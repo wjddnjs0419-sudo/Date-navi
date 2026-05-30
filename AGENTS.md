@@ -1,0 +1,157 @@
+# AGENTS.md — Date Planner Agent Guide
+
+AI 에이전트(Claude, Codex 등)가 이 저장소에서 작업할 때 따라야 할 워크플로우와 아키텍처 문서.
+
+---
+
+## 필수 워크플로우: Plan-First Iterative Approach
+
+모든 복잡한 태스크는 아래 순서를 반드시 따른다.
+
+0. **세션 단축키**: 첫 메시지가 `ㅎㅇ`이면 `CLAUDE.md` → `PLAN.md` → `RESULT.md` 순으로 읽고 현재 상태를 요약한 뒤 작업 지시를 기다린다. `종료`는 PLAN/RESULT 최신화 + validate 기록 점검.
+1. **계획 수립**: 새 태스크는 `PLAN.md`의 `## Pending Approval` 아래에 추가. 변경 파일·전략 문서화.
+2. **승인 대기**: 사용자가 `PLAN.md`를 검토하도록 멈춘다.
+3. **반복 수정**: 피드백 반영 후 명시적 "구현" 승인까지 반복.
+4. **외과적 실행**: 최종 PLAN.md 기준으로 서브태스크 하나씩 구현. 각 단계마다 `npm run validate`.
+5. **결과 보고**: 완료 후 변경 내용·기술 결정을 `RESULT.md`에 기록. 과거 기록은 `RESULT_ARCHIVE.md`로 이관.
+6. **PLAN 정리**: 완료된 승인 계획은 `[Done]` 한 줄로 축약. `[Done]` 항목이 10개 초과하면 가장 오래된 항목부터 삭제.
+7. **Zero-Human Validation Loop**: `npm run validate` 후 타입/린트 에러는 사용자 개입 없이 스스로 수정·재검증 반복.
+8. **Ratchet**: 스스로 해결한 빌드/린트 오류는 아래 `## Anti-Patterns` 섹션에 1줄 추가.
+
+---
+
+## 커맨드
+
+```bash
+npm run dev        # Next.js 개발 서버 (기본 포트 3000)
+npm run build      # 프로덕션 빌드
+npm run validate   # tsc --noEmit               ← 변경 후 항상 실행
+npm run typecheck  # tsc --noEmit
+npm run lint       # next lint
+```
+
+### 환경 변수 (`.env`)
+
+```
+NEXT_PUBLIC_BACKEND_PROVIDER=supabase   # 주석 처리 시 mock 모드
+NEXT_PUBLIC_SUPABASE_URL=https://wqjguifsmtblgrhdfnji.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+GOOGLE_AI_STUDIO_API_KEY=...
+```
+
+### 백엔드 전환
+
+| 모드 | 설정 | 저장소 |
+|------|------|--------|
+| Supabase | `NEXT_PUBLIC_BACKEND_PROVIDER=supabase` | Postgres DB |
+| Mock | 위 줄 주석 처리 | localStorage (시드 데이터) |
+
+Mock 시드 데이터 초기화: 프로필 탭 → "데모 초기화" 버튼 (mock 모드 전용)
+
+---
+
+## 아키텍처
+
+**스택:** Next.js 15 (App Router) + React 19 + TypeScript + Supabase (Auth, Postgres, Realtime, RLS) + CSS Custom Properties
+
+**경로 별칭:** `@` → `./src`
+
+### 핵심 파일 맵
+
+| 파일 | 역할 |
+|------|------|
+| `src/app/page.tsx` | 앱 진입점 — `DatePlannerApp` 마운트 |
+| `src/app/globals.css` | 디자인 시스템 전체 — CSS 변수 + 컴포넌트 스타일 |
+| `src/app/api/date-options/route.ts` | AI 후보 생성 API Route |
+| `src/features/date-planner/date-planner-app.tsx` | **메인 컴포넌트** — 모든 뷰/상태/핸들러 |
+| `src/features/date-planner/icons.tsx` | SVG 아이콘 컴포넌트 |
+| `src/types/date-planner.ts` | 모든 타입 + 레이블 맵 |
+| `src/lib/backend/client.ts` | 백엔드 클라이언트 팩토리 (mock/supabase 분기) |
+| `src/lib/backend/mock-client.ts` | Mock 클라이언트 (localStorage) + 시드 데이터 |
+| `src/lib/backend/supabase-client.ts` | Supabase 클라이언트 구현 |
+| `src/lib/backend/types.ts` | `BackendClient` 인터페이스 |
+| `src/lib/validation/date-planner.ts` | 폼 유효성 검사 |
+| `src/lib/ai/google-ai-studio.ts` | Gemini API 호출 + fallback |
+| `docs/supabase-schema.sql` | DB 스키마 전체 (마이그레이션 기준) |
+
+### Supabase 데이터베이스 테이블
+
+| 테이블 | 설명 |
+|--------|------|
+| `date_planner_profiles` | 사용자 프로필 (`user_id`, `display_name`, `couple_id`) |
+| `date_planner_couples` | 커플 코드 (`code`, `owner_user_id`, `partner_user_id`, `status`) |
+| `date_planner_proposals` | 데이트 제안 (`couple_id`, `title`, `proposed_date`, `status`, `selected_option_id`) |
+| `date_planner_options` | 후보 옵션 (`proposal_id`, `place_name`, `address`, `estimated_cost`) |
+| `date_planner_option_preferences` | 유저별 옵션 선호도 (`option_id`, `user_id`, `preference`) — PK: `(option_id, user_id)` |
+| `date_planner_comments` | 옵션 댓글 (`option_id`, `author_user_id`, `type`, `content`) |
+
+연결 프로젝트: `wqjguifsmtblgrhdfnji` (`Date-planner`, Northeast Asia, Seoul)
+
+스키마 변경 시 `docs/supabase-schema.sql` 수정 후 Supabase SQL Editor에서 실행. 대시보드 직접 편집 금지.
+
+### 상태 흐름
+
+```
+DatePlannerApp
+├── useEffect → connectClient() → BackendClient (mock | supabase)
+├── data: AppData | null  (profile + couple + proposals + options + comments)
+├── activeView: "home" | "create" | "calendar" | "profile"
+└── 모든 변경: client.xxx() → commit/loadAppData → setData({ ...client.dump() })
+```
+
+Realtime: `data.profile.coupleId` 변경 시 `client.realtime.subscribe()` 재구독.
+
+### AI 후보 생성 흐름
+
+```
+handleGenerateAiOptions()
+→ POST /api/date-options
+→ google-ai-studio.ts → generateDateOptions()
+→ Gemini 2.0 Flash (API key 있을 때) or createFallbackOptions() (없을 때)
+→ setOptionDrafts(generated)
+```
+
+---
+
+## 디자인 시스템
+
+**철학:** Tinder iOS 온보딩 스타일 — 그라디언트 브랜드 컬러, 블랙 필 CTA, 깔끔한 화이트 배경.
+
+### CSS 변수 (`:root` in `globals.css`)
+
+| 변수 | 값 | 용도 |
+|------|-----|------|
+| `--gradient` | `linear-gradient(135deg, #fd297b, #ff655b, #ff9a4a)` | 브랜드 그라디언트 |
+| `--primary` | `#fd297b` | 액센트 (칩, 인디케이터, active 상태) |
+| `--cta` | `#111111` | Primary 버튼 배경 (블랙) |
+| `--canvas` | `#ffffff` | 페이지 배경 |
+| `--ink` | `#21242c` | 본문 텍스트 |
+| `--surface-soft` | `#f7f7f7` | 카드/인풋 배경 |
+| `--hairline-soft` | `#f0f0f0` | 미세 구분선 |
+| `--bottom-nav-h` | `62px` | 하단 네비 높이 (모바일 패딩 계산용) |
+
+### 버튼 규칙
+
+- `primary-button`: `background: var(--cta)` (블랙), `border-radius: 9999px`, `min-height: 52px`
+- `secondary-button`: 흰 배경, `1.5px` 테두리, 필 shape
+- `danger-button`: 투명 배경, 빨간 텍스트, 필 shape
+- 모바일 `decision-bar`에서 모든 버튼은 전체 너비 (`width: 100%`)
+
+### 인풋 규칙
+
+- `background: var(--surface-soft)`, `border: 0`, `border-radius: 10px`
+- 포커스: `background: var(--surface-strong)`, `outline: none`
+
+### 반응형 브레이크포인트
+
+- `≤920px`: 하단 네비 표시, 2-컬럼 → 1-컬럼, mobile-back 버튼 표시
+- `≤680px`: h1 28px, 폼 1-컬럼, decision-bar 세로 스택, 버튼 전체 너비
+
+---
+
+## 🚫 Anti-Patterns & Lessons Learned
+
+- `.map(toOption)` 사용 금지 — array index가 두 번째 인자로 넘어가 타입 충돌 발생. 항상 `.map((row) => toOption(row))`로 래핑.
+- `gemini-1.5-flash` 모델 사용 금지 — deprecated. `gemini-2.0-flash` 사용.
+- 회원가입 폼에 mock 기본값(`"지우"`, `"jiwoo@example.com"`) pre-fill 금지 — Supabase 모드에서 실제 사용자 데이터처럼 혼동 유발.
+- `isSupabaseMode` 무관하게 "로컬 mock 데이터" notice 출력 금지 — Supabase 모드에서는 초기 notice 빈 문자열로 시작.

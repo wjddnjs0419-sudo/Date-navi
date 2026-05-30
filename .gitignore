@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build / cache
+.next/
+*.tsbuildinfo
+datemate-app/.expo/
+datemate-app/dist/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS
+.DS_Store
+**/.DS_Store
+
+# supabase
+supabase/.temp/
