@@ -20,3 +20,5 @@ datemate-app/dist/
 
 # supabase
 supabase/.temp/
+supabase/.branches/
+supabase/migrations_backup_*/
