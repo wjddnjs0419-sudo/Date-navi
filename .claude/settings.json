@@ -6,5 +6,8 @@
       "mcp__plugin_supabase_supabase__get_advisors",
       "Bash(awk 'NR>=22 && /^};/{print NR\": \"$0; exit}' lib/i18n.ts)"
     ]
+  },
+  "enabledPlugins": {
+    "expo@claude-plugins-official": true
   }
 }

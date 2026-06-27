@@ -4,7 +4,7 @@
 
 스택: **React Native + Expo (SDK 54)** / Supabase(DB·Auth·Edge Functions) / Google AI Studio(Gemini, 카드·문장 생성).
 
-> 앱 코드는 모두 `datemate-app/` 안에 있다. 루트는 기획 문서와 Supabase 마이그레이션을 담는다.
+> 앱 코드(Expo)·기획 문서·Supabase 마이그레이션이 모두 **저장소 루트**에 함께 있다.
 
 ## 🧭 처음 오셨나요? (어디부터 볼지)
 - **이 앱을 처음 돌려본다면 → 아래 [빠른 시작](#-빠른-시작-로컬)** (위에서부터 한 줄씩 따라가면 됨)
@@ -17,8 +17,7 @@
 > 사전 준비물: **Docker Desktop**, **Node.js**, **Supabase CLI**(`brew install supabase/tap/supabase`), 그리고 폰에 **Expo Go** 앱.
 
 ```bash
-# 1) 앱 라이브러리(의존성) 설치 — 코드가 쓰는 외부 패키지를 내려받음
-cd datemate-app
+# 1) 앱 라이브러리(의존성) 설치 — 코드가 쓰는 외부 패키지를 내려받음 (루트에서)
 npm install
 
 # 2) 비밀값 쪽지(.env) 만들기 — 템플릿 복사 후, 🔴 실제 키는 관리자에게 받아 채움
@@ -26,7 +25,6 @@ cp .env.example .env
 
 # 3) 내 컴퓨터 안에 '연습용 서버'(로컬 Supabase) 켜기 — 루트에서 실행
 #    Docker로 DB·로그인·Edge Function을 한꺼번에 띄움 (포트 55321~)
-cd ..
 supabase start
 
 # 4) 로컬 스택에 연결할 .env.local 만들기 (실기기 Expo Go 기준)
@@ -37,21 +35,20 @@ supabase start
 #      EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_xxxxx
 #    (GOOGLE 키는 .env 에서 자동 상속되므로 안 넣어도 됨)
 
-# 5) 개발 서버 실행 — 폰의 Expo Go로 QR을 찍으면 앱이 뜸
-cd datemate-app
+# 5) 개발 서버 실행 — 폰의 Expo Go로 QR을 찍으면 앱이 뜸 (루트에서)
 npx expo start --clear
 ```
 
 - 폰과 맥이 **같은 Wi-Fi**여야 함. QR이 안 잡히면 Expo Go에서 `exp://<맥-LAN-IP>:8081` 직접 입력.
 - 로컬 DB는 **비어 있음**(스키마만, 데이터 0건) → 앱에서 **회원가입부터** 새로 시작.
-- 코드 바꾼 뒤 검사: `npm run validate` (= `tsc --noEmit`, datemate-app 안에서 실행).
+- 코드 바꾼 뒤 검사: `npm run validate` (= `tsc --noEmit`, 루트에서 실행).
 
 ## 📅 매일 작업 시작 (요약 순서)
 > 위 "빠른 시작"은 **처음 한 번**. 익숙해지면 매번 이 순서면 충분.
 
 1. **Docker Desktop 실행** — 트레이 아이콘이 켜질 때까지 대기. (로컬 서버가 여기 위에서 돎 → 안 켜면 3번이 실패)
 2. **`supabase start`** — 루트(`Codex_sample/`)에서. 내 컴퓨터 위 '연습용 서버' 켜기. *(처음 한 번은 몇 분 걸림)*
-3. **`cd datemate-app && npx expo start --clear`** — 개발 서버 띄우기.
+3. **`npx expo start --clear`** (루트에서) — 개발 서버 띄우기.
 4. **Expo Go로 QR 스캔** — 폰에서 앱 실행.
 5. **Claude Code 켜고 `ㅎㅇ` 입력** — AI 비서가 현재 상황 요약 + 다음 할 일을 한국어로 안내.
 
