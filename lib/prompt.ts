@@ -20,6 +20,8 @@ export const MOOD_MAP: Record<string, string> = {
   comfortable: '편안하게',
   fun: '재밌고 활기차게',
   romantic: '로맨틱하게',
+  quiet: '조용하고 차분하게',
+  new: '새롭고 색다르게',
 };
 export const DURATION_MAP: Record<string, string> = {
   '1h': '약 1시간',
@@ -54,6 +56,8 @@ export const MOOD_MAP_EN: Record<string, string> = {
   comfortable: 'Comfortable',
   fun: 'Fun and lively',
   romantic: 'Romantic',
+  quiet: 'Quiet and calm',
+  new: 'Fresh and new',
 };
 export const DURATION_MAP_EN: Record<string, string> = {
   '1h': 'About 1 hour',
