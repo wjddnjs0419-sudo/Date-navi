@@ -1,0 +1,29 @@
+import { buildPrompt } from '../lib/prompt';
+import type { FeelingInput } from '../lib/ai';
+
+const base: FeelingInput = {
+  energy: 'low', budget: 'low', distance: 'near',
+  mood: 'comfortable', duration: '1h', avoid: [],
+};
+
+describe('buildPrompt mode별 차별화 (ko)', () => {
+  it('pick_for_me: 조건 충실/무난 지침 포함', () => {
+    const p = buildPrompt(base, 'pick_for_me');
+    expect(p).toContain('계획이 귀찮');
+    expect(p).toContain('실패 확률');
+  });
+  it('feeling: 감정/분위기 구체화 지침 포함', () => {
+    const p = buildPrompt(base, 'feeling');
+    expect(p).toContain('끌리는 분위기');
+    expect(p).toContain('감성');
+  });
+  it('light: 저예산/근거리 지침 포함', () => {
+    const p = buildPrompt(base, 'light');
+    expect(p).toContain('피곤');
+    expect(p).toContain('저예산');
+  });
+  it('make_course: 단계별 동선 지침 포함', () => {
+    const p = buildPrompt(base, 'make_course');
+    expect(p).toContain('1단계');
+  });
+});

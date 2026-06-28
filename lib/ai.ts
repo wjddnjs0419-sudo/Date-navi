@@ -1,14 +1,36 @@
+import { supabase } from './supabase';
 import type { AppLanguage } from './i18n';
+import { buildPrompt } from './prompt';
 
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_AI_STUDIO_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// AI 호출은 Supabase Edge Function(generate-ai)이 대행한다.
+// Anthropic 키는 함수 시크릿으로만 존재하며 클라이언트 번들에 노출되지 않는다.
+async function invokeAI(action: 'cards' | 'soft_message', prompt: string): Promise<unknown> {
+  const { data, error } = await supabase.functions.invoke('generate-ai', {
+    body: { action, prompt },
+  });
+  if (error) throw error;
+  return data;
+}
 
 export type UserPreferences = {
   preferred_tags: string[];
   avoid_tags: string[];
+  mood_tags: string[];
   is_long_distance: boolean;
   planning_style: string;
 };
+
+// 로그인한 사용자의 온보딩 취향을 불러온다. 추천 호출부 공통 사용.
+export async function getUserPreferences(): Promise<UserPreferences | undefined> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return undefined;
+  const { data } = await supabase
+    .from('user_preferences')
+    .select('preferred_tags, avoid_tags, mood_tags, is_long_distance, planning_style')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  return data ? (data as UserPreferences) : undefined;
+}
 
 export type FeelingInput = {
   energy: string;
@@ -28,215 +50,6 @@ export type DateCard = {
   tags: string[];
   why_recommended: string;
 };
-
-const ENERGY_MAP: Record<string, string> = {
-  low: '피곤함',
-  medium: '보통',
-  high: '에너지 넘침',
-};
-const BUDGET_MAP: Record<string, string> = {
-  low: '저예산 (1~3만 원)',
-  medium: '적당한 예산 (3~7만 원)',
-  high: '넉넉한 예산 (7만 원 이상)',
-};
-const DISTANCE_MAP: Record<string, string> = {
-  near: '가까운 곳 (도보/차 10분)',
-  any: '거리 상관없음',
-  far: '멀리도 가능 (1시간 이내)',
-};
-const MOOD_MAP: Record<string, string> = {
-  comfortable: '편안하게',
-  fun: '재밌고 활기차게',
-  romantic: '로맨틱하게',
-};
-const DURATION_MAP: Record<string, string> = {
-  '1h': '약 1시간',
-  '2-3h': '2~3시간',
-  half_day: '반나절 (4~5시간)',
-  full_day: '하루종일',
-};
-const AVOID_MAP: Record<string, string> = {
-  long_walk: '오래 걷기',
-  crowded: '사람 많은 곳',
-  outdoor: '야외 활동',
-  expensive: '비싼 곳',
-  reservation: '복잡한 예약',
-};
-
-const ENERGY_MAP_EN: Record<string, string> = {
-  low: 'Low energy / tired',
-  medium: 'Okay',
-  high: 'High energy',
-};
-const BUDGET_MAP_EN: Record<string, string> = {
-  low: 'Low budget (about $10-25 per person)',
-  medium: 'Moderate budget (about $25-60 per person)',
-  high: 'Higher budget (about $60+ per person)',
-};
-const DISTANCE_MAP_EN: Record<string, string> = {
-  near: 'Nearby (walk or 10 minutes by car)',
-  any: 'Any distance is fine',
-  far: 'Longer travel is okay (within about an hour)',
-};
-const MOOD_MAP_EN: Record<string, string> = {
-  comfortable: 'Comfortable',
-  fun: 'Fun and lively',
-  romantic: 'Romantic',
-};
-const DURATION_MAP_EN: Record<string, string> = {
-  '1h': 'About 1 hour',
-  '2-3h': '2-3 hours',
-  half_day: 'Half day (4-5 hours)',
-  full_day: 'All day',
-};
-const AVOID_MAP_EN: Record<string, string> = {
-  long_walk: 'Long walks',
-  crowded: 'Crowded places',
-  outdoor: 'Outdoor activities',
-  expensive: 'Expensive places',
-  reservation: 'Complicated reservations',
-};
-
-const MODE_CONTEXT: Record<string, string> = {
-  pick_for_me: '계획이 귀찮아서 앱이 대신 골라주길 원하는 커플',
-  feeling_only: '끌리는 분위기만 알고 있는 커플',
-  light_date: '피곤하고 부담 없이 가볍게 하고 싶은 커플',
-  low_risk: '실패 없는 무난하고 안정적인 데이트를 원하는 커플',
-  special_date: '기념일이나 특별한 날을 위한 데이트를 원하는 커플',
-  next_time: '다음 만남을 위해 미리 계획을 세우고 싶은 커플',
-  make_course: '아이디어는 있지만 코스로 구체화가 필요한 커플',
-};
-
-const MODE_CONTEXT_EN: Record<string, string> = {
-  pick_for_me: 'A couple that wants the app to pick because planning feels tiring',
-  feeling_only: 'A couple that only knows the vibe they want',
-  light_date: 'A couple that wants something easy and light',
-  low_risk: 'A couple that wants a safe, reliable date',
-  special_date: 'A couple planning for an anniversary or a special day',
-  next_time: 'A couple saving ideas for their next meeting',
-  make_course: 'A couple with ideas that need to be turned into a plan',
-};
-
-const MODE_EMPHASIS: Record<string, string> = {
-  light_date: '\n\n【모드 특별 지침】\n저예산, 근거리, 짧은 시간, 체력 소모가 적은 데이트를 우선 추천하세요. 이동 거리가 짧고 특별한 준비 없이도 즐길 수 있는 가볍고 편안한 후보를 강조하세요.',
-  special_date: '\n\n【모드 특별 지침】\n기념일이나 특별한 날에 어울리는 감성적이고 특별한 데이트를 추천하세요. 로맨틱하고 기억에 남을 경험, 특별한 레스토랑이나 야경 같은 요소를 강조하세요.',
-  low_risk: '\n\n【모드 특별 지침】\n실패 확률이 낮고 무난하며 안정적인 데이트를 추천하세요. 특별한 준비 없이도 즐길 수 있고, 둘 다 만족할 가능성이 높으며 쉽게 실행 가능한 후보를 우선으로 하세요.',
-  make_course: '\n\n【모드 특별 지침】\n아이디어를 구체적인 코스로 정리해주세요. summary 필드에 "1단계: … → 2단계: … → 3단계: …" 형식의 단계별 동선을 포함하고, tags에 준비할 것을 넣고, why_recommended에 대체안을 포함하세요.',
-};
-
-const MODE_EMPHASIS_EN: Record<string, string> = {
-  light_date: '\n\n【Mode guidance】\nPrioritize low-budget, nearby, short, low-effort dates. Suggest options that require no special preparation and are easy on the body.',
-  special_date: '\n\n【Mode guidance】\nSuggest romantic, memorable dates for anniversaries or special occasions. Emphasize special restaurants, scenic views, or experiences worth remembering.',
-  low_risk: '\n\n【Mode guidance】\nPrioritize safe, reliable, easy-to-enjoy dates. Focus on options that require no preparation, are highly likely to satisfy both people, and are simple to execute.',
-  make_course: '\n\n【Mode guidance】\nTurn the idea into a concrete step-by-step course. In the summary field, include steps like "Step 1: … → Step 2: … → Step 3: …", put things to prepare in tags, and include a backup plan in why_recommended.',
-};
-
-const PLANNING_STYLE_MAP: Record<string, string> = {
-  planner: '자주 계획하는 편',
-  together: '같이 정하는 편',
-  idea_only: '고르는 건 괜찮지만 계획은 어려운 편',
-  passive: '의견 표현이 어려운 편',
-  flexible: '그때그때 다름',
-};
-
-const PLANNING_STYLE_MAP_EN: Record<string, string> = {
-  planner: 'Usually the planner',
-  together: 'We decide together',
-  idea_only: 'I can choose, but planning is hard',
-  passive: 'I struggle to express my opinion',
-  flexible: 'It depends on the day',
-};
-
-function buildPreferencesBlock(prefs: UserPreferences, language: AppLanguage): string {
-  const lines: string[] = [];
-  const isEnglish = language === 'en';
-  if (prefs.preferred_tags.length > 0) {
-    lines.push(isEnglish ? `- Preferred vibes: ${prefs.preferred_tags.join(', ')}` : `- 선호 분위기: ${prefs.preferred_tags.join(', ')}`);
-  }
-  if (prefs.avoid_tags.length > 0) {
-    lines.push(isEnglish ? `- Things to avoid: ${prefs.avoid_tags.join(', ')}` : `- 평소 피하고 싶은 것: ${prefs.avoid_tags.join(', ')}`);
-  }
-  lines.push(isEnglish ? `- Long-distance couple: ${prefs.is_long_distance ? 'Yes' : 'No'}` : `- 장거리 커플: ${prefs.is_long_distance ? '네' : '아니요'}`);
-  if (prefs.planning_style) {
-    const planningStyle = isEnglish
-      ? PLANNING_STYLE_MAP_EN[prefs.planning_style] ?? prefs.planning_style
-      : PLANNING_STYLE_MAP[prefs.planning_style] ?? prefs.planning_style;
-    lines.push(isEnglish ? `- Planning style: ${planningStyle}` : `- 계획 성향: ${planningStyle}`);
-  }
-  if (lines.length === 0) return '';
-  return isEnglish
-    ? `\n\n【Couple preferences (from onboarding)】\n${lines.join('\n')}`
-    : `\n\n【커플 취향 (온보딩 기반)】\n${lines.join('\n')}`;
-}
-
-function buildPrompt(input: FeelingInput, mode: string, prefs?: UserPreferences, language: AppLanguage = 'ko'): string {
-  const isEnglish = language === 'en';
-  const avoidText = input.avoid.length > 0
-    ? (isEnglish
-      ? `Things to avoid: ${input.avoid.map(a => AVOID_MAP_EN[a] ?? a).join(', ')}`
-      : `피하고 싶은 것: ${input.avoid.map(a => AVOID_MAP[a] ?? a).join(', ')}`)
-    : '';
-  const freeTextPart = input.freeText ? `\n${isEnglish ? 'Additional note' : '추가 메모'}: ${input.freeText}` : '';
-  const modeContext = (isEnglish ? MODE_CONTEXT_EN[mode] : MODE_CONTEXT[mode]) ?? (isEnglish ? 'A couple that needs help planning a date' : '데이트 계획이 필요한 커플');
-  const emphasisBlock = (isEnglish ? MODE_EMPHASIS_EN[mode] : MODE_EMPHASIS[mode]) ?? '';
-  const prefsBlock = prefs ? buildPreferencesBlock(prefs, language) : '';
-
-  if (isEnglish) {
-    return `You are an expert at planning dates for couples. Based on the situation below, recommend 3 date ideas.
-
-【Situation】 ${modeContext}
-- Energy: ${ENERGY_MAP_EN[input.energy] ?? input.energy}
-- Budget: ${BUDGET_MAP_EN[input.budget] ?? input.budget}
-- Distance: ${DISTANCE_MAP_EN[input.distance] ?? input.distance}
-- Vibe: ${MOOD_MAP_EN[input.mood] ?? input.mood}
-- Time available: ${DURATION_MAP_EN[input.duration] ?? input.duration}
-${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
-
-Reply with JSON only. Do not include any other text.
-
-{
-  "cards": [
-    {
-      "title": "Date title (within 15 characters)",
-      "summary": "One-line summary (within 40 characters)",
-      "estimated_time": "Estimated time",
-      "estimated_budget": "Estimated cost per person",
-      "tags": ["Tag 1", "Tag 2", "Tag 3"],
-      "why_recommended": "Why this fits well (within 50 characters, warm tone)"
-    }
-  ]
-}
-
-Tag examples: low travel, good when tired, cheap, low risk, indoor, outdoor, romantic, fun, quiet, good for photos`;
-  }
-
-  return `당신은 커플 데이트 계획 전문가입니다. 아래 커플의 상황을 보고 데이트 후보 3개를 추천해주세요.
-
-【상황】 ${modeContext}
-- 컨디션: ${ENERGY_MAP[input.energy] ?? input.energy}
-- 예산: ${BUDGET_MAP[input.budget] ?? input.budget}
-- 이동 거리: ${DISTANCE_MAP[input.distance] ?? input.distance}
-- 분위기: ${MOOD_MAP[input.mood] ?? input.mood}
-- 가능 시간: ${DURATION_MAP[input.duration] ?? input.duration}
-${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
-
-반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
-
-{
-  "cards": [
-    {
-      "title": "데이트 제목 (15자 이내)",
-      "summary": "한 줄 설명 (40자 이내)",
-      "estimated_time": "예상 소요 시간",
-      "estimated_budget": "1인 예상 비용",
-      "tags": ["태그1", "태그2", "태그3"],
-      "why_recommended": "이 데이트가 잘 맞는 이유 (50자 이내, 따뜻한 말투)"
-    }
-  ]
-}
-
-태그 예시: 이동 적음, 피곤한 날 가능, 돈 적게 듦, 실패 확률 낮음, 실내, 야외, 로맨틱, 재밌음, 조용함, 사진 찍기 좋음`;
-}
 
 const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
   ko: [
@@ -384,27 +197,10 @@ const SOFT_MESSAGE_FALLBACKS: Record<AppLanguage, Record<string, string>> = {
 export async function generateSoftMessage(input: SoftMessageInput, language: AppLanguage = 'ko'): Promise<string> {
   try {
     const prompt = buildSoftMessagePrompt(input, language);
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.9, maxOutputTokens: 256 },
-      }),
-    });
+    const data = (await invokeAI('soft_message', prompt)) as { message?: string };
+    if (!data?.message) throw new Error('No message in response');
 
-    if (!response.ok) throw new Error(`Gemini error: ${response.status}`);
-
-    const data = await response.json();
-    const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON in response');
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.message) throw new Error('No message in response');
-
-    return parsed.message as string;
+    return data.message;
   } catch {
     const firstReason = input.reasons[0];
     return SOFT_MESSAGE_FALLBACKS[language][firstReason] ?? SOFT_MESSAGE_FALLBACKS[language].default;
@@ -419,29 +215,12 @@ export async function generateDateCards(
 ): Promise<DateCard[]> {
   try {
     const prompt = buildPrompt(input, mode, prefs, language);
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 1024 },
-      }),
-    });
-
-    if (!response.ok) throw new Error(`Gemini error: ${response.status}`);
-
-    const data = await response.json();
-    const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON in response');
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!Array.isArray(parsed.cards) || parsed.cards.length === 0) {
+    const data = (await invokeAI('cards', prompt)) as { cards?: DateCard[] };
+    if (!Array.isArray(data?.cards) || data.cards.length === 0) {
       throw new Error('No cards in response');
     }
 
-    return parsed.cards.slice(0, 3) as DateCard[];
+    return data.cards.slice(0, 3);
   } catch {
     return FALLBACK_CARDS_BY_LANGUAGE[language];
   }
