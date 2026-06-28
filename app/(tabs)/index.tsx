@@ -1,25 +1,39 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, SafeAreaView,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, SafeAreaView, Image,
+  Dimensions, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
 import {
   Bell, ChevronRight, Heart, Gift, MessageCircle, Map, Mail, Sparkles,
+  CalendarHeart, Clock, MapPin,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { SoftCard, Chip } from '../../components/ui';
 
-type Profile = { display_name: string; couple_id: string | null };
+type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type Partner = { display_name: string } | null;
+type TopCandidate = { id: string; title: string; tags: string[] } | null;
+type UpcomingPlan = {
+  id: string; title: string;
+  confirmed_date: string | null; confirmed_time: string | null; confirmed_place: string | null;
+};
+
+const POSITIVE = ['love', 'like'];
 
 const MODES = [
-  { title: '앱이 골라줘', Icon: Gift, bg: C.pinkLight, fg: C.pinkDeep },
-  { title: '느낌만 말할게', Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
-  { title: '코스로 정리해줘', Icon: Map, bg: C.mint, fg: C.mintFg },
-  { title: '부드럽게 말해줘', Icon: Mail, bg: C.cream, fg: C.creamFg },
+  { title: '앱이 골라줘', desc: '오늘 끌리는 느낌만 고르면 앱이 데이트를 정해줘요.', Icon: Gift, bg: C.pinkLight, fg: C.pinkDeep },
+  { title: '느낌만 말할게', desc: '기분만 편하게 말하면 어울리는 데이트를 찾아줘요.', Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
+  { title: '코스로 정리해줘', desc: '흩어진 후보들을 깔끔한 하루 코스로 묶어줘요.', Icon: Map, bg: C.mint, fg: C.mintFg },
+  { title: '부드럽게 말해줘', desc: '하고 싶은 말을 상대가 듣기 좋게 다듬어줘요.', Icon: Mail, bg: C.cream, fg: C.creamFg },
 ];
+
+const SCREEN_W = Dimensions.get('window').width;
+const CARD_GAP = 12;
+const CARD_W = SCREEN_W - 64; // 살짝 다음 카드가 보이도록
+const SNAP = CARD_W + CARD_GAP;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,6 +41,14 @@ export default function HomeScreen() {
   const [partner, setPartner] = useState<Partner>(null);
   const [loading, setLoading] = useState(true);
   const [hasNotif, setHasNotif] = useState(false);
+  const [activeMode, setActiveMode] = useState(0);
+  const [topCandidate, setTopCandidate] = useState<TopCandidate>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingPlan[]>([]);
+
+  const onModeScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / SNAP);
+    if (idx !== activeMode) setActiveMode(idx);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -43,7 +65,7 @@ export default function HomeScreen() {
 
           const { data: myProfile } = await supabase
             .from('date_planner_profiles')
-            .select('display_name, couple_id')
+            .select('display_name, couple_id, profile_photo_url')
             .eq('user_id', user.id)
             .maybeSingle();
           if (!myProfile) return;
@@ -69,6 +91,46 @@ export default function HomeScreen() {
                 setPartner(partnerProfile);
               }
             }
+
+            // 둘 다 끌린 후보 1건 조회
+            const { data: cardRows } = await supabase
+              .from('date_cards')
+              .select('id, title, tags')
+              .eq('couple_id', myProfile.couple_id)
+              .eq('status', 'active')
+              .order('created_at', { ascending: false });
+
+            if (cardRows?.length) {
+              const { data: rxRows } = await supabase
+                .from('reactions')
+                .select('card_id, user_id, reaction_type')
+                .in('card_id', cardRows.map(c => c.id));
+
+              const both = cardRows.find(card => {
+                const rx = rxRows?.filter(r => r.card_id === card.id) ?? [];
+                const mine = rx.find(r => r.user_id === user.id);
+                const ptnr = rx.find(r => r.user_id !== user.id);
+                return mine && ptnr
+                  && POSITIVE.includes(mine.reaction_type)
+                  && POSITIVE.includes(ptnr.reaction_type);
+              });
+              setTopCandidate(both
+                ? { id: both.id, title: both.title, tags: both.tags ?? [] }
+                : null);
+            } else {
+              setTopCandidate(null);
+            }
+
+            // 다가오는 데이트(확정) 최신 2건
+            const { data: planRows } = await supabase
+              .from('date_cards')
+              .select('id, title, confirmed_date, confirmed_time, confirmed_place')
+              .eq('couple_id', myProfile.couple_id)
+              .eq('status', 'confirmed')
+              .order('confirmed_date', { ascending: true, nullsFirst: false })
+              .order('created_at', { ascending: false })
+              .limit(2);
+            setUpcoming(planRows ?? []);
           }
         } finally {
           setLoading(false);
@@ -121,7 +183,11 @@ export default function HomeScreen() {
                 style={s.avatarBtn}
                 onPress={() => router.push('/settings' as any)}
               >
-                <Text style={s.avatarText}>{firstName}</Text>
+                {profile?.profile_photo_url ? (
+                  <Image source={{ uri: profile.profile_photo_url }} style={s.avatarImage} />
+                ) : (
+                  <Text style={s.avatarText}>{firstName}</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -141,49 +207,130 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {/* 오늘 필요한 도움 카드 */}
-        <SoftCard
-          style={s.modeCard}
-          onPress={() => router.push('/(tabs)/mode')}
-        >
-          <View style={s.modeCardHeader}>
-            <Text style={s.modeCardTitle}>오늘 필요한 도움</Text>
-            <ChevronRight size={16} color={C.creamFg} />
-          </View>
-          <View style={s.modeGrid}>
-            {MODES.map((m) => (
-              <View key={m.title} style={s.modeItem}>
-                <View style={[s.modeIcon, { backgroundColor: m.bg }]}>
-                  <m.Icon size={18} strokeWidth={1.8} color={m.fg} />
-                </View>
-                <Text style={s.modeItemLabel}>{m.title}</Text>
-              </View>
-            ))}
-          </View>
-        </SoftCard>
-
-        {/* 둘 다 끌린 후보 */}
+        {/* 오늘 필요한 도움 — 가로 스와이프 카드 */}
         <View style={s.sectionRow}>
-          <Text style={s.sectionTitle}>둘 다 끌린 후보</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/candidates')}>
+          <Text style={s.sectionTitle}>오늘 필요한 도움</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/mode')}>
             <Text style={s.sectionLink}>전체 보기</Text>
           </TouchableOpacity>
         </View>
-        <SoftCard onPress={() => router.push('/mode-flow/result' as any)}>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
-              <Heart size={22} strokeWidth={1.8} color={C.pinkDeep} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.candidateTitle}>동네 맛집 포장 + 집 영화</Text>
-              <View style={s.chips}>
-                <Chip tone="gray">이동 적음</Chip>
-                <Chip tone="gray">돈 적게 듦</Chip>
-                <Chip tone="gray">피곤한 날</Chip>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={SNAP}
+          snapToAlignment="start"
+          onScroll={onModeScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingRight: 20 }}
+        >
+          {MODES.map((m, i) => (
+            <TouchableOpacity
+              key={m.title}
+              activeOpacity={0.9}
+              onPress={() => router.push('/(tabs)/mode')}
+              style={[
+                s.modeCard,
+                { width: CARD_W, marginRight: i === MODES.length - 1 ? 0 : CARD_GAP },
+              ]}
+            >
+              <View style={[s.modeIcon, { backgroundColor: m.bg }]}>
+                <m.Icon size={26} strokeWidth={1.8} color={m.fg} />
               </View>
+              <Text style={s.modeItemLabel}>{m.title}</Text>
+              <Text style={s.modeItemDesc}>{m.desc}</Text>
+              <View style={s.modeCardFooter}>
+                <Text style={[s.modeCardCta, { color: m.fg }]}>시작하기</Text>
+                <ChevronRight size={16} color={m.fg} />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <View style={s.dots}>
+          {MODES.map((m, i) => (
+            <View
+              key={m.title}
+              style={[s.dot, i === activeMode && s.dotActive]}
+            />
+          ))}
+        </View>
+
+        {/* 다가오는 데이트 — 확정된 데이트 있을 때만 */}
+        {upcoming.length > 0 && (
+          <>
+            <View style={s.sectionRow}>
+              <Text style={s.sectionTitle}>다가오는 데이트</Text>
+              <TouchableOpacity onPress={() => router.push('/plans' as any)}>
+                <Text style={s.sectionLink}>전체 보기</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-        </SoftCard>
+            <View style={{ gap: 10 }}>
+              {upcoming.map((p) => (
+                <SoftCard key={p.id} onPress={() => router.push(`/card/${p.id}` as any)}>
+                  <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                    <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
+                      <CalendarHeart size={22} strokeWidth={1.8} color={C.pinkDeep} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.candidateTitle}>{p.title}</Text>
+                      <View style={s.planMeta}>
+                        {p.confirmed_date && (
+                          <View style={s.planMetaItem}>
+                            <CalendarHeart size={12} color={C.textSub} />
+                            <Text style={s.planMetaText}>{p.confirmed_date}</Text>
+                          </View>
+                        )}
+                        {p.confirmed_time && (
+                          <View style={s.planMetaItem}>
+                            <Clock size={12} color={C.textSub} />
+                            <Text style={s.planMetaText}>{p.confirmed_time}</Text>
+                          </View>
+                        )}
+                        {p.confirmed_place && (
+                          <View style={s.planMetaItem}>
+                            <MapPin size={12} color={C.textSub} />
+                            <Text style={s.planMetaText}>{p.confirmed_place}</Text>
+                          </View>
+                        )}
+                        {!p.confirmed_date && !p.confirmed_time && !p.confirmed_place && (
+                          <Text style={s.planMetaText}>날짜 미정</Text>
+                        )}
+                      </View>
+                    </View>
+                    <ChevronRight size={16} color={C.textFaint} />
+                  </View>
+                </SoftCard>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* 둘 다 끌린 후보 — 실제 데이터 있을 때만 */}
+        {topCandidate && (
+          <>
+            <View style={s.sectionRow}>
+              <Text style={s.sectionTitle}>둘 다 끌린 후보</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/candidates')}>
+                <Text style={s.sectionLink}>전체 보기</Text>
+              </TouchableOpacity>
+            </View>
+            <SoftCard onPress={() => router.push(`/card/${topCandidate.id}` as any)}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
+                  <Heart size={22} strokeWidth={1.8} color={C.pinkDeep} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.candidateTitle}>{topCandidate.title}</Text>
+                  <View style={s.chips}>
+                    {topCandidate.tags.slice(0, 3).map((t) => (
+                      <Chip key={t} tone="gray">{t}</Chip>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </SoftCard>
+          </>
+        )}
 
         {/* 파트너 반응 */}
         {partner && (
@@ -255,6 +402,7 @@ const s = StyleSheet.create({
     backgroundColor: C.pinkMid, alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: 14, fontWeight: '700', color: C.white },
+  avatarImage: { width: 44, height: 44, borderRadius: 22 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 4 },
   connectBanner: {
     flexDirection: 'row',
@@ -269,19 +417,30 @@ const s = StyleSheet.create({
     borderColor: C.pinkBorder,
   },
   connectText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
-  modeCard: { marginTop: 20, backgroundColor: C.cream },
-  modeCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  modeCardTitle: { fontSize: 13, fontWeight: '700', color: C.creamFg },
-  modeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  modeItem: { width: '47%', backgroundColor: C.white, borderRadius: 16, padding: 12 },
-  modeIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  modeItemLabel: { fontSize: 12, fontWeight: '600', color: C.text, marginTop: 10 },
+  modeCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  modeIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  modeItemLabel: { fontSize: 17, fontWeight: '700', color: C.text, marginTop: 16 },
+  modeItemDesc: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: 6 },
+  modeCardFooter: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 16 },
+  modeCardCta: { fontSize: 13, fontWeight: '700' },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 14 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
+  dotActive: { width: 18, backgroundColor: C.pink },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 10 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: C.text },
   sectionLink: { fontSize: 12, color: C.textSub },
   candidateIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   candidateTitle: { fontSize: 14, fontWeight: '700', color: C.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
+  planMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
+  planMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  planMetaText: { fontSize: 12, color: C.textSub },
   partnerAvatar: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: C.lavender, alignItems: 'center', justifyContent: 'center',

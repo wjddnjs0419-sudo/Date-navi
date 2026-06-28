@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  TouchableOpacity, ActivityIndicator, Alert,
+  TouchableOpacity, ActivityIndicator, Alert, Linking, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { supabase } from '../lib/supabase';
 import {
   User, Users, Lock, Bell, Globe, Shield,
@@ -20,6 +21,7 @@ export default function SettingsScreen() {
   const t = strings.settings;
 
   const [displayName, setDisplayName] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [daysConnected, setDaysConnected] = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState('');
@@ -36,20 +38,23 @@ export default function SettingsScreen() {
 
           const { data: profile } = await supabase
             .from('date_planner_profiles')
-            .select('display_name, invite_code, couple_id, created_at')
+            .select('display_name, profile_photo_url, couple_id, created_at')
             .eq('user_id', user.id)
             .maybeSingle();
 
           if (profile) {
             setDisplayName(profile.display_name ?? '');
-            setInviteCode(profile.invite_code ?? '');
+            setPhotoUrl(profile.profile_photo_url ?? null);
 
             if (profile.couple_id) {
+              // 초대 코드는 profiles가 아니라 date_planner_couples.code에 있다.
               const { data: coupleRow } = await supabase
                 .from('date_planner_couples')
-                .select('created_at')
+                .select('created_at, code')
                 .eq('id', profile.couple_id)
                 .maybeSingle();
+
+              if (coupleRow?.code) setInviteCode(coupleRow.code);
 
               if (coupleRow?.created_at) {
                 const diff = Math.floor((Date.now() - new Date(coupleRow.created_at).getTime()) / (1000 * 60 * 60 * 24));
@@ -102,6 +107,36 @@ export default function SettingsScreen() {
     Alert.alert(t.helpTitle, t.helpMessage);
   }
 
+  async function handleNotifications() {
+    const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+
+    // 아직 한 번도 안 물어봤으면 iOS 권한 팝업을 띄운다(이때부터 설정에 알림 항목 생김).
+    if (status === 'undetermined' && canAskAgain) {
+      const res = await Notifications.requestPermissionsAsync();
+      if (res.status === 'granted') {
+        Alert.alert('알림 켜짐', '이제 알림을 받을 수 있어요.');
+      } else {
+        Alert.alert('알림 꺼짐', '나중에 설정에서 알림을 켤 수 있어요.', [
+          { text: '확인', style: 'cancel' },
+          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        ]);
+      }
+      return;
+    }
+
+    // 이미 결정된 상태면(허용/거부) iOS 설정에서 직접 바꾸게 안내.
+    Alert.alert(
+      '알림 설정',
+      status === 'granted'
+        ? '알림이 켜져 있어요. 끄려면 설정을 열어주세요.'
+        : '알림이 꺼져 있어요. 켜려면 설정을 열어주세요.',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '설정 열기', onPress: () => Linking.openSettings() },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
@@ -126,7 +161,11 @@ export default function SettingsScreen() {
           activeOpacity={0.8}
         >
           <View style={s.avatar}>
-            <Text style={s.avatarText}>{initials}</Text>
+            {photoUrl ? (
+              <Image source={{ uri: photoUrl }} style={s.avatarImage} />
+            ) : (
+              <Text style={s.avatarText}>{initials}</Text>
+            )}
             <View style={s.avatarCamera}>
               <Camera size={14} strokeWidth={1.8} color={C.text} />
             </View>
@@ -192,7 +231,7 @@ export default function SettingsScreen() {
               icon={<Bell size={16} strokeWidth={1.8} color={C.text} />}
               label={t.rowNotifications}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
-              onPress={() => router.push('/account/notifications' as any)}
+              onPress={handleNotifications}
             />
             <ListRow
               icon={<Globe size={16} strokeWidth={1.8} color={C.text} />}
@@ -265,6 +304,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     position: 'relative',
   },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
   avatarText: { fontSize: 36, fontWeight: '800', color: C.white },
   avatarCamera: {
     position: 'absolute', bottom: 0, right: 0,

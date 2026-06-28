@@ -16,7 +16,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { generateDateCards } from '../../lib/ai';
+import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 
 type CardDetail = {
@@ -158,7 +158,8 @@ export default function CardDetailScreen() {
         avoid: condTag === 'indoor' ? ['outdoor'] : [],
         freeText: `${card.title} 분위기와 비슷하지만 ${condInfo?.freeText ?? '조건을 바꿔서 추천해줘'}`,
       };
-      const newCards = await generateDateCards(input, card.mode || 'pick_for_me', undefined, 'ko');
+      const prefs = await getUserPreferences();
+      const newCards = await generateDateCards(input, card.mode || 'pick_for_me', prefs, 'ko');
       for (const nc of newCards) {
         await supabase.from('date_cards').insert({
           couple_id: coupleId,

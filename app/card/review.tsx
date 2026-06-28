@@ -74,6 +74,8 @@ export default function ReviewScreen() {
         want_again: wantAgain,
       });
       if (error) throw error;
+      // 회고를 남기면 데이트는 완료 상태가 되어 계획 목록에서 빠진다.
+      await supabase.from('date_cards').update({ status: 'done' }).eq('id', id);
       router.replace('/(tabs)/memories');
     } catch {
       Alert.alert('오류', c.saveError);

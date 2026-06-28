@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { generateDateCards } from '../../lib/ai';
+import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, SoftCard } from '../../components/ui';
@@ -46,6 +46,7 @@ export default function NewCardScreen() {
       const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
       if (useAI) {
+        const prefs = await getUserPreferences();
         const cards = await generateDateCards(
           {
             energy: '',
@@ -57,7 +58,7 @@ export default function NewCardScreen() {
             freeText: [title.trim(), description.trim()].filter(Boolean).join('. '),
           },
           'make_course',
-          undefined,
+          prefs,
           'ko',
         );
         const card = cards[0];

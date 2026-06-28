@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, TextInput, Alert,
+  ActivityIndicator, SafeAreaView, TextInput, Alert, Image, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { Camera, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
@@ -24,6 +26,8 @@ export default function EditProfileScreen() {
   const [planningStyle, setPlanningStyle] = useState(2);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [initials, setInitials] = useState('나');
 
   useEffect(() => {
@@ -34,7 +38,7 @@ export default function EditProfileScreen() {
 
         const { data: profile } = await supabase
           .from('date_planner_profiles')
-          .select('display_name')
+          .select('display_name, profile_photo_url')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -42,6 +46,7 @@ export default function EditProfileScreen() {
           setNickname(profile.display_name);
           setInitials(profile.display_name.slice(0, 1));
         }
+        if (profile?.profile_photo_url) setPhotoUrl(profile.profile_photo_url);
 
         const { data: prefs } = await supabase
           .from('user_preferences')
@@ -59,6 +64,71 @@ export default function EditProfileScreen() {
     })();
   }, []);
 
+  async function handlePickPhoto() {
+    if (uploadingPhoto) return;
+
+    // 갤러리 접근 권한 요청 — 거부 시 iOS 설정으로 안내
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        '사진 접근 권한 필요',
+        '프로필 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]?.base64) return;
+
+    setUploadingPhoto(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('no user');
+
+      const base64 = result.assets[0].base64!;
+      const path = `${user.id}/avatar_${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, decode(base64), { contentType: 'image/jpeg', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+
+      // 프로필 행이 없을 수도 있으므로 upsert로 사진 URL 저장
+      const { error: saveError } = await supabase
+        .from('date_planner_profiles')
+        .upsert(
+          {
+            id: user.id,
+            user_id: user.id,
+            display_name: nickname.trim() || initials,
+            profile_photo_url: publicUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        );
+      if (saveError) throw saveError;
+
+      setPhotoUrl(publicUrl);
+    } catch {
+      Alert.alert('오류', '사진 업로드 중 문제가 생겼어요.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
   async function handleSave() {
     const trimmed = nickname.trim();
     if (!trimmed) { Alert.alert('닉네임을 입력해주세요.'); return; }
@@ -67,10 +137,19 @@ export default function EditProfileScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('no user');
 
+      // update가 아닌 upsert — 프로필 행이 없는 계정에서도 닉네임이 확실히 저장된다.
+      // (update는 행이 없으면 0건 매칭으로 조용히 무시되어 마이페이지에 반영되지 않았음)
       const { error: profileError } = await supabase
         .from('date_planner_profiles')
-        .update({ display_name: trimmed })
-        .eq('user_id', user.id);
+        .upsert(
+          {
+            id: user.id,
+            user_id: user.id,
+            display_name: trimmed,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        );
       if (profileError) throw profileError;
 
       // 계획 성향 저장은 best-effort — 실패해도 닉네임 저장/이동을 막지 않는다.
@@ -110,21 +189,24 @@ export default function EditProfileScreen() {
         <Text style={[s.heading, { marginTop: 16 }]}>프로필 수정</Text>
 
         <View style={s.avatarWrap}>
-          <TouchableOpacity
-            onPress={() => Alert.alert('사진 변경', '이미지 선택 기능은 곧 업데이트될 예정이에요.')}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} disabled={uploadingPhoto}>
             <View style={s.avatar}>
-              <Text style={s.avatarText}>{initials}</Text>
+              {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={s.avatarImage} />
+              ) : (
+                <Text style={s.avatarText}>{initials}</Text>
+              )}
+              {uploadingPhoto && (
+                <View style={s.avatarOverlay}>
+                  <ActivityIndicator color={C.white} />
+                </View>
+              )}
               <View style={s.avatarCamera}>
                 <Camera size={16} strokeWidth={1.8} color={C.text} />
               </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={{ marginTop: 12 }}
-            onPress={() => Alert.alert('사진 변경', '이미지 선택 기능은 곧 업데이트될 예정이에요.')}
-          >
+          <TouchableOpacity style={{ marginTop: 12 }} onPress={handlePickPhoto} disabled={uploadingPhoto}>
             <Text style={s.changePhotoBtn}>사진 변경하기</Text>
           </TouchableOpacity>
         </View>
@@ -200,6 +282,13 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   avatarText: { fontSize: 40, fontWeight: '800', color: C.white },
+  avatarImage: { width: 110, height: 110, borderRadius: 55 },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 55,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   avatarCamera: {
     position: 'absolute', bottom: 0, right: 0,
     width: 36, height: 36, borderRadius: 18,

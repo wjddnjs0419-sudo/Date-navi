@@ -4,7 +4,7 @@ import {
   ActivityIndicator, SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { generateDateCards, type DateCard, type FeelingInput, type UserPreferences } from '../../lib/ai';
+import { generateDateCards, getUserPreferences, type DateCard, type FeelingInput } from '../../lib/ai';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
 import { useI18n } from '../../lib/i18n';
@@ -27,6 +27,7 @@ export default function ResultScreen() {
   const { strings: s, language } = useI18n();
 
   const [cards, setCards] = useState<DateCard[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -37,16 +38,7 @@ export default function ResultScreen() {
     (async () => {
       try {
         const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-        const { data: { user } } = await supabase.auth.getUser();
-        let prefs: UserPreferences | undefined;
-        if (user) {
-          const { data } = await supabase
-            .from('user_preferences')
-            .select('preferred_tags, avoid_tags, is_long_distance, planning_style')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (data) prefs = data as UserPreferences;
-        }
+        const prefs = await getUserPreferences();
 
         await logEvent('mode_selected', { mode: mode ?? 'pick_for_me' });
         const result = await generateDateCards(parsedInput, mode ?? 'pick_for_me', prefs, language);
@@ -146,14 +138,16 @@ export default function ResultScreen() {
 
         {cards.map((card, i) => {
           const style = CARD_STYLES[i % CARD_STYLES.length];
-          const isFeatured = i === 0;
+          const isFeatured = i === selectedIndex;
           return isFeatured ? (
             /* 메인 카드 */
             <View key={i} style={s2.featuredCard}>
               <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
-                <View style={{ position: 'absolute', top: 16, left: 16 }}>
-                  <Badge tone="pink">가장 잘 맞아요</Badge>
-                </View>
+                {i === 0 && (
+                  <View style={{ position: 'absolute', top: 16, left: 16 }}>
+                    <Badge tone="pink">가장 잘 맞아요</Badge>
+                  </View>
+                )}
                 <View style={[s2.featuredIcon, { backgroundColor: C.white }]}>
                   <style.Icon size={36} strokeWidth={1.5} color={style.iconColor} />
                 </View>
@@ -228,7 +222,7 @@ export default function ResultScreen() {
             </View>
           ) : (
             /* 서브 카드 */
-            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => {}}>
+            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => setSelectedIndex(i)}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[s2.subIcon, { backgroundColor: style.bg2 }]}>
                   <style.Icon size={26} strokeWidth={1.5} color={style.iconColor} />

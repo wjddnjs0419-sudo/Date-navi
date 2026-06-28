@@ -52,12 +52,20 @@ export default function ConfirmScreen() {
     if (saving) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('date_cards')
-        .update({ status: 'confirmed' })
-        .eq('id', id);
+        .update({
+          status: 'confirmed',
+          confirmed_date: date.trim() || null,
+          confirmed_time: time.trim() || null,
+          confirmed_place: place.trim() || null,
+          confirmed_items: items.trim() || null,
+        })
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
-      router.replace({ pathname: '/card/review', params: { id } });
+      if (!data?.length) throw new Error('update affected no rows');
+      router.replace('/plans');
     } catch {
       Alert.alert('오류', c.saveError);
     } finally {

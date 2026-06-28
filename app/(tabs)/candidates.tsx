@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { Plus, Heart, Leaf, Palette, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { SoftCard, Chip, Badge } from '../../components/ui';
-import { generateDateCards } from '../../lib/ai';
+import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
@@ -173,7 +173,8 @@ export default function CandidatesScreen() {
         avoid: [],
         freeText: bucketItem.item,
       };
-      const cards = await generateDateCards(input, 'next_meet', undefined, 'ko');
+      const prefs = await getUserPreferences();
+      const cards = await generateDateCards(input, 'next_meet', prefs, 'ko');
 
       for (const card of cards) {
         await supabase.from('date_cards').insert({

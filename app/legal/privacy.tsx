@@ -42,7 +42,7 @@ export default function PrivacyScreen() {
             title: '4. 제3자 제공',
             body: [
               '사용자의 개인정보를 제3자에게 제공하지 않습니다.',
-              '단, 데이트 후보 생성을 위해 Google Gemini AI API를 활용합니다.',
+              '단, 데이트 후보 생성을 위해 Anthropic Claude AI API를 활용합니다.',
               '입력값 (컨디션, 예산 등 조건 정보)이 API에 전달되며, 이름·이메일 등 식별 정보는 전달되지 않습니다.',
             ],
           },
@@ -94,7 +94,7 @@ export default function PrivacyScreen() {
             title: '4. Third-party sharing',
             body: [
               'We do not share your personal information with third parties.',
-              'However, we use the Google Gemini AI API to generate date suggestions.',
+              'However, we use the Anthropic Claude AI API to generate date suggestions.',
               'Only the input conditions (such as energy and budget) are sent. Identifiers such as name or email are not sent.',
             ],
           },

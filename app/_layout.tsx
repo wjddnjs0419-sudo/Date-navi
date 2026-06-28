@@ -21,11 +21,11 @@ async function getDestination(session: Session | null): Promise<string> {
 
   const { data: prefs } = await supabase
     .from('user_preferences')
-    .select('user_id')
+    .select('onboarding_completed')
     .eq('user_id', session.user.id)
     .maybeSingle();
 
-  if (!prefs) return '/onboarding/preferences';
+  if (!prefs?.onboarding_completed) return '/onboarding/preferences';
   return '/(tabs)';
 }
 

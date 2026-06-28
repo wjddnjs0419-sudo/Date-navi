@@ -98,6 +98,37 @@ export default function CoupleConnectScreen() {
     }
   }
 
+  // 커플 연결을 건너뛰면 솔로 모드: couple_id를 자기 user.id로 설정해
+  // 저장/후보 조회가 동작하게 한다. (나중에 실제 연결 시 couple_id가 갱신됨)
+  async function skipConnect() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // couple_id는 date_planner_couples를 참조하므로 솔로용 couple 행을 먼저 만든다.
+        await supabase
+          .from('date_planner_couples')
+          .upsert(
+            {
+              id: user.id,
+              code: user.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
+              owner_user_id: user.id,
+              status: 'waiting',
+            },
+            { onConflict: 'id', ignoreDuplicates: true },
+          );
+
+        await supabase
+          .from('date_planner_profiles')
+          .update({ couple_id: user.id, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .is('couple_id', null);
+      }
+    } catch {
+      // 실패해도 온보딩은 진행 (다음 진입 시 재시도됨)
+    }
+    router.replace('/onboarding/preferences' as any);
+  }
+
   const displayCode = myCode || 'DN-????';
 
   return (
@@ -176,7 +207,7 @@ export default function CoupleConnectScreen() {
 
         <TouchableOpacity
           style={{ alignItems: 'center', paddingVertical: 12 }}
-          onPress={() => router.replace('/onboarding/preferences' as any)}
+          onPress={skipConnect}
         >
           <Text style={s.skipText}>나중에 연결할게요</Text>
         </TouchableOpacity>

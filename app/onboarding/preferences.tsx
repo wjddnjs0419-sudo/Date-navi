@@ -84,6 +84,7 @@ export default function PreferencesScreen() {
           avoid_tags: skip ? [] : avoid,
           mood_tags: skip ? [] : mood,
           is_long_distance: skip ? false : longDistance === 'yes',
+          onboarding_completed: true,
         }, { onConflict: 'user_id' });
       if (error) throw error;
 
