@@ -22,22 +22,16 @@ export default function ModeScreen() {
 
   function handleStart() {
     const mode = MODES[selIdx];
-    if (mode.id === 'make_course') {
-      router.push('/mode-flow/course' as any);
-      return;
-    }
-    if (mode.id === 'soft_message') {
-      router.push('/share/soft-message' as any);
-      return;
-    }
-    if (mode.id === 'next_meet') {
-      router.push('/mode-flow/bucketlist' as any);
-      return;
-    }
-    router.push({
-      pathname: '/mode-flow/feeling',
-      params: { mode: mode.id },
-    } as any);
+    const routes: Record<string, string> = {
+      pick_for_me: '/mode-flow/pick',
+      feeling: '/mode-flow/feeling',
+      light: '/mode-flow/light',
+      make_course: '/mode-flow/course',
+      soft_message: '/(tabs)/soft-message',
+      next_meet: '/mode-flow/bucketlist',
+    };
+    const path = routes[mode.id];
+    if (path) router.push(path as any);
   }
 
   return (
