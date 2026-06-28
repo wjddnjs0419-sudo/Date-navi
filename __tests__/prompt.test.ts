@@ -10,7 +10,7 @@ describe('buildPrompt mode별 차별화 (ko)', () => {
   it('pick_for_me: 조건 충실/무난 지침 포함', () => {
     const p = buildPrompt(base, 'pick_for_me');
     expect(p).toContain('계획이 귀찮');
-    expect(p).toContain('실패 확률');
+    expect(p).toContain('조건에 충실');
   });
   it('feeling: 감정/분위기 구체화 지침 포함', () => {
     const p = buildPrompt(base, 'feeling');
@@ -19,11 +19,16 @@ describe('buildPrompt mode별 차별화 (ko)', () => {
   });
   it('light: 저예산/근거리 지침 포함', () => {
     const p = buildPrompt(base, 'light');
-    expect(p).toContain('피곤');
-    expect(p).toContain('저예산');
+    expect(p).toContain('체력 소모가 적은');
+    expect(p).toContain('근거리');
   });
   it('make_course: 단계별 동선 지침 포함', () => {
     const p = buildPrompt(base, 'make_course');
     expect(p).toContain('1단계');
+  });
+  it('feeling(en): 영문 context/emphasis 정합', () => {
+    const p = buildPrompt(base, 'feeling', undefined, 'en');
+    expect(p).toContain('only knows the vibe');
+    expect(p).toContain('emotionally resonant');
   });
 });
