@@ -56,7 +56,7 @@ const SOFT_MESSAGE_SCHEMA = {
 };
 
 const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number }> = {
-  cards: { schema: CARDS_SCHEMA, maxTokens: 1024, temperature: 0.8 },
+  cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8 },
   soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9 },
 };
 
