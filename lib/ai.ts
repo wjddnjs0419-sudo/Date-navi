@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import type { AppLanguage } from './i18n';
 import { buildPrompt } from './prompt';
+import type { CourseStep } from './course';
+export type { CourseStep };
 
 // AI 호출은 Supabase Edge Function(generate-ai)이 대행한다.
 // Anthropic 키는 함수 시크릿으로만 존재하며 클라이언트 번들에 노출되지 않는다.
@@ -49,6 +51,7 @@ export type DateCard = {
   estimated_budget: string;
   tags: string[];
   why_recommended: string;
+  steps?: CourseStep[];
 };
 
 const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
