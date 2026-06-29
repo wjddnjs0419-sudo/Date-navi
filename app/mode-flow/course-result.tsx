@@ -19,14 +19,15 @@ import { BackBar, BigButton, Badge } from '../../components/ui';
 // 가로 S자 동선 트레일 배치 옵션
 const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 150, padX: 48, padY: 56 };
 
-function CourseTrail({ steps, width }: { steps: CourseStep[]; width: number }) {
-  // 단계가 2개 미만이면 트레일 대신 텍스트 목록으로 폴백
+function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: number; summary?: string }) {
+  // 단계가 2개 미만이면(모델이 steps를 안 준 경우 등) 트레일 대신 요약 텍스트로 폴백 — 화면이 비지 않게.
   if (steps.length < 2) {
     return (
       <View style={{ gap: 10, paddingVertical: 16 }}>
         {steps.map((st, i) => (
           <Text key={i} style={trail.fallbackStep}>{i + 1}. {st.label}</Text>
         ))}
+        {steps.length === 0 && !!summary && <Text style={trail.fallbackStep}>{summary}</Text>}
       </View>
     );
   }
@@ -171,7 +172,7 @@ export default function CourseResultScreen() {
                 <View style={s.metaItem}><Wallet size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_budget}</Text></View>
               </View>
 
-              <CourseTrail steps={steps} width={width - 40} />
+              <CourseTrail steps={steps} width={width - 40} summary={card.summary} />
 
               <View style={s.btnRow}>
                 <TouchableOpacity style={s.sendBtn} onPress={() => router.push('/share/send' as any)}>
