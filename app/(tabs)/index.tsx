@@ -266,7 +266,7 @@ export default function HomeScreen() {
             </View>
             <View style={{ gap: 10 }}>
               {upcoming.map((p) => (
-                <SoftCard key={p.id} onPress={() => router.push(`/card/${p.id}` as any)}>
+                <SoftCard key={p.id} onPress={() => router.push({ pathname: '/card/confirm', params: { id: p.id } } as any)}>
                   <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                     <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
                       <CalendarHeart size={22} strokeWidth={1.8} color={C.pinkDeep} />

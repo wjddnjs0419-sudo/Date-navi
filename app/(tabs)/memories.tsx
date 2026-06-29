@@ -130,7 +130,7 @@ export default function MemoriesScreen() {
             renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={[s.card, index === 0 && s.featuredCard]}
-                onPress={() => router.push(`/card/${item.card_id}` as any)}
+                onPress={() => router.push({ pathname: '/card/memory/[id]', params: { id: item.card_id } } as any)}
                 activeOpacity={0.85}
               >
                 {index === 0 ? (

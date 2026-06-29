@@ -28,25 +28,35 @@ export default function ConfirmScreen() {
   const [card, setCard] = useState<CardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [isPlan, setIsPlan] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [place, setPlace] = useState('');
   const [items, setItems] = useState('');
 
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        setLoading(true);
-        const { data } = await supabase
-          .from('date_cards')
-          .select('id, title, estimated_time, estimated_budget, tags')
-          .eq('id', id)
-          .maybeSingle();
-        setCard(data);
-        setLoading(false);
-      })();
-    }, [id]),
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('date_cards')
+      .select('id, title, estimated_time, estimated_budget, tags, confirmed_date, confirmed_time, confirmed_place, confirmed_items')
+      .eq('id', id)
+      .maybeSingle();
+    setCard(data);
+    if (data) {
+      setDate(data.confirmed_date ?? '');
+      setTime(data.confirmed_time ?? '');
+      setPlace(data.confirmed_place ?? '');
+      setItems(data.confirmed_items ?? '');
+    }
+    // 이미 확정된 데이트면 읽기 상세로, 아직 미확정이면 바로 입력 모드로 연다.
+    const confirmed = !!data?.confirmed_date;
+    setIsPlan(confirmed);
+    setEditing(!confirmed);
+    setLoading(false);
+  }, [id]);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   async function handleSave() {
     if (saving) return;
@@ -65,12 +75,28 @@ export default function ConfirmScreen() {
         .select('id');
       if (error) throw error;
       if (!data?.length) throw new Error('update affected no rows');
-      router.replace('/plans');
+      // 저장 후엔 읽기 상세로 전환해 정리된 일정을 보여준다.
+      await load();
+      setEditing(false);
     } catch {
       Alert.alert('오류', c.saveError);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleCancelPlan() {
+    Alert.alert('계획 취소', '이 데이트 계획을 취소할까요? 카드가 완전히 삭제돼요.', [
+      { text: '닫기', style: 'cancel' },
+      {
+        text: '계획 취소', style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.from('date_cards').delete().eq('id', id);
+          if (error) { Alert.alert('오류', '취소 중 문제가 발생했어요.'); return; }
+          router.back();
+        },
+      },
+    ]);
   }
 
   if (loading) {
@@ -90,6 +116,59 @@ export default function ConfirmScreen() {
     { icon: ROW_ICONS[3], label: c.itemsLabel, value: items, setter: setItems, placeholder: c.itemsPlaceholder },
   ];
 
+  // ── 읽기 상세 모드 ──────────────────────────────────────────────
+  if (!editing) {
+    const dateLine = [date, time].filter(Boolean).join(' · ') || '날짜·시간 미정';
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <BackBar />
+
+          <View style={styles.headingBlock}>
+            <Text style={styles.heading}>다가오는 데이트</Text>
+            <Text style={styles.sub}>{dateLine}</Text>
+          </View>
+
+          {card && (
+            <SoftCard style={styles.cardPreview}>
+              <Text style={styles.cardTitle}>{card.title}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>
+                <Text style={styles.metaSep}>·</Text>
+                <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>
+              </View>
+              <View style={styles.chipRow}>
+                {(card.tags ?? []).slice(0, 3).map((t, i) => (
+                  <Chip key={i} tone="gray">{t}</Chip>
+                ))}
+              </View>
+
+              <View style={styles.detailRows}>
+                {rows.map((row) => (
+                  <View key={row.label} style={styles.detailRow}>
+                    <Text style={styles.detailIcon}>{row.icon}</Text>
+                    <Text style={styles.detailLabel}>{row.label}</Text>
+                    <Text style={[styles.detailValue, !row.value && styles.detailValueEmpty]} numberOfLines={1}>
+                      {row.value || '미정'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </SoftCard>
+          )}
+
+          <View style={styles.actions}>
+            <BigButton onPress={() => setEditing(true)}>계획 수정하기</BigButton>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.7}>
+              <Text style={styles.cancelBtnText}>계획 취소하기</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── 입력/수정 모드 ──────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -142,8 +221,8 @@ export default function ConfirmScreen() {
             <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
               {saving ? '저장 중...' : c.saveButton}
             </BigButton>
-            <BigButton variant="text" onPress={() => router.back()}>
-              {c.keepButton}
+            <BigButton variant="text" onPress={() => (isPlan ? setEditing(false) : router.back())}>
+              {isPlan ? '돌아가기' : c.keepButton}
             </BigButton>
           </View>
         </ScrollView>
@@ -193,5 +272,14 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginBottom: 4 },
   rowInput: { fontSize: 14, color: C.text, paddingVertical: 0 },
 
+  detailRows: { marginTop: 16, gap: 12, borderTopWidth: 1, borderTopColor: C.borderLight, paddingTop: 16 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  detailIcon: { fontSize: 15, width: 20, textAlign: 'center' },
+  detailLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', width: 72 },
+  detailValue: { fontSize: 14, color: C.text, fontWeight: '600', flex: 1 },
+  detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
+
   actions: { gap: 6 },
+  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
+  cancelBtnText: { fontSize: 14, color: '#FF4F6D', fontWeight: '600' },
 });
