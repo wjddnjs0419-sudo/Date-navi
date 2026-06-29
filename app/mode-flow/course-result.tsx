@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, useWindowDimensions,
+  ActivityIndicator, useWindowDimensions, Alert,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { generateDateCards, getUserPreferences, type DateCard, type FeelingInput } from '../../lib/ai';
+import { type DateCard, type FeelingInput } from '../../lib/ai';
 import { computeTrailNodes, buildTrailPath, parseStepsFromSummary, type CourseStep } from '../../lib/course';
 import { supabase } from '../../lib/supabase';
-import { logEvent } from '../../lib/analytics';
-import { useI18n } from '../../lib/i18n';
 import { Clock, Wallet, Send, Bookmark } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Badge } from '../../components/ui';
@@ -74,34 +72,64 @@ function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: nu
 }
 
 export default function CourseResultScreen() {
-  const { mode, input } = useLocalSearchParams<{ mode: string; input: string }>();
+  const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
   const router = useRouter();
-  const { language } = useI18n();
   const { width } = useWindowDimensions();
 
-  const [cards, setCards] = useState<DateCard[]>([]);
+  // 카드는 generating 화면에서 생성해 params로 넘겨준다.
+  const cards = useMemo<DateCard[]>(() => {
+    try { return JSON.parse(cardsParam ?? '[]'); } catch { return []; }
+  }, [cardsParam]);
+
+  // 입력화면은 스택에서 빠져 있으므로, 다시 시도는 generating 으로 재진입해 재생성한다.
+  function regenerate() {
+    router.replace({
+      pathname: '/mode-flow/generating',
+      params: { mode: mode ?? 'make_course', input: input ?? '{}' },
+    } as any);
+  }
+
+  const [sending, setSending] = useState(false);
+
+  // 보내기 전에 현재 보고 있는 코스를 저장해 id 를 확보하고, 그 id 로 공유 화면을 연다.
+  async function handleSendToPartner() {
+    setSending(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
+      if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return; }
+
+      const card = cards[page];
+      const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const { error } = await supabase.from('date_cards').insert({
+        id: cardId,
+        couple_id: profile.couple_id,
+        created_by: user.id,
+        mode: mode ?? 'make_course',
+        input_json: JSON.parse(input ?? '{}'),
+        source: 'ai',
+        title: card.title,
+        summary: card.summary,
+        estimated_time: card.estimated_time,
+        estimated_budget: card.estimated_budget,
+        tags: card.tags,
+        why_recommended: card.why_recommended,
+      });
+      if (error) throw error;
+      router.push({ pathname: '/share/send', params: { cardId } } as any);
+    } catch {
+      Alert.alert('오류', '보내기 중 문제가 생겼어요.');
+    } finally {
+      setSending(false);
+    }
+  }
+
   const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const parsed: FeelingInput = JSON.parse(input ?? '{}');
-        const prefs = await getUserPreferences();
-        await logEvent('mode_selected', { mode: mode ?? 'make_course' });
-        const result = await generateDateCards(parsed, mode ?? 'make_course', prefs, language);
-        setCards(result);
-        await logEvent('ai_card_created', { mode: mode ?? 'make_course', card_count: result.length });
-      } catch {
-        setErrorMsg('코스를 만드는 중 문제가 생겼어요.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [input, language, mode]);
 
   function stepsOf(card: DateCard): CourseStep[] {
     return card.steps && card.steps.length > 0 ? card.steps : parseStepsFromSummary(card.summary);
@@ -116,7 +144,8 @@ export default function CourseResultScreen() {
         .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
       if (!profile?.couple_id) return;
       const parsed: FeelingInput = JSON.parse(input ?? '{}');
-      const rows = cards.map(card => ({
+      const card = cards[page];
+      const { error } = await supabase.from('date_cards').insert({
         id: Math.random().toString(36).slice(2) + Date.now().toString(36),
         couple_id: profile.couple_id,
         created_by: user.id,
@@ -129,8 +158,7 @@ export default function CourseResultScreen() {
         estimated_budget: card.estimated_budget,
         tags: card.tags,
         why_recommended: card.why_recommended,
-      }));
-      const { error } = await supabase.from('date_cards').insert(rows);
+      });
       if (error) throw error;
       setSaved(true);
     } catch {
@@ -144,20 +172,11 @@ export default function CourseResultScreen() {
     setPage(Math.round(e.nativeEvent.contentOffset.x / width));
   }
 
-  if (loading) {
-    return (
-      <View style={s.center}>
-        <ActivityIndicator size="large" color={C.pink} />
-        <Text style={s.loadingText}>둘에게 맞는 코스를{'\n'}짜는 중이에요</Text>
-      </View>
-    );
-  }
-
   if (errorMsg !== '' && cards.length === 0) {
     return (
       <SafeAreaView style={s.center}>
         <Text style={s.errTitle}>잠깐 문제가 생겼어요</Text>
-        <BigButton onPress={() => router.back()} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
+        <BigButton onPress={regenerate} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
       </SafeAreaView>
     );
   }
@@ -190,8 +209,8 @@ export default function CourseResultScreen() {
               <CourseTrail steps={steps} width={width - 40} summary={card.summary} />
 
               <View style={s.btnRow}>
-                <TouchableOpacity style={s.sendBtn} onPress={() => router.push('/share/send' as any)}>
-                  <Send size={14} color={C.white} /><Text style={s.sendText}>상대에게 보내기</Text>
+                <TouchableOpacity style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>
+                  {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>상대에게 보내기</Text>
                 </TouchableOpacity>
                 {!saved && (
                   <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>

@@ -1,11 +1,11 @@
 import {
-  View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { C } from '../constants/colors';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'text' | 'disabled';
@@ -61,6 +61,87 @@ const card = StyleSheet.create({
     shadowRadius: 7,
     elevation: 3,
   },
+});
+
+// ─── SwipeableCard ─────────────────────────────────────────────────────────────
+// 카드를 왼쪽으로 밀면 오른쪽에 수정(연필)·삭제(X) 액션이 노출된다.
+// 오른쪽으로 밀면(또는 열린 상태에서 탭) 다시 기본 카드로 닫힌다.
+// 액션 패널은 카드와 맞닿는 왼쪽 모서리만 SoftCard 와 동일 radius(22), 바깥(오른쪽)은 직각.
+const REVEAL_W = 128;
+
+export function SwipeableCard({
+  children, onPress, onEdit, onDelete,
+}: { children: ReactNode; onPress?: () => void; onEdit: () => void; onDelete: () => void }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const openRef = useRef(false);
+  const startX = useRef(0);
+
+  function snap(open: boolean) {
+    openRef.current = open;
+    Animated.spring(translateX, { toValue: open ? -REVEAL_W : 0, useNativeDriver: true, bounciness: 0 }).start();
+  }
+
+  function handlePress() {
+    if (openRef.current) { snap(false); return; }
+    onPress?.();
+  }
+
+  const pan = useRef(
+    PanResponder.create({
+      // 가로 드래그가 세로보다 우세하면 바로 스와이프로 인식(탭/세로 스크롤과만 구분).
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 3 && Math.abs(g.dx) > Math.abs(g.dy),
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 3 && Math.abs(g.dx) > Math.abs(g.dy),
+      // 한 번 스와이프로 잡으면 자식(Pressable)에게 뺏기지 않게 한다.
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => { startX.current = openRef.current ? -REVEAL_W : 0; },
+      onPanResponderMove: (_, g) => {
+        const x = Math.max(-REVEAL_W, Math.min(0, startX.current + g.dx));
+        translateX.setValue(x);
+      },
+      onPanResponderRelease: (_, g) => {
+        snap(startX.current + g.dx < -REVEAL_W / 2);
+      },
+      onPanResponderTerminate: () => snap(openRef.current),
+    }),
+  ).current;
+
+  // 스와이프 전(닫힘)에는 패널을 완전히 숨겨, 카드 터치 시 뒤 패널이 비치지 않게 한다.
+  const actionsOpacity = translateX.interpolate({
+    inputRange: [-REVEAL_W, 0], outputRange: [1, 0], extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={swipe.container}>
+      <Animated.View style={[swipe.actions, { opacity: actionsOpacity }]} pointerEvents="box-none">
+        <TouchableOpacity
+          style={[swipe.actionBtn, { backgroundColor: C.lavender }]}
+          activeOpacity={0.8}
+          onPress={() => { snap(false); onEdit(); }}
+        >
+          <Pencil size={20} color={C.lavenderFg} strokeWidth={2} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[swipe.actionBtn, { backgroundColor: '#FF4F6D' }]}
+          activeOpacity={0.8}
+          onPress={() => { snap(false); onDelete(); }}
+        >
+          <X size={20} color={C.white} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </Animated.View>
+      <Animated.View style={{ transform: [{ translateX }] }} {...pan.panHandlers}>
+        <Pressable onPress={handlePress}>{children}</Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+const swipe = StyleSheet.create({
+  container: { position: 'relative' },
+  actions: {
+    position: 'absolute', right: 0, top: 0, bottom: 0, width: REVEAL_W,
+    flexDirection: 'row', overflow: 'hidden',
+    borderTopLeftRadius: 22, borderBottomLeftRadius: 22,
+  },
+  actionBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────

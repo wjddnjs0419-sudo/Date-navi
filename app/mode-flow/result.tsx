@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView,
+  ActivityIndicator, SafeAreaView, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { generateDateCards, getUserPreferences, type DateCard, type FeelingInput } from '../../lib/ai';
+import { type DateCard, type FeelingInput } from '../../lib/ai';
 import { supabase } from '../../lib/supabase';
-import { logEvent } from '../../lib/analytics';
-import { useI18n } from '../../lib/i18n';
 import {
   Heart, Sparkles, Clock, Wallet, MapPin, Send, Bookmark, RefreshCw,
   ChevronRight, Leaf, Palette,
@@ -22,35 +20,63 @@ const CARD_STYLES = [
 ];
 
 export default function ResultScreen() {
-  const { mode, input } = useLocalSearchParams<{ mode: string; input: string }>();
+  const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
   const router = useRouter();
-  const { strings: s, language } = useI18n();
 
-  const [cards, setCards] = useState<DateCard[]>([]);
+  // 카드는 generating 화면에서 생성해 params로 넘겨준다.
+  const cards = useMemo<DateCard[]>(() => {
+    try { return JSON.parse(cardsParam ?? '[]'); } catch { return []; }
+  }, [cardsParam]);
+
+  // 입력화면은 스택에서 빠져 있으므로, 다시 추천은 generating 으로 재진입해 재생성한다.
+  function regenerate() {
+    router.replace({
+      pathname: '/mode-flow/generating',
+      params: { mode: mode ?? 'pick_for_me', input: input ?? '{}' },
+    } as any);
+  }
+
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedFirstId, setSavedFirstId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-        const prefs = await getUserPreferences();
+  // 보내기 전에 선택 카드를 저장해 id 를 확보하고, 그 id 로 공유 화면을 연다.
+  async function handleSendToPartner() {
+    setSending(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
+      if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return; }
 
-        await logEvent('mode_selected', { mode: mode ?? 'pick_for_me' });
-        const result = await generateDateCards(parsedInput, mode ?? 'pick_for_me', prefs, language);
-        setCards(result);
-        await logEvent('ai_card_created', { mode: mode ?? 'pick_for_me', card_count: result.length });
-      } catch {
-        setErrorMsg('추천을 만드는 중 문제가 생겼어요.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [input, language, mode]);
+      const card = cards[selectedIndex];
+      const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const { error } = await supabase.from('date_cards').insert({
+        id: cardId,
+        couple_id: profile.couple_id,
+        created_by: user.id,
+        mode: mode ?? 'pick_for_me',
+        input_json: JSON.parse(input ?? '{}'),
+        source: 'ai',
+        title: card.title,
+        summary: card.summary,
+        estimated_time: card.estimated_time,
+        estimated_budget: card.estimated_budget,
+        tags: card.tags,
+        why_recommended: card.why_recommended,
+      });
+      if (error) throw error;
+      router.push({ pathname: '/share/send', params: { cardId } } as any);
+    } catch {
+      Alert.alert('오류', '보내기 중 문제가 생겼어요.');
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -67,47 +93,31 @@ export default function ResultScreen() {
       if (!profile?.couple_id) return;
 
       const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-      const savedIds: string[] = [];
-      const rows = cards.map(card => {
-        const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        savedIds.push(cardId);
-        return {
-          id: cardId,
-          couple_id: profile.couple_id,
-          created_by: user.id,
-          mode: mode ?? 'pick_for_me',
-          input_json: parsedInput,
-          source: 'ai',
-          title: card.title,
-          summary: card.summary,
-          estimated_time: card.estimated_time,
-          estimated_budget: card.estimated_budget,
-          tags: card.tags,
-          why_recommended: card.why_recommended,
-        };
+      const card = cards[selectedIndex];
+      const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const { error } = await supabase.from('date_cards').insert({
+        id: cardId,
+        couple_id: profile.couple_id,
+        created_by: user.id,
+        mode: mode ?? 'pick_for_me',
+        input_json: parsedInput,
+        source: 'ai',
+        title: card.title,
+        summary: card.summary,
+        estimated_time: card.estimated_time,
+        estimated_budget: card.estimated_budget,
+        tags: card.tags,
+        why_recommended: card.why_recommended,
       });
-
-      const { error } = await supabase.from('date_cards').insert(rows);
       if (error) throw error;
 
       setSaved(true);
-      setSavedFirstId(savedIds[0] ?? null);
+      setSavedFirstId(cardId);
     } catch {
       setErrorMsg('저장 중 오류가 발생했어요.');
     } finally {
       setSaving(false);
     }
-  }
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={C.pink} />
-        <Text style={{ fontSize: 14, color: C.textSub, marginTop: 16, textAlign: 'center' }}>
-          둘에게 맞는 후보를{'\n'}고르는 중이에요
-        </Text>
-      </View>
-    );
   }
 
   if (errorMsg !== '' && cards.length === 0) {
@@ -118,7 +128,7 @@ export default function ResultScreen() {
         </View>
         <Text style={s2.errTitle}>잠깐 문제가 생겼어요</Text>
         <Text style={s2.errSub}>추천을 만드는 중 문제가 생겼어요.{'\n'}다시 한 번 시도해볼게요.</Text>
-        <BigButton onPress={() => router.back()} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
+        <BigButton onPress={regenerate} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
       </SafeAreaView>
     );
   }
@@ -187,9 +197,10 @@ export default function ResultScreen() {
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
                   <TouchableOpacity
                     style={s2.sendBtn}
-                    onPress={() => router.push('/share/send' as any)}
+                    onPress={handleSendToPartner}
+                    disabled={sending}
                   >
-                    <Send size={14} color={C.white} />
+                    {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}
                     <Text style={s2.sendBtnText}>상대에게 보내기</Text>
                   </TouchableOpacity>
                   {!saved && (
@@ -213,7 +224,7 @@ export default function ResultScreen() {
                 )}
                 <TouchableOpacity
                   style={s2.retryBtn}
-                  onPress={() => router.back()}
+                  onPress={regenerate}
                 >
                   <RefreshCw size={12} color={C.textSub} />
                   <Text style={s2.retryBtnText}>다시 추천받기</Text>

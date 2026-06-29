@@ -7,7 +7,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Plus, Heart, Leaf, Palette, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { SoftCard, Chip, Badge } from '../../components/ui';
+import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 
@@ -51,15 +51,47 @@ export default function CandidatesScreen() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [coupleId, setCoupleId] = useState<string | null>(null);
+  const [pendingProposals, setPendingProposals] = useState<{ cardId: string; title: string }[]>([]);
 
   const FILTERS: FilterTab[] = ['전체', '둘 다 끌림', '조건부로 좋음', '다음에 하기', '다음에 만나면'];
 
   useFocusEffect(
     useCallback(() => {
       loadCards();
+      loadProposals();
       if (activeFilter === '다음에 만나면') loadBucketItems();
     }, []),
   );
+
+  // 상대가 보낸(card_id 가 연결된) 제안 중, 내가 아직 반응하지 않은 것만 추린다.
+  async function loadProposals() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await supabase
+      .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
+    if (!profile?.couple_id) { setPendingProposals([]); return; }
+
+    const { data: msgs } = await supabase
+      .from('soft_messages')
+      .select('card_id')
+      .eq('couple_id', profile.couple_id)
+      .neq('user_id', user.id)
+      .not('card_id', 'is', null)
+      .order('created_at', { ascending: false });
+
+    const cardIds = [...new Set((msgs ?? []).map(m => m.card_id as string))];
+    if (!cardIds.length) { setPendingProposals([]); return; }
+
+    const { data: myRx } = await supabase
+      .from('reactions').select('card_id').eq('user_id', user.id).in('card_id', cardIds);
+    const reacted = new Set((myRx ?? []).map(r => r.card_id));
+    const pendingIds = cardIds.filter(id => !reacted.has(id));
+    if (!pendingIds.length) { setPendingProposals([]); return; }
+
+    const { data: cardRows } = await supabase
+      .from('date_cards').select('id, title').in('id', pendingIds);
+    setPendingProposals((cardRows ?? []).map(c => ({ cardId: c.id, title: c.title })));
+  }
 
   async function loadCards() {
     setLoading(true);
@@ -214,6 +246,20 @@ export default function CandidatesScreen() {
     if (f === '다음에 만나면') loadBucketItems();
   }
 
+  function confirmDelete(cardId: string) {
+    Alert.alert('후보 삭제', '이 후보를 삭제할까요? 되돌릴 수 없어요.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제', style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.from('date_cards').delete().eq('id', cardId);
+          if (error) { Alert.alert('오류', '삭제 중 문제가 발생했어요.'); return; }
+          loadCards();
+        },
+      },
+    ]);
+  }
+
   function classify(c: CardWithReactions): FilterTab {
     const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
     if (c.myReaction === 'next_time' || c.partnerReaction === 'next_time') return '다음에 하기';
@@ -269,6 +315,23 @@ export default function CandidatesScreen() {
             ))}
           </ScrollView>
 
+          {/* 상대가 보낸 제안 */}
+          {activeFilter !== '다음에 만나면' && pendingProposals.length > 0 && (
+            <TouchableOpacity
+              style={s.proposalBanner}
+              activeOpacity={0.85}
+              onPress={() => router.push({
+                pathname: '/share/reaction',
+                params: { cardId: pendingProposals[0].cardId },
+              } as any)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={s.proposalTitle}>상대가 보낸 데이트 제안 {pendingProposals.length}개</Text>
+                <Text style={s.proposalSub} numberOfLines={1}>"{pendingProposals[0].title}" · 지금 확인하기 →</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           {/* 버킷리스트 탭 */}
           {activeFilter === '다음에 만나면' ? (
             <BucketSection
@@ -297,7 +360,13 @@ export default function CandidatesScreen() {
                     const IconComponent = ICONS[idx % ICONS.length];
                     const iconColors = ICON_COLORS[idx % ICON_COLORS.length];
                     return (
-                      <SoftCard key={card.id} onPress={() => router.push(`/card/${card.id}` as any)}>
+                      <SwipeableCard
+                        key={card.id}
+                        onPress={() => router.push(`/card/${card.id}` as any)}
+                        onEdit={() => router.push(`/card/edit/${card.id}` as any)}
+                        onDelete={() => confirmDelete(card.id)}
+                      >
+                      <SoftCard>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                           <View style={[s.cardIcon, { backgroundColor: iconColors.bg }]}>
                             <IconComponent size={22} strokeWidth={1.8} color={iconColors.fg} />
@@ -338,6 +407,7 @@ export default function CandidatesScreen() {
                           </View>
                         </View>
                       </SoftCard>
+                      </SwipeableCard>
                     );
                   })}
                 </View>
@@ -521,6 +591,13 @@ const s = StyleSheet.create({
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 6,
   },
   fabText: { fontSize: 13, fontWeight: '600', color: C.white },
+  proposalBanner: {
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: 16, padding: 14, borderRadius: 16,
+    backgroundColor: C.pinkLight, borderWidth: 1, borderColor: C.pinkBorder,
+  },
+  proposalTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
+  proposalSub: { fontSize: 12, color: C.textSub, marginTop: 3 },
   // Bucket
   bucketHeader: {
     flexDirection: 'row', alignItems: 'center',

@@ -35,7 +35,7 @@ export default function PickScreen() {
 
   function handleGenerate() {
     const input = buildPickInput({ energy, budget, distance, duration });
-    router.push({
+    router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'pick_for_me', input: JSON.stringify(input) },
     } as any);

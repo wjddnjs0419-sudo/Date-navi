@@ -29,7 +29,7 @@ export default function FeelingScreen() {
       budget: budget === '아끼기' ? 'low' : budget === '적당히' ? 'medium' : 'high',
       duration: duration === '1시간' ? '1h' : duration === '2~3시간' ? '2-3h' : duration === '반나절' ? 'half_day' : 'full_day',
     });
-    router.push({
+    router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'feeling', input: JSON.stringify(input) },
     } as any);

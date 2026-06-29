@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { generateSoftMessage } from '../../lib/ai';
+import { generateInviteMessage } from '../../lib/ai';
 import { Heart, Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Chip } from '../../components/ui';
@@ -17,7 +17,7 @@ export default function SendScreen() {
   const router = useRouter();
 
   const [card, setCard] = useState<CardInfo | null>(null);
-  const [message, setMessage] = useState('오늘은 이 정도면 부담 없을 것 같아!');
+  const [message, setMessage] = useState('이거 우리 같이 가보면 어때? 😊');
   const [loading, setLoading] = useState(!!cardId);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
@@ -41,8 +41,8 @@ export default function SendScreen() {
   async function handleSuggestMessage() {
     setGenerating(true);
     try {
-      const text = await generateSoftMessage(
-        { reasons: ['그래도 같이 있고 싶어'], freeText: undefined },
+      const text = await generateInviteMessage(
+        { title: card?.title ?? '선택한 데이트 후보', summary: card?.summary, tags: card?.tags },
         'ko',
       );
       setMessage(text);
@@ -69,13 +69,14 @@ export default function SendScreen() {
         id: `sm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         couple_id: profile.couple_id,
         user_id: user.id,
+        card_id: cardId ?? null,
         reason_tags: [],
         free_text: null,
         generated_text: message,
         used: true,
       });
 
-      router.push('/share/reaction' as any);
+      router.push({ pathname: '/share/reaction', params: cardId ? { cardId } : {} } as any);
     } finally {
       setSending(false);
     }

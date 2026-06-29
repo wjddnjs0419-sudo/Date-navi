@@ -18,7 +18,7 @@ export default function LightScreen() {
 
   function handleGenerate() {
     const input = buildLightInput({ duration });
-    router.push({
+    router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'light', input: JSON.stringify(input) },
     } as any);

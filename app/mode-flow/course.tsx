@@ -21,8 +21,8 @@ export default function CourseScreen() {
       return;
     }
     const input = buildCourseInput({ idea, budget, duration });
-    router.push({
-      pathname: '/mode-flow/course-result',
+    router.replace({
+      pathname: '/mode-flow/generating',
       params: { mode: 'make_course', input: JSON.stringify(input) },
     } as any);
   }

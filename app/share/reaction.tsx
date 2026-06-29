@@ -33,6 +33,8 @@ export default function ReactionScreen() {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [partnerName, setPartnerName] = useState('상대방');
+  const [card, setCard] = useState<{ title: string; summary: string } | null>(null);
+  const [sentMessage, setSentMessage] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -57,8 +59,27 @@ export default function ReactionScreen() {
       if (partnerProfile?.display_name) {
         setPartnerName(partnerProfile.display_name);
       }
+
+      if (cardId) {
+        const { data: cardRow } = await supabase
+          .from('date_cards')
+          .select('title, summary')
+          .eq('id', cardId)
+          .maybeSingle();
+        if (cardRow) setCard(cardRow);
+
+        // 이 후보로 보낸 한마디(가장 최근)를 가져와 보여준다.
+        const { data: msgRow } = await supabase
+          .from('soft_messages')
+          .select('generated_text')
+          .eq('card_id', cardId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (msgRow?.generated_text) setSentMessage(msgRow.generated_text);
+      }
     })();
-  }, []);
+  }, [cardId]);
 
   async function handleSubmit() {
     if (!cardId) {
@@ -108,11 +129,13 @@ export default function ReactionScreen() {
             </View>
           </View>
           <View style={{ padding: 16 }}>
-            <Text style={s.cardTitle}>선택한 데이트 후보</Text>
-            <Text style={s.cardDesc}>멀리 가지 않고 편하게 쉬는 데이트</Text>
-            <View style={s.noteBox}>
-              <Text style={s.noteText}>"오늘은 이 정도면 부담 없을 것 같아!"</Text>
-            </View>
+            <Text style={s.cardTitle}>{card?.title ?? '선택한 데이트 후보'}</Text>
+            <Text style={s.cardDesc}>{card?.summary ?? '멀리 가지 않고 편하게 쉬는 데이트'}</Text>
+            {!!sentMessage && (
+              <View style={s.noteBox}>
+                <Text style={s.noteText}>"{sentMessage}"</Text>
+              </View>
+            )}
           </View>
         </View>
 
