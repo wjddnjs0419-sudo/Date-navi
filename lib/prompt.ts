@@ -172,6 +172,12 @@ export function buildPrompt(input: FeelingInput, mode: string, prefs?: UserPrefe
   const modeContext = (isEnglish ? MODE_CONTEXT_EN[mode] : MODE_CONTEXT[mode]) ?? (isEnglish ? 'A couple that needs help planning a date' : '데이트 계획이 필요한 커플');
   const emphasisBlock = (isEnglish ? MODE_EMPHASIS_EN[mode] : MODE_EMPHASIS[mode]) ?? '';
   const prefsBlock = prefs ? buildPreferencesBlock(prefs, language) : '';
+  // make_course만 JSON 골격에 steps 배열을 명시해야 모델이 단계를 채운다.
+  const stepsSchema = mode === 'make_course'
+    ? (isEnglish
+      ? `,\n      "steps": [{ "label": "place/action (<=12 chars)", "desc": "one-line note (<=20 chars)" }]`
+      : `,\n      "steps": [{ "label": "장소/행동 (12자 이내)", "desc": "한 줄 보충 (20자 이내)" }]`)
+    : '';
 
   if (isEnglish) {
     return `You are an expert at planning dates for couples. Based on the situation below, recommend 3 date ideas.
@@ -194,7 +200,7 @@ Reply with JSON only. Do not include any other text.
       "estimated_time": "Estimated time",
       "estimated_budget": "Estimated cost per person",
       "tags": ["Tag 1", "Tag 2", "Tag 3"],
-      "why_recommended": "Why this fits well (within 50 characters, warm tone)"
+      "why_recommended": "Why this fits well (within 50 characters, warm tone)"${stepsSchema}
     }
   ]
 }
@@ -222,7 +228,7 @@ ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
       "estimated_time": "예상 소요 시간",
       "estimated_budget": "1인 예상 비용",
       "tags": ["태그1", "태그2", "태그3"],
-      "why_recommended": "이 데이트가 잘 맞는 이유 (50자 이내, 따뜻한 말투)"
+      "why_recommended": "이 데이트가 잘 맞는 이유 (50자 이내, 따뜻한 말투)"${stepsSchema}
     }
   ]
 }

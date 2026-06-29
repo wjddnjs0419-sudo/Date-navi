@@ -41,3 +41,16 @@ describe('make_course 프롬프트', () => {
     expect(MODE_EMPHASIS_EN.make_course).toContain('steps');
   });
 });
+
+describe('make_course JSON 골격에 steps 필드', () => {
+  it('ko: make_course면 JSON 스키마에 "steps": 포함', () => {
+    expect(buildPrompt(base, 'make_course')).toContain('"steps":');
+  });
+  it('en: make_course면 JSON 스키마에 "steps": 포함', () => {
+    expect(buildPrompt(base, 'make_course', undefined, 'en')).toContain('"steps":');
+  });
+  it('다른 모드는 JSON 스키마에 "steps": 미포함', () => {
+    expect(buildPrompt(base, 'pick_for_me')).not.toContain('"steps":');
+    expect(buildPrompt(base, 'light', undefined, 'en')).not.toContain('"steps":');
+  });
+});
