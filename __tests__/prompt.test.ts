@@ -1,4 +1,4 @@
-import { buildPrompt } from '../lib/prompt';
+import { buildPrompt, MODE_EMPHASIS, MODE_EMPHASIS_EN } from '../lib/prompt';
 import type { FeelingInput } from '../lib/ai';
 
 const base: FeelingInput = {
@@ -24,11 +24,20 @@ describe('buildPrompt mode별 차별화 (ko)', () => {
   });
   it('make_course: 단계별 동선 지침 포함', () => {
     const p = buildPrompt(base, 'make_course');
-    expect(p).toContain('1단계');
+    expect(p).toContain('steps');
   });
   it('feeling(en): 영문 context/emphasis 정합', () => {
     const p = buildPrompt(base, 'feeling', undefined, 'en');
     expect(p).toContain('only knows the vibe');
     expect(p).toContain('emotionally resonant');
+  });
+});
+
+describe('make_course 프롬프트', () => {
+  it('ko 지침에 steps 출력 요구가 포함', () => {
+    expect(MODE_EMPHASIS.make_course).toContain('steps');
+  });
+  it('en 지침에 steps 출력 요구가 포함', () => {
+    expect(MODE_EMPHASIS_EN.make_course).toContain('steps');
   });
 });
