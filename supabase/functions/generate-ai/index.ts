@@ -25,6 +25,19 @@ const CARDS_SCHEMA = {
           estimated_budget: { type: 'string' },
           tags: { type: 'array', items: { type: 'string' } },
           why_recommended: { type: 'string' },
+          // make_course 모드 전용 동선 단계 (optional — required 미포함이라 다른 모드는 생략 가능)
+          steps: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                label: { type: 'string' },
+                desc: { type: 'string' },
+              },
+              required: ['label'],
+              additionalProperties: false,
+            },
+          },
         },
         required: ['title', 'summary', 'estimated_time', 'estimated_budget', 'tags', 'why_recommended'],
         additionalProperties: false,
