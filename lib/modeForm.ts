@@ -37,3 +37,17 @@ export function buildLightInput(a: LightArgs): FeelingInput {
     avoid: [],
   };
 }
+
+type CourseArgs = { idea: string; budget: string; duration: string };
+
+export function buildCourseInput(a: CourseArgs): FeelingInput {
+  return {
+    energy: 'medium',
+    budget: a.budget || 'medium',
+    distance: 'any',
+    mood: 'comfortable',
+    duration: a.duration || '2-3h',
+    avoid: [],
+    freeText: a.idea.trim() || undefined,
+  };
+}

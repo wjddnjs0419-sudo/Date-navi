@@ -1,4 +1,4 @@
-import { buildLightInput, buildPickInput, buildFeelingInput } from '../lib/modeForm';
+import { buildLightInput, buildPickInput, buildFeelingInput, buildCourseInput } from '../lib/modeForm';
 
 describe('mode별 FeelingInput 빌더', () => {
   it('light: 저예산·근거리 고정', () => {
@@ -17,5 +17,14 @@ describe('mode별 FeelingInput 빌더', () => {
     const input = buildFeelingInput({ mood: 'quiet', freeText: '조용한 데이트', budget: 'low', duration: '1h' });
     expect(input.mood).toBe('quiet');
     expect(input.freeText).toBe('조용한 데이트');
+  });
+  it('course: 아이디어 freeText + 예산/시간 반영, 빈 값은 기본값', () => {
+    const input = buildCourseInput({ idea: '한강 피크닉', budget: '', duration: '' });
+    expect(input.freeText).toBe('한강 피크닉');
+    expect(input.budget).toBe('medium');
+    expect(input.duration).toBe('2-3h');
+    const input2 = buildCourseInput({ idea: ' 야경 ', budget: 'high', duration: 'half_day' });
+    expect(input2.freeText).toBe('야경');
+    expect(input2.budget).toBe('high');
   });
 });
