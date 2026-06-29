@@ -17,9 +17,8 @@ import { C } from '../../constants/colors';
 import { BackBar, BigButton, Badge } from '../../components/ui';
 
 // 가로 S자 동선 트레일 배치 옵션
-const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 170, padX: 48, padY: 64 };
+const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 150, padX: 48, padY: 56 };
 const LABEL_W = 150;
-const LABEL_H = 38;
 
 function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: number; summary?: string }) {
   // 단계가 2개 미만이면(모델이 steps를 안 준 경우 등) 트레일 대신 요약 텍스트로 폴백 — 화면이 비지 않게.
@@ -51,14 +50,20 @@ function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: nu
         </View>
       ))}
       {nodes.map((n, i) => {
-        // 이 노드에서 위/아래로 세로 선이 지나가면 라벨은 반대쪽(선 없는 쪽)에 둔다.
+        // 라벨은 항상 노드 아래(높이 통일). 단, 세로 선이 지나가는 노드는
+        // 라벨을 안쪽으로 밀어 선과 겹치지 않게 한다.
         const hasVertical =
-          (i + 1 < nodes.length && nodes[i + 1].x === n.x && nodes[i + 1].y > n.y) ||
-          (i - 1 >= 0 && nodes[i - 1].x === n.x && nodes[i - 1].y > n.y);
-        const top = hasVertical ? n.y - 20 - LABEL_H : n.y + 20;
-        const left = Math.max(8, Math.min(n.x - LABEL_W / 2, width - LABEL_W - 8));
+          (i + 1 < nodes.length && nodes[i + 1].x === n.x && nodes[i + 1].y !== n.y) ||
+          (i - 1 >= 0 && nodes[i - 1].x === n.x && nodes[i - 1].y !== n.y);
+        let left: number;
+        if (hasVertical) {
+          left = n.x > width / 2 ? n.x - LABEL_W - 12 : n.x + 12;
+        } else {
+          left = n.x - LABEL_W / 2;
+        }
+        left = Math.max(8, Math.min(left, width - LABEL_W - 8));
         return (
-          <View key={`l${i}`} style={[trail.labelBox, { left, top, width: LABEL_W }]}>
+          <View key={`l${i}`} style={[trail.labelBox, { left, top: n.y + 22, width: LABEL_W }]}>
             <Text style={trail.labelText} numberOfLines={1}>{steps[i].label}</Text>
             {!!steps[i].desc && <Text style={trail.descText} numberOfLines={1}>{steps[i].desc}</Text>}
           </View>
