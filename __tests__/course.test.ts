@@ -48,4 +48,10 @@ describe('buildTrailPath', () => {
     expect(buildTrailPath([])).toBe('');
     expect(buildTrailPath([{ x: 0, y: 0 }])).toBe('');
   });
+  it('실제 serpentine 노드의 U턴 모서리가 곡선(Q)으로 둥글어진다', () => {
+    const nodes = computeTrailNodes(4, 320, { nodesPerRow: 2, rowHeight: 140, padX: 40, padY: 60 });
+    const d = buildTrailPath(nodes);
+    // 4노드 = 가운데 노드 2개가 U턴 모서리 → Q 2개 이상
+    expect((d.match(/Q/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
 });
