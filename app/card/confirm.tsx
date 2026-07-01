@@ -39,7 +39,7 @@ export default function ConfirmScreen() {
     setLoading(true);
     const { data } = await supabase
       .from('date_cards')
-      .select('id, title, estimated_time, estimated_budget, tags, confirmed_date, confirmed_time, confirmed_place, confirmed_items')
+      .select('id, title, estimated_time, estimated_budget, tags, status, confirmed_date, confirmed_time, confirmed_place, confirmed_items')
       .eq('id', id)
       .maybeSingle();
     setCard(data);
@@ -49,8 +49,8 @@ export default function ConfirmScreen() {
       setPlace(data.confirmed_place ?? '');
       setItems(data.confirmed_items ?? '');
     }
-    // 이미 확정된 데이트면 읽기 상세로, 아직 미확정이면 바로 입력 모드로 연다.
-    const confirmed = !!data?.confirmed_date;
+    // 이미 확정(status=confirmed)이면 읽기 상세로, 아직 미확정이면 바로 입력 모드로 연다.
+    const confirmed = data?.status === 'confirmed';
     setIsPlan(confirmed);
     setEditing(!confirmed);
     setLoading(false);

@@ -4,7 +4,7 @@ import {
   ActivityIndicator, SafeAreaView, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { type DateCard, type FeelingInput } from '../../lib/ai';
+import { type DateCard } from '../../lib/ai';
 import { supabase } from '../../lib/supabase';
 import {
   Heart, Sparkles, Clock, Wallet, MapPin, Send, Bookmark, RefreshCw,
@@ -39,38 +39,64 @@ export default function ResultScreen() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [savedFirstId, setSavedFirstId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [sending, setSending] = useState(false);
+  const [opening, setOpening] = useState<number | null>(null);
+  // 후보는 params 로만 넘어와 아직 DB 에 없다. 저장하며 확보한 id 를 인덱스별로 재사용해
+  // 같은 카드를 중복 insert 하지 않는다.
+  const [savedIds, setSavedIds] = useState<Record<number, string>>({});
+
+  // 후보(인덱스) 를 date_cards 에 저장하고 id 를 돌려준다. 이미 저장했으면 그 id 를 재사용.
+  async function saveCard(i: number): Promise<string | null> {
+    if (savedIds[i]) return savedIds[i];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: profile } = await supabase
+      .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
+    if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return null; }
+
+    const card = cards[i];
+    const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const { error } = await supabase.from('date_cards').insert({
+      id: cardId,
+      couple_id: profile.couple_id,
+      created_by: user.id,
+      mode: mode ?? 'pick_for_me',
+      input_json: JSON.parse(input ?? '{}'),
+      source: 'ai',
+      status: 'active',
+      title: card.title,
+      summary: card.summary,
+      estimated_time: card.estimated_time,
+      estimated_budget: card.estimated_budget,
+      tags: card.tags,
+      why_recommended: card.why_recommended,
+    });
+    if (error) throw error;
+    setSavedIds(prev => ({ ...prev, [i]: cardId }));
+    return cardId;
+  }
+
+  // 후보 카드 탭 → 저장 후 상세로 이동. 상세에서 반응·코멘트·확정한다.
+  async function openDetail(i: number) {
+    if (opening !== null) return;
+    setOpening(i);
+    try {
+      const cardId = await saveCard(i);
+      if (cardId) router.push(`/card/${cardId}` as any);
+    } catch {
+      Alert.alert('오류', '후보를 여는 중 문제가 생겼어요.');
+    } finally {
+      setOpening(null);
+    }
+  }
 
   // 보내기 전에 선택 카드를 저장해 id 를 확보하고, 그 id 로 공유 화면을 연다.
   async function handleSendToPartner() {
     setSending(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase
-        .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
-      if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return; }
-
-      const card = cards[selectedIndex];
-      const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      const { error } = await supabase.from('date_cards').insert({
-        id: cardId,
-        couple_id: profile.couple_id,
-        created_by: user.id,
-        mode: mode ?? 'pick_for_me',
-        input_json: JSON.parse(input ?? '{}'),
-        source: 'ai',
-        title: card.title,
-        summary: card.summary,
-        estimated_time: card.estimated_time,
-        estimated_budget: card.estimated_budget,
-        tags: card.tags,
-        why_recommended: card.why_recommended,
-      });
-      if (error) throw error;
-      router.push({ pathname: '/share/send', params: { cardId } } as any);
+      const cardId = await saveCard(selectedIndex);
+      if (cardId) router.push({ pathname: '/share/send', params: { cardId } } as any);
     } catch {
       Alert.alert('오류', '보내기 중 문제가 생겼어요.');
     } finally {
@@ -81,38 +107,9 @@ export default function ResultScreen() {
   async function handleSave() {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from('date_planner_profiles')
-        .select('couple_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.couple_id) return;
-
-      const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-      const card = cards[selectedIndex];
-      const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      const { error } = await supabase.from('date_cards').insert({
-        id: cardId,
-        couple_id: profile.couple_id,
-        created_by: user.id,
-        mode: mode ?? 'pick_for_me',
-        input_json: parsedInput,
-        source: 'ai',
-        title: card.title,
-        summary: card.summary,
-        estimated_time: card.estimated_time,
-        estimated_budget: card.estimated_budget,
-        tags: card.tags,
-        why_recommended: card.why_recommended,
-      });
-      if (error) throw error;
-
+      const cardId = await saveCard(selectedIndex);
+      if (!cardId) return;
       setSaved(true);
-      setSavedFirstId(cardId);
     } catch {
       setErrorMsg('저장 중 오류가 발생했어요.');
     } finally {
@@ -144,14 +141,14 @@ export default function ResultScreen() {
         </View>
 
         <Text style={[s2.heading, { marginTop: 12 }]}>오늘은 이런 데이트가{'\n'}잘 맞아 보여요</Text>
-        <Text style={s2.subText}>3개 후보 중 마음에 드는 걸 골라주세요.</Text>
+        <Text style={s2.subText}>카드를 누르면 반응·코멘트를 남기고 확정할 수 있어요.</Text>
 
         {cards.map((card, i) => {
           const style = CARD_STYLES[i % CARD_STYLES.length];
           const isFeatured = i === selectedIndex;
           return isFeatured ? (
-            /* 메인 카드 */
-            <View key={i} style={s2.featuredCard}>
+            /* 메인 카드 — 탭하면 저장 후 상세(반응·확정)로 이동 */
+            <TouchableOpacity key={i} style={s2.featuredCard} activeOpacity={0.92} onPress={() => openDetail(i)}>
               <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
                 {i === 0 && (
                   <View style={{ position: 'absolute', top: 16, left: 16 }}>
@@ -230,10 +227,10 @@ export default function ResultScreen() {
                   <Text style={s2.retryBtnText}>다시 추천받기</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           ) : (
             /* 서브 카드 */
-            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => setSelectedIndex(i)}>
+            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => openDetail(i)}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[s2.subIcon, { backgroundColor: style.bg2 }]}>
                   <style.Icon size={26} strokeWidth={1.5} color={style.iconColor} />

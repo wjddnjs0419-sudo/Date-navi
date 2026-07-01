@@ -38,10 +38,15 @@ const btn = StyleSheet.create({
 export function SoftCard({
   children, style, onPress,
 }: { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void }) {
+  // onPress 가 없으면 순수 View 로 렌더한다. TouchableOpacity 는 onPress 가 없어도
+  // 터치를 잡아먹어, 상위 Pressable(예: SwipeableCard) 의 탭이 안 먹히는 문제가 생긴다.
+  if (!onPress) {
+    return <View style={[card.base, style]}>{children}</View>;
+  }
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={onPress ? 0.85 : 1}
+      activeOpacity={0.85}
       style={[card.base, style]}
     >
       {children}
@@ -88,9 +93,11 @@ export function SwipeableCard({
 
   const pan = useRef(
     PanResponder.create({
-      // 가로 드래그가 세로보다 우세하면 바로 스와이프로 인식(탭/세로 스크롤과만 구분).
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 3 && Math.abs(g.dx) > Math.abs(g.dy),
-      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 3 && Math.abs(g.dx) > Math.abs(g.dy),
+      // 가로 드래그가 세로보다 확실히 우세할 때만 스와이프로 인식한다.
+      // 문턱을 10px 로 둬, 탭 시 생기는 미세한 손가락 흔들림(수 px)은 스와이프로 가로채지 않고
+      // 자식 Pressable 의 onPress 로 흘려보낸다.
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy),
       // 한 번 스와이프로 잡으면 자식(Pressable)에게 뺏기지 않게 한다.
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => { startX.current = openRef.current ? -REVEAL_W : 0; },
@@ -99,6 +106,12 @@ export function SwipeableCard({
         translateX.setValue(x);
       },
       onPanResponderRelease: (_, g) => {
+        // 스와이프로 잡았어도 이동량이 거의 없으면 탭으로 간주해 눌림을 그대로 전달한다.
+        if (Math.abs(g.dx) < 10) {
+          if (openRef.current) snap(false);
+          else onPress?.();
+          return;
+        }
         snap(startX.current + g.dx < -REVEAL_W / 2);
       },
       onPanResponderTerminate: () => snap(openRef.current),
