@@ -275,13 +275,6 @@ type Copy = {
     partnerReaction: (label: string, emoji: string) => string;
     memoryButton: string;
     memoryDone: string;
-    modalTitle: string;
-    modalSubtitle: string;
-    reviewPlaceholder: string;
-    wantAgainLabel: string;
-    wantAgainYes: string;
-    wantAgainNo: string;
-    modalSave: string;
     saveError: string;
     confirmButton: string;
     reactionLabels: Record<'love' | 'like' | 'burden' | 'next_time', { emoji: string; label: string }>;
@@ -307,8 +300,6 @@ type Copy = {
     sub: string;
     ratingLabel: string;
     ratings: { key: string; label: string }[];
-    goodLabel: string;
-    goodChips: string[];
     reviewLabel: string;
     reviewPlaceholder: string;
     saveButton: string;
@@ -712,13 +703,6 @@ const COPY: Record<AppLanguage, Copy> = {
       partnerReaction: (label: string, emoji: string) => `상대방 반응: ${emoji} ${label}`,
       memoryButton: '이 데이트 완료했어요',
       memoryDone: '완료한 데이트예요',
-      modalTitle: '데이트 후기 남기기',
-      modalSubtitle: '어떤 데이트였나요?',
-      reviewPlaceholder: '한 줄 후기 (선택)',
-      wantAgainLabel: '다시 하고 싶어요?',
-      wantAgainYes: '또 가고 싶어요',
-      wantAgainNo: '한 번이면 충분',
-      modalSave: '저장하기',
       saveError: '저장에 실패했어요. 다시 시도해주세요.',
       confirmButton: '이번 데이트로 정할까요? →',
       reactionLabels: {
@@ -763,8 +747,6 @@ const COPY: Record<AppLanguage, Copy> = {
         { key: 'ok', label: '무난했어' },
         { key: 'change', label: '다음엔 조금 바꾸고 싶어' },
       ],
-      goodLabel: '가장 좋았던 점은?',
-      goodChips: ['가까워서 좋았어', '비용이 부담 없었어', '대화하기 좋았어', '사진이 잘 나왔어', '편해서 좋았어'],
       reviewLabel: '한 줄 후기',
       reviewPlaceholder: '오늘 데이트 한 마디로 남기기',
       saveButton: '추억으로 저장',
@@ -1166,13 +1148,6 @@ const COPY: Record<AppLanguage, Copy> = {
       partnerReaction: (label: string, emoji: string) => `Partner reaction: ${emoji} ${label}`,
       memoryButton: 'Completed this date',
       memoryDone: 'This date is marked complete',
-      modalTitle: 'Add a date note',
-      modalSubtitle: 'How was the date?',
-      reviewPlaceholder: 'One-line review (optional)',
-      wantAgainLabel: 'Want to go again?',
-      wantAgainYes: 'I want to go again',
-      wantAgainNo: 'Once is enough',
-      modalSave: 'Save',
       saveError: 'Could not save. Please try again.',
       confirmButton: 'Make this the date? →',
       reactionLabels: {
@@ -1217,8 +1192,6 @@ const COPY: Record<AppLanguage, Copy> = {
         { key: 'ok', label: 'It was fine' },
         { key: 'change', label: 'A few tweaks next time' },
       ],
-      goodLabel: 'What did you like most?',
-      goodChips: ['Convenient location', 'Easy on the budget', 'Great conversation', 'Good for photos', 'Relaxing'],
       reviewLabel: 'One-line review',
       reviewPlaceholder: 'What would you say in one line?',
       saveButton: 'Save as memory',

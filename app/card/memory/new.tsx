@@ -3,13 +3,13 @@ import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
   SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
-import { supabase } from '../../lib/supabase';
-import { useI18n } from '../../lib/i18n';
-import { C } from '../../constants/colors';
-import { BackBar, BigButton } from '../../components/ui';
+import { supabase } from '../../../lib/supabase';
+import { useI18n } from '../../../lib/i18n';
+import { C } from '../../../constants/colors';
+import { BackBar, BigButton } from '../../../components/ui';
 
 const RATING_ICONS: Record<string, string> = {
   love: '❤️',
@@ -18,8 +18,7 @@ const RATING_ICONS: Record<string, string> = {
   change: '🔄',
 };
 
-export default function ReviewScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function NewMemoryScreen() {
   const router = useRouter();
   const { strings: s } = useI18n();
   const c = s.review;
@@ -28,6 +27,7 @@ export default function ReviewScreen() {
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState('');
   const [rating, setRating] = useState<string | null>(null);
   const [reviewText, setReviewText] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -99,6 +99,7 @@ export default function ReviewScreen() {
   }
 
   async function handleSave() {
+    if (!photoUrl) { Alert.alert('', '사진을 추가해주세요.'); return; }
     if (!rating) { Alert.alert('', c.noRatingError); return; }
     if (!myUserId || !coupleId) { Alert.alert('', c.missingCoupleError); return; }
     if (saving) return;
@@ -108,15 +109,14 @@ export default function ReviewScreen() {
 
       const { error } = await supabase.from('date_memories').insert({
         couple_id: coupleId,
-        card_id: id,
+        card_id: null,
         user_id: myUserId,
+        title: title.trim() || null,
         review: reviewText.trim(),
         want_again: wantAgain,
         photo_url: photoUrl,
       });
       if (error) throw error;
-      // 회고를 남기면 데이트는 완료 상태가 되어 계획 목록에서 빠진다.
-      await supabase.from('date_cards').update({ status: 'done' }).eq('id', id);
       router.replace('/(tabs)/memories');
     } catch {
       Alert.alert('오류', c.saveError);
@@ -142,11 +142,37 @@ export default function ReviewScreen() {
           <BackBar />
 
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>{c.heading}</Text>
-            <Text style={styles.sub}>{c.sub}</Text>
+            <Text style={styles.heading}>새 추억 남기기</Text>
+            <Text style={styles.sub}>사진과 함께 그날의 기억을 남겨보세요.</Text>
           </View>
 
-          <Text style={styles.sectionLabel}>{c.ratingLabel}</Text>
+          <TouchableOpacity
+            style={styles.photoPlaceholder}
+            onPress={handlePickPhoto}
+            activeOpacity={0.8}
+            disabled={uploadingPhoto}
+          >
+            {uploadingPhoto ? (
+              <ActivityIndicator color={C.pinkDeep} />
+            ) : photoUrl ? (
+              <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
+            ) : (
+              <Text style={styles.photoText}>📷 사진 추가하기</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>제목</Text>
+          <TextInput
+            style={styles.titleInput}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="예: 한강 피크닉"
+            placeholderTextColor={C.textFaint}
+            maxLength={40}
+            returnKeyType="next"
+          />
+
+          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{c.ratingLabel}</Text>
           <View style={styles.ratingGrid}>
             {c.ratings.map((item) => {
               const sel = rating === item.key;
@@ -178,21 +204,6 @@ export default function ReviewScreen() {
             returnKeyType="done"
           />
 
-          <TouchableOpacity
-            style={styles.photoPlaceholder}
-            onPress={handlePickPhoto}
-            activeOpacity={0.8}
-            disabled={uploadingPhoto}
-          >
-            {uploadingPhoto ? (
-              <ActivityIndicator color={C.pinkDeep} />
-            ) : photoUrl ? (
-              <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
-            ) : (
-              <Text style={styles.photoText}>📷 사진 추가하기</Text>
-            )}
-          </TouchableOpacity>
-
           <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={{ marginTop: 24 }}>
             {saving ? '저장 중...' : c.saveButton}
           </BigButton>
@@ -212,6 +223,17 @@ const styles = StyleSheet.create({
   sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
 
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
+
+  titleInput: {
+    backgroundColor: C.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: C.text,
+  },
 
   ratingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   ratingCard: {
@@ -252,7 +274,7 @@ const styles = StyleSheet.create({
 
   photoPlaceholder: {
     marginTop: 14,
-    height: 140,
+    height: 180,
     borderRadius: 16,
     borderWidth: 1.5,
     borderStyle: 'dashed',

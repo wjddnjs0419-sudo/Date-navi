@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity, Image, Alert,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Camera, Heart, Clock, Wallet, MapPin, ChevronRight } from 'lucide-react-native';
+import { Camera, Heart, Clock, Wallet, ChevronRight } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { Badge, Chip } from '../../components/ui';
+import { Badge, Chip, SwipeableCard } from '../../components/ui';
 
 type MemoryItem = {
-  id: string; card_id: string; review: string;
-  want_again: boolean; created_at: string;
+  id: string; card_id: string | null; title: string | null; review: string;
+  want_again: boolean; created_at: string; photo_url: string | null;
   card_title: string; card_mode: string;
   card_time: string; card_budget: string; card_tags: string[];
 };
@@ -25,46 +25,62 @@ export default function MemoriesScreen() {
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        setLoading(true);
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+  const loadMemories = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-          const { data: mems } = await supabase
-            .from('date_memories')
-            .select('id, card_id, review, want_again, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+      const { data: mems } = await supabase
+        .from('date_memories')
+        .select('id, card_id, title, review, want_again, created_at, photo_url')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-          if (!mems?.length) { setItems([]); return; }
+      if (!mems?.length) { setItems([]); return; }
 
-          const { data: cards } = await supabase
-            .from('date_cards')
-            .select('id, title, mode, estimated_time, estimated_budget, tags')
-            .in('id', mems.map(m => m.card_id));
+      const cardIds = mems.map(m => m.card_id).filter((cid): cid is string => !!cid);
+      const { data: cards } = cardIds.length
+        ? await supabase
+          .from('date_cards')
+          .select('id, title, mode, estimated_time, estimated_budget, tags')
+          .in('id', cardIds)
+        : { data: [] };
 
-          const cardMap: Record<string, { title: string; mode: string; estimated_time: string; estimated_budget: string; tags: string[] }> = {};
-          (cards ?? []).forEach(c => {
-            cardMap[c.id] = { title: c.title, mode: c.mode, estimated_time: c.estimated_time ?? '', estimated_budget: c.estimated_budget ?? '', tags: c.tags ?? [] };
-          });
+      const cardMap: Record<string, { title: string; mode: string; estimated_time: string; estimated_budget: string; tags: string[] }> = {};
+      (cards ?? []).forEach(c => {
+        cardMap[c.id] = { title: c.title, mode: c.mode, estimated_time: c.estimated_time ?? '', estimated_budget: c.estimated_budget ?? '', tags: c.tags ?? [] };
+      });
 
-          setItems(mems.map(m => ({
-            ...m,
-            card_title: cardMap[m.card_id]?.title ?? '데이트',
-            card_mode: cardMap[m.card_id]?.mode ?? '',
-            card_time: cardMap[m.card_id]?.estimated_time ?? '',
-            card_budget: cardMap[m.card_id]?.estimated_budget ?? '',
-            card_tags: cardMap[m.card_id]?.tags ?? [],
-          })));
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }, []),
-  );
+      setItems(mems.map(m => ({
+        ...m,
+        card_title: (m.card_id ? cardMap[m.card_id]?.title : null) ?? m.title ?? '추억',
+        card_mode: (m.card_id && cardMap[m.card_id]?.mode) ?? '',
+        card_time: (m.card_id && cardMap[m.card_id]?.estimated_time) ?? '',
+        card_budget: (m.card_id && cardMap[m.card_id]?.estimated_budget) ?? '',
+        card_tags: (m.card_id && cardMap[m.card_id]?.tags) ?? [],
+      })));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { loadMemories(); }, [loadMemories]));
+
+  function confirmDeleteMemory(memoryId: string) {
+    Alert.alert('추억 삭제', '이 추억을 삭제할까요? 되돌릴 수 없어요.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제', style: 'destructive',
+        onPress: async () => {
+          const { data, error } = await supabase.from('date_memories').delete().eq('id', memoryId).select('id');
+          if (error) { Alert.alert('오류', '삭제 중 문제가 발생했어요.'); return; }
+          if (!data?.length) { Alert.alert('알림', '본인이 남긴 추억만 삭제할 수 있어요.'); return; }
+          loadMemories();
+        },
+      },
+    ]);
+  }
 
   const wantAgainCount = items.filter(i => i.want_again).length;
 
@@ -77,7 +93,7 @@ export default function MemoriesScreen() {
             <Text style={s.pageTitle}>우리 추억</Text>
             <Text style={s.countText}>지금까지 함께한 데이트 {items.length}개</Text>
           </View>
-          <TouchableOpacity style={s.iconBtn}>
+          <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/card/memory/new')} activeOpacity={0.8}>
             <Camera size={17} color={C.textSub} />
           </TouchableOpacity>
         </View>
@@ -128,18 +144,24 @@ export default function MemoriesScreen() {
               </View>
             }
             renderItem={({ item, index }) => (
-              <TouchableOpacity
-                style={[s.card, index === 0 && s.featuredCard]}
-                onPress={() => router.push({ pathname: '/card/memory/[id]', params: { id: item.card_id } } as any)}
-                activeOpacity={0.85}
+              <SwipeableCard
+                onPress={() => router.push({ pathname: '/card/memory/[id]', params: { id: item.id } } as any)}
+                onEdit={() => router.push({ pathname: '/card/memory/edit/[id]', params: { id: item.id } } as any)}
+                onDelete={() => confirmDeleteMemory(item.id)}
               >
+              <View style={[s.card, index === 0 && s.featuredCard]}>
                 {index === 0 ? (
                   /* 최근 추억 — 큰 카드 */
                   <>
                     <View style={s.featuredBanner}>
-                      <View style={[s.featuredIcon, { backgroundColor: C.pinkLight }]}>
-                        <Heart size={28} strokeWidth={1.5} color={C.pinkDeep} />
-                      </View>
+                      {item.photo_url && (
+                        <Image source={{ uri: item.photo_url }} style={s.featuredPhoto} resizeMode="cover" />
+                      )}
+                      {!item.photo_url && (
+                        <View style={[s.featuredIcon, { backgroundColor: C.pinkLight }]}>
+                          <Heart size={28} strokeWidth={1.5} color={C.pinkDeep} />
+                        </View>
+                      )}
                       {item.want_again && (
                         <View style={s.wantAgainBadge}>
                           <Heart size={11} color={C.pinkDeep} fill={C.pinkDeep} />
@@ -181,9 +203,13 @@ export default function MemoriesScreen() {
                 ) : (
                   /* 나머지 추억 — 행 카드 */
                   <View style={s.rowCard}>
-                    <View style={[s.rowIcon, { backgroundColor: index % 2 === 0 ? C.pinkLight : C.mint }]}>
-                      <Heart size={26} strokeWidth={1.5} color={index % 2 === 0 ? C.pinkDeep : C.mintFg} />
-                    </View>
+                    {item.photo_url ? (
+                      <Image source={{ uri: item.photo_url }} style={s.rowIcon} resizeMode="cover" />
+                    ) : (
+                      <View style={[s.rowIcon, { backgroundColor: index % 2 === 0 ? C.pinkLight : C.mint }]}>
+                        <Heart size={26} strokeWidth={1.5} color={index % 2 === 0 ? C.pinkDeep : C.mintFg} />
+                      </View>
+                    )}
                     <View style={s.rowContent}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <Text style={s.rowTitle}>{item.card_title}</Text>
@@ -196,7 +222,8 @@ export default function MemoriesScreen() {
                     <ChevronRight size={16} color={C.textFaint} />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
+              </SwipeableCard>
             )}
           />
         )}
@@ -266,6 +293,7 @@ const s = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
+  featuredPhoto: StyleSheet.absoluteFillObject,
   featuredIcon: {
     width: 64, height: 64, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',

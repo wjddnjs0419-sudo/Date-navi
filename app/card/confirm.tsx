@@ -6,6 +6,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
 
@@ -158,7 +159,15 @@ export default function ConfirmScreen() {
           )}
 
           <View style={styles.actions}>
-            <BigButton onPress={() => setEditing(true)}>계획 수정하기</BigButton>
+            <TouchableOpacity
+              style={styles.doneBtn}
+              onPress={() => router.push({ pathname: '/card/review', params: { id } })}
+              activeOpacity={0.85}
+            >
+              <Check size={14} color={C.white} strokeWidth={2.5} />
+              <Text style={styles.doneBtnText}>데이트 다녀왔어요 · 어땠어요?</Text>
+            </TouchableOpacity>
+            <BigButton variant="secondary" onPress={() => setEditing(true)}>계획 수정하기</BigButton>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.7}>
               <Text style={styles.cancelBtnText}>계획 취소하기</Text>
             </TouchableOpacity>
@@ -280,6 +289,11 @@ const styles = StyleSheet.create({
   detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
   actions: { gap: 6 },
+  doneBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: C.pink, borderRadius: 14, paddingVertical: 14,
+  },
+  doneBtnText: { color: C.white, fontSize: 14, fontWeight: '700' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12 },
   cancelBtnText: { fontSize: 14, color: '#FF4F6D', fontWeight: '600' },
 });

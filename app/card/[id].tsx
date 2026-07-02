@@ -8,10 +8,6 @@ import {
   ActivityIndicator,
   SafeAreaView,
   Alert,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -64,11 +60,6 @@ export default function CardDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [generatingAlt, setGeneratingAlt] = useState(false);
   const [memoryDone, setMemoryDone] = useState(false);
-
-  const [showMemoryModal, setShowMemoryModal] = useState(false);
-  const [review, setReview] = useState('');
-  const [wantAgain, setWantAgain] = useState<boolean | null>(null);
-  const [savingMemory, setSavingMemory] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -184,27 +175,6 @@ export default function CardDetailScreen() {
       Alert.alert(alertTitle, s.card.saveError);
     } finally {
       setGeneratingAlt(false);
-    }
-  }
-
-  async function handleSaveMemory() {
-    if (wantAgain === null || !myUserId || !coupleId) return;
-    setSavingMemory(true);
-    try {
-      const { error } = await supabase.from('date_memories').insert({
-        couple_id: coupleId,
-        card_id: id,
-        user_id: myUserId,
-        review: review.trim(),
-        want_again: wantAgain,
-      });
-      if (error) throw error;
-      setMemoryDone(true);
-      setShowMemoryModal(false);
-    } catch {
-      Alert.alert(alertTitle, s.card.saveError);
-    } finally {
-      setSavingMemory(false);
     }
   }
 
@@ -370,7 +340,7 @@ export default function CardDetailScreen() {
           ) : (
             <TouchableOpacity
               style={styles.memoryBtn}
-              onPress={() => setShowMemoryModal(true)}
+              onPress={() => router.push({ pathname: '/card/review', params: { id } })}
               activeOpacity={0.85}
             >
               <Text style={styles.memoryBtnText}>{s.card.memoryButton}</Text>
@@ -378,73 +348,6 @@ export default function CardDetailScreen() {
           )}
         </ScrollView>
       )}
-
-      <Modal
-        visible={showMemoryModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowMemoryModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
-        >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowMemoryModal(false)}
-          />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{s.card.modalTitle}</Text>
-            <Text style={styles.modalSub}>{s.card.modalSubtitle}</Text>
-
-            <TextInput
-              style={styles.reviewInput}
-              placeholder={s.card.reviewPlaceholder}
-              placeholderTextColor="#9CA3AF"
-              value={review}
-              onChangeText={setReview}
-              maxLength={100}
-              returnKeyType="done"
-            />
-
-            <Text style={styles.wantAgainLabel}>{s.card.wantAgainLabel}</Text>
-            <View style={styles.wantAgainRow}>
-              {[
-                { value: true, emoji: '', label: s.card.wantAgainYes },
-                { value: false, emoji: '', label: s.card.wantAgainNo },
-              ].map(item => {
-                const on = wantAgain === item.value;
-                return (
-                  <TouchableOpacity
-                    key={String(item.value)}
-                    style={[styles.wantBtn, on && styles.wantBtnOn]}
-                    onPress={() => setWantAgain(item.value)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.wantText, on && styles.wantTextOn]}>
-                      {item.emoji} {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <TouchableOpacity
-              style={[styles.modalSaveBtn, wantAgain === null && styles.modalSaveBtnDisabled]}
-              onPress={handleSaveMemory}
-              disabled={wantAgain === null || savingMemory}
-              activeOpacity={0.85}
-            >
-              {savingMemory ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.modalSaveText}>{s.card.modalSave}</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -582,46 +485,4 @@ const styles = StyleSheet.create({
   },
   memoryDoneText: { fontSize: 15, fontWeight: '600', color: '#16A34A' },
 
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
-  modalSub: { fontSize: 14, color: '#9CA3AF', marginBottom: 20 },
-  reviewInput: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: '#1A1A1A',
-    marginBottom: 20,
-  },
-  wantAgainLabel: { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 10 },
-  wantAgainRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  wantBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  wantBtnOn: { backgroundColor: '#FFF0F3', borderColor: '#FF4F6D' },
-  wantText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
-  wantTextOn: { color: '#FF4F6D', fontWeight: '700' },
-  modalSaveBtn: {
-    backgroundColor: '#FF4F6D',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  modalSaveBtnDisabled: { backgroundColor: '#E5E7EB' },
-  modalSaveText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 });
