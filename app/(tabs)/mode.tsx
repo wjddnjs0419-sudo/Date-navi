@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Gift, MessageCircle, Map, Mail, Leaf, Plane, Check } from 'lucide-react-native';
+import { Gift, MessageCircle, Map, Leaf, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BigButton } from '../../components/ui';
 
@@ -11,7 +11,6 @@ const MODES = [
   { id: 'pick_for_me', title: '앱이 골라줘', desc: '조건만 고르면 후보 3개를 뽑아드릴게요.', Icon: Gift },
   { id: 'feeling', title: '느낌만 말할게', desc: '하고 싶은 분위기만 남겨도 괜찮아요.', Icon: MessageCircle },
   { id: 'make_course', title: '코스로 정리해줘', desc: '러프한 아이디어를 시간, 예산, 준비물까지 정리해요.', Icon: Map },
-  { id: 'soft_message', title: '부드럽게 말해줘', desc: '말하기 어려운 마음을 자연스러운 문장으로 바꿔요.', Icon: Mail },
   { id: 'light', title: '가볍게 하고 싶어', desc: '피곤한 날, 돈 아끼는 날에 좋아요.', Icon: Leaf },
   { id: 'next_meet', title: '다음에 만나면', desc: '장거리 커플의 다음 만남 버킷리스트.', Icon: Plane },
 ];
@@ -27,7 +26,6 @@ export default function ModeScreen() {
       feeling: '/mode-flow/feeling',
       light: '/mode-flow/light',
       make_course: '/mode-flow/course',
-      soft_message: '/(tabs)/soft-message',
       next_meet: '/mode-flow/bucketlist',
     };
     const path = routes[mode.id];

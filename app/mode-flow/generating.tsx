@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Sparkles, Check } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
 import { generateDateCards, getUserPreferences, type FeelingInput } from '../../lib/ai';
 import { logEvent } from '../../lib/analytics';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
-import { BigButton } from '../../components/ui';
+import { BigButton, GeneratingView } from '../../components/ui';
 
 const COURSE_STEPS = [
   '취향과 분위기 확인 중',
@@ -78,38 +78,7 @@ export default function GeneratingScreen() {
     );
   }
 
-  return (
-    <View style={s.container}>
-      <View style={s.iconWrap}>
-        <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
-      </View>
-
-      <Text style={s.heading}>{heading}</Text>
-
-      <View style={s.stepList}>
-        {STEPS.map((label, i) => (
-          <View key={label} style={s.stepRow}>
-            <View style={[
-              s.stepDot,
-              { backgroundColor: step > i ? C.mintFg : step === i ? C.pink : '#E0D5CB' },
-            ]}>
-              {step > i && <Check size={10} color={C.white} strokeWidth={3} />}
-            </View>
-            <Text style={[
-              s.stepText,
-              {
-                color: step > i ? C.mintFg : step === i ? C.text : C.textMuted,
-                fontWeight: step === i ? '600' : '500',
-                opacity: step < i ? 0.4 : 1,
-              },
-            ]}>
-              {label}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
+  return <GeneratingView heading={heading} steps={STEPS} step={step} />;
 }
 
 const s = StyleSheet.create({
@@ -136,11 +105,4 @@ const s = StyleSheet.create({
     marginTop: 32, marginBottom: 32,
   },
   errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: -16 },
-  stepList: { width: '100%', maxWidth: 260, gap: 10 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepDot: {
-    width: 16, height: 16, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  stepText: { fontSize: 13 },
 });

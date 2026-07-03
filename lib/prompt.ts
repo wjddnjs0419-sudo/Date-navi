@@ -235,3 +235,131 @@ ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
 
 태그 예시: 이동 적음, 피곤한 날 가능, 돈 적게 듦, 실패 확률 낮음, 실내, 야외, 로맨틱, 재밌음, 조용함, 사진 찍기 좋음`;
 }
+
+export type SoftMessageInput = {
+  reasons: string[];
+  freeText?: string;
+  tone?: string;
+};
+
+const REASON_MAP: Record<string, string> = {
+  tired: '피곤해요',
+  budget: '예산이 부담돼요',
+  far: '멀리 가기 싫어요',
+  sorry: '거절하기 미안해요',
+  near: '가까운 곳이 좋아요',
+  crowded: '사람 많은 곳은 싫어요',
+  time: '시간이 촉박해요',
+  weather: '날씨가 맞지 않아요',
+};
+
+const REASON_MAP_EN: Record<string, string> = {
+  tired: 'I am tired',
+  budget: 'Budget feels tight',
+  far: 'I do not want to travel far',
+  sorry: 'I feel bad saying no',
+  near: 'A nearby place is better',
+  crowded: 'Crowded places are not my thing',
+  time: 'I am short on time',
+  weather: 'The weather is not great',
+};
+
+// soft-message 탭의 톤 선택("다정하게"/"가볍게"/"솔직하게")을 실제 프롬프트 지침으로 반영한다.
+// 선택지에 없는 값이 오면(예: 아직 안 고른 초기 상태) 추가 지침 없이 기본 톤으로 생성한다.
+const TONE_GUIDE_MAP: Record<string, string> = {
+  '다정하게': '평소보다 더 다정하고 애교 섞인 표현을 적극적으로 사용하세요.',
+  '가볍게': '무겁지 않고 캐주얼하게, 가벼운 농담이나 편안한 말투를 섞어서 부담 없이 표현하세요.',
+  '솔직하게': '돌려 말하지 않고 담백하고 직설적으로 표현하되, 무례하지 않게 애정은 유지하세요.',
+};
+
+const TONE_GUIDE_MAP_EN: Record<string, string> = {
+  '다정하게': 'Lean extra warm and affectionate, more than usual.',
+  '가볍게': 'Keep it light and casual, maybe a little playful, so it does not feel heavy.',
+  '솔직하게': 'Be direct and straightforward rather than roundabout, while staying respectful and caring.',
+};
+
+export function buildSoftMessagePrompt(input: SoftMessageInput, language: AppLanguage): string {
+  const isEnglish = language === 'en';
+  const reasonText = input.reasons.map(r => (isEnglish ? REASON_MAP_EN[r] ?? r : REASON_MAP[r] ?? r)).join(', ');
+  const freeTextPart = input.freeText ? `\n${isEnglish ? 'Additional note' : '추가 메모'}: ${input.freeText}` : '';
+  const toneGuide = input.tone ? (isEnglish ? TONE_GUIDE_MAP_EN[input.tone] : TONE_GUIDE_MAP[input.tone]) : undefined;
+  const toneRule = toneGuide ? `\n- ${toneGuide}` : '';
+
+  if (isEnglish) {
+    return `You are an expert at gently expressing hard-to-say feelings between couples.
+Please write a warm, gentle message based on the situation below.
+
+【Situation】
+- What I want to say: ${reasonText}${freeTextPart}
+
+Reply with JSON only. Do not include any other text.
+
+{
+  "message": "A gentle message to send to my partner (2-3 sentences, warm and sincere)"
+}
+
+Rules:
+- Even if you are saying no or setting a boundary, the message should still feel loving
+- Include soft language that shows you still care
+- Avoid overly formal language and keep it natural, like a couple would speak
+- Keep it concise, within 2-3 sentences${toneRule}`;
+  }
+
+  return `당신은 커플 사이에서 말하기 어려운 마음을 부드럽게 전달해주는 전문가입니다.
+아래 상황을 보고, 상대방에게 부드럽고 따뜻하게 전달할 수 있는 문장을 만들어주세요.
+
+【상황】
+- 전달하고 싶은 마음: ${reasonText}${freeTextPart}
+
+반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
+
+{
+  "message": "상대방에게 보낼 부드러운 문장 (2~3문장, 진심이 느껴지는 따뜻한 말투)"
+}
+
+규칙:
+- 거절이나 부담을 표현하면서도 상대에 대한 애정이 느껴져야 합니다
+- "~해서 미안해", "그래도 같이 있고 싶어" 같은 따뜻한 표현을 넣으세요
+- 너무 격식체는 피하고, 자연스러운 연인 말투로 작성하세요
+- 2~3문장 이내로 간결하게 작성하세요${toneRule}`;
+}
+
+export function buildAdjustSoftMessagePrompt(
+  currentText: string,
+  instruction: 'warmer' | 'shorter',
+  language: AppLanguage = 'ko',
+): string {
+  const isEnglish = language === 'en';
+
+  if (isEnglish) {
+    const instructionText = instruction === 'warmer'
+      ? 'Rewrite it to sound warmer and more affectionate, while keeping the same meaning.'
+      : 'Rewrite it to be shorter and more concise, while keeping the same meaning.';
+    return `You are an expert at gently expressing hard-to-say feelings between couples.
+Below is a message the user already wrote. ${instructionText}
+
+【Current message】
+${currentText}
+
+Reply with JSON only. Do not include any other text.
+
+{
+  "message": "The revised message (2-3 sentences, warm and sincere)"
+}`;
+  }
+
+  const instructionText = instruction === 'warmer'
+    ? '원래 의미는 유지하면서 더 다정하게, 따뜻한 말투로 다듬어주세요.'
+    : '원래 의미는 유지하면서 더 짧게 줄여주세요.';
+  return `당신은 커플 사이에서 말하기 어려운 마음을 부드럽게 전달해주는 전문가입니다.
+아래는 사용자가 이미 작성한 문장입니다. ${instructionText}
+
+【현재 문장】
+${currentText}
+
+반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
+
+{
+  "message": "다듬어진 문장 (2~3문장, 진심이 느껴지는 따뜻한 말투)"
+}`;
+}

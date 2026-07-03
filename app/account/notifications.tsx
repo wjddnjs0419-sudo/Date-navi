@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator,
+  Modal, Clipboard,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Heart, Sparkles, BellOff, ChevronRight } from 'lucide-react-native';
+import { Heart, Sparkles, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, ListGroup, ListRow, SectionLabel } from '../../components/ui';
+import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 
-type NotifType = 'reaction' | 'new_card';
+type NotifType = 'reaction' | 'new_card' | 'soft_message';
 type Notif = {
   id: string;
   type: NotifType;
@@ -23,6 +24,8 @@ export default function NotificationsScreen() {
   const t = strings.notifications;
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Notif | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -67,7 +70,9 @@ export default function NotificationsScreen() {
   }
 
   function renderTitle(n: Notif): string {
-    return n.type === 'reaction' ? t.reactionTitle : t.newCardTitle;
+    if (n.type === 'reaction') return t.reactionTitle;
+    if (n.type === 'soft_message') return t.softMessageTitle;
+    return t.newCardTitle;
   }
 
   function renderBody(n: Notif): string {
@@ -77,7 +82,31 @@ export default function NotificationsScreen() {
       const card = n.payload?.card_title ?? '';
       return [label, card].filter(Boolean).join(' · ');
     }
+    if (n.type === 'soft_message') return n.payload?.message ?? '';
     return n.payload?.card_title ?? '';
+  }
+
+  // soft_message는 눌렀을 때 바로 지우지 않고 전체 문장을 모달로 보여준다.
+  // 모달을 닫으면(확인 완료로 간주) 그때 삭제한다.
+  function handleRowPress(n: Notif) {
+    if (n.type === 'soft_message') {
+      setSelected(n);
+      return;
+    }
+    removeOne(n.id);
+  }
+
+  function closeModal() {
+    if (selected) removeOne(selected.id);
+    setSelected(null);
+    setCopied(false);
+  }
+
+  function copySelectedMessage() {
+    if (!selected) return;
+    Clipboard.setString(selected.payload?.message ?? '');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   // 시간 그룹핑: 오늘 / 이번 주 / 이전
@@ -134,17 +163,18 @@ export default function NotificationsScreen() {
               <SectionLabel>{group.label}</SectionLabel>
               <ListGroup>
                 {group.items.map((n, i) => {
-                  const isReaction = n.type === 'reaction';
                   return (
                     <ListRow
                       key={n.id}
                       divider={i < group.items.length - 1}
-                      onPress={() => removeOne(n.id)}
+                      onPress={() => handleRowPress(n)}
                       icon={
-                        <View style={[s.iconBox, { backgroundColor: isReaction ? C.pinkLight : C.lavender }]}>
-                          {isReaction
+                        <View style={[s.iconBox, { backgroundColor: n.type === 'reaction' ? C.pinkLight : C.lavender }]}>
+                          {n.type === 'reaction'
                             ? <Heart size={16} strokeWidth={1.8} color={C.pinkDeep} />
-                            : <Sparkles size={16} strokeWidth={1.8} color={C.lavenderFg} />}
+                            : n.type === 'soft_message'
+                              ? <Mail size={16} strokeWidth={1.8} color={C.lavenderFg} />
+                              : <Sparkles size={16} strokeWidth={1.8} color={C.lavenderFg} />}
                         </View>
                       }
                       label={
@@ -165,6 +195,31 @@ export default function NotificationsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <Modal
+        visible={selected !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closeModal}
+      >
+        <View style={s.modalBackdrop}>
+          <View style={s.modalCard}>
+            <View style={s.modalHeaderRow}>
+              <Text style={s.modalTitle}>{t.softMessageTitle}</Text>
+              <TouchableOpacity onPress={closeModal} hitSlop={8}>
+                <X size={20} color={C.textSub} />
+              </TouchableOpacity>
+            </View>
+            <Text style={s.modalMessage}>{selected?.payload?.message}</Text>
+            <BigButton onPress={copySelectedMessage} variant={copied ? 'secondary' : 'primary'} style={{ marginTop: 20 }}>
+              {copied ? '복사됨 ✓' : t.modalCopyButton}
+            </BigButton>
+            <TouchableOpacity onPress={closeModal} style={{ alignItems: 'center', paddingVertical: 10, marginTop: 4 }}>
+              <Text style={{ fontSize: 13, color: C.textSub, fontWeight: '600' }}>{t.modalCloseButton}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -191,4 +246,15 @@ const s = StyleSheet.create({
   itemTitle: { fontSize: 13, fontWeight: '600', color: C.text },
   itemBody: { fontSize: 12, color: C.textSub, lineHeight: 17, marginTop: 2 },
   itemTime: { fontSize: 10, color: C.textLight, marginTop: 4 },
+  modalBackdrop: {
+    flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%', maxWidth: 360, backgroundColor: C.white,
+    borderRadius: 24, padding: 20,
+  },
+  modalHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  modalTitle: { fontSize: 15, fontWeight: '700', color: C.text },
+  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: 16 },
 });

@@ -2,7 +2,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft, Pencil, X } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { C } from '../constants/colors';
 import { useRef, type ReactNode } from 'react';
@@ -348,6 +348,75 @@ export function InfoNote({ children, style }: { children: ReactNode; style?: Sty
 const noteS = StyleSheet.create({
   wrap: { backgroundColor: C.cream, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
   text: { fontSize: 11, color: C.creamFg, lineHeight: 17 },
+});
+
+// ─── GeneratingView ───────────────────────────────────────────────────────────
+// AI 생성 로딩 화면 공통 UI. 아이콘 + 헤딩 + 단계별 체크리스트만 담당하고,
+// 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
+export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
+  return (
+    <View style={genS.container}>
+      <View style={genS.iconWrap}>
+        <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
+      </View>
+
+      <Text style={genS.heading}>{heading}</Text>
+
+      <View style={genS.stepList}>
+        {steps.map((label, i) => (
+          <View key={label} style={genS.stepRow}>
+            <View style={[
+              genS.stepDot,
+              { backgroundColor: step > i ? C.mintFg : step === i ? C.pink : '#E0D5CB' },
+            ]}>
+              {step > i && <Check size={10} color={C.white} strokeWidth={3} />}
+            </View>
+            <Text style={[
+              genS.stepText,
+              {
+                color: step > i ? C.mintFg : step === i ? C.text : C.textMuted,
+                fontWeight: step === i ? '600' : '500',
+                opacity: step < i ? 0.4 : 1,
+              },
+            ]}>
+              {label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+const genS = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF8F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  iconWrap: {
+    width: 140, height: 140, borderRadius: 70,
+    backgroundColor: C.white,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: C.pink,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  heading: {
+    fontSize: 22, fontWeight: '700', color: C.text,
+    textAlign: 'center', lineHeight: 29,
+    marginTop: 32, marginBottom: 32,
+  },
+  stepList: { width: '100%', maxWidth: 260, gap: 10 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepDot: {
+    width: 16, height: 16, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stepText: { fontSize: 13 },
 });
 
 // ─── FieldBox ─────────────────────────────────────────────────────────────────

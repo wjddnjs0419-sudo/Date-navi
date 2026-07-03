@@ -319,11 +319,14 @@ type Copy = {
     groupEarlier: string;
     reactionTitle: string;
     newCardTitle: string;
+    softMessageTitle: string;
     timeJustNow: string;
     timeMinutes: string;
     timeHours: string;
     timeYesterday: string;
     timeDays: string;
+    modalCopyButton: string;
+    modalCloseButton: string;
   };
 };
 
@@ -766,11 +769,14 @@ const COPY: Record<AppLanguage, Copy> = {
       groupEarlier: '이전',
       reactionTitle: '상대가 반응을 남겼어요',
       newCardTitle: '새 데이트 추천이 도착했어요',
+      softMessageTitle: '다정한 문장이 도착했어요',
       timeJustNow: '방금',
       timeMinutes: '분 전',
       timeHours: '시간 전',
       timeYesterday: '어제',
       timeDays: '일 전',
+      modalCopyButton: '복사하기',
+      modalCloseButton: '닫기',
     },
   },
   en: {
@@ -1211,11 +1217,14 @@ const COPY: Record<AppLanguage, Copy> = {
       groupEarlier: 'Earlier',
       reactionTitle: 'Your partner reacted',
       newCardTitle: 'New date picks arrived',
+      softMessageTitle: 'A gentle message arrived',
       timeJustNow: 'just now',
       timeMinutes: 'm ago',
       timeHours: 'h ago',
       timeYesterday: 'yesterday',
       timeDays: 'd ago',
+      modalCopyButton: 'Copy',
+      modalCloseButton: 'Close',
     },
   },
 };
