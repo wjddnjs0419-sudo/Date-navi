@@ -4,6 +4,22 @@ import { buildPrompt, buildAdjustSoftMessagePrompt, buildSoftMessagePrompt, type
 export type { SoftMessageInput };
 import type { CourseStep } from './course';
 export type { CourseStep };
+import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, type KakaoPlace, type PlaceFocus } from './place';
+
+// 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
+// 실패하면 빈 배열 → 장소 없는 기존 프롬프트로 자연스럽게 폴백한다.
+async function searchPlaces(location: string, radius: number, focus: PlaceFocus | null): Promise<KakaoPlace[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('place-search', {
+      body: { location, radius, focus: focus ?? undefined },
+    });
+    if (error) throw error;
+    const places = (data as { places?: KakaoPlace[] })?.places;
+    return Array.isArray(places) ? places : [];
+  } catch {
+    return [];
+  }
+}
 
 // AI 호출은 Supabase Edge Function(generate-ai)이 대행한다.
 // Anthropic 키는 함수 시크릿으로만 존재하며 클라이언트 번들에 노출되지 않는다.
@@ -35,6 +51,9 @@ export async function getUserPreferences(): Promise<UserPreferences | undefined>
   return data ? (data as UserPreferences) : undefined;
 }
 
+// 카카오 규약 좌표. x=경도(longitude), y=위도(latitude).
+export type GeoCoords = { x: string; y: string };
+
 export type FeelingInput = {
   energy: string;
   budget: string;
@@ -43,6 +62,10 @@ export type FeelingInput = {
   duration: string;
   avoid: string[];
   freeText?: string;
+  // 사용자가 입력한 동네/지역 텍스트 (예: "성수동"). 있으면 카카오 로컬로 실제 장소를 붙인다.
+  location?: string;
+  // GPS 현재 위치 (LocationField의 내 위치 토글 사용 시에만 채워진다)
+  coords?: GeoCoords;
 };
 
 export type DateCard = {
@@ -53,6 +76,10 @@ export type DateCard = {
   tags: string[];
   why_recommended: string;
   steps?: CourseStep[];
+  // 카카오 로컬 실제 장소 (location 입력 시에만 채워진다)
+  place_name?: string;
+  place_address?: string;
+  map_url?: string;
 };
 
 const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
@@ -111,21 +138,9 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
 };
 
 
-const SOFT_MESSAGE_FALLBACKS: Record<AppLanguage, Record<string, string>> = {
-  ko: {
-    tired: '오늘은 조금 피곤해서 멀리 가기보다 가까운 곳에서 편하게 보내고 싶어. 그래도 너랑 시간 보내는 건 좋아 😊',
-    budget: '이거 진짜 좋아 보이는데, 이번 주는 예산이 조금 부담돼서 다음에 더 여유 있을 때 가면 좋을 것 같아.',
-    far: '오늘은 멀리 가기가 좀 힘들 것 같아. 가까운 데서 만나면 더 편하게 시간 보낼 수 있을 것 같아!',
-    sorry: '제안해줘서 좋았는데, 이번엔 조금 부담이 돼서. 다음 번엔 꼭 같이 가자!',
-    default: '오늘은 조금 쉬고 싶어. 가까운 데서 편하게 보내는 건 어때? 그래도 같이 있고 싶어 😊',
-  },
-  en: {
-    tired: 'I am a little tired today, so I would rather keep it close and comfortable. I still love spending time with you 😊',
-    budget: 'This sounds really nice, but this week is a bit tight for me. Maybe we can do it when I have a little more room.',
-    far: 'Traveling far feels a bit hard for me today. It would be much nicer if we could meet somewhere nearby!',
-    sorry: 'I really appreciate the idea, but it feels a little heavy for me this time. Let’s definitely go together next time!',
-    default: 'I would like to rest a bit today. How about something comfortable nearby? I still want to be with you 😊',
-  },
+const SOFT_MESSAGE_FALLBACKS: Record<AppLanguage, string> = {
+  ko: '오늘은 조금 쉬고 싶어. 가까운 데서 편하게 보내는 건 어때? 그래도 같이 있고 싶어 😊',
+  en: 'I would like to rest a bit today. How about something comfortable nearby? I still want to be with you 😊',
 };
 
 // ─── 초대 한마디 (긍정·설레는 톤) ───────────────────────────────────────────────
@@ -195,8 +210,7 @@ export async function generateSoftMessage(input: SoftMessageInput, language: App
 
     return data.message;
   } catch {
-    const firstReason = input.reasons[0];
-    return SOFT_MESSAGE_FALLBACKS[language][firstReason] ?? SOFT_MESSAGE_FALLBACKS[language].default;
+    return SOFT_MESSAGE_FALLBACKS[language];
   }
 }
 
@@ -222,7 +236,15 @@ export async function generateDateCards(
   language: AppLanguage = 'ko',
 ): Promise<DateCard[]> {
   try {
-    const prompt = buildPrompt(input, mode, prefs, language);
+    // 위치가 있으면 실제 장소를 먼저 가져와 프롬프트에 주입한다.
+    // freeText에 "카페"/"맛집" 등 카테고리가 콕 집혀 있으면 그 카테고리만 검색해 후보를 좁힌다.
+    let placesBlock = '';
+    if (input.location) {
+      const focus = detectPlaceFocus(input.freeText);
+      const places = await searchPlaces(input.location, distanceToRadius(input.distance), focus);
+      placesBlock = formatPlacesBlock(places, language, focus?.label);
+    }
+    const prompt = buildPrompt(input, mode, prefs, language, placesBlock);
     const data = (await invokeAI('cards', prompt)) as { cards?: DateCard[] };
     if (!Array.isArray(data?.cards) || data.cards.length === 0) {
       throw new Error('No cards in response');

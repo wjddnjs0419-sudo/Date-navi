@@ -1,8 +1,10 @@
-import type { FeelingInput } from './ai';
+import type { FeelingInput, GeoCoords } from './ai';
 
-type PickArgs = { energy: string; budget: string; distance: string; duration: string };
-type FeelingArgs = { mood: string; budget: string; duration: string; freeText?: string };
-type LightArgs = { duration: string };
+const norm = (v?: string) => v?.trim() || undefined;
+
+type PickArgs = { energy: string; budget: string; distance: string; duration: string; location?: string; coords?: GeoCoords };
+type FeelingArgs = { mood: string; budget: string; duration: string; freeText?: string; location?: string; coords?: GeoCoords };
+type LightArgs = { duration: string; location?: string; coords?: GeoCoords };
 
 export function buildPickInput(a: PickArgs): FeelingInput {
   return {
@@ -12,6 +14,8 @@ export function buildPickInput(a: PickArgs): FeelingInput {
     mood: 'comfortable',
     duration: a.duration,
     avoid: [],
+    location: norm(a.location),
+    coords: a.coords,
   };
 }
 
@@ -23,7 +27,9 @@ export function buildFeelingInput(a: FeelingArgs): FeelingInput {
     mood: a.mood,
     duration: a.duration,
     avoid: [],
-    freeText: a.freeText?.trim() || undefined,
+    freeText: norm(a.freeText),
+    location: norm(a.location),
+    coords: a.coords,
   };
 }
 
@@ -35,10 +41,12 @@ export function buildLightInput(a: LightArgs): FeelingInput {
     mood: 'comfortable',
     duration: a.duration,
     avoid: [],
+    location: norm(a.location),
+    coords: a.coords,
   };
 }
 
-type CourseArgs = { idea: string; budget: string; duration: string };
+type CourseArgs = { idea: string; budget: string; duration: string; location?: string; coords?: GeoCoords };
 
 export function buildCourseInput(a: CourseArgs): FeelingInput {
   return {
@@ -49,5 +57,7 @@ export function buildCourseInput(a: CourseArgs): FeelingInput {
     duration: a.duration || '2-3h',
     avoid: [],
     freeText: a.idea.trim() || undefined,
+    location: norm(a.location),
+    coords: a.coords,
   };
 }
