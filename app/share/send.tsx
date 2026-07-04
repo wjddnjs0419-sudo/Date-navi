@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, TextInput,
+  ActivityIndicator, TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateInviteMessage } from '../../lib/ai';
 import { Heart, Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip } from '../../components/ui';
 
 type CardInfo = { id: string; title: string; summary: string; tags: string[] };
@@ -83,16 +85,16 @@ export default function SendScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <View style={{ marginTop: 16 }}>
+        <View style={s.introWrap}>
           <Text style={s.heading}>이 후보를 상대에게{'\n'}보내볼까요?</Text>
           <Text style={s.subText}>상대방이 부담 없이 반응할 수 있게 부드럽게 전달돼요.</Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator color={C.pink} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={C.pink} style={s.loadingSpinner} />
         ) : (
           <View style={s.cardBox}>
             <View style={s.cardBanner}>
@@ -100,10 +102,10 @@ export default function SendScreen() {
                 <Heart size={26} strokeWidth={1.5} color={C.pinkDeep} />
               </View>
             </View>
-            <View style={{ padding: 16 }}>
+            <View style={s.cardBody}>
               <Text style={s.cardTitle}>{card?.title ?? '선택한 데이트 후보'}</Text>
               <Text style={s.cardDesc}>{card?.summary ?? '멀리 가지 않고 편하게 쉬는 데이트'}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+              <View style={s.tagsRow}>
                 {(card?.tags ?? ['이동 적음', '돈 적게 듦', '피곤한 날']).slice(0, 3).map(t => (
                   <Chip key={t} tone="gray">{t}</Chip>
                 ))}
@@ -112,7 +114,7 @@ export default function SendScreen() {
           </View>
         )}
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.sectionBlock}>
           <Text style={s.sectionLabel}>함께 보낼 한마디</Text>
           <View style={s.messageBox}>
             <TextInput
@@ -138,7 +140,7 @@ export default function SendScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -155,6 +157,12 @@ export default function SendScreen() {
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  introWrap: { marginTop: 16 },
+  loadingSpinner: { marginTop: 40 },
+  cardBody: { padding: 16 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  sectionBlock: { marginTop: 20 },
+  bottomSpacer: { height: 120 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   cardBox: {
@@ -206,7 +214,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     gap: 4,
   },
   textBtn: { alignItems: 'center', paddingVertical: 10 },

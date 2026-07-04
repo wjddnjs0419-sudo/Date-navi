@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  ActivityIndicator, Alert, SafeAreaView,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { C } from '../../../constants/colors';
+import { G } from '../../../constants/theme';
 import { BackBar, BigButton } from '../../../components/ui';
 
 export default function EditCardScreen() {
@@ -67,14 +69,14 @@ export default function EditCardScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={[G.screen, G.center]}>
         <ActivityIndicator size="large" color={C.pink} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
@@ -82,7 +84,7 @@ export default function EditCardScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, { marginTop: 16 }]}>후보 수정하기</Text>
+        <Text style={[s.heading, s.headingTop]}>후보 수정하기</Text>
         <Text style={s.subText}>내용을 바꾼 뒤 저장하면 후보에 반영돼요.</Text>
 
         <Text style={s.label}>제목 *</Text>
@@ -100,7 +102,7 @@ export default function EditCardScreen() {
         <Text style={s.label}>설명</Text>
         <View style={s.inputWrap}>
           <TextInput
-            style={[s.input, { minHeight: 72, textAlignVertical: 'top' }]}
+            style={[s.input, s.inputMultiline]}
             value={summary}
             onChangeText={setSummary}
             placeholder="어떤 데이트인지 적어주세요"
@@ -134,7 +136,7 @@ export default function EditCardScreen() {
           />
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -152,6 +154,7 @@ export default function EditCardScreen() {
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingTop: { marginTop: 16 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
   inputWrap: {
@@ -164,12 +167,14 @@ const s = StyleSheet.create({
   },
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
   input: { fontSize: 14, color: C.text, lineHeight: 22 },
+  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  bottomSpacer: { height: 120 },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

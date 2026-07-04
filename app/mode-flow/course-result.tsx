@@ -22,7 +22,7 @@ function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: nu
   // 단계가 2개 미만이면(모델이 steps를 안 준 경우 등) 트레일 대신 요약 텍스트로 폴백 — 화면이 비지 않게.
   if (steps.length < 2) {
     return (
-      <View style={{ gap: 10, paddingVertical: 16 }}>
+      <View style={trail.fallbackWrap}>
         {steps.map((st, i) => (
           <Text key={i} style={trail.fallbackStep}>{i + 1}. {st.label}</Text>
         ))}
@@ -61,7 +61,7 @@ function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: nu
         }
         left = Math.max(8, Math.min(left, width - LABEL_W - 8));
         return (
-          <View key={`l${i}`} style={[trail.labelBox, { left, top: n.y + 22, width: LABEL_W }]}>
+          <View key={`l${i}`} style={[trail.labelBox, trail.labelWidth, { left, top: n.y + 22 }]}>
             <Text style={trail.labelText} numberOfLines={1}>{steps[i].label}</Text>
             {!!steps[i].desc && <Text style={trail.descText} numberOfLines={1}>{steps[i].desc}</Text>}
           </View>
@@ -182,7 +182,7 @@ export default function CourseResultScreen() {
     return (
       <SafeAreaView style={s.center}>
         <Text style={s.errTitle}>잠깐 문제가 생겼어요</Text>
-        <BigButton onPress={regenerate} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
+        <BigButton onPress={regenerate} style={s.errRetryBtn}>다시 시도하기</BigButton>
       </SafeAreaView>
     );
   }
@@ -215,7 +215,7 @@ export default function CourseResultScreen() {
               <CourseTrail steps={steps} width={width - 40} summary={card.summary} />
 
               {!!card.place_name && (
-                <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={{ marginTop: 12 }} />
+                <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={s.placeRowGap} />
               )}
 
               <View style={s.btnRow}>
@@ -244,10 +244,12 @@ export default function CourseResultScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFF8F3' },
-  center: { flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  safe: { flex: 1, backgroundColor: C.bg },
+  center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
   loadingText: { fontSize: 14, color: C.textSub, marginTop: 16, textAlign: 'center' },
   errTitle: { fontSize: 20, fontWeight: '700', color: C.text, textAlign: 'center' },
+  errRetryBtn: { marginTop: 24 },
+  placeRowGap: { marginTop: 12 },
   headerArea: { paddingHorizontal: 20, gap: 6, marginBottom: 8 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: 6 },
   sub: { fontSize: 13, color: C.textSub },
@@ -267,9 +269,11 @@ const s = StyleSheet.create({
 });
 
 const trail = StyleSheet.create({
+  fallbackWrap: { gap: 10, paddingVertical: 16 },
   node: { position: 'absolute', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   nodeNum: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
   labelBox: { position: 'absolute', alignItems: 'center', width: 120 },
+  labelWidth: { width: LABEL_W },
   labelText: { fontSize: 12, fontWeight: '600', color: C.text, textAlign: 'center' },
   descText: { fontSize: 10, color: C.textMuted, textAlign: 'center', marginTop: 1 },
   fallbackStep: { fontSize: 14, color: C.text },

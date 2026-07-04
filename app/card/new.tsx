@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, SafeAreaView, Switch,
+  ActivityIndicator, Alert, Switch,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard } from '../../components/ui';
 
 const TIME_OPTIONS = ['1~2시간', '2~3시간', '반나절', '하루 종일'];
@@ -103,7 +105,7 @@ export default function NewCardScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
@@ -111,7 +113,7 @@ export default function NewCardScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, { marginTop: 16 }]}>아이디어를 후보로{'\n'}등록할게요</Text>
+        <Text style={[s.heading, s.headingTop]}>아이디어를 후보로{'\n'}등록할게요</Text>
         <Text style={s.subText}>제목만 입력해도 바로 후보가 돼요.</Text>
 
         {/* 제목 */}
@@ -131,7 +133,7 @@ export default function NewCardScreen() {
         <Text style={s.label}>설명 (선택)</Text>
         <View style={s.inputWrap}>
           <TextInput
-            style={[s.input, { minHeight: 72, textAlignVertical: 'top' }]}
+            style={[s.input, s.inputMultiline]}
             value={description}
             onChangeText={setDescription}
             placeholder="어떤 느낌인지 간단히 적어주세요"
@@ -143,7 +145,7 @@ export default function NewCardScreen() {
 
         {/* 예상 시간 */}
         <Text style={s.label}>예상 시간 (선택)</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={s.timeRow}>
           {TIME_OPTIONS.map((t, i) => {
             const sel = i === selTime;
             return (
@@ -160,8 +162,8 @@ export default function NewCardScreen() {
         </View>
 
         {/* 예산 */}
-        <Text style={[s.label, { marginTop: 20 }]}>예산 (선택)</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Text style={s.label}>예산 (선택)</Text>
+        <View style={s.budgetRow}>
           {BUDGET_OPTIONS.map((b, i) => {
             const sel = i === selBudget;
             return (
@@ -169,7 +171,7 @@ export default function NewCardScreen() {
                 key={b}
                 onPress={() => setSelBudget(sel ? null : i)}
                 activeOpacity={0.7}
-                style={[s.chipBtn, { flex: 1 }, sel && s.chipBtnOn]}
+                style={[s.chipBtn, s.chipBtnFlex, sel && s.chipBtnOn]}
               >
                 <Text style={[s.chipText, sel && s.chipTextOn]}>{b}</Text>
               </TouchableOpacity>
@@ -178,12 +180,12 @@ export default function NewCardScreen() {
         </View>
 
         {/* AI 보정 토글 */}
-        <SoftCard style={{ marginTop: 24, backgroundColor: useAI ? C.lavender : C.white }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+        <SoftCard style={[s.aiCard, { backgroundColor: useAI ? C.lavender : C.white }]}>
+          <View style={s.toggleRow}>
+            <View style={s.toggleLeft}>
               <Sparkles size={16} color={useAI ? C.lavenderFg : C.textSub} />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.toggleTitle, useAI && { color: C.lavenderFg }]}>
+              <View style={s.toggleBody}>
+                <Text style={[s.toggleTitle, useAI && s.toggleTitleOn]}>
                   AI가 카드로 정리해줘
                 </Text>
                 <Text style={s.toggleSub}>입력한 내용을 AI가 정제해서 카드로 만들어줘요</Text>
@@ -198,7 +200,7 @@ export default function NewCardScreen() {
           </View>
         </SoftCard>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -218,6 +220,7 @@ export default function NewCardScreen() {
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingTop: { marginTop: 16 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
   inputWrap: {
@@ -230,6 +233,9 @@ const s = StyleSheet.create({
   },
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
   input: { fontSize: 14, color: C.text, lineHeight: 22 },
+  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  budgetRow: { flexDirection: 'row', gap: 8 },
   chipBtn: {
     borderRadius: 14,
     paddingHorizontal: 16,
@@ -239,17 +245,24 @@ const s = StyleSheet.create({
     borderColor: C.border,
     alignItems: 'center',
   },
+  chipBtnFlex: { flex: 1 },
   chipBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder, borderWidth: 1.5 },
-  chipText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  chipText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   chipTextOn: { color: C.pinkDeep, fontWeight: '600' },
+  aiCard: { marginTop: 24 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  toggleBody: { flex: 1 },
   toggleTitle: { fontSize: 13, fontWeight: '600', color: C.text },
+  toggleTitleOn: { color: C.lavenderFg },
   toggleSub: { fontSize: 11, color: C.textSub, marginTop: 2, lineHeight: 16 },
+  bottomSpacer: { height: 120 },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

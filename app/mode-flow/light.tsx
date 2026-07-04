@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Leaf } from 'lucide-react-native';
 import { buildLightInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, LocationField } from '../../components/ui';
 
 const DURATIONS = [
@@ -27,8 +29,8 @@ export default function LightScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.body}>
         <View style={s.content}>
           <BackBar />
           <View style={s.iconBox}>
@@ -56,6 +58,7 @@ export default function LightScreen() {
 }
 
 const s = StyleSheet.create({
+  body: { flex: 1 },
   content: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
   iconBox: { width: 56, height: 56, borderRadius: 18, backgroundColor: C.cream, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, marginTop: 16 },
@@ -64,7 +67,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   btn: { flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
   btnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  btnText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  btnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   btnTextOn: { color: C.pinkDeep, fontWeight: '600' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: '#FFF8F3' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
 });

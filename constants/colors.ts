@@ -24,4 +24,11 @@ export const C = {
   gray: '#F2EBE3',
   grayFg: '#6B5247',
   dark: '#1f1f24',
+  danger: '#FF4F6D',
+  shadow: '#785046',
+  ink: '#1A1A1A',
+  inkSoft: '#4A4A55',
+  coolGray: '#6B7280',
+  coolGrayLight: '#9CA3AF',
+  disabledBg: '#EFE7DF',
 } as const;

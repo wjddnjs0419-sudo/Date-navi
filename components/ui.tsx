@@ -5,22 +5,22 @@ import {
 import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { C } from '../constants/colors';
+import { C } from '../constants/theme';
 import { useRef, useState, type ReactNode } from 'react';
 import type { GeoCoords } from '../lib/ai';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'text' | 'disabled';
+const BTN_VARIANTS: Record<BtnVariant, { bg: string; fg: string }> = {
+  primary: { bg: C.pink, fg: C.white },
+  secondary: { bg: C.pinkLight, fg: C.pinkDeep },
+  text: { bg: 'transparent', fg: C.textSub },
+  disabled: { bg: C.disabledBg, fg: C.textLight },
+};
 export function BigButton({
   children, variant = 'primary', onPress, style,
 }: { children: ReactNode; variant?: BtnVariant; onPress?: () => void; style?: StyleProp<ViewStyle> }) {
-  const map: Record<BtnVariant, { bg: string; fg: string; border?: string }> = {
-    primary: { bg: C.pink, fg: C.white },
-    secondary: { bg: C.pinkLight, fg: C.pinkDeep },
-    text: { bg: 'transparent', fg: C.textSub },
-    disabled: { bg: '#EFE7DF', fg: '#B8AEA6' },
-  };
-  const m = map[variant];
+  const m = BTN_VARIANTS[variant];
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -62,7 +62,7 @@ const card = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: C.borderLight,
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 7,
@@ -136,7 +136,7 @@ export function SwipeableCard({
           <Pencil size={20} color={C.lavenderFg} strokeWidth={2} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[swipe.actionBtn, { backgroundColor: '#FF4F6D' }]}
+          style={[swipe.actionBtn, swipe.deleteBtn]}
           activeOpacity={0.8}
           onPress={() => { snap(false); onDelete(); }}
         >
@@ -157,21 +157,22 @@ const swipe = StyleSheet.create({
     borderTopLeftRadius: 22, borderBottomLeftRadius: 22,
   },
   actionBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { backgroundColor: C.danger },
 });
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
 type ChipTone = 'pink' | 'lavender' | 'mint' | 'cream' | 'gray';
+const CHIP_TONES: Record<ChipTone, { bg: string; fg: string; sel: string }> = {
+  pink: { bg: C.pinkLight, fg: C.pinkDeep, sel: C.pinkMid },
+  lavender: { bg: C.lavender, fg: C.lavenderFg, sel: '#D7CAFF' },
+  mint: { bg: C.mint, fg: C.mintFg, sel: '#B7DDC6' },
+  cream: { bg: C.cream, fg: C.creamFg, sel: '#FFDDB0' },
+  gray: { bg: C.gray, fg: C.grayFg, sel: '#DDD2C5' },
+};
 export function Chip({
   children, selected, tone = 'pink', onPress,
 }: { children: ReactNode; selected?: boolean; tone?: ChipTone; onPress?: () => void }) {
-  const tones: Record<ChipTone, { bg: string; fg: string; sel: string }> = {
-    pink: { bg: C.pinkLight, fg: C.pinkDeep, sel: C.pinkMid },
-    lavender: { bg: C.lavender, fg: C.lavenderFg, sel: '#D7CAFF' },
-    mint: { bg: C.mint, fg: C.mintFg, sel: '#B7DDC6' },
-    cream: { bg: C.cream, fg: C.creamFg, sel: '#FFDDB0' },
-    gray: { bg: C.gray, fg: C.grayFg, sel: '#DDD2C5' },
-  };
-  const t = tones[tone];
+  const t = CHIP_TONES[tone];
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -191,14 +192,14 @@ const chipS = StyleSheet.create({
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender';
+const BADGE_TONES: Record<BadgeTone, { bg: string; fg: string }> = {
+  gray: { bg: C.gray, fg: C.textSub },
+  pink: { bg: C.pinkLight, fg: C.pinkDeep },
+  mint: { bg: C.mint, fg: C.mintFg },
+  lavender: { bg: C.lavender, fg: C.lavenderFg },
+};
 export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?: BadgeTone }) {
-  const colors: Record<BadgeTone, { bg: string; fg: string }> = {
-    gray: { bg: C.gray, fg: C.textSub },
-    pink: { bg: C.pinkLight, fg: C.pinkDeep },
-    mint: { bg: C.mint, fg: C.mintFg },
-    lavender: { bg: C.lavender, fg: C.lavenderFg },
-  };
-  const c = colors[tone];
+  const c = BADGE_TONES[tone];
   return (
     <View style={[badgeS.base, { backgroundColor: c.bg }]}>
       <Text style={[badgeS.label, { color: c.fg }]}>{children}</Text>
@@ -230,21 +231,26 @@ const backS = StyleSheet.create({
 // ─── ProgressDots ─────────────────────────────────────────────────────────────
 export function ProgressDots({ current, total }: { current: number; total: number }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+    <View style={dotsS.row}>
       {Array.from({ length: total }).map((_, i) => (
         <View
           key={i}
-          style={{
-            width: i + 1 === current ? 24 : 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: i + 1 <= current ? C.pink : C.border,
-          }}
+          style={[
+            dotsS.dot,
+            i + 1 === current && dotsS.dotCurrent,
+            i + 1 <= current && dotsS.dotDone,
+          ]}
         />
       ))}
     </View>
   );
 }
+const dotsS = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },
+  dotCurrent: { width: 24 },
+  dotDone: { backgroundColor: C.pink },
+});
 
 // ─── ListGroup ────────────────────────────────────────────────────────────────
 export function ListGroup({ children }: { children: ReactNode }) {
@@ -259,7 +265,7 @@ const listGroupS = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.09,
     shadowRadius: 7,
@@ -292,7 +298,7 @@ export function ListRow({
           {icon && <View style={listRowS.icon}>{icon}</View>}
           {typeof label === 'string'
             ? <Text style={[listRowS.label, { color: fg }]}>{label}</Text>
-            : <View style={{ flex: 1 }}>{label}</View>}
+            : <View style={listRowS.labelWrap}>{label}</View>}
         </View>
         <View style={listRowS.right}>
           {value !== undefined && (
@@ -316,6 +322,7 @@ const listRowS = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
   icon: {},
   label: { fontSize: 14, fontWeight: '500', color: C.text },
+  labelWrap: { flex: 1 },
   right: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
   value: { fontSize: 13, color: C.textMuted },
   divider: { height: 1, marginLeft: 16, backgroundColor: C.borderLight },
@@ -452,7 +459,7 @@ export function PlaceRow({
       onPress={url ? () => { Linking.openURL(url); } : undefined}
     >
       <MapPin size={16} color={C.text} strokeWidth={2} style={placeS.icon} />
-      <View style={{ flex: 1 }}>
+      <View style={placeS.body}>
         <Text style={placeS.name} numberOfLines={1}>{name}</Text>
         {!!address && <Text style={placeS.addr} numberOfLines={1}>{address}</Text>}
       </View>
@@ -463,6 +470,7 @@ export function PlaceRow({
 const placeS = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   icon: { marginTop: 1 },
+  body: { flex: 1 },
   name: { fontSize: 15, fontWeight: '700', color: C.text },
   addr: { fontSize: 13, color: C.textSub, marginTop: 2 },
   link: { fontSize: 13, fontWeight: '600', color: C.textSub, marginTop: 1 },
@@ -521,7 +529,7 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
 const genS = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -568,6 +576,6 @@ const fieldS = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  label: { fontSize: 11, color: '#B8AEA6', marginBottom: 4 },
+  label: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   content: {},
 });

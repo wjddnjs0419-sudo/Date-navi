@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity, SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { CalendarHeart, Clock, MapPin, Check } from 'lucide-react-native';
@@ -65,17 +66,17 @@ export default function PlansScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={C.pink} style={{ marginTop: 60 }} />
+          <ActivityIndicator color={C.pink} style={s.loader} />
         ) : plans.length === 0 ? (
           <View style={s.emptyWrap}>
-            <View style={[s.emptyIcon, { backgroundColor: C.pinkLight }]}>
+            <View style={[s.emptyIcon, s.emptyIconBg]}>
               <CalendarHeart size={44} strokeWidth={1.5} color={C.pinkDeep} />
             </View>
             <Text style={s.emptyTitle}>확정한 데이트가 없어요</Text>
             <Text style={s.emptySub}>후보 중 마음에 드는 데이트를{'\n'}"이번 데이트로 정하기"로 확정해보세요.</Text>
           </View>
         ) : (
-          <View style={{ gap: 12, marginTop: 8 }}>
+          <View style={s.planList}>
             {plans.map((p) => (
               <SoftCard key={p.id} onPress={() => router.push(`/card/${p.id}` as any)}>
                 <Text style={s.cardTitle}>{p.title}</Text>
@@ -125,7 +126,7 @@ export default function PlansScreen() {
           </View>
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -137,12 +138,16 @@ const s = StyleSheet.create({
   headingBlock: { marginTop: 16, marginBottom: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
   sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  loader: { marginTop: 60 },
+  planList: { gap: 12, marginTop: 8 },
+  bottomSpacer: { height: 40 },
 
   emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
   emptyIcon: {
     width: 120, height: 120, borderRadius: 60,
     alignItems: 'center', justifyContent: 'center', marginBottom: 24,
   },
+  emptyIconBg: { backgroundColor: C.pinkLight },
   emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
   emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
 

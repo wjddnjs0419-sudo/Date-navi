@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, TextInput,
+  ActivityIndicator, TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Heart } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
 
 const REACTIONS = [
@@ -106,7 +108,7 @@ export default function ReactionScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
 
@@ -120,7 +122,7 @@ export default function ReactionScreen() {
           </View>
         </View>
 
-        <Text style={[s.heading, { marginTop: 16 }]}>이 데이트 어때요?</Text>
+        <Text style={[s.heading, s.headingSpacing]}>이 데이트 어때요?</Text>
 
         <View style={s.cardBox}>
           <View style={s.cardBanner}>
@@ -128,7 +130,7 @@ export default function ReactionScreen() {
               <Heart size={22} strokeWidth={1.5} color={C.pinkDeep} />
             </View>
           </View>
-          <View style={{ padding: 16 }}>
+          <View style={s.cardBody}>
             <Text style={s.cardTitle}>{card?.title ?? '선택한 데이트 후보'}</Text>
             <Text style={s.cardDesc}>{card?.summary ?? '멀리 가지 않고 편하게 쉬는 데이트'}</Text>
             {!!sentMessage && (
@@ -139,7 +141,7 @@ export default function ReactionScreen() {
           </View>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.sectionBlock}>
           <Text style={s.sectionLabel}>마음에 드는 반응을 골라주세요</Text>
           <View style={s.reactionGrid}>
             {REACTIONS.map((t, i) => {
@@ -158,7 +160,7 @@ export default function ReactionScreen() {
           </View>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.sectionBlock}>
           <Text style={s.sectionLabel}>한마디 (선택)</Text>
           <View style={s.noteInputBox}>
             <TextInput
@@ -172,7 +174,7 @@ export default function ReactionScreen() {
           </View>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -196,6 +198,10 @@ const s = StyleSheet.create({
   senderName: { fontSize: 13, fontWeight: '600', color: C.text },
   senderTime: { fontSize: 11, color: C.textLight, marginTop: 1 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingSpacing: { marginTop: 16 },
+  cardBody: { padding: 16 },
+  sectionBlock: { marginTop: 20 },
+  bottomSpacer: { height: 120 },
   cardBox: {
     marginTop: 16,
     borderRadius: 22,
@@ -218,7 +224,7 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
   cardDesc: { fontSize: 12, color: C.textSub, marginTop: 4 },
   noteBox: { marginTop: 12, borderRadius: 12, padding: 12, backgroundColor: C.cream },
-  noteText: { fontSize: 12, color: '#6B5247', lineHeight: 18 },
+  noteText: { fontSize: 12, color: C.grayFg, lineHeight: 18 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
   reactionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   reactionBtn: {
@@ -230,7 +236,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   reactionBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  reactionBtnText: { fontSize: 12, color: '#4A4A55', fontWeight: '500' },
+  reactionBtnText: { fontSize: 12, color: C.inkSoft, fontWeight: '500' },
   reactionBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
   noteInputBox: {
     backgroundColor: C.white,
@@ -247,6 +253,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity, SafeAreaView, Alert,
+  TouchableOpacity, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Plus, Heart, Leaf, Palette, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
@@ -277,8 +279,8 @@ export default function CandidatesScreen() {
   const ICON_COLORS = [{ bg: C.pinkLight, fg: C.pinkDeep }, { bg: C.mint, fg: C.mintFg }, { bg: C.lavender, fg: C.lavenderFg }];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.flex1}>
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           {/* 헤더 */}
           <View style={s.headerRow}>
@@ -300,8 +302,8 @@ export default function CandidatesScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 16 }}
-            contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+            style={s.filterScroll}
+            contentContainerStyle={s.filterContent}
           >
             {FILTERS.map((f) => (
               <Chip
@@ -325,7 +327,7 @@ export default function CandidatesScreen() {
                 params: { cardId: pendingProposals[0].cardId },
               } as any)}
             >
-              <View style={{ flex: 1 }}>
+              <View style={s.flex1}>
                 <Text style={s.proposalTitle}>상대가 보낸 데이트 제안 {pendingProposals.length}개</Text>
                 <Text style={s.proposalSub} numberOfLines={1}>"{pendingProposals[0].title}" · 지금 확인하기 →</Text>
               </View>
@@ -345,17 +347,17 @@ export default function CandidatesScreen() {
           ) : (
             <>
               {loading ? (
-                <ActivityIndicator color={C.pink} style={{ marginTop: 60 }} />
+                <ActivityIndicator color={C.pink} style={s.loader} />
               ) : filtered.length === 0 ? (
                 <View style={s.emptyWrap}>
-                  <View style={[s.emptyIcon, { backgroundColor: C.lavender }]}>
+                  <View style={[s.emptyIcon, s.bgLavender]}>
                     <Heart size={44} strokeWidth={1.5} color={C.lavenderFg} />
                   </View>
                   <Text style={s.emptyTitle}>아직 데이트 후보가 없어요</Text>
                   <Text style={s.emptySub}>오늘 끌리는 느낌만 알려주시면{'\n'}앱이 첫 후보를 만들어드릴게요.</Text>
                 </View>
               ) : (
-                <View style={{ marginTop: 16, gap: 12 }}>
+                <View style={s.cardList}>
                   {filtered.map((card, idx) => {
                     const IconComponent = ICONS[idx % ICONS.length];
                     const iconColors = ICON_COLORS[idx % ICON_COLORS.length];
@@ -367,14 +369,14 @@ export default function CandidatesScreen() {
                         onDelete={() => confirmDelete(card.id)}
                       >
                       <SoftCard>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                        <View style={s.cardRow}>
                           <View style={[s.cardIcon, { backgroundColor: iconColors.bg }]}>
                             <IconComponent size={22} strokeWidth={1.8} color={iconColors.fg} />
                           </View>
-                          <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                          <View style={s.flex1}>
+                            <View style={s.cardTitleRow}>
                               <Text style={s.cardTitle}>{card.title}</Text>
-                              <View style={{ flexDirection: 'row', gap: 4 }}>
+                              <View style={s.badgeRow}>
                                 {card.source === 'manual' && (
                                   <Badge tone="lavender">직접 추가</Badge>
                                 )}
@@ -415,7 +417,7 @@ export default function CandidatesScreen() {
             </>
           )}
 
-          <View style={{ height: 100 }} />
+          <View style={s.bottomSpacer} />
         </ScrollView>
 
         {/* FAB */}
@@ -447,12 +449,12 @@ type BucketSectionProps = {
 };
 
 function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd }: BucketSectionProps) {
-  if (loading) return <ActivityIndicator color={C.lavenderFg} style={{ marginTop: 60 }} />;
+  if (loading) return <ActivityIndicator color={C.lavenderFg} style={s.loader} />;
 
   if (items.length === 0) {
     return (
       <View style={s.emptyWrap}>
-        <View style={[s.emptyIcon, { backgroundColor: C.lavender }]}>
+        <View style={[s.emptyIcon, s.bgLavender]}>
           <Plane size={44} strokeWidth={1.5} color={C.lavenderFg} />
         </View>
         <Text style={s.emptyTitle}>버킷리스트가 비어있어요</Text>
@@ -466,7 +468,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
   }
 
   return (
-    <View style={{ marginTop: 16 }}>
+    <View style={s.bucketWrap}>
       <View style={s.bucketHeader}>
         <Text style={s.bucketHeaderText}>다음 만남에 하고 싶은 것들 ({items.length})</Text>
         <TouchableOpacity onPress={onAdd} activeOpacity={0.8} style={s.bucketAddSmall}>
@@ -475,14 +477,14 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
         </TouchableOpacity>
       </View>
 
-      <View style={{ gap: 12 }}>
+      <View style={s.bucketList}>
         {items.map((item) => {
           const confirming = confirmingId === item.id;
           const bothLove = item.myReaction === 'love' && item.partnerReaction === 'love';
           return (
             <SoftCard key={item.id}>
               <View style={s.bucketItemHeader}>
-                <View style={[s.bucketIcon, { backgroundColor: C.lavender }]}>
+                <View style={[s.bucketIcon, s.bgLavender]}>
                   <Plane size={18} strokeWidth={1.8} color={C.lavenderFg} />
                 </View>
                 <Text style={s.bucketItemText}>{item.item}</Text>
@@ -491,7 +493,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
               {/* 반응 버튼 */}
               <View style={s.bucketRxRow}>
                 <Text style={s.bucketRxLabel}>내 반응</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={s.bucketRxBtns}>
                   <TouchableOpacity
                     style={[s.bucketRxBtn, item.myReaction === 'love' && s.bucketRxBtnActive]}
                     onPress={() => onReact(item.id, 'love')}
@@ -525,7 +527,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
               {/* 만남 확정 버튼 */}
               {(item.myReaction === 'love' || bothLove) && (
                 <TouchableOpacity
-                  style={[s.confirmBtn, confirming && { opacity: 0.6 }]}
+                  style={[s.confirmBtn, confirming && s.confirmBtnBusy]}
                   onPress={() => onConfirm(item)}
                   activeOpacity={0.85}
                   disabled={confirming}
@@ -551,8 +553,14 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
 }
 
 const s = StyleSheet.create({
+  flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  filterScroll: { marginTop: 16 },
+  filterContent: { gap: 8, paddingRight: 4 },
+  loader: { marginTop: 60 },
+  bgLavender: { backgroundColor: C.lavender },
+  bottomSpacer: { height: 100 },
   pageTitle: { fontSize: 24, fontWeight: '800', color: C.text },
   countText: { fontSize: 12, color: C.textMuted, marginTop: 2 },
   addBtn: {
@@ -574,11 +582,15 @@ const s = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20,
   },
   addBucketBtnText: { color: C.white, fontSize: 14, fontWeight: '600' },
+  cardList: { marginTop: 16, gap: 12 },
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  badgeRow: { flexDirection: 'row', gap: 4 },
   cardIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 14, fontWeight: '700', color: C.text, flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
   rxRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  rxBox: { flex: 1, borderRadius: 10, padding: 8, backgroundColor: '#FFF8F3' },
+  rxBox: { flex: 1, borderRadius: 10, padding: 8, backgroundColor: C.bg },
   rxLabel: { fontSize: 10, color: C.textMuted },
   rxValue: { fontSize: 11, color: C.text, fontWeight: '600', marginTop: 2 },
   rxCondition: { fontSize: 10, color: C.lavenderFg, marginTop: 3, fontWeight: '500' },
@@ -599,6 +611,9 @@ const s = StyleSheet.create({
   proposalTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
   proposalSub: { fontSize: 12, color: C.textSub, marginTop: 3 },
   // Bucket
+  bucketWrap: { marginTop: 16 },
+  bucketList: { gap: 12 },
+  bucketRxBtns: { flexDirection: 'row', gap: 8 },
   bucketHeader: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 12,
@@ -634,5 +649,6 @@ const s = StyleSheet.create({
     marginTop: 4, backgroundColor: C.lavenderFg,
     borderRadius: 14, paddingVertical: 12,
   },
+  confirmBtnBusy: { opacity: 0.6 },
   confirmBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
 });

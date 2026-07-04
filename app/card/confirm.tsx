@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -122,7 +123,7 @@ export default function ConfirmScreen() {
     const dateLine = [date, time].filter(Boolean).join(' · ') || '날짜·시간 미정';
     return (
       <SafeAreaView style={styles.safe}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -180,8 +181,8 @@ export default function ConfirmScreen() {
   // ── 입력/수정 모드 ──────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -211,7 +212,7 @@ export default function ConfirmScreen() {
                 <View style={styles.rowIconWrap}>
                   <Text style={styles.rowIconText}>{row.icon}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={styles.flex1}>
                   <Text style={styles.rowLabel}>{row.label}</Text>
                   <TextInput
                     style={styles.rowInput}
@@ -243,6 +244,7 @@ export default function ConfirmScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
 
   headingBlock: { marginTop: 16, marginBottom: 20 },
@@ -295,5 +297,5 @@ const styles = StyleSheet.create({
   },
   doneBtnText: { color: C.white, fontSize: 14, fontWeight: '700' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12 },
-  cancelBtnText: { fontSize: 14, color: '#FF4F6D', fontWeight: '600' },
+  cancelBtnText: { fontSize: 14, color: C.danger, fontWeight: '600' },
 });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, LocationField } from '../../components/ui';
 
 const MOODS = [
@@ -40,11 +42,11 @@ export default function FeelingScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.body}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <BackBar />
-          <View style={{ marginTop: 16 }}>
+          <View style={s.headerWrap}>
             <Text style={s.heading}>오늘 끌리는 느낌만{'\n'}알려주세요</Text>
             <Text style={s.subText}>대충 말해도 괜찮아요. 분위기를 데이트 카드로 정리해드릴게요.</Text>
           </View>
@@ -89,7 +91,7 @@ export default function FeelingScreen() {
 
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
 
-          <View style={{ height: 120 }} />
+          <View style={s.footerSpacer} />
         </ScrollView>
         <View style={s.footer}>
           <BigButton onPress={handleGenerate}>데이트 후보 만들기</BigButton>
@@ -100,7 +102,9 @@ export default function FeelingScreen() {
 }
 
 const s = StyleSheet.create({
+  body: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  headerWrap: { marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   freeInputWrap: { backgroundColor: C.white, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.border, minHeight: 90, marginTop: 20 },
@@ -110,12 +114,13 @@ const s = StyleSheet.create({
   triRow: { flexDirection: 'row', gap: 8 },
   triBtn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
   triBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  triBtnText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  triBtnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   triBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
   quadRow: { flexDirection: 'row', gap: 8 },
   quadBtn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
   quadBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  quadBtnText: { fontSize: 12, color: '#4A4A55', fontWeight: '500' },
+  quadBtnText: { fontSize: 12, color: C.inkSoft, fontWeight: '500' },
   quadBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: '#FFF8F3' },
+  footerSpacer: { height: 120 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
 });

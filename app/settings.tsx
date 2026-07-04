@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView,
+  View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, Alert, Linking, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
@@ -13,6 +14,7 @@ import {
   HelpCircle, FileText, LogOut, Trash2, Camera, Heart, ChevronRight, MapPin,
 } from 'lucide-react-native';
 import { C } from '../constants/colors';
+import { G } from '../constants/theme';
 import { ListGroup, ListRow, SectionLabel } from '../components/ui';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 
@@ -170,7 +172,7 @@ export default function SettingsScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={[G.screen, G.center]}>
         <ActivityIndicator size="large" color={C.pink} />
       </View>
     );
@@ -182,7 +184,7 @@ export default function SettingsScreen() {
     : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
         {/* 프로필 헤더 */}
@@ -219,7 +221,7 @@ export default function SettingsScreen() {
             { label: t.statDates, value: String(stats.dates) },
             { label: t.statWantAgain, value: String(stats.wantAgain) },
           ].map((st, i) => (
-            <View key={st.label} style={[s.statBox, i > 0 && { borderLeftWidth: 1, borderLeftColor: C.border }]}>
+            <View key={st.label} style={[s.statBox, i > 0 && s.statBoxDivider]}>
               <Text style={s.statValue}>{st.value}</Text>
               <Text style={s.statLabel}>{st.label}</Text>
             </View>
@@ -227,7 +229,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* 계정 */}
-        <View style={{ marginTop: 28 }}>
+        <View style={s.sectionFirst}>
           <SectionLabel>{t.accountTitle}</SectionLabel>
           <ListGroup>
             <ListRow
@@ -255,7 +257,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* 환경설정 */}
-        <View style={{ marginTop: 20 }}>
+        <View style={s.section}>
           <SectionLabel>{t.prefsTitle}</SectionLabel>
           <ListGroup>
             <ListRow
@@ -282,7 +284,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* 정보 */}
-        <View style={{ marginTop: 20 }}>
+        <View style={s.section}>
           <SectionLabel>{t.infoTitle}</SectionLabel>
           <ListGroup>
             <ListRow
@@ -308,7 +310,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* 로그아웃 / 탈퇴 */}
-        <View style={{ marginTop: 20 }}>
+        <View style={s.section}>
           <ListGroup>
             <ListRow
               icon={<LogOut size={16} strokeWidth={1.8} color={C.text} />}
@@ -326,7 +328,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={s.version}>Date Navi v1.0.0</Text>
-        <View style={{ height: 40 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -369,7 +371,11 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   statBox: { flex: 1, padding: 16, alignItems: 'center' },
+  statBoxDivider: { borderLeftWidth: 1, borderLeftColor: C.border },
   statValue: { fontSize: 18, fontWeight: '800', color: C.pinkDeep },
   statLabel: { fontSize: 11, color: C.textSub, marginTop: 2 },
+  sectionFirst: { marginTop: 28 },
+  section: { marginTop: 20 },
   version: { textAlign: 'center', fontSize: 11, color: C.textLight, marginTop: 24 },
+  bottomSpacer: { height: 40 },
 });

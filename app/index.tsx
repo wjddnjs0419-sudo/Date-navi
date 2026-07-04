@@ -36,7 +36,7 @@ export default function Index() {
         <Animated.View style={{ transform: [{ scale }, { translateY }], opacity }}>
           <Image source={logo} style={s.logo} />
         </Animated.View>
-        <Animated.View style={{ opacity, marginTop: 16, alignItems: 'center' }}>
+        <Animated.View style={[s.titleBlock, { opacity }]}>
           <Text style={s.appName}>Date Navi</Text>
           <Text style={s.tagline}>우리 데이트의 작은 나침반이 되어줄게요.</Text>
         </Animated.View>
@@ -61,6 +61,7 @@ const s = StyleSheet.create({
     paddingBottom: 56,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  titleBlock: { marginTop: 16, alignItems: 'center' },
   logo: { width: 240, height: 240, resizeMode: 'contain' },
   appName: { fontSize: 30, fontWeight: '800', color: '#3A2E2E', textAlign: 'center', letterSpacing: -0.6 },
   tagline: { fontSize: 13, color: '#8A7F76', textAlign: 'center', marginTop: 8 },

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
 
 const OPTIONS = [
@@ -42,7 +44,7 @@ export default function TypeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={G.screen}>
       <View style={s.container}>
         <BackBar />
         <View style={s.progressRow}>
@@ -50,7 +52,7 @@ export default function TypeScreen() {
           <Text style={s.stepCount}>4 / 4</Text>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.headingBlock}>
           <Text style={s.heading}>{'데이트 계획,\n보통 어떻게 하세요?'}</Text>
           <Text style={s.subText}>
             유형을 정하는 게 아니라, 첫 추천을 더 잘 맞추기 위한 힌트예요.
@@ -74,7 +76,7 @@ export default function TypeScreen() {
           })}
         </View>
 
-        <View style={{ flex: 1 }} />
+        <View style={s.spacer} />
 
         <BigButton onPress={handleStart} variant={loading ? 'disabled' : 'primary'}>
           {loading
@@ -90,6 +92,7 @@ const s = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   stepCount: { fontSize: 11, color: C.textMuted },
+  headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, marginTop: 8, lineHeight: 20 },
   optionList: { marginTop: 24, gap: 8 },
@@ -105,6 +108,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   optionSel: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
-  optionText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  optionText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   optionTextSel: { color: C.pinkDeep, fontWeight: '600' },
+  spacer: { flex: 1 },
 });

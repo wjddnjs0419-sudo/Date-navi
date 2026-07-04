@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity, Image, Alert,
+  View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Image, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Camera, Heart, Clock, Wallet, ChevronRight } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { Badge, Chip, SwipeableCard } from '../../components/ui';
 
 type MemoryItem = {
@@ -85,8 +87,8 @@ export default function MemoriesScreen() {
   const wantAgainCount = items.filter(i => i.want_again).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.flex1}>
         {/* 헤더 */}
         <View style={s.header}>
           <View>
@@ -99,12 +101,12 @@ export default function MemoriesScreen() {
         </View>
 
         {loading ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={G.center}>
             <ActivityIndicator size="large" color={C.pink} />
           </View>
         ) : items.length === 0 ? (
           <View style={s.emptyWrap}>
-            <View style={[s.emptyIcon, { backgroundColor: C.lavender }]}>
+            <View style={[s.emptyIcon, s.bgLavender]}>
               <Heart size={44} strokeWidth={1.5} color={C.lavenderFg} />
             </View>
             <Text style={s.emptyTitle}>아직 추억이 없어요</Text>
@@ -158,7 +160,7 @@ export default function MemoriesScreen() {
                         <Image source={{ uri: item.photo_url }} style={s.featuredPhoto} resizeMode="cover" />
                       )}
                       {!item.photo_url && (
-                        <View style={[s.featuredIcon, { backgroundColor: C.pinkLight }]}>
+                        <View style={[s.featuredIcon, s.bgPinkLight]}>
                           <Heart size={28} strokeWidth={1.5} color={C.pinkDeep} />
                         </View>
                       )}
@@ -169,8 +171,8 @@ export default function MemoriesScreen() {
                         </View>
                       )}
                     </View>
-                    <View style={{ padding: 16 }}>
-                      <Text style={{ fontSize: 11, color: C.textMuted }}>{formatDate(item.created_at)}</Text>
+                    <View style={s.featuredBody}>
+                      <Text style={s.featuredDate}>{formatDate(item.created_at)}</Text>
                       <Text style={s.cardTitle}>{item.card_title}</Text>
                       {item.review ? (
                         <Text style={s.reviewText}>"{item.review}"</Text>
@@ -206,12 +208,12 @@ export default function MemoriesScreen() {
                     {item.photo_url ? (
                       <Image source={{ uri: item.photo_url }} style={s.rowIcon} resizeMode="cover" />
                     ) : (
-                      <View style={[s.rowIcon, { backgroundColor: index % 2 === 0 ? C.pinkLight : C.mint }]}>
+                      <View style={[s.rowIcon, index % 2 === 0 ? s.bgPinkLight : s.bgMint]}>
                         <Heart size={26} strokeWidth={1.5} color={index % 2 === 0 ? C.pinkDeep : C.mintFg} />
                       </View>
                     )}
                     <View style={s.rowContent}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <View style={s.rowTitleRow}>
                         <Text style={s.rowTitle}>{item.card_title}</Text>
                         {item.want_again && (
                           <Heart size={13} color={C.pinkDeep} fill={C.pinkDeep} />
@@ -233,6 +235,10 @@ export default function MemoriesScreen() {
 }
 
 const s = StyleSheet.create({
+  flex1: { flex: 1 },
+  bgLavender: { backgroundColor: C.lavender },
+  bgPinkLight: { backgroundColor: C.pinkLight },
+  bgMint: { backgroundColor: C.mint },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -278,7 +284,7 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -287,7 +293,7 @@ const s = StyleSheet.create({
   featuredCard: {},
   featuredBanner: {
     height: 160,
-    backgroundColor: '#FFD3D9',
+    backgroundColor: C.pinkMid,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -314,13 +320,16 @@ const s = StyleSheet.create({
   },
   wantAgainText: { fontSize: 10, color: C.pinkDeep, fontWeight: '600' },
   sectionLabelRow: { marginBottom: 10 },
+  featuredBody: { padding: 16 },
+  featuredDate: { fontSize: 11, color: C.textMuted },
   cardTitle: { fontSize: 16, fontWeight: '700', color: C.text, marginTop: 4 },
-  reviewText: { fontSize: 13, color: '#6B5247', lineHeight: 20, marginTop: 8 },
+  reviewText: { fontSize: 13, color: C.grayFg, lineHeight: 20, marginTop: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontSize: 11, color: C.textSub },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   rowCard: { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  rowTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   rowIcon: { width: 88, height: 80, alignItems: 'center', justifyContent: 'center', borderRadius: 0, marginLeft: -14, marginTop: -14, marginBottom: -14, marginRight: 14 },
   rowContent: { flex: 1 },
   rowTitle: { fontSize: 13, fontWeight: '700', color: C.text },

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
@@ -86,7 +87,7 @@ export default function CourseScreen() {
 
         <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
 
-        <View style={{ height: 24 }} />
+        <View style={s2.bottomSpacer} />
         <BigButton onPress={handleGenerate} variant={idea.trim() ? 'primary' : 'disabled'}>{c.generateButton}</BigButton>
       </ScrollView>
     </SafeAreaView>
@@ -94,8 +95,9 @@ export default function CourseScreen() {
 }
 
 const s2 = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFF8F3' },
+  safe: { flex: 1, backgroundColor: C.bg },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 60 },
+  bottomSpacer: { height: 24 },
   modeLabel: { fontSize: 13, color: C.pinkDeep, fontWeight: '600', marginBottom: 8 },
   title: { fontSize: 24, fontWeight: '700', lineHeight: 32, color: C.text, marginBottom: 28 },
   sectionLabel: { fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 12 },

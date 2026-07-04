@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
@@ -13,6 +14,7 @@ import {
   Check,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, InfoNote } from '../../components/ui';
 
 type Step = 1 | 2 | 3 | 4;
@@ -104,7 +106,7 @@ export default function PreferencesScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <View style={s.container}>
         {/* 헤더 */}
         <View style={s.headerRow}>
@@ -116,8 +118,8 @@ export default function PreferencesScreen() {
         <Text style={s.heading}>{STEP_TITLES[step]}</Text>
 
         <ScrollView
-          style={{ flex: 1, marginTop: 24 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          style={s.scroll}
+          contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Step 1: 선호 활동 */}
@@ -157,7 +159,7 @@ export default function PreferencesScreen() {
 
           {/* Step 4: 장거리 여부 */}
           {step === 4 && (
-            <View style={{ gap: 8 }}>
+            <View style={s.singleList}>
               {LONG_DISTANCE_OPTIONS.map((o) => {
                 const sel = longDistance === o.id;
                 return (
@@ -185,7 +187,7 @@ export default function PreferencesScreen() {
               ? <ActivityIndicator color={C.white} size="small" />
               : step === 4 ? '첫 추천 받아보기' : '다음'}
           </BigButton>
-          <TouchableOpacity onPress={() => handleSave(true)} style={{ alignItems: 'center', paddingVertical: 8 }}>
+          <TouchableOpacity onPress={() => handleSave(true)} style={s.skipBtn}>
             <Text style={s.skipText}>건너뛰기</Text>
           </TouchableOpacity>
         </View>
@@ -244,16 +246,19 @@ const grid = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 13, fontWeight: '500', color: '#4A4A55' },
+  label: { fontSize: 13, fontWeight: '500', color: C.inkSoft },
   labelOn: { color: C.pinkDeep, fontWeight: '600' },
 });
 
 const s = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stepCount: { fontSize: 12, color: '#B8AEA6' },
+  stepCount: { fontSize: 12, color: C.textLight },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, marginTop: 24 },
+  scroll: { flex: 1, marginTop: 24 },
+  scrollContent: { paddingBottom: 20 },
   hint: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16 },
+  singleList: { gap: 8 },
   singleBtn: {
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -266,7 +271,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   singleBtnOn: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
-  singleText: { fontSize: 13, color: '#4A4A55', fontWeight: '500', flex: 1 },
+  singleText: { fontSize: 13, color: C.inkSoft, fontWeight: '500', flex: 1 },
   singleTextOn: { color: C.pinkDeep, fontWeight: '600' },
   radio: {
     width: 24, height: 24, borderRadius: 12,
@@ -277,5 +282,6 @@ const s = StyleSheet.create({
   },
   radioOn: { borderColor: C.pink, backgroundColor: C.pink },
   footer: { gap: 4 },
+  skipBtn: { alignItems: 'center', paddingVertical: 8 },
   skipText: { fontSize: 12, color: C.textMuted },
 });

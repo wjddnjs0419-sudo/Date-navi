@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
-  SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
@@ -137,8 +138,8 @@ export default function ReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -166,7 +167,7 @@ export default function ReviewScreen() {
             })}
           </View>
 
-          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{c.reviewLabel}</Text>
+          <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>{c.reviewLabel}</Text>
           <TextInput
             style={styles.reviewInput}
             value={reviewText}
@@ -193,7 +194,7 @@ export default function ReviewScreen() {
             )}
           </TouchableOpacity>
 
-          <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={{ marginTop: 24 }}>
+          <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
             {saving ? '저장 중...' : c.saveButton}
           </BigButton>
         </ScrollView>
@@ -205,6 +206,7 @@ export default function ReviewScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
 
   headingBlock: { marginTop: 16, marginBottom: 20 },
@@ -212,6 +214,7 @@ const styles = StyleSheet.create({
   sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
 
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
+  sectionLabelSpaced: { marginTop: 20 },
 
   ratingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   ratingCard: {
@@ -263,4 +266,5 @@ const styles = StyleSheet.create({
   },
   photoPreview: { width: '100%', height: '100%' },
   photoText: { fontSize: 13, color: C.textMuted },
+  saveBtn: { marginTop: 24 },
 });

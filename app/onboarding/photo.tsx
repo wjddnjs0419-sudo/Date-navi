@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Camera } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
 
 export default function PhotoScreen() {
@@ -16,7 +18,7 @@ export default function PhotoScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={G.screen}>
       <View style={s.container}>
         <BackBar />
         <View style={s.progressRow}>
@@ -24,7 +26,7 @@ export default function PhotoScreen() {
           <Text style={s.stepCount}>2 / 4</Text>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.headingBlock}>
           <Text style={s.heading}>{'프로필 사진을\n골라주세요'}</Text>
           <Text style={s.subText}>지금 건너뛰어도 괜찮아요.</Text>
         </View>
@@ -44,7 +46,7 @@ export default function PhotoScreen() {
 
         <Text style={s.hint}>연인에게도 이 사진이 보여요.</Text>
 
-        <View style={{ flex: 1 }} />
+        <View style={s.spacer} />
 
         <BigButton onPress={() => router.replace('/onboarding/anniversary' as any)}>
           다음
@@ -58,6 +60,7 @@ const s = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   stepCount: { fontSize: 11, color: C.textMuted },
+  headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
   avatarWrap: {
@@ -88,7 +91,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -106,4 +109,5 @@ const s = StyleSheet.create({
   },
   changeBtnText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
   hint: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 12 },
+  spacer: { flex: 1 },
 });

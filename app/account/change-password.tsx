@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, TextInput, Alert,
+  ActivityIndicator, TextInput, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, InfoNote } from '../../components/ui';
 
 export default function ChangePasswordScreen() {
@@ -52,15 +54,15 @@ export default function ChangePasswordScreen() {
   const isReady = currentPw.length > 0 && newPw.length >= 8 && newPw === confirmPw;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <BackBar />
-        <View style={{ marginTop: 16 }}>
+        <View style={s.headingWrap}>
           <Text style={s.heading}>비밀번호 변경</Text>
           <Text style={s.subText}>안전한 비밀번호로 계정을 지켜주세요.</Text>
         </View>
 
-        <View style={{ marginTop: 24, gap: 16 }}>
+        <View style={s.fieldList}>
           {fields.map(f => (
             <View key={f.label}>
               <Text style={s.fieldLabel}>{f.label}</Text>
@@ -84,11 +86,11 @@ export default function ChangePasswordScreen() {
           ))}
         </View>
 
-        <InfoNote style={{ marginTop: 20 }}>
+        <InfoNote style={s.infoNote}>
           8자 이상, 영문·숫자·특수문자 중 2가지 이상 조합을 추천해요.
         </InfoNote>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -102,8 +104,12 @@ export default function ChangePasswordScreen() {
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  headingWrap: { marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
+  fieldList: { marginTop: 24, gap: 16 },
+  infoNote: { marginTop: 20 },
+  bottomSpacer: { height: 120 },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: C.text, marginBottom: 6, paddingHorizontal: 4 },
   fieldBox: {
     flexDirection: 'row',
@@ -123,6 +129,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

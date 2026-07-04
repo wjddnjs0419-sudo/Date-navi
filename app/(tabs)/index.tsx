@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, SafeAreaView, Image,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Image,
   Dimensions, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
@@ -11,6 +12,7 @@ import {
   CalendarHeart, Clock, MapPin,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
@@ -141,7 +143,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={[s.container, { alignItems: 'center', justifyContent: 'center' }]}>
+      <View style={[s.container, s.centerContent]}>
         <ActivityIndicator size="large" color={C.pink} />
       </View>
     );
@@ -153,10 +155,10 @@ export default function HomeScreen() {
   const firstName = profile?.display_name?.charAt(0) ?? '?';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         style={s.container}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* 헤더 배너 — 그라디언트 */}
@@ -222,7 +224,7 @@ export default function HomeScreen() {
           snapToAlignment="start"
           onScroll={onModeScroll}
           scrollEventThrottle={16}
-          contentContainerStyle={{ paddingRight: 20 }}
+          contentContainerStyle={s.modeScrollContent}
         >
           {MODES.map((m, i) => (
             <TouchableOpacity
@@ -231,7 +233,8 @@ export default function HomeScreen() {
               onPress={() => router.push('/(tabs)/mode')}
               style={[
                 s.modeCard,
-                { width: CARD_W, marginRight: i === MODES.length - 1 ? 0 : CARD_GAP },
+                s.modeCardSized,
+                { marginRight: i === MODES.length - 1 ? 0 : CARD_GAP },
               ]}
             >
               <View style={[s.modeIcon, { backgroundColor: m.bg }]}>
@@ -264,14 +267,14 @@ export default function HomeScreen() {
                 <Text style={s.sectionLink}>전체 보기</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ gap: 10 }}>
+            <View style={s.upcomingList}>
               {upcoming.map((p) => (
                 <SoftCard key={p.id} onPress={() => router.push({ pathname: '/card/confirm', params: { id: p.id } } as any)}>
-                  <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                    <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
+                  <View style={s.planRow}>
+                    <View style={[s.candidateIcon, s.bgPinkLight]}>
                       <CalendarHeart size={22} strokeWidth={1.8} color={C.pinkDeep} />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={s.flex1}>
                       <Text style={s.candidateTitle}>{p.title}</Text>
                       <View style={s.planMeta}>
                         {p.confirmed_date && (
@@ -315,11 +318,11 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <SoftCard onPress={() => router.push(`/card/${topCandidate.id}` as any)}>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={[s.candidateIcon, { backgroundColor: C.pinkLight }]}>
+              <View style={s.candidateRow}>
+                <View style={[s.candidateIcon, s.bgPinkLight]}>
                   <Heart size={22} strokeWidth={1.8} color={C.pinkDeep} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={s.flex1}>
                   <Text style={s.candidateTitle}>{topCandidate.title}</Text>
                   <View style={s.chips}>
                     {topCandidate.tags.slice(0, 3).map((t) => (
@@ -334,17 +337,17 @@ export default function HomeScreen() {
 
         {/* 파트너 반응 */}
         {partner && (
-          <View style={{ marginTop: 20 }}>
+          <View style={s.partnerSection}>
             <Text style={s.sectionTitle}>상대가 남긴 반응</Text>
-            <SoftCard style={{ marginTop: 10 }} onPress={() => router.push('/share/mutual' as any)}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <SoftCard style={s.partnerCard} onPress={() => router.push('/share/mutual' as any)}>
+              <View style={s.partnerRow}>
                 <View style={s.partnerAvatar}>
                   <Text style={s.partnerAvatarText}>{partner.display_name.charAt(0)}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={s.flex1}>
                   <Text style={s.partnerText}>
                     {partner.display_name}가{' '}
-                    <Text style={{ color: C.pinkDeep, fontWeight: '600' }}>"가까우면 좋아"</Text>
+                    <Text style={s.partnerQuote}>"가까우면 좋아"</Text>
                     를 남겼어요
                   </Text>
                   <Text style={s.partnerTime}>5분 전</Text>
@@ -357,7 +360,7 @@ export default function HomeScreen() {
 
         {/* AI 추천 빠른 시작 — 그라디언트 버튼 */}
         <TouchableOpacity
-          style={{ marginTop: 24, borderRadius: 18, overflow: 'hidden' }}
+          style={s.startBtnWrap}
           onPress={() => router.push({
             pathname: '/mode-flow/feeling',
             params: { mode: 'pick_for_me' },
@@ -381,11 +384,14 @@ export default function HomeScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF8F3' },
+  container: { flex: 1, backgroundColor: C.bg },
+  flex1: { flex: 1 },
+  centerContent: { alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { paddingBottom: 32 },
   heroBanner: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
   content: { paddingHorizontal: 20, paddingTop: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  dateText: { fontSize: 12, color: '#B8AEA6' },
+  dateText: { fontSize: 12, color: C.textLight },
   greetText: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: 2, lineHeight: 28 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bellBtn: {
@@ -424,6 +430,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
+  modeCardSized: { width: CARD_W },
+  modeScrollContent: { paddingRight: 20 },
   modeIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   modeItemLabel: { fontSize: 17, fontWeight: '700', color: C.text, marginTop: 16 },
   modeItemDesc: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: 6 },
@@ -437,6 +445,10 @@ const s = StyleSheet.create({
   sectionLink: { fontSize: 12, color: C.textSub },
   candidateIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   candidateTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+  candidateRow: { flexDirection: 'row', gap: 12 },
+  bgPinkLight: { backgroundColor: C.pinkLight },
+  upcomingList: { gap: 10 },
+  planRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
   planMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
   planMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
@@ -447,7 +459,12 @@ const s = StyleSheet.create({
   },
   partnerAvatarText: { fontSize: 13, fontWeight: '700', color: C.lavenderFg },
   partnerText: { fontSize: 13, color: C.text },
-  partnerTime: { fontSize: 11, color: '#B8AEA6', marginTop: 2 },
+  partnerTime: { fontSize: 11, color: C.textLight, marginTop: 2 },
+  partnerSection: { marginTop: 20 },
+  partnerCard: { marginTop: 10 },
+  partnerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  partnerQuote: { color: C.pinkDeep, fontWeight: '600' },
+  startBtnWrap: { marginTop: 24, borderRadius: 18, overflow: 'hidden' },
   startBtn: {
     flexDirection: 'row',
     alignItems: 'center',

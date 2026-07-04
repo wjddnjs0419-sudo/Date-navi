@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
-  ScrollView, Share, ActivityIndicator, SafeAreaView,
+  ScrollView, Share, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
 import { Copy, Share2 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard } from '../../components/ui';
 
 function makeCode() {
@@ -132,7 +134,7 @@ export default function CoupleConnectScreen() {
   const displayCode = myCode || 'DN-????';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         contentContainerStyle={s.container}
         keyboardShouldPersistTaps="handled"
@@ -140,7 +142,7 @@ export default function CoupleConnectScreen() {
       >
         <BackBar />
 
-        <View style={{ marginTop: 16 }}>
+        <View style={s.headingBlock}>
           <Text style={s.heading}>연인과 연결해볼까요?</Text>
           <Text style={s.subText}>
             데이트 후보를 함께 고르고,{'\n'}서로의 반응을 볼 수 있어요.
@@ -162,7 +164,7 @@ export default function CoupleConnectScreen() {
             ) : null}
           </View>
           {!myCode ? (
-            <BigButton onPress={createCode} variant={loading ? 'disabled' : 'primary'} style={{ marginTop: 12 }}>
+            <BigButton onPress={createCode} variant={loading ? 'disabled' : 'primary'} style={s.createBtn}>
               {loading ? <ActivityIndicator color={C.white} size="small" /> : '초대 코드 만들기'}
             </BigButton>
           ) : (
@@ -197,16 +199,16 @@ export default function CoupleConnectScreen() {
           />
         </View>
 
-        <View style={{ marginTop: 12 }}>
+        <View style={s.joinBtnWrap}>
           <BigButton onPress={joinWithCode} variant="secondary">
             코드 입력하고 연결하기
           </BigButton>
         </View>
 
-        <View style={{ flex: 1, minHeight: 32 }} />
+        <View style={s.spacer} />
 
         <TouchableOpacity
-          style={{ alignItems: 'center', paddingVertical: 12 }}
+          style={s.skipBtn}
           onPress={skipConnect}
         >
           <Text style={s.skipText}>나중에 연결할게요</Text>
@@ -222,13 +224,15 @@ export default function CoupleConnectScreen() {
 
 const s = StyleSheet.create({
   container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  headingBlock: { marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: '#8A7F76', lineHeight: 20, marginTop: 8 },
+  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   inviteCard: {
     marginTop: 24,
     backgroundColor: C.cream,
     padding: 20,
   },
+  createBtn: { marginTop: 12 },
   inviteLabel: { fontSize: 11, color: C.creamFg, fontWeight: '600', letterSpacing: 0.4 },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
   codeText: { fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: 4 },
@@ -252,7 +256,7 @@ const s = StyleSheet.create({
   },
   shareBtnText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#F2E0DC' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: C.border },
   dividerText: { fontSize: 11, color: C.textMuted },
   fieldBox: {
     backgroundColor: C.white,
@@ -262,8 +266,11 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  fieldLabel: { fontSize: 11, color: '#B8AEA6', marginBottom: 4 },
+  fieldLabel: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   fieldInput: { fontSize: 16, color: C.textFaint, letterSpacing: 4, fontWeight: '600' },
+  joinBtnWrap: { marginTop: 12 },
+  spacer: { flex: 1, minHeight: 32 },
+  skipBtn: { alignItems: 'center', paddingVertical: 12 },
   skipText: { fontSize: 12, color: C.textMuted },
   footerText: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 8 },
 });

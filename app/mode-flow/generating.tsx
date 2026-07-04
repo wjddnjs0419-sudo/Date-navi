@@ -68,12 +68,12 @@ export default function GeneratingScreen() {
   if (errorMsg !== '') {
     return (
       <View style={s.container}>
-        <View style={[s.iconWrap, { backgroundColor: C.gray }]}>
+        <View style={[s.iconWrap, s.iconWrapGray]}>
           <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
         </View>
         <Text style={s.heading}>잠깐 문제가 생겼어요</Text>
         <Text style={s.errSub}>{errorMsg}{'\n'}다시 한 번 시도해볼게요.</Text>
-        <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
+        <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>다시 시도하기</BigButton>
       </View>
     );
   }
@@ -84,7 +84,7 @@ export default function GeneratingScreen() {
 const s = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -99,6 +99,8 @@ const s = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
+  iconWrapGray: { backgroundColor: C.gray },
+  retryBtn: { marginTop: 24 },
   heading: {
     fontSize: 22, fontWeight: '700', color: C.text,
     textAlign: 'center', lineHeight: 29,

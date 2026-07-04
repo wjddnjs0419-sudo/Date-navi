@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, TextInput, Alert, Image, Linking,
+  ActivityIndicator, TextInput, Alert, Image, Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { Camera, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 
 const PLANNING_STYLES = [
@@ -176,17 +178,17 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={[G.screen, G.center]}>
         <ActivityIndicator size="large" color={C.pink} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <Text style={[s.heading, { marginTop: 16 }]}>프로필 수정</Text>
+        <Text style={[s.heading, s.headingSpacing]}>프로필 수정</Text>
 
         <View style={s.avatarWrap}>
           <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} disabled={uploadingPhoto}>
@@ -206,12 +208,12 @@ export default function EditProfileScreen() {
               </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={{ marginTop: 12 }} onPress={handlePickPhoto} disabled={uploadingPhoto}>
+          <TouchableOpacity style={s.changePhotoWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
             <Text style={s.changePhotoBtn}>사진 변경하기</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ marginTop: 28 }}>
+        <View style={s.nicknameSection}>
           <SectionLabel>닉네임</SectionLabel>
           <ListGroup>
             <ListRow
@@ -234,7 +236,7 @@ export default function EditProfileScreen() {
           <Text style={s.fieldHint}>한글, 영문, 숫자 2~12자</Text>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.planningSection}>
           <SectionLabel>나는 데이트 계획할 때 보통...</SectionLabel>
           <ListGroup>
             {PLANNING_STYLES.map((option, i, arr) => (
@@ -242,7 +244,7 @@ export default function EditProfileScreen() {
                 key={option}
                 onPress={() => setPlanningStyle(i)}
                 label={
-                  <Text style={{ color: i === planningStyle ? C.pinkDeep : C.text, fontWeight: i === planningStyle ? '600' : '500', fontSize: 14 }}>
+                  <Text style={[s.optionText, { color: i === planningStyle ? C.pinkDeep : C.text, fontWeight: i === planningStyle ? '600' : '500' }]}>
                     {option}
                   </Text>
                 }
@@ -259,7 +261,7 @@ export default function EditProfileScreen() {
           </ListGroup>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -274,7 +276,13 @@ export default function EditProfileScreen() {
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text },
+  headingSpacing: { marginTop: 16 },
   avatarWrap: { alignItems: 'center', marginTop: 24 },
+  changePhotoWrap: { marginTop: 12 },
+  nicknameSection: { marginTop: 28 },
+  planningSection: { marginTop: 20 },
+  optionText: { fontSize: 14 },
+  bottomSpacer: { height: 120 },
   avatar: {
     width: 110, height: 110, borderRadius: 55,
     backgroundColor: C.pinkMid,
@@ -311,6 +319,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
 import { C } from '../../constants/colors';
@@ -55,7 +56,7 @@ function ConnectAnimation() {
 export default function CoupleConnectedScreen() {
   const router = useRouter();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bgSplash }}>
+    <SafeAreaView style={s.safe}>
       <View style={s.container}>
         <View style={s.content}>
           <ConnectAnimation />
@@ -109,6 +110,7 @@ const anim = StyleSheet.create({
 });
 
 const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bgSplash },
   container: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, textAlign: 'center', marginTop: 8 },

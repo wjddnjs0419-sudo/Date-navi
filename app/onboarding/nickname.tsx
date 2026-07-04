@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert, SafeAreaView,
+  View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
 
 export default function NicknameScreen() {
@@ -39,10 +41,10 @@ export default function NicknameScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#FFF8F3' }}
+      style={G.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={s.safe}>
         <View style={s.container}>
           <BackBar />
           <View style={s.progressRow}>
@@ -50,12 +52,12 @@ export default function NicknameScreen() {
             <Text style={s.stepCount}>1 / 4</Text>
           </View>
 
-          <View style={{ marginTop: 20 }}>
+          <View style={s.headingBlock}>
             <Text style={s.heading}>어떻게 불러드릴까요?</Text>
             <Text style={s.subText}>닉네임은 언제든 바꿀 수 있어요.</Text>
           </View>
 
-          <View style={{ marginTop: 24 }}>
+          <View style={s.fieldSection}>
             <View style={s.fieldBox}>
               <Text style={s.fieldLabel}>닉네임</Text>
               <View style={s.fieldRow}>
@@ -76,7 +78,7 @@ export default function NicknameScreen() {
             <Text style={s.hint}>한글·영문·숫자 12자 이내로 입력해주세요.</Text>
           </View>
 
-          <View style={{ flex: 1 }} />
+          <View style={s.spacer} />
 
           <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
             {loading ? '저장 중...' : '다음'}
@@ -88,11 +90,14 @@ export default function NicknameScreen() {
 }
 
 const s = StyleSheet.create({
+  safe: { flex: 1 },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   stepCount: { fontSize: 11, color: C.textMuted },
+  headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: '#8A7F76', marginTop: 8 },
+  subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
+  fieldSection: { marginTop: 24 },
   fieldBox: {
     backgroundColor: C.white,
     borderRadius: 16,
@@ -101,9 +106,10 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  fieldLabel: { fontSize: 11, color: '#B8AEA6', marginBottom: 4 },
+  fieldLabel: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fieldInput: { fontSize: 16, color: C.text, fontWeight: '500', flex: 1 },
   charCount: { fontSize: 11, color: C.textFaint },
   hint: { fontSize: 11, color: C.textMuted, marginTop: 8, paddingHorizontal: 4 },
+  spacer: { flex: 1 },
 });

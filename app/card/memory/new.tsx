@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
-  SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
@@ -137,8 +138,8 @@ export default function NewMemoryScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -161,7 +162,7 @@ export default function NewMemoryScreen() {
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>제목</Text>
+          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>제목</Text>
           <TextInput
             style={styles.titleInput}
             value={title}
@@ -172,7 +173,7 @@ export default function NewMemoryScreen() {
             returnKeyType="next"
           />
 
-          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{c.ratingLabel}</Text>
+          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{c.ratingLabel}</Text>
           <View style={styles.ratingGrid}>
             {c.ratings.map((item) => {
               const sel = rating === item.key;
@@ -192,7 +193,7 @@ export default function NewMemoryScreen() {
             })}
           </View>
 
-          <Text style={[styles.sectionLabel, { marginTop: 20 }]}>{c.reviewLabel}</Text>
+          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{c.reviewLabel}</Text>
           <TextInput
             style={styles.reviewInput}
             value={reviewText}
@@ -204,7 +205,7 @@ export default function NewMemoryScreen() {
             returnKeyType="done"
           />
 
-          <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={{ marginTop: 24 }}>
+          <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
             {saving ? '저장 중...' : c.saveButton}
           </BigButton>
         </ScrollView>
@@ -216,6 +217,7 @@ export default function NewMemoryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
 
   headingBlock: { marginTop: 16, marginBottom: 20 },
@@ -223,6 +225,8 @@ const styles = StyleSheet.create({
   sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
 
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
+  sectionLabelTop: { marginTop: 20 },
+  saveBtn: { marginTop: 24 },
 
   titleInput: {
     backgroundColor: C.white,

@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Sparkles, Clock, Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
 
 type MutualCard = {
@@ -138,16 +140,16 @@ export default function MutualScreen() {
   const firstMutualId = sections.mutual[0]?.id ?? null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <View style={{ marginTop: 16 }}>
+        <View style={s.introWrap}>
           <Text style={s.heading}>둘 다 괜찮아한 후보예요</Text>
           <Text style={s.subText}>완전히 같지 않아도 괜찮아요. 조건을 맞추면 좋은 후보를 모아봤어요.</Text>
         </View>
 
         {loading ? (
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
+          <View style={s.loadingWrap}>
             <ActivityIndicator size="large" color={C.pink} />
           </View>
         ) : totalCount === 0 ? (
@@ -161,7 +163,7 @@ export default function MutualScreen() {
             if (!items.length) return null;
             const style = SECTION_STYLES[key];
             return (
-              <View key={key} style={{ marginTop: 24 }}>
+              <View key={key} style={s.sectionWrap}>
                 <View style={s.sectionHeader}>
                   <View style={[s.sectionDot, { backgroundColor: style.fg }]} />
                   <Text style={s.sectionLabel}>{style.label}</Text>
@@ -169,7 +171,7 @@ export default function MutualScreen() {
                 {items.map(card => (
                   <SoftCard
                     key={card.id}
-                    style={[{ marginTop: 10 }, { backgroundColor: style.bg }]}
+                    style={[s.cardGap, { backgroundColor: style.bg }]}
                     onPress={() => router.push(`/card/${card.id}` as any)}
                   >
                     <Text style={s.cardTitle}>{card.title}</Text>
@@ -213,7 +215,7 @@ export default function MutualScreen() {
                       </View>
                     </View>
                     <View style={s.noteBox}>
-                      <Sparkles size={13} color={style.fg} style={{ marginTop: 1 }} />
+                      <Sparkles size={13} color={style.fg} style={s.noteIcon} />
                       <Text style={s.noteText}>{card.note}</Text>
                     </View>
                   </SoftCard>
@@ -223,7 +225,7 @@ export default function MutualScreen() {
           })
         )}
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -248,6 +250,11 @@ export default function MutualScreen() {
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  introWrap: { marginTop: 16 },
+  loadingWrap: { alignItems: 'center', marginTop: 60 },
+  sectionWrap: { marginTop: 24 },
+  cardGap: { marginTop: 10 },
+  bottomSpacer: { height: 120 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -272,7 +279,8 @@ const s = StyleSheet.create({
     backgroundColor: C.white,
     alignItems: 'flex-start',
   },
-  noteText: { fontSize: 12, color: '#6B5247', lineHeight: 18, flex: 1 },
+  noteIcon: { marginTop: 1 },
+  noteText: { fontSize: 12, color: C.grayFg, lineHeight: 18, flex: 1 },
   emptyWrap: { alignItems: 'center', marginTop: 80, gap: 16 },
   emptyText: { fontSize: 14, color: C.textSub },
   footer: {
@@ -281,7 +289,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     gap: 4,
   },
   textBtn: { alignItems: 'center', paddingVertical: 10 },

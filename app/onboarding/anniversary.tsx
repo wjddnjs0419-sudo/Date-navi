@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, SoftCard } from '../../components/ui';
 
 const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() - i));
@@ -52,7 +54,7 @@ export default function AnniversaryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={G.screen}>
       <View style={s.container}>
         <BackBar />
         <View style={s.progressRow}>
@@ -60,7 +62,7 @@ export default function AnniversaryScreen() {
           <Text style={s.stepCount}>3 / 4</Text>
         </View>
 
-        <View style={{ marginTop: 20 }}>
+        <View style={s.headingBlock}>
           <Text style={s.heading}>{'사귀기 시작한 날을\n알려주세요'}</Text>
           <Text style={s.subText}>기념일 알림과 추억 정리에 사용돼요.</Text>
         </View>
@@ -73,7 +75,7 @@ export default function AnniversaryScreen() {
 
         {days >= 0 && (
           <SoftCard style={s.daysCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={s.daysRow}>
               <Heart size={14} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
               <Text style={s.daysText}>오늘로 {days}일째</Text>
             </View>
@@ -81,11 +83,11 @@ export default function AnniversaryScreen() {
           </SoftCard>
         )}
 
-        <TouchableOpacity style={{ alignItems: 'center', marginTop: 16 }} onPress={handleSkip}>
+        <TouchableOpacity style={s.skipBtn} onPress={handleSkip}>
           <Text style={s.skipText}>나중에 입력할게요</Text>
         </TouchableOpacity>
 
-        <View style={{ flex: 1 }} />
+        <View style={s.spacer} />
 
         <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
           {loading ? '저장 중...' : '다음'}
@@ -103,14 +105,14 @@ function DatePicker({ label, value, items, onSelect }: {
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <View style={{ flex: 1 }}>
+    <View style={dp.wrap}>
       <TouchableOpacity style={dp.cell} onPress={() => setOpen(!open)} activeOpacity={0.75}>
         <Text style={dp.label}>{label}</Text>
         <Text style={dp.value}>{value}</Text>
       </TouchableOpacity>
       {open && (
         <View style={dp.dropdown}>
-          <ScrollView style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={dp.scroll} showsVerticalScrollIndicator={false}>
             {items.map((item) => (
               <TouchableOpacity
                 key={item}
@@ -128,6 +130,7 @@ function DatePicker({ label, value, items, onSelect }: {
 }
 
 const dp = StyleSheet.create({
+  wrap: { flex: 1 },
   cell: {
     backgroundColor: C.white,
     borderWidth: 1,
@@ -136,8 +139,9 @@ const dp = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 14,
   },
-  label: { fontSize: 11, color: '#B8AEA6' },
+  label: { fontSize: 11, color: C.textLight },
   value: { fontSize: 18, fontWeight: '600', color: C.text, marginTop: 4 },
+  scroll: { maxHeight: 180 },
   dropdown: {
     position: 'absolute',
     top: 68,
@@ -148,7 +152,7 @@ const dp = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     zIndex: 100,
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -164,15 +168,19 @@ const s = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   stepCount: { fontSize: 11, color: C.textMuted },
+  headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
   dateRow: { flexDirection: 'row', gap: 8, marginTop: 24 },
   daysCard: {
     marginTop: 20,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: C.cream,
     borderColor: '#F2DDB0',
   },
+  daysRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   daysText: { fontSize: 12, color: C.creamFg, fontWeight: '600' },
-  daysHint: { fontSize: 12, color: '#6B5247', lineHeight: 18, marginTop: 8 },
+  daysHint: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: 8 },
+  skipBtn: { alignItems: 'center', marginTop: 16 },
   skipText: { fontSize: 12, color: C.textMuted },
+  spacer: { flex: 1 },
 });

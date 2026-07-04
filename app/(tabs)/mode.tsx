@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Gift, MessageCircle, Map, Leaf, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
 
 const MODES = [
@@ -33,8 +35,8 @@ export default function ModeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.flex1}>
         <ScrollView
           contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
@@ -53,10 +55,10 @@ export default function ModeScreen() {
                   style={[s.modeCard, sel && s.modeCardOn]}
                 >
                   <View style={s.modeCardLeft}>
-                    <View style={[s.iconBox, { backgroundColor: sel ? C.white : C.cream }]}>
+                    <View style={[s.iconBox, sel ? s.iconBoxOn : s.iconBoxOff]}>
                       <m.Icon size={20} strokeWidth={1.8} color={sel ? C.pinkDeep : C.creamFg} />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={s.flex1}>
                       <Text style={[s.modeTitle, sel && s.modeTitleOn]}>{m.title}</Text>
                       <Text style={s.modeDesc}>{m.desc}</Text>
                     </View>
@@ -67,7 +69,7 @@ export default function ModeScreen() {
             })}
           </View>
 
-          <View style={{ height: 120 }} />
+          <View style={s.bottomSpacer} />
         </ScrollView>
 
         {/* 고정 하단 버튼 */}
@@ -80,6 +82,8 @@ export default function ModeScreen() {
 }
 
 const s = StyleSheet.create({
+  flex1: { flex: 1 },
+  bottomSpacer: { height: 120 },
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 20 },
@@ -100,6 +104,8 @@ const s = StyleSheet.create({
     width: 44, height: 44, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
+  iconBoxOn: { backgroundColor: C.white },
+  iconBoxOff: { backgroundColor: C.cream },
   modeTitle: { fontSize: 14, fontWeight: '700', color: C.text },
   modeTitleOn: { color: C.pinkDeep },
   modeDesc: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: 4 },
@@ -111,6 +117,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

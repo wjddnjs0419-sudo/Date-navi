@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, Alert,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type DateCard } from '../../lib/ai';
 import { supabase } from '../../lib/supabase';
@@ -11,12 +12,13 @@ import {
   ChevronRight, Leaf, Palette,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
 
 const CARD_STYLES = [
-  { bg: 'linear-gradient(135deg, #FFD3D9 0%, #F1ECFF 100%)', bg2: C.pinkMid, Icon: Heart, iconColor: C.pinkDeep },
-  { bg: 'linear-gradient(135deg, #E3F2EA, #FFF3E0)', bg2: C.mint, Icon: Leaf, iconColor: C.mintFg },
-  { bg: 'linear-gradient(135deg, #F1ECFF, #FFEEF0)', bg2: C.lavender, Icon: Palette, iconColor: C.lavenderFg },
+  { bg2: C.pinkMid, Icon: Heart, iconColor: C.pinkDeep },
+  { bg2: C.mint, Icon: Leaf, iconColor: C.mintFg },
+  { bg2: C.lavender, Icon: Palette, iconColor: C.lavenderFg },
 ];
 
 export default function ResultScreen() {
@@ -107,28 +109,28 @@ export default function ResultScreen() {
 
   if (errorMsg !== '' && cards.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: C.gray, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+      <SafeAreaView style={s2.errWrap}>
+        <View style={s2.errIcon}>
           <Sparkles size={44} strokeWidth={1.5} color={C.textSub} />
         </View>
         <Text style={s2.errTitle}>잠깐 문제가 생겼어요</Text>
         <Text style={s2.errSub}>추천을 만드는 중 문제가 생겼어요.{'\n'}다시 한 번 시도해볼게요.</Text>
-        <BigButton onPress={regenerate} style={{ marginTop: 24 }}>다시 시도하기</BigButton>
+        <BigButton onPress={regenerate} style={s2.errRetryBtn}>다시 시도하기</BigButton>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s2.content} showsVerticalScrollIndicator={false}>
         <BackBar />
 
-        <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
+        <View style={s2.badgeRow}>
           <Badge tone="pink">AI 추천</Badge>
           <Badge>방금 전</Badge>
         </View>
 
-        <Text style={[s2.heading, { marginTop: 12 }]}>오늘은 이런 데이트가{'\n'}잘 맞아 보여요</Text>
+        <Text style={[s2.heading, s2.headingGap]}>오늘은 이런 데이트가{'\n'}잘 맞아 보여요</Text>
         <Text style={s2.subText}>저장하면 우리 후보에서 반응·코멘트를 남길 수 있어요.</Text>
 
         {cards.map((card, i) => {
@@ -139,11 +141,11 @@ export default function ResultScreen() {
             <View key={i} style={s2.featuredCard}>
               <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
                 {i === 0 && (
-                  <View style={{ position: 'absolute', top: 16, left: 16 }}>
+                  <View style={s2.bannerBadge}>
                     <Badge tone="pink">가장 잘 맞아요</Badge>
                   </View>
                 )}
-                <View style={[s2.featuredIcon, { backgroundColor: C.white }]}>
+                <View style={[s2.featuredIcon, s2.featuredIconBg]}>
                   <style.Icon size={36} strokeWidth={1.5} color={style.iconColor} />
                 </View>
               </View>
@@ -153,7 +155,7 @@ export default function ResultScreen() {
                 <Text style={s2.featuredDesc}>{card.summary}</Text>
 
                 {!!card.place_name && (
-                  <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={{ marginTop: 12 }} />
+                  <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={s2.placeRowGap} />
                 )}
 
                 <View style={s2.metaGrid}>
@@ -183,7 +185,7 @@ export default function ResultScreen() {
                   <Text style={s2.whyText}>{card.why_recommended}</Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+                <View style={s2.actionRow}>
                   <TouchableOpacity
                     style={s2.sendBtn}
                     onPress={handleSendToPartner}
@@ -222,27 +224,27 @@ export default function ResultScreen() {
             </View>
           ) : (
             /* 서브 카드 — 탭하면 저장 없이 그 카드를 크게(선택) 본다 */
-            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => setSelectedIndex(i)}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <SoftCard key={i} style={s2.subCardGap} onPress={() => setSelectedIndex(i)}>
+              <View style={s2.subRow}>
                 <View style={[s2.subIcon, { backgroundColor: style.bg2 }]}>
                   <style.Icon size={26} strokeWidth={1.5} color={style.iconColor} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={s2.subBody}>
                   <Text style={s2.subTitle}>{card.title}</Text>
                   <Text style={s2.subDesc} numberOfLines={2}>{card.summary}</Text>
-                  <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <View style={s2.subMetaRow}>
+                    <View style={s2.subMetaItem}>
                       <Clock size={11} color={C.textMuted} />
                       <Text style={s2.subMeta}>{card.estimated_time}</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    <View style={s2.subMetaItem}>
                       <Wallet size={11} color={C.textMuted} />
                       <Text style={s2.subMeta}>{card.estimated_budget}</Text>
                     </View>
                     {!!card.place_name && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 }}>
+                      <View style={s2.subMetaPlace}>
                         <MapPin size={11} color={C.pinkDeep} />
-                        <Text style={[s2.subMeta, { color: C.pinkDeep }]} numberOfLines={1}>{card.place_name}</Text>
+                        <Text style={[s2.subMeta, s2.subMetaPink]} numberOfLines={1}>{card.place_name}</Text>
                       </View>
                     )}
                   </View>
@@ -253,7 +255,7 @@ export default function ResultScreen() {
           );
         })}
 
-        <View style={{ height: 40 }} />
+        <View style={s2.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -262,6 +264,8 @@ export default function ResultScreen() {
 const s2 = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingGap: { marginTop: 12 },
+  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 4 },
   featuredCard: {
     marginTop: 20,
@@ -270,7 +274,7 @@ const s2 = StyleSheet.create({
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: '#785046',
+    shadowColor: C.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
@@ -282,6 +286,8 @@ const s2 = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 20,
   },
+  bannerBadge: { position: 'absolute', top: 16, left: 16 },
+  featuredIconBg: { backgroundColor: C.white },
   featuredIcon: {
     width: 80, height: 80, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
@@ -298,7 +304,7 @@ const s2 = StyleSheet.create({
   metaGrid: { flexDirection: 'row', gap: 8, marginTop: 16 },
   metaBox: {
     flex: 1, borderRadius: 14, padding: 12,
-    backgroundColor: '#FFF8F3', gap: 4,
+    backgroundColor: C.bg, gap: 4,
   },
   metaLabel: { fontSize: 10, color: C.textMuted, marginTop: 4 },
   metaValue: { fontSize: 13, fontWeight: '600', color: C.text },
@@ -312,7 +318,9 @@ const s2 = StyleSheet.create({
     marginTop: 16,
     alignItems: 'flex-start',
   },
-  whyText: { fontSize: 12, color: '#6B5247', lineHeight: 19, flex: 1 },
+  whyText: { fontSize: 12, color: C.grayFg, lineHeight: 19, flex: 1 },
+  placeRowGap: { marginTop: 12 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   sendBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -340,10 +348,21 @@ const s2 = StyleSheet.create({
   goBtnText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
   retryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
   retryBtnText: { fontSize: 12, color: C.textSub },
+  subCardGap: { marginTop: 12 },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  subBody: { flex: 1 },
   subIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   subTitle: { fontSize: 14, fontWeight: '700', color: C.text },
   subDesc: { fontSize: 12, color: C.textSub, lineHeight: 17, marginTop: 2 },
+  subMetaRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  subMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  subMetaPlace: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 },
   subMeta: { fontSize: 11, color: C.textMuted },
+  subMetaPink: { color: C.pinkDeep },
+  bottomSpacer: { height: 40 },
+  errWrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  errIcon: { width: 120, height: 120, borderRadius: 60, backgroundColor: C.gray, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  errRetryBtn: { marginTop: 24 },
   errTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
   errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
 });

@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
   Modal, Clipboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Heart, Sparkles, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -129,16 +131,16 @@ export default function NotificationsScreen() {
   const unreadCount = items.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.headerRow}>
           <BackBar />
           <TouchableOpacity onPress={clearAll} disabled={unreadCount === 0}>
-            <Text style={[s.clearBtn, unreadCount === 0 && { color: C.textLight }]}>{t.clearAll}</Text>
+            <Text style={[s.clearBtn, unreadCount === 0 && s.clearBtnDisabled]}>{t.clearAll}</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ marginTop: 12 }}>
+        <View style={s.titleWrap}>
           <Text style={s.heading}>{t.title}</Text>
           {unreadCount > 0
             ? <Text style={s.count}>{`${unreadCount}${t.unreadSuffix}`}</Text>
@@ -159,7 +161,7 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           visibleGroups.map(group => (
-            <View key={group.label} style={{ marginTop: 24 }}>
+            <View key={group.label} style={s.groupSection}>
               <SectionLabel>{group.label}</SectionLabel>
               <ListGroup>
                 {group.items.map((n, i) => {
@@ -178,7 +180,7 @@ export default function NotificationsScreen() {
                         </View>
                       }
                       label={
-                        <View style={{ flex: 1, paddingRight: 8 }}>
+                        <View style={s.itemTextWrap}>
                           <Text style={s.itemTitle}>{renderTitle(n)}</Text>
                           <Text style={s.itemBody} numberOfLines={2}>{renderBody(n)}</Text>
                           <Text style={s.itemTime}>{relativeTime(n.created_at)}</Text>
@@ -193,7 +195,7 @@ export default function NotificationsScreen() {
           ))
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <Modal
@@ -211,11 +213,11 @@ export default function NotificationsScreen() {
               </TouchableOpacity>
             </View>
             <Text style={s.modalMessage}>{selected?.payload?.message}</Text>
-            <BigButton onPress={copySelectedMessage} variant={copied ? 'secondary' : 'primary'} style={{ marginTop: 20 }}>
+            <BigButton onPress={copySelectedMessage} variant={copied ? 'secondary' : 'primary'} style={s.modalCopyBtn}>
               {copied ? '복사됨 ✓' : t.modalCopyButton}
             </BigButton>
-            <TouchableOpacity onPress={closeModal} style={{ alignItems: 'center', paddingVertical: 10, marginTop: 4 }}>
-              <Text style={{ fontSize: 13, color: C.textSub, fontWeight: '600' }}>{t.modalCloseButton}</Text>
+            <TouchableOpacity onPress={closeModal} style={s.modalCloseBtn}>
+              <Text style={s.modalCloseText}>{t.modalCloseButton}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -228,12 +230,17 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clearBtn: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  clearBtnDisabled: { color: C.textLight },
+  titleWrap: { marginTop: 12 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text },
   count: { fontSize: 12, color: C.textMuted, marginTop: 2 },
+  groupSection: { marginTop: 24 },
+  itemTextWrap: { flex: 1, paddingRight: 8 },
+  bottomSpacer: { height: 40 },
   centerBox: { paddingTop: 80, alignItems: 'center' },
   emptyBox: { paddingTop: 72, alignItems: 'center', paddingHorizontal: 24 },
   emptyIcon: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF',
+    width: 64, height: 64, borderRadius: 32, backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
     borderWidth: 1, borderColor: C.border,
   },
@@ -257,4 +264,7 @@ const s = StyleSheet.create({
   modalHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modalTitle: { fontSize: 15, fontWeight: '700', color: C.text },
   modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: 16 },
+  modalCopyBtn: { marginTop: 20 },
+  modalCloseBtn: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
+  modalCloseText: { fontSize: 13, color: C.textSub, fontWeight: '600' },
 });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildPickInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, LocationField } from '../../components/ui';
 
 const ENERGY = [
@@ -66,11 +68,11 @@ export default function PickScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <View style={s.body}>
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           <BackBar />
-          <View style={{ marginTop: 16 }}>
+          <View style={s.headerWrap}>
             <Text style={s.heading}>조건만 알려주세요{'\n'}앱이 골라드릴게요</Text>
             <Text style={s.subText}>고민 없이 조건만 고르면 후보 3개를 뽑아드려요.</Text>
           </View>
@@ -79,7 +81,7 @@ export default function PickScreen() {
           <Row label="예산" items={BUDGETS} value={budget} onSelect={setBudget} />
           <Row label="시간" items={DURATIONS} value={duration} onSelect={setDuration} />
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
-          <View style={{ height: 120 }} />
+          <View style={s.footerSpacer} />
         </ScrollView>
         <View style={s.footer}>
           <BigButton onPress={handleGenerate}>데이트 후보 만들기</BigButton>
@@ -90,7 +92,9 @@ export default function PickScreen() {
 }
 
 const s = StyleSheet.create({
+  body: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  headerWrap: { marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
@@ -100,10 +104,11 @@ const s = StyleSheet.create({
     backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border,
   },
   btnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  btnText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  btnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   btnTextOn: { color: C.pinkDeep, fontWeight: '600' },
+  footerSpacer: { height: 120 },
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: '#FFF8F3',
+    paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg,
   },
 });

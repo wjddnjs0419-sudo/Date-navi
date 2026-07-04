@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from '../lib/supabase';
@@ -52,6 +53,7 @@ export default function RootLayout() {
 
   return (
     <I18nProvider>
+      <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />

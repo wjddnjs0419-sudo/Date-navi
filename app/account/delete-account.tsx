@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, SafeAreaView, Alert,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 
 const REASONS = [
@@ -67,10 +69,10 @@ export default function DeleteAccountScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <View style={{ marginTop: 16 }}>
+        <View style={s.headingWrap}>
           <Text style={s.heading}>정말 떠나시는 건가요?</Text>
           <Text style={s.subText}>탈퇴하면 둘이 함께 만든 추억과 후보가 모두 사라져요.</Text>
         </View>
@@ -87,7 +89,7 @@ export default function DeleteAccountScreen() {
           ))}
         </View>
 
-        <View style={{ marginTop: 24 }}>
+        <View style={s.reasonSection}>
           <SectionLabel>떠나는 이유 (선택)</SectionLabel>
           <ListGroup>
             {REASONS.map((reason, i, arr) => (
@@ -95,11 +97,10 @@ export default function DeleteAccountScreen() {
                 key={reason}
                 onPress={() => setReasonIdx(i)}
                 label={
-                  <Text style={{
-                    fontSize: 14,
+                  <Text style={[s.reasonText, {
                     color: reasonIdx === i ? C.pinkDeep : C.text,
                     fontWeight: reasonIdx === i ? '600' : '500',
-                  }}>
+                  }]}>
                     {reason}
                   </Text>
                 }
@@ -131,7 +132,7 @@ export default function DeleteAccountScreen() {
           </Text>
         </TouchableOpacity>
 
-        <View style={{ height: 120 }} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -151,8 +152,12 @@ export default function DeleteAccountScreen() {
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  headingWrap: { marginTop: 16 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
+  reasonSection: { marginTop: 24 },
+  reasonText: { fontSize: 14 },
+  bottomSpacer: { height: 120 },
   warningBox: {
     marginTop: 20,
     borderRadius: 18,
@@ -162,7 +167,7 @@ const s = StyleSheet.create({
     borderColor: C.pinkBorder,
   },
   warningTitle: { fontSize: 13, fontWeight: '700', color: C.pinkDeep, marginBottom: 8 },
-  warningItem: { fontSize: 12, color: '#6B5247', lineHeight: 22 },
+  warningItem: { fontSize: 12, color: C.grayFg, lineHeight: 22 },
   checkCircle: {
     width: 20, height: 20, borderRadius: 10,
     backgroundColor: C.pink,
@@ -187,14 +192,14 @@ const s = StyleSheet.create({
     marginTop: 1,
   },
   checkboxOn: { backgroundColor: C.pink, borderColor: C.pink },
-  agreeText: { flex: 1, fontSize: 12, color: '#6B5247', lineHeight: 19 },
+  agreeText: { flex: 1, fontSize: 12, color: C.grayFg, lineHeight: 19 },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     gap: 4,
   },
   cancelBtn: { alignItems: 'center', paddingVertical: 10 },

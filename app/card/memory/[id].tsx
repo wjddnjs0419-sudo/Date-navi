@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, ActivityIndicator, SafeAreaView, Image,
+  View, Text, StyleSheet, ScrollView, ActivityIndicator, Image,
   TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { Heart, RotateCcw } from 'lucide-react-native';
 import { C } from '../../../constants/colors';
+import { G } from '../../../constants/theme';
 import { BackBar, Badge } from '../../../components/ui';
 
 type CardInfo = { title: string; summary: string };
@@ -37,7 +39,7 @@ function CommentRow({ userId, content, createdAt, wantAgain, profiles }: {
           <Text style={s.avatarInitial}>{initial}</Text>
         </View>
       )}
-      <View style={{ flex: 1 }}>
+      <View style={s.flex1}>
         <View style={s.commentHeader}>
           <Text style={s.commentName}>{p?.display_name ?? '나'}</Text>
           <Text style={s.commentDate}>{formatDate(createdAt)}</Text>
@@ -153,7 +155,7 @@ export default function MemoryDetailScreen() {
 
   if (!memory) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+      <SafeAreaView style={G.screen}>
         <ScrollView contentContainerStyle={s.content}>
           <BackBar />
           <Text style={s.empty}>추억을 찾을 수 없어요.</Text>
@@ -163,8 +165,8 @@ export default function MemoryDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+    <SafeAreaView style={G.screen}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <BackBar />
 
@@ -216,7 +218,7 @@ export default function MemoryDetailScreen() {
             ))
           )}
 
-          <View style={{ height: 24 }} />
+          <View style={s.bottomSpacer} />
         </ScrollView>
 
         <View style={s.inputBar}>
@@ -243,7 +245,9 @@ export default function MemoryDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  center: { flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  flex1: { flex: 1 },
+  bottomSpacer: { height: 24 },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
   banner: {
     width: '100%', aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 16, overflow: 'hidden',
@@ -290,6 +294,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   sendBtn: { backgroundColor: C.pink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11 },
-  sendBtnDisabled: { backgroundColor: '#EFE7DF' },
+  sendBtnDisabled: { backgroundColor: C.disabledBg },
   sendBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
 });

@@ -1,13 +1,15 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
-  ActivityIndicator, Alert, SafeAreaView, TouchableOpacity, Linking,
+  ActivityIndicator, Alert, TouchableOpacity, Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../../lib/supabase';
 import { C } from '../../../../constants/colors';
+import { G } from '../../../../constants/theme';
 import { BackBar, BigButton } from '../../../../components/ui';
 
 export default function EditMemoryScreen() {
@@ -120,14 +122,14 @@ export default function EditMemoryScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={s.center}>
         <ActivityIndicator size="large" color={C.pink} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
@@ -135,7 +137,7 @@ export default function EditMemoryScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, { marginTop: 16 }]}>추억 수정하기</Text>
+        <Text style={[s.heading, s.headingTop]}>추억 수정하기</Text>
         <Text style={s.subText}>내용을 바꾼 뒤 저장하면 추억에 반영돼요.</Text>
 
         <TouchableOpacity
@@ -172,7 +174,7 @@ export default function EditMemoryScreen() {
         <Text style={s.label}>한 줄 후기</Text>
         <View style={s.inputWrap}>
           <TextInput
-            style={[s.input, { minHeight: 70, textAlignVertical: 'top' }]}
+            style={[s.input, s.inputMultiline]}
             value={reviewText}
             onChangeText={setReviewText}
             placeholder="어떤 데이트였나요?"
@@ -199,7 +201,7 @@ export default function EditMemoryScreen() {
           })}
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={s.footerSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -212,8 +214,10 @@ export default function EditMemoryScreen() {
 }
 
 const s = StyleSheet.create({
+  center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingTop: { marginTop: 16 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
   inputWrap: {
@@ -225,6 +229,8 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   input: { fontSize: 14, color: C.text, lineHeight: 22 },
+  inputMultiline: { minHeight: 70, textAlignVertical: 'top' },
+  footerSpacer: { height: 120 },
 
   photoPlaceholder: {
     marginTop: 14,
@@ -260,6 +266,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
   },
 });

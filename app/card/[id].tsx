@@ -6,10 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { C } from '../../constants/colors';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
@@ -199,7 +200,7 @@ export default function CardDetailScreen() {
           <Text style={styles.backText}>{s.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{s.card.title}</Text>
-        <View style={{ width: 32 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       {loading ? (
@@ -208,7 +209,7 @@ export default function CardDetailScreen() {
         </View>
       ) : !card ? (
         <View style={styles.loadingWrap}>
-          <Text style={{ color: '#999' }}>{s.card.missing}</Text>
+          <Text style={styles.missingText}>{s.card.missing}</Text>
         </View>
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -220,7 +221,7 @@ export default function CardDetailScreen() {
           <Text style={styles.summary}>{card.summary}</Text>
 
           {!!card.place_name && (
-            <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={{ marginTop: 4, marginBottom: 20 }} />
+            <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={styles.placeRowSpacing} />
           )}
 
           <View style={styles.metaRow}>
@@ -261,14 +262,15 @@ export default function CardDetailScreen() {
                   style={[
                     styles.reactionBtn,
                     { backgroundColor: selected ? r.bg : '#F7F7F7' },
-                    selected && { borderColor: r.color, borderWidth: 2 },
+                    selected && styles.reactionBtnSelected,
+                    selected && { borderColor: r.color },
                   ]}
                   onPress={() => handleReact(r.type)}
                   disabled={saving}
                   activeOpacity={0.75}
                 >
                   <Text style={styles.reactionEmoji}>{s.card.reactionLabels[r.type].emoji}</Text>
-                  <Text style={[styles.reactionLabel, selected && { color: r.color, fontWeight: '700' }]}>
+                  <Text style={[styles.reactionLabel, selected && styles.reactionLabelSelected, selected && { color: r.color }]}>
                     {s.card.reactionLabels[r.type].label}
                   </Text>
                 </TouchableOpacity>
@@ -302,7 +304,7 @@ export default function CardDetailScreen() {
               </View>
               {myConditionTag && (
                 <TouchableOpacity
-                  style={[styles.altBtn, generatingAlt && { opacity: 0.6 }]}
+                  style={[styles.altBtn, generatingAlt && styles.altBtnBusy]}
                   onPress={() => handleGenerateAlt(myConditionTag)}
                   disabled={generatingAlt}
                   activeOpacity={0.85}
@@ -364,7 +366,7 @@ export default function CardDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: C.white },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -374,9 +376,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backText: { fontSize: 24, color: '#333' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A1A' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: C.ink },
+  headerSpacer: { width: 32 },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  missingText: { color: '#999' },
 
   scroll: { flex: 1 },
   content: { padding: 24, paddingBottom: 60 },
@@ -389,10 +393,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 14,
   },
-  modeText: { fontSize: 12, color: '#FF4F6D', fontWeight: '600' },
+  modeText: { fontSize: 12, color: C.danger, fontWeight: '600' },
 
-  title: { fontSize: 24, fontWeight: '700', color: '#1A1A1A', marginBottom: 8, lineHeight: 32 },
+  title: { fontSize: 24, fontWeight: '700', color: C.ink, marginBottom: 8, lineHeight: 32 },
   summary: { fontSize: 15, color: '#555', lineHeight: 22, marginBottom: 16 },
+  placeRowSpacing: { marginTop: 4, marginBottom: 20 },
 
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -405,11 +410,11 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 13, color: '#555', fontWeight: '500' },
 
   whyBox: { backgroundColor: '#FFF0F3', borderRadius: 12, padding: 14, marginBottom: 8 },
-  whyText: { fontSize: 14, color: '#FF4F6D', lineHeight: 21 },
+  whyText: { fontSize: 14, color: C.danger, lineHeight: 21 },
 
   divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 24 },
 
-  reactionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
+  reactionTitle: { fontSize: 18, fontWeight: '700', color: C.ink, marginBottom: 4 },
   reactionSub: { fontSize: 13, color: '#999', marginBottom: 18 },
 
   reactionGrid: {
@@ -427,8 +432,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  reactionBtnSelected: { borderWidth: 2 },
   reactionEmoji: { fontSize: 28 },
   reactionLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
+  reactionLabelSelected: { fontWeight: '700' },
 
   conditionBox: {
     backgroundColor: '#F8F8F8',
@@ -436,23 +443,24 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
-  conditionTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
-  conditionSub: { fontSize: 12, color: '#9CA3AF', marginBottom: 14 },
+  conditionTitle: { fontSize: 15, fontWeight: '700', color: C.ink, marginBottom: 4 },
+  conditionSub: { fontSize: 12, color: C.coolGrayLight, marginBottom: 14 },
   conditionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   conditionBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20,
     backgroundColor: '#EFEFEF', borderWidth: 1.5, borderColor: 'transparent',
   },
-  conditionBtnSelected: { backgroundColor: '#EEF2FF', borderColor: '#6B7280' },
+  conditionBtnSelected: { backgroundColor: '#EEF2FF', borderColor: C.coolGray },
   conditionEmoji: { fontSize: 14 },
   conditionLabel: { fontSize: 13, fontWeight: '500', color: '#555' },
   conditionLabelSelected: { color: '#374151', fontWeight: '700' },
   altBtn: {
-    backgroundColor: '#1A1A1A', borderRadius: 14,
+    backgroundColor: C.ink, borderRadius: 14,
     paddingVertical: 13, alignItems: 'center',
   },
-  altBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  altBtnBusy: { opacity: 0.6 },
+  altBtnText: { fontSize: 13, fontWeight: '700', color: C.white },
   partnerBadge: {
     borderRadius: 12,
     padding: 14,
@@ -475,17 +483,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#F2A8B0',
+    borderColor: C.pinkBorder,
     marginBottom: 10,
   },
-  confirmBtnText: { fontSize: 15, fontWeight: '600', color: '#C24B57' },
+  confirmBtnText: { fontSize: 15, fontWeight: '600', color: C.pinkDeep },
   memoryBtn: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: C.ink,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
   },
-  memoryBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  memoryBtnText: { fontSize: 15, fontWeight: '700', color: C.white },
   memoryDoneBadge: {
     backgroundColor: '#F0FDF4',
     borderRadius: 16,

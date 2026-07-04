@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Image,
+  KeyboardAvoidingView, Platform, ScrollView, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
 import { Mail, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
 
 type Mode = 'welcome' | 'email';
@@ -65,7 +67,7 @@ export default function AuthScreen() {
 
   if (mode === 'welcome') {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+      <SafeAreaView style={G.screen}>
         <View style={s.welcomeContainer}>
           {/* 로고 배너 */}
           <View style={s.logoBanner}>
@@ -77,14 +79,14 @@ export default function AuthScreen() {
           </View>
 
           {/* 헤드라인 */}
-          <View style={{ paddingHorizontal: 4 }}>
+          <View style={s.headlineBlock}>
             <Text style={s.heading}>"오늘 뭐 하지?"를{'\n'}가볍게 정해요</Text>
             <Text style={s.subText}>
               둘의 취향과 오늘의 상태를 모아{'\n'}데이트 후보를 추천해드려요.
             </Text>
           </View>
 
-          <View style={{ flex: 1 }} />
+          <View style={s.spacer} />
 
           {/* 소셜 버튼 영역 */}
           <View style={s.btnArea}>
@@ -114,12 +116,12 @@ export default function AuthScreen() {
             </View>
             <TouchableOpacity
               onPress={() => setMode('email')}
-              style={[s.socialBtn, { backgroundColor: C.white, borderColor: '#F2A8B0', borderWidth: 1 }]}
+              style={[s.socialBtn, s.emailBtn]}
             >
-              <View style={{ position: 'absolute', left: 20 }}>
+              <View style={s.emailIcon}>
                 <Mail size={16} color={C.pinkDeep} />
               </View>
-              <Text style={[s.socialBtnText, { color: C.pinkDeep }]}>이메일로 시작하기</Text>
+              <Text style={[s.socialBtnText, s.emailBtnText]}>이메일로 시작하기</Text>
             </TouchableOpacity>
             <Text style={s.legal}>
               가입하면 <Text style={s.legalLink}>이용약관</Text>과{' '}
@@ -134,10 +136,10 @@ export default function AuthScreen() {
   // 이메일 로그인/회원가입 화면
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#FFF8F3' }}
+      style={G.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={s.safe}>
         <ScrollView
           contentContainerStyle={s.emailContainer}
           keyboardShouldPersistTaps="handled"
@@ -149,11 +151,11 @@ export default function AuthScreen() {
           </TouchableOpacity>
 
           <Text style={s.heading}>이메일로 시작하기</Text>
-          <Text style={[s.subText, { marginTop: 8 }]}>
+          <Text style={[s.subText, s.emailSub]}>
             로그인에 사용할 이메일과 비밀번호를 알려주세요.
           </Text>
 
-          <View style={{ gap: 10, marginTop: 24 }}>
+          <View style={s.fieldGroup}>
             <View style={s.fieldBox}>
               <Text style={s.fieldLabel}>이메일</Text>
               <TextInput
@@ -183,17 +185,17 @@ export default function AuthScreen() {
           </View>
 
           {/* 약관 동의 */}
-          <View style={{ marginTop: 20, gap: 10 }}>
+          <View style={s.agreeBlock}>
             <TouchableOpacity
               onPress={() => setAgreed(!agreed)}
               style={s.checkRow}
             >
-              <View style={[s.checkBox, { backgroundColor: agreed ? C.pink : C.border }]}>
+              <View style={[s.checkBox, agreed ? s.checkBoxOn : s.checkBoxOff]}>
                 {agreed && <Check size={13} color={C.white} strokeWidth={3} />}
               </View>
               <Text style={s.checkLabel}>
-                (필수) <Text style={{ textDecorationLine: 'underline' }}>이용약관</Text>·
-                <Text style={{ textDecorationLine: 'underline' }}>개인정보처리방침</Text> 동의
+                (필수) <Text style={s.legalLink}>이용약관</Text>·
+                <Text style={s.legalLink}>개인정보처리방침</Text> 동의
               </Text>
             </TouchableOpacity>
           </View>
@@ -204,7 +206,7 @@ export default function AuthScreen() {
             </View>
           )}
 
-          <View style={{ marginTop: 24 }}>
+          <View style={s.submitBlock}>
             <BigButton
               onPress={handleAuth}
               variant={loading ? 'disabled' : 'primary'}
@@ -215,11 +217,11 @@ export default function AuthScreen() {
 
           <TouchableOpacity
             onPress={() => { setIsSignUp(!isSignUp); setErrorMsg(''); }}
-            style={{ marginTop: 16, alignItems: 'center' }}
+            style={s.toggleBtn}
           >
             <Text style={s.toggleText}>
               {isSignUp ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '}
-              <Text style={{ color: C.pinkDeep, fontWeight: '600' }}>
+              <Text style={s.toggleStrong}>
                 {isSignUp ? '로그인' : '회원가입'}
               </Text>
             </Text>
@@ -264,8 +266,10 @@ const s = StyleSheet.create({
     width: 180,
     height: 180,
   },
+  headlineBlock: { paddingHorizontal: 4 },
+  spacer: { flex: 1 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  subText: { fontSize: 13, color: '#8A7F76', lineHeight: 20, marginTop: 10 },
+  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 10 },
   btnArea: { gap: 10 },
   socialBtn: {
     borderRadius: 18,
@@ -276,12 +280,18 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   socialBtnText: { fontSize: 15, fontWeight: '600' },
+  emailBtn: { backgroundColor: C.white, borderColor: C.pinkBorder, borderWidth: 1 },
+  emailIcon: { position: 'absolute', left: 20 },
+  emailBtnText: { color: C.pinkDeep },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#F2E0DC' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: C.border },
   dividerText: { fontSize: 11, color: C.textMuted },
   legal: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 17 },
   legalLink: { textDecorationLine: 'underline' },
 
+  safe: { flex: 1 },
+  emailSub: { marginTop: 8 },
+  fieldGroup: { gap: 10, marginTop: 24 },
   emailContainer: {
     flexGrow: 1,
     paddingHorizontal: 24,
@@ -298,8 +308,9 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  fieldLabel: { fontSize: 11, color: '#B8AEA6', marginBottom: 4 },
+  fieldLabel: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   fieldInput: { fontSize: 15, color: C.text, fontWeight: '500' },
+  agreeBlock: { marginTop: 20, gap: 10 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkBox: {
     width: 20,
@@ -308,6 +319,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkBoxOn: { backgroundColor: C.pink },
+  checkBoxOff: { backgroundColor: C.border },
   checkLabel: { fontSize: 12, color: C.text, flex: 1, lineHeight: 18 },
   errorBox: {
     backgroundColor: C.pinkLight,
@@ -316,5 +329,8 @@ const s = StyleSheet.create({
     marginTop: 12,
   },
   errorText: { color: C.pinkDeep, fontSize: 13, textAlign: 'center' },
+  submitBlock: { marginTop: 24 },
+  toggleBtn: { marginTop: 16, alignItems: 'center' },
   toggleText: { fontSize: 13, color: C.textSub },
+  toggleStrong: { color: C.pinkDeep, fontWeight: '600' },
 });

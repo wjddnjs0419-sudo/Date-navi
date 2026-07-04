@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, Clipboard, SafeAreaView,
+  ActivityIndicator, Alert, Clipboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateSoftMessage, adjustSoftMessage } from '../../lib/ai';
 import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard, InfoNote, GeneratingView } from '../../components/ui';
 
 const SOFT_MESSAGE_STEPS = ['마음 확인하는 중', '다정한 표현 고르는 중', '문장 다듬는 중'];
@@ -111,7 +113,7 @@ export default function SoftMessageResultScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8F3' }}>
+    <SafeAreaView style={G.screen}>
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
@@ -119,12 +121,12 @@ export default function SoftMessageResultScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, { marginTop: 16 }]}>이렇게 말해볼까요?</Text>
+        <Text style={[s.heading, s.headingTop]}>이렇게 말해볼까요?</Text>
 
-        <SoftCard style={{ marginTop: 20, backgroundColor: C.lavender }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+        <SoftCard style={s.messageCard}>
+          <View style={s.toneRow}>
             <Sparkles size={13} color={C.lavenderFg} />
-            <Text style={{ fontSize: 11, color: C.lavenderFg, fontWeight: '600' }}>{tone}</Text>
+            <Text style={s.toneText}>{tone}</Text>
           </View>
           <TextInput
             ref={textInputRef}
@@ -136,7 +138,7 @@ export default function SoftMessageResultScreen() {
           />
         </SoftCard>
 
-        <View style={{ gap: 8, marginTop: 16 }}>
+        <View style={s.adjustList}>
           {ADJUST_ACTIONS.map((a) => (
             <TouchableOpacity
               key={a.key}
@@ -148,13 +150,13 @@ export default function SoftMessageResultScreen() {
               <Text style={s.adjustBtnText}>{a.label}</Text>
               {a.loading
                 ? <ActivityIndicator size="small" color={C.pinkDeep} />
-                : <Text style={{ color: '#B8AEA6' }}>→</Text>}
+                : <Text style={s.adjustArrow}>→</Text>}
             </TouchableOpacity>
           ))}
         </View>
 
         <InfoNote>문장은 바로 전송되지 않아요. 확인하고 보낼 수 있어요.</InfoNote>
-        <View style={{ height: 140 }} />
+        <View style={s.footerSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
@@ -162,7 +164,7 @@ export default function SoftMessageResultScreen() {
           {copied ? '복사됨 ✓' : '문장 복사하기'}
         </BigButton>
         <TouchableOpacity
-          style={[s.saveBtn, saving && { opacity: 0.6 }]}
+          style={[s.saveBtn, saving && s.saveBtnSaving]}
           onPress={handleSend}
           disabled={saving}
         >
@@ -178,7 +180,14 @@ export default function SoftMessageResultScreen() {
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
+  headingTop: { marginTop: 16 },
+  messageCard: { marginTop: 20, backgroundColor: C.lavender },
+  toneRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  toneText: { fontSize: 11, color: C.lavenderFg, fontWeight: '600' },
   messageInput: { fontSize: 15, color: C.text, lineHeight: 25, minHeight: 80 },
+  adjustList: { gap: 8, marginTop: 16 },
+  adjustArrow: { color: C.textLight },
+  footerSpacer: { height: 140 },
   adjustBtn: {
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -190,7 +199,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
   },
-  adjustBtnText: { fontSize: 13, color: '#4A4A55', fontWeight: '500' },
+  adjustBtnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -199,9 +208,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: '#FFF8F3',
+    backgroundColor: C.bg,
     gap: 4,
   },
   saveBtn: { alignItems: 'center', paddingVertical: 10 },
+  saveBtnSaving: { opacity: 0.6 },
   saveBtnText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
 });
