@@ -91,8 +91,10 @@ Deno.serve(async (req) => {
     if (userError || !user) return json({ error: 'Unauthorized' }, 401);
 
     const { location, radius, focus, coords } = await req.json();
-    // GPS 좌표가 오면 지오코딩 없이 그대로 사용한다 (x=경도, y=위도).
-    const hasCoords = coords && typeof coords.x === 'string' && typeof coords.y === 'string';
+    // GPS 좌표가 오면 지오코딩 없이 그대로 사용한다 (x=경도, y=위도). 숫자 형식만 허용해 쿼리 주입을 막는다.
+    const COORD_RE = /^-?\d+(\.\d+)?$/;
+    const hasCoords = coords && typeof coords.x === 'string' && typeof coords.y === 'string'
+      && COORD_RE.test(coords.x) && COORD_RE.test(coords.y);
     if (!hasCoords && (typeof location !== 'string' || !location.trim())) {
       return json({ error: 'Invalid request' }, 400);
     }
