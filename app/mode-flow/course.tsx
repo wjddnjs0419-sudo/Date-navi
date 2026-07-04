@@ -6,6 +6,7 @@ import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, LocationField } from '../../components/ui';
+import { DurationWheelPicker } from '../../components/pickers';
 
 export default function CourseScreen() {
   const router = useRouter();
@@ -68,21 +69,12 @@ export default function CourseScreen() {
         </View>
 
         <Text style={s2.sectionLabel}>{c.durationLabel}</Text>
-        <View style={s2.optionRow}>
-          {c.durationOptions.map(opt => {
-            const sel = duration === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[s2.optionCard, sel && s2.optionSelected]}
-                onPress={() => setDuration(opt.value)}
-                activeOpacity={0.7}
-              >
-                <Text style={s2.optionEmoji}>{opt.emoji}</Text>
-                <Text style={[s2.optionLabel, sel && s2.optionLabelSelected]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={s2.wheelBlock}>
+          <DurationWheelPicker
+            options={c.durationOptions.map((opt) => ({ value: opt.value, label: `${opt.emoji} ${opt.label}` }))}
+            value={duration || c.durationOptions[0]?.value}
+            onChange={setDuration}
+          />
         </View>
 
         <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
@@ -116,4 +108,5 @@ const s2 = StyleSheet.create({
   optionEmoji: { fontSize: 22 },
   optionLabel: { fontSize: 13, fontWeight: '600', color: C.textSub, textAlign: 'center' },
   optionLabelSelected: { color: C.pinkDeep },
+  wheelBlock: { marginBottom: 28 },
 });

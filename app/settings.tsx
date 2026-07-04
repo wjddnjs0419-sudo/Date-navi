@@ -16,7 +16,27 @@ import {
 import { C } from '../constants/colors';
 import { G } from '../constants/theme';
 import { ListGroup, ListRow, SectionLabel } from '../components/ui';
+import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
+
+function toDateOnly(value?: string | null) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function daysSince(dateStr: string) {
+  const start = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -27,6 +47,10 @@ export default function SettingsScreen() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [daysConnected, setDaysConnected] = useState<number | null>(null);
+  const [relationshipStartDate, setRelationshipStartDate] = useState('');
+  const [draftRelationshipDate, setDraftRelationshipDate] = useState(defaultIsoDate());
+  const [relationshipPickerOpen, setRelationshipPickerOpen] = useState(false);
+  const [savingRelationshipDate, setSavingRelationshipDate] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [stats, setStats] = useState({ dates: 0, wantAgain: 0 });
   const [loading, setLoading] = useState(true);
@@ -38,10 +62,14 @@ export default function SettingsScreen() {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
+          setInviteCode('');
+          setPartnerName('');
+          setDaysConnected(null);
+          setRelationshipStartDate('');
 
           const { data: profile } = await supabase
             .from('date_planner_profiles')
-            .select('display_name, profile_photo_url, couple_id, created_at')
+            .select('display_name, profile_photo_url, couple_id, anniversary_date')
             .eq('user_id', user.id)
             .maybeSingle();
 
@@ -59,10 +87,10 @@ export default function SettingsScreen() {
 
               if (coupleRow?.code) setInviteCode(coupleRow.code);
 
-              if (coupleRow?.created_at) {
-                const diff = Math.floor((Date.now() - new Date(coupleRow.created_at).getTime()) / (1000 * 60 * 60 * 24));
-                setDaysConnected(diff);
-              }
+              const startDate = toDateOnly(profile.anniversary_date) || toDateOnly(coupleRow?.created_at);
+              const days = daysSince(startDate);
+              setRelationshipStartDate(startDate);
+              setDaysConnected(days);
 
               const { data: partnerProfile } = await supabase
                 .from('date_planner_profiles')
@@ -72,6 +100,10 @@ export default function SettingsScreen() {
                 .maybeSingle();
 
               if (partnerProfile?.display_name) setPartnerName(partnerProfile.display_name);
+            } else if (profile.anniversary_date) {
+              const startDate = toDateOnly(profile.anniversary_date);
+              setRelationshipStartDate(startDate);
+              setDaysConnected(daysSince(startDate));
             }
           }
 
@@ -108,6 +140,34 @@ export default function SettingsScreen() {
 
   function handleHelp() {
     Alert.alert(t.helpTitle, t.helpMessage);
+  }
+
+  function openRelationshipPicker() {
+    setDraftRelationshipDate(relationshipStartDate || defaultIsoDate());
+    setRelationshipPickerOpen(true);
+  }
+
+  async function handleSaveRelationshipDate() {
+    if (savingRelationshipDate) return;
+    setSavingRelationshipDate(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('no user');
+
+      const { error } = await supabase
+        .from('date_planner_profiles')
+        .update({ anniversary_date: draftRelationshipDate, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      if (error) throw error;
+
+      setRelationshipStartDate(draftRelationshipDate);
+      setDaysConnected(daysSince(draftRelationshipDate));
+      setRelationshipPickerOpen(false);
+    } catch {
+      Alert.alert('오류', '사귀기 시작한 날을 저장하지 못했어요. 다시 시도해주세요.');
+    } finally {
+      setSavingRelationshipDate(false);
+    }
   }
 
   async function handleNotifications() {
@@ -208,10 +268,11 @@ export default function SettingsScreen() {
         <View style={s.profileCenter}>
           <Text style={s.profileName}>{displayName || t.nameEmpty}</Text>
           {dayLabel && (
-            <View style={s.dayBadge}>
+            <TouchableOpacity style={s.dayBadge} activeOpacity={0.8} onPress={openRelationshipPicker}>
               <Heart size={10} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
               <Text style={s.dayBadgeText}>{dayLabel}</Text>
-            </View>
+              <ChevronRight size={10} color={C.pinkDeep} strokeWidth={2.2} />
+            </TouchableOpacity>
           )}
         </View>
 
@@ -330,6 +391,20 @@ export default function SettingsScreen() {
         <Text style={s.version}>Date Navi v1.0.0</Text>
         <View style={s.bottomSpacer} />
       </ScrollView>
+      <PickerSheet
+        visible={relationshipPickerOpen}
+        title="사귀기 시작한 날"
+        onCancel={() => setRelationshipPickerOpen(false)}
+        onConfirm={handleSaveRelationshipDate}
+        confirmLabel={savingRelationshipDate ? '저장 중...' : '완료'}
+      >
+        <DateWheelPicker
+          value={draftRelationshipDate}
+          minYear={new Date().getFullYear() - 30}
+          maxYear={new Date().getFullYear()}
+          onChange={setDraftRelationshipDate}
+        />
+      </PickerSheet>
     </SafeAreaView>
   );
 }

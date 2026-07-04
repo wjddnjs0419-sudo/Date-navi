@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,10 +9,9 @@ import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, SoftCard } from '../../components/ui';
+import { DateWheelPicker, parseIsoDate } from '../../components/pickers';
 
 const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() - i));
-const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 
 function daysBetween(dateStr: string) {
   const d = new Date(dateStr);
@@ -68,9 +67,18 @@ export default function AnniversaryScreen() {
         </View>
 
         <View style={s.dateRow}>
-          <DatePicker label="년" value={year} items={YEARS} onSelect={setYear} />
-          <DatePicker label="월" value={month} items={MONTHS} onSelect={setMonth} />
-          <DatePicker label="일" value={day} items={DAYS} onSelect={setDay} />
+          <DateWheelPicker
+            value={dateStr}
+            minYear={Number(YEARS[YEARS.length - 1])}
+            maxYear={Number(YEARS[0])}
+            onChange={(next) => {
+              const parsed = parseIsoDate(next);
+              if (!parsed) return;
+              setYear(parsed.year);
+              setMonth(parsed.month);
+              setDay(parsed.day);
+            }}
+          />
         </View>
 
         {days >= 0 && (
@@ -97,73 +105,6 @@ export default function AnniversaryScreen() {
   );
 }
 
-function DatePicker({ label, value, items, onSelect }: {
-  label: string;
-  value: string;
-  items: string[];
-  onSelect: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={dp.wrap}>
-      <TouchableOpacity style={dp.cell} onPress={() => setOpen(!open)} activeOpacity={0.75}>
-        <Text style={dp.label}>{label}</Text>
-        <Text style={dp.value}>{value}</Text>
-      </TouchableOpacity>
-      {open && (
-        <View style={dp.dropdown}>
-          <ScrollView style={dp.scroll} showsVerticalScrollIndicator={false}>
-            {items.map((item) => (
-              <TouchableOpacity
-                key={item}
-                style={[dp.option, item === value && dp.optionSel]}
-                onPress={() => { onSelect(item); setOpen(false); }}
-              >
-                <Text style={[dp.optionText, item === value && dp.optionTextSel]}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </View>
-  );
-}
-
-const dp = StyleSheet.create({
-  wrap: { flex: 1 },
-  cell: {
-    backgroundColor: C.white,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-  },
-  label: { fontSize: 11, color: C.textLight },
-  value: { fontSize: 18, fontWeight: '600', color: C.text, marginTop: 4 },
-  scroll: { maxHeight: 180 },
-  dropdown: {
-    position: 'absolute',
-    top: 68,
-    left: 0,
-    right: 0,
-    backgroundColor: C.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    zIndex: 100,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  option: { paddingHorizontal: 16, paddingVertical: 10 },
-  optionSel: { backgroundColor: C.pinkLight },
-  optionText: { fontSize: 14, color: C.text },
-  optionTextSel: { color: C.pinkDeep, fontWeight: '600' },
-});
-
 const s = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
@@ -171,7 +112,7 @@ const s = StyleSheet.create({
   headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
-  dateRow: { flexDirection: 'row', gap: 8, marginTop: 24 },
+  dateRow: { marginTop: 24 },
   daysCard: {
     marginTop: 20,
     backgroundColor: C.cream,

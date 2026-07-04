@@ -1,12 +1,13 @@
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
+  AccessibilityInfo, Easing,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
 import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C } from '../constants/theme';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GeoCoords } from '../lib/ai';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
@@ -493,10 +494,86 @@ const noteS = StyleSheet.create({
 // AI 생성 로딩 화면 공통 UI. 아이콘 + 헤딩 + 단계별 체크리스트만 담당하고,
 // 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
 export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
+  const pulseScale = useRef(new Animated.Value(1)).current;
+  const haloOpacity = useRef(new Animated.Value(0.24)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (mounted) setReduceMotion(enabled);
+    });
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      pulseScale.setValue(1);
+      haloOpacity.setValue(0.18);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(pulseScale, {
+            toValue: 1.08,
+            duration: 360,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(haloOpacity, {
+            toValue: 0.36,
+            duration: 360,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(pulseScale, {
+          toValue: 0.98,
+          duration: 180,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.parallel([
+          Animated.timing(pulseScale, {
+            toValue: 1,
+            duration: 300,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(haloOpacity, {
+            toValue: 0.2,
+            duration: 300,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(520),
+      ]),
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, [haloOpacity, pulseScale, reduceMotion]);
+
+  const haloScale = pulseScale.interpolate({
+    inputRange: [0.98, 1.08],
+    outputRange: [1.04, 1.18],
+  });
+
   return (
     <View style={genS.container}>
-      <View style={genS.iconWrap}>
-        <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
+      <View style={genS.iconStage}>
+        <Animated.View style={[genS.iconHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
+        <Animated.View style={[genS.iconWrap, { transform: [{ scale: pulseScale }] }]}>
+          <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
+        </Animated.View>
       </View>
 
       <Text style={genS.heading}>{heading}</Text>
@@ -533,6 +610,19 @@ const genS = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+  iconStage: {
+    width: 166,
+    height: 166,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconHalo: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: C.pinkMid,
   },
   iconWrap: {
     width: 140, height: 140, borderRadius: 70,

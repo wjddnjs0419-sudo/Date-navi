@@ -10,6 +10,13 @@ import { useI18n } from '../../lib/i18n';
 import { Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
+import {
+  DateWheelPicker,
+  PickerSheet,
+  TimeWheelPicker,
+  defaultIsoDate,
+  formatDateLabel,
+} from '../../components/pickers';
 
 type CardSummary = {
   id: string;
@@ -34,6 +41,10 @@ export default function ConfirmScreen() {
   const [isPlan, setIsPlan] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [draftDate, setDraftDate] = useState(defaultIsoDate());
+  const [draftTime, setDraftTime] = useState('오후 7:00');
   const [place, setPlace] = useState('');
   const [items, setItems] = useState('');
 
@@ -101,6 +112,16 @@ export default function ConfirmScreen() {
     ]);
   }
 
+  function openDatePicker() {
+    setDraftDate(date.match(/^\d{4}-\d{2}-\d{2}$/) ? date : defaultIsoDate());
+    setDatePickerOpen(true);
+  }
+
+  function openTimePicker() {
+    setDraftTime(time || '오후 7:00');
+    setTimePickerOpen(true);
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -111,16 +132,20 @@ export default function ConfirmScreen() {
     );
   }
 
-  const rows = [
-    { icon: ROW_ICONS[0], label: c.dateLabel, value: date, setter: setDate, placeholder: c.datePlaceholder },
-    { icon: ROW_ICONS[1], label: c.timeLabel, value: time, setter: setTime, placeholder: c.timePlaceholder },
+  const detailRows = [
+    { icon: ROW_ICONS[0], label: c.dateLabel, value: formatDateLabel(date, '') },
+    { icon: ROW_ICONS[1], label: c.timeLabel, value: time },
+    { icon: ROW_ICONS[2], label: c.placeLabel, value: place },
+    { icon: ROW_ICONS[3], label: c.itemsLabel, value: items },
+  ];
+  const textRows = [
     { icon: ROW_ICONS[2], label: c.placeLabel, value: place, setter: setPlace, placeholder: c.placePlaceholder },
     { icon: ROW_ICONS[3], label: c.itemsLabel, value: items, setter: setItems, placeholder: c.itemsPlaceholder },
   ];
 
   // ── 읽기 상세 모드 ──────────────────────────────────────────────
   if (!editing) {
-    const dateLine = [date, time].filter(Boolean).join(' · ') || '날짜·시간 미정';
+    const dateLine = [formatDateLabel(date, ''), time].filter(Boolean).join(' · ') || '날짜·시간 미정';
     return (
       <SafeAreaView style={styles.safe}>
         <ScrollView style={styles.flex1} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -146,7 +171,7 @@ export default function ConfirmScreen() {
               </View>
 
               <View style={styles.detailRows}>
-                {rows.map((row) => (
+                {detailRows.map((row) => (
                   <View key={row.label} style={styles.detailRow}>
                     <Text style={styles.detailIcon}>{row.icon}</Text>
                     <Text style={styles.detailLabel}>{row.label}</Text>
@@ -207,7 +232,31 @@ export default function ConfirmScreen() {
           )}
 
           <View style={styles.rowList}>
-            {rows.map((row) => (
+            <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openDatePicker}>
+              <View style={styles.rowIconWrap}>
+                <Text style={styles.rowIconText}>{ROW_ICONS[0]}</Text>
+              </View>
+              <View style={styles.flex1}>
+                <Text style={styles.rowLabel}>{c.dateLabel}</Text>
+                <Text style={[styles.pickerValue, !date && styles.pickerValueEmpty]}>
+                  {date ? formatDateLabel(date) : c.datePlaceholder}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openTimePicker}>
+              <View style={styles.rowIconWrap}>
+                <Text style={styles.rowIconText}>{ROW_ICONS[1]}</Text>
+              </View>
+              <View style={styles.flex1}>
+                <Text style={styles.rowLabel}>{c.timeLabel}</Text>
+                <Text style={[styles.pickerValue, !time && styles.pickerValueEmpty]}>
+                  {time || c.timePlaceholder}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {textRows.map((row) => (
               <View key={row.label} style={styles.row}>
                 <View style={styles.rowIconWrap}>
                   <Text style={styles.rowIconText}>{row.icon}</Text>
@@ -237,6 +286,22 @@ export default function ConfirmScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PickerSheet
+        visible={datePickerOpen}
+        title={c.dateLabel}
+        onCancel={() => setDatePickerOpen(false)}
+        onConfirm={() => { setDate(draftDate); setDatePickerOpen(false); }}
+      >
+        <DateWheelPicker value={draftDate} onChange={setDraftDate} />
+      </PickerSheet>
+      <PickerSheet
+        visible={timePickerOpen}
+        title={c.timeLabel}
+        onCancel={() => setTimePickerOpen(false)}
+        onConfirm={() => { setTime(draftTime); setTimePickerOpen(false); }}
+      >
+        <TimeWheelPicker value={draftTime} onChange={setDraftTime} />
+      </PickerSheet>
     </SafeAreaView>
   );
 }
@@ -282,6 +347,8 @@ const styles = StyleSheet.create({
   rowIconText: { fontSize: 16 },
   rowLabel: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginBottom: 4 },
   rowInput: { fontSize: 14, color: C.text, paddingVertical: 0 },
+  pickerValue: { fontSize: 14, color: C.text, paddingVertical: 2, fontWeight: '600' },
+  pickerValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
   detailRows: { marginTop: 16, gap: 12, borderTopWidth: 1, borderTopColor: C.borderLight, paddingTop: 16 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

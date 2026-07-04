@@ -22,9 +22,29 @@ function formatDate(iso: string) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function toDateOnly(value?: string | null) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function daysSince(dateStr: string) {
+  const start = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
 export default function MemoriesScreen() {
   const router = useRouter();
   const [items, setItems] = useState<MemoryItem[]>([]);
+  const [relationshipDays, setRelationshipDays] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadMemories = useCallback(async () => {
@@ -32,6 +52,24 @@ export default function MemoriesScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setRelationshipDays(null);
+      const { data: profile } = await supabase
+        .from('date_planner_profiles')
+        .select('couple_id, anniversary_date')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let startDate = toDateOnly(profile?.anniversary_date);
+      if (!startDate && profile?.couple_id) {
+        const { data: coupleRow } = await supabase
+          .from('date_planner_couples')
+          .select('created_at')
+          .eq('id', profile.couple_id)
+          .maybeSingle();
+        startDate = toDateOnly(coupleRow?.created_at);
+      }
+      setRelationshipDays(daysSince(startDate));
 
       const { data: mems } = await supabase
         .from('date_memories')
@@ -125,7 +163,7 @@ export default function MemoriesScreen() {
                 {/* 통계 */}
                 <View style={s.statsRow}>
                   {[
-                    { label: '함께한 날', value: String(items.length) },
+                    { label: '함께한 날', value: relationshipDays !== null ? String(relationshipDays) : '—' },
                     { label: '다시 하고싶어', value: String(wantAgainCount) },
                     { label: '이번 달', value: String(items.filter(i => {
                       const d = new Date(i.created_at);

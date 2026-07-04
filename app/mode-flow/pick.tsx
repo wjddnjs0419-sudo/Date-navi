@@ -6,6 +6,7 @@ import { buildPickInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, LocationField } from '../../components/ui';
+import { DurationWheelPicker } from '../../components/pickers';
 
 const ENERGY = [
   { v: 'low', label: '피곤해' },
@@ -79,7 +80,12 @@ export default function PickScreen() {
           <Row label="컨디션" items={ENERGY} value={energy} onSelect={setEnergy} />
           <Row label="이동 거리" items={DISTANCES} value={distance} onSelect={setDistance} />
           <Row label="예산" items={BUDGETS} value={budget} onSelect={setBudget} />
-          <Row label="시간" items={DURATIONS} value={duration} onSelect={setDuration} />
+          <Text style={s.sectionLabel}>시간</Text>
+          <DurationWheelPicker
+            options={DURATIONS.map((d) => ({ value: d.v, label: d.label }))}
+            value={duration}
+            onChange={setDuration}
+          />
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
           <View style={s.footerSpacer} />
         </ScrollView>

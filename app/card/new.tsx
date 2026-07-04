@@ -11,6 +11,7 @@ import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard } from '../../components/ui';
+import { DurationWheelPicker } from '../../components/pickers';
 
 const TIME_OPTIONS = ['1~2시간', '2~3시간', '반나절', '하루 종일'];
 const BUDGET_OPTIONS = ['아끼기', '적당히', '특별하게'];
@@ -145,21 +146,17 @@ export default function NewCardScreen() {
 
         {/* 예상 시간 */}
         <Text style={s.label}>예상 시간 (선택)</Text>
-        <View style={s.timeRow}>
-          {TIME_OPTIONS.map((t, i) => {
-            const sel = i === selTime;
-            return (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setSelTime(sel ? null : i)}
-                activeOpacity={0.7}
-                style={[s.chipBtn, sel && s.chipBtnOn]}
-              >
-                <Text style={[s.chipText, sel && s.chipTextOn]}>{t}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <DurationWheelPicker
+          options={[
+            { value: '', label: '선택 안 함' },
+            ...TIME_OPTIONS.map((t) => ({ value: t, label: t })),
+          ]}
+          value={selTime !== null ? TIME_OPTIONS[selTime] : ''}
+          onChange={(v) => {
+            const idx = TIME_OPTIONS.indexOf(v);
+            setSelTime(idx >= 0 ? idx : null);
+          }}
+        />
 
         {/* 예산 */}
         <Text style={s.label}>예산 (선택)</Text>

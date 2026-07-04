@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Leaf } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { buildLightInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, LocationField } from '../../components/ui';
+import { DurationWheelPicker } from '../../components/pickers';
 
 const DURATIONS = [
   { v: '1h', label: '1시간' },
@@ -40,13 +41,11 @@ export default function LightScreen() {
           <Text style={s.subText}>돈도 시간도 부담 없이. 가까운 곳에서 즐길 후보만 골라드릴게요.</Text>
 
           <Text style={s.sectionLabel}>얼마나 함께할까요?</Text>
-          <View style={s.row}>
-            {DURATIONS.map(d => (
-              <TouchableOpacity key={d.v} onPress={() => setDuration(d.v)} activeOpacity={0.7} style={[s.btn, duration === d.v && s.btnOn]}>
-                <Text style={[s.btnText, duration === d.v && s.btnTextOn]}>{d.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <DurationWheelPicker
+            options={DURATIONS.map((d) => ({ value: d.v, label: d.label }))}
+            value={duration}
+            onChange={setDuration}
+          />
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
         </View>
         <View style={s.footer}>

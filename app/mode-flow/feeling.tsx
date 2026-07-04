@@ -6,6 +6,7 @@ import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, LocationField } from '../../components/ui';
+import { DurationWheelPicker } from '../../components/pickers';
 
 const MOODS = [
   { v: 'comfortable', label: '편안하게' },
@@ -81,13 +82,11 @@ export default function FeelingScreen() {
           </View>
 
           <Text style={s.sectionLabel}>시간</Text>
-          <View style={s.quadRow}>
-            {DURATIONS.map(d => (
-              <TouchableOpacity key={d} onPress={() => setDuration(d)} activeOpacity={0.7} style={[s.quadBtn, duration === d && s.quadBtnOn]}>
-                <Text style={[s.quadBtnText, duration === d && s.quadBtnTextOn]}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <DurationWheelPicker
+            options={DURATIONS.map((d) => ({ value: d, label: d }))}
+            value={duration}
+            onChange={setDuration}
+          />
 
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
 

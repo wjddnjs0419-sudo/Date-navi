@@ -9,6 +9,9 @@ import { supabase } from '../../../lib/supabase';
 import { C } from '../../../constants/colors';
 import { G } from '../../../constants/theme';
 import { BackBar, BigButton } from '../../../components/ui';
+import { DurationWheelPicker } from '../../../components/pickers';
+
+const TIME_OPTIONS = ['1~2시간', '2~3시간', '반나절', '하루 종일'];
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,6 +47,11 @@ export default function EditCardScreen() {
   );
 
   const canSave = title.trim().length > 0;
+  const timeOptions = [
+    { value: '', label: '선택 안 함' },
+    ...(time && !TIME_OPTIONS.includes(time) ? [{ value: time, label: `기존 값 · ${time}` }] : []),
+    ...TIME_OPTIONS.map((t) => ({ value: t, label: t })),
+  ];
 
   async function handleSave() {
     if (!canSave) return;
@@ -113,16 +121,11 @@ export default function EditCardScreen() {
         </View>
 
         <Text style={s.label}>예상 시간</Text>
-        <View style={s.inputWrap}>
-          <TextInput
-            style={s.input}
-            value={time}
-            onChangeText={setTime}
-            placeholder="예: 2~3시간"
-            placeholderTextColor={C.textFaint}
-            maxLength={30}
-          />
-        </View>
+        <DurationWheelPicker
+          options={timeOptions}
+          value={time}
+          onChange={setTime}
+        />
 
         <Text style={s.label}>예산</Text>
         <View style={s.inputWrap}>

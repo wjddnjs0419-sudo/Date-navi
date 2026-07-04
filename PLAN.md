@@ -267,15 +267,6 @@
 
 ## 완료된 항목
 
-- [Done] 옵션 이미지 완전 제거 (2026-05-21)
-- [Done] AI 후보 생성 실제 연동 (2026-05-21)
-- [Done] Tinder 디자인 시스템 (2026-05-21)
-- [Done] Mock 시드 데이터 Claudia 추가 (2026-05-21)
-- [Done] Supabase 모드 mock 데이터 혼동 버그 수정 (2026-05-21)
-- [Done] Supabase 모드 전환 (2026-05-23)
-- [Done] Expo SDK 54 호환 (56→54 다운그레이드) (2026-05-23)
-- [Done] Phase 1 인증 & 커플 연결 구현 (2026-05-23)
-- [Done] Phase 2 데이트 모드 UX + AI 카드 생성 (2026-05-23)
 - [Done] Phase 3 반응 & 후보 분류 (2026-05-23)
 - [Done] Phase 4 내 마음 문장 만들기 (2026-05-23)
 - [Done] Phase 5 온보딩 & 추억 (2026-05-23)
@@ -283,3 +274,6 @@
 - [Done] Phase 8 모드별 차별화 UX — course.tsx 신규, 모드별 프롬프트 강조 분기 (2026-05-24)
 - [Done] 알림 Supabase 연동 — notifications 테이블/트리거 2개(reaction·new_card), 개별·전체 삭제, 빈 상태 UI, 벨 dot 조건부 (2026-05-28)
 - [Done] 마이페이지 버그픽스 — 커플연결 onPress 추가, settings 전체 i18n localize, 닉네임 저장 prefs upsert 분리 (2026-05-28)
+- [Done] AI 후보 생성 로딩 아이콘 pulse 애니메이션 추가 (2026-07-05)
+- [Done] 날짜/시간/소요시간 선택 UX를 드래그 picker로 전환 (2026-07-05)
+- [Done] 사귄 날짜 수정 및 함께한 날 기준 통일 (2026-07-05)

@@ -4,6 +4,103 @@
 
 ---
 
+## 2026-07-05 세션 X — 사귄 날짜 수정 및 함께한 날 기준 통일
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `app/settings.tsx` | 마이페이지 "상대방과 N일째" 기준을 `date_planner_profiles.anniversary_date`로 변경. 값이 없으면 기존 커플 연결일(`date_planner_couples.created_at`) fallback 사용 |
+| `app/settings.tsx` | day badge를 터치 가능하게 변경하고, 누르면 `DateWheelPicker` sheet로 사귀기 시작한 날 수정 가능 |
+| `app/settings.tsx` | picker 확정 시 `anniversary_date` 저장 후 day badge 값을 즉시 갱신 |
+| `app/(tabs)/memories.tsx` | 우리 추억 상단 통계의 "함께한 날"을 추억 개수 대신 `anniversary_date` 기준 D-day로 변경. 추억 개수는 기존 헤더 문구에 유지 |
+
+### 기술 결정
+
+- 시작일의 단일 기준은 `date_planner_profiles.anniversary_date`로 둔다.
+- 기존 사용자가 `anniversary_date`를 비워둔 경우에는 커플 연결일을 fallback으로 보여주고, 사용자가 수정하면 `anniversary_date`로 저장한다.
+- 날짜 수정 UI는 이미 만든 `PickerSheet` + `DateWheelPicker`를 재사용했다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+### 다음 세션 할 일 / 주의
+
+1. 실기기에서 마이페이지 badge 탭 → 날짜 저장 → 마이페이지/우리 추억 D-day 반영 확인
+2. 현재는 본인 profile의 `anniversary_date`만 수정한다. 커플 양쪽에 같은 값을 강제 동기화하려면 별도 DB/RLS 정책 설계 필요
+
+---
+
+## 2026-07-05 세션 W — 날짜/시간/소요시간 drag picker 전환
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `components/pickers.tsx` | 신규 — `WheelPicker`, `PickerSheet`, `DateWheelPicker`, `TimeWheelPicker`, `DurationWheelPicker` 공용 컴포넌트 추가 |
+| `app/card/confirm.tsx` | 확정 날짜/시간 텍스트 입력 → 하단 sheet 기반 날짜/시간 wheel picker로 교체. 장소/준비물은 자유 입력 유지 |
+| `app/onboarding/anniversary.tsx` | 기념일 드롭다운 3개 → inline 년/월/일 wheel picker로 교체. 월별 일수 보정은 공용 picker에서 처리 |
+| `app/mode-flow/pick.tsx`, `feeling.tsx`, `light.tsx`, `course.tsx` | 시간/소요시간 버튼 그룹 → drag wheel picker로 교체. 기존 `duration` value는 유지 |
+| `app/card/new.tsx`, `app/card/edit/[id].tsx` | 예상 시간 선택/입력 → duration wheel picker로 교체. 수정 화면은 프리셋 밖 기존 값도 보존 |
+
+### 후속 수정
+
+- 실제 iOS 화면에서 picker 항목이 선택 범위와 겹쳐 보이는 문제 수정: wheel item 높이를 `42` → `58`로 확대하고 picker 텍스트 lineHeight/maxFontSizeMultiplier를 지정했다.
+- wheel 항목을 직접 터치하면 해당 값으로 스크롤하며 선택되도록 `Pressable` 기반 터치 선택을 추가했다.
+- 터치 선택 시 선택값 변경과 `scrollTo`가 동시에 실행되어 선택 행 주변이 떨리는 문제 수정: 터치 시 먼저 목표 위치로 이동하고, 짧은 지연 후 값을 확정하도록 순서를 변경했다.
+- 드래그 종료 후 iOS 감속/스냅 타이밍 때문에 두 항목 사이에 멈추는 문제 수정: `onScroll`로 최신 offset을 추적하고, 드래그 종료 후 지연 snap을 2회 강제 적용한다.
+
+### 기술 결정
+
+- React Native `ScrollView`의 `snapToInterval` + `decelerationRate="fast"` 조합으로 wheel picker를 구현해 의존성 추가 없이 Expo SDK 54 범위 안에서 해결했다.
+- 실제 DB 스키마는 변경하지 않고 기존 문자열 컬럼(`confirmed_date`, `confirmed_time`, `estimated_time`)을 유지했다.
+- 확정 날짜는 새 picker 선택 시 `YYYY-MM-DD`로 저장하고, 읽기 화면에서는 `n월 d일 (요일)`로 표시한다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+### 다음 세션 할 일 / 주의
+
+1. 실기기/시뮬레이터에서 wheel 감속감, sheet 높이, 손가락 조작감을 확인
+2. 영어 UI에서 날짜/시간 표시 문구까지 완전 현지화하려면 `formatDateLabel`/`TimeWheelPicker` locale 옵션 추가
+
+---
+
+## 2026-07-05 세션 V — AI 후보 생성 로딩 아이콘 pulse 애니메이션
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `components/ui.tsx` | `GeneratingView` 중앙 Sparkles 아이콘을 `Animated.View`로 감싸 heartbeat/pulse scale 애니메이션 추가 |
+| `components/ui.tsx` | 아이콘 뒤에 은은한 pink halo를 추가하고, pulse에 맞춰 halo opacity/scale이 함께 변하도록 구성 |
+| `components/ui.tsx` | `AccessibilityInfo.isReduceMotionEnabled()` 및 `reduceMotionChanged` 구독 추가. reduce motion 환경에서는 정적 아이콘 상태 유지 |
+
+### 기술 결정
+
+- 생성 화면 공통 컴포넌트인 `GeneratingView`에 적용해 `pick/feeling/light/course` 생성 플로우가 모두 동일한 집중 애니메이션을 사용한다.
+- `useNativeDriver: true`가 가능한 `transform: scale`과 `opacity`만 애니메이션해 로딩 중 프레임 부담을 낮췄다.
+- `iconStage` 크기를 고정해 pulse 중에도 헤딩/체크리스트 레이아웃이 흔들리지 않게 했다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+### 다음 세션 할 일 / 주의
+
+1. 실기기 또는 Expo 시뮬레이터에서 생성 화면 진입 후 pulse 속도/강도 체감 확인
+2. 너무 튄다고 느껴지면 scale 상한을 `1.08`에서 `1.05~1.06`으로 낮추기
+
+---
+
 ## 2026-05-28 세션 U — 마이페이지 버그픽스 (커플연결·언어·닉네임)
 
 ### 변경 사항 요약
