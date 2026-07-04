@@ -44,3 +44,5 @@ yarn-error.*
 supabase/.temp/
 supabase/.branches/
 supabase/migrations_backup_*/
+
+.superpowers/
