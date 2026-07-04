@@ -1,11 +1,13 @@
 import {
-  View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable,
+  View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { C } from '../constants/colors';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import type { GeoCoords } from '../lib/ai';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'text' | 'disabled';
@@ -335,6 +337,131 @@ const sectionS = StyleSheet.create({
     paddingHorizontal: 4,
     marginBottom: 8,
   },
+});
+
+// ─── LocationField ────────────────────────────────────────────────────────────
+// 데이트 지역(동네) 입력. 값이 있으면 카카오 로컬로 실제 장소를 붙인다. 선택 입력.
+// onCoordsChange를 넘기면 우측에 GPS 토글 버튼이 생긴다. GPS 사용 중에는
+// 입력창이 "내 위치 사용 중" 고정 문구로 비활성화되고, 아이콘 재탭으로만 해제된다.
+const GPS_ACTIVE_TEXT = '내 위치 사용 중';
+
+export function LocationField({
+  value, onChangeText, coords, onCoordsChange, style,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  coords?: GeoCoords | null;
+  onCoordsChange?: (c: GeoCoords | null) => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const [locating, setLocating] = useState(false);
+  const gpsOn = !!coords;
+
+  async function handleGpsPress() {
+    if (!onCoordsChange || locating) return;
+    if (gpsOn) {
+      onCoordsChange(null);
+      onChangeText('');
+      return;
+    }
+    setLocating(true);
+    try {
+      let { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted' && canAskAgain) {
+        ({ status } = await Location.requestForegroundPermissionsAsync());
+      }
+      if (status !== 'granted') {
+        Alert.alert('위치 권한이 꺼져 있어요', '내 위치를 사용하려면 설정에서 위치 권한을 켜주세요.', [
+          { text: '취소', style: 'cancel' },
+          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        ]);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // 카카오 규약: x=경도(longitude), y=위도(latitude)
+      onCoordsChange({ x: String(pos.coords.longitude), y: String(pos.coords.latitude) });
+      onChangeText(GPS_ACTIVE_TEXT);
+    } catch {
+      Alert.alert('위치를 가져오지 못했어요', '잠시 후 다시 시도하거나 직접 입력해주세요.');
+    } finally {
+      setLocating(false);
+    }
+  }
+
+  return (
+    <View style={style}>
+      <Text style={locS.label}>어디서 만나요? (선택)</Text>
+      <View style={locS.inputWrap}>
+        <MapPin size={18} color={C.pink} strokeWidth={2} />
+        <TextInput
+          style={[locS.input, gpsOn && locS.inputGps]}
+          placeholder="예: 성수동, 홍대입구역"
+          placeholderTextColor={C.textFaint}
+          value={value}
+          onChangeText={onChangeText}
+          returnKeyType="done"
+          editable={!gpsOn}
+        />
+        {!!onCoordsChange && (
+          <TouchableOpacity
+            style={[locS.gpsBtn, gpsOn && locS.gpsBtnOn]}
+            onPress={handleGpsPress}
+            activeOpacity={0.7}
+            disabled={locating}
+          >
+            <LocateFixed size={16} color={gpsOn ? C.white : C.pinkDeep} strokeWidth={2} />
+          </TouchableOpacity>
+        )}
+      </View>
+      <Text style={locS.hint}>동네를 알려주면 실제 장소·맛집으로 추천해드려요.</Text>
+    </View>
+  );
+}
+const locS = StyleSheet.create({
+  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
+  inputWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: C.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    borderWidth: 1.5, borderColor: C.border,
+  },
+  input: { flex: 1, fontSize: 14, color: C.text, padding: 0 },
+  inputGps: { color: C.pinkDeep, fontWeight: '600' },
+  gpsBtn: {
+    width: 30, height: 30, borderRadius: 10,
+    backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
+  },
+  gpsBtnOn: { backgroundColor: C.pink },
+  hint: { fontSize: 11, color: C.textSub, marginTop: 6, lineHeight: 16 },
+});
+
+// ─── PlaceRow ─────────────────────────────────────────────────────────────────
+// 카드에 붙은 실제 카카오 장소. url이 있으면 탭 시 지도(카카오 place) 링크를 연다.
+export function PlaceRow({
+  name, address, url, style,
+}: { name?: string; address?: string; url?: string; style?: StyleProp<ViewStyle> }) {
+  if (!name) return null;
+  return (
+    <TouchableOpacity
+      style={[placeS.wrap, style]}
+      activeOpacity={url ? 0.7 : 1}
+      disabled={!url}
+      onPress={url ? () => { Linking.openURL(url); } : undefined}
+    >
+      <MapPin size={16} color={C.text} strokeWidth={2} style={placeS.icon} />
+      <View style={{ flex: 1 }}>
+        <Text style={placeS.name} numberOfLines={1}>{name}</Text>
+        {!!address && <Text style={placeS.addr} numberOfLines={1}>{address}</Text>}
+      </View>
+      {!!url && <Text style={placeS.link}>지도 →</Text>}
+    </TouchableOpacity>
+  );
+}
+const placeS = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  icon: { marginTop: 1 },
+  name: { fontSize: 15, fontWeight: '700', color: C.text },
+  addr: { fontSize: 13, color: C.textSub, marginTop: 2 },
+  link: { fontSize: 13, fontWeight: '600', color: C.textSub, marginTop: 1 },
 });
 
 // ─── InfoNote ─────────────────────────────────────────────────────────────────
