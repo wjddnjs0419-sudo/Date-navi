@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
+import { PlaceRow } from '../../components/ui';
 
 type CardDetail = {
   id: string;
@@ -23,6 +24,9 @@ type CardDetail = {
   estimated_budget: string;
   tags: string[];
   why_recommended: string;
+  place_name?: string | null;
+  place_address?: string | null;
+  map_url?: string | null;
   mode: string;
   created_at: string;
 };
@@ -164,6 +168,9 @@ export default function CardDetailScreen() {
           estimated_budget: nc.estimated_budget,
           tags: nc.tags,
           why_recommended: nc.why_recommended,
+          place_name: nc.place_name ?? null,
+          place_address: nc.place_address ?? null,
+          map_url: nc.map_url ?? null,
         });
       }
       Alert.alert(
@@ -211,6 +218,10 @@ export default function CardDetailScreen() {
 
           <Text style={styles.title}>{card.title}</Text>
           <Text style={styles.summary}>{card.summary}</Text>
+
+          {!!card.place_name && (
+            <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={{ marginTop: 4, marginBottom: 20 }} />
+          )}
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>

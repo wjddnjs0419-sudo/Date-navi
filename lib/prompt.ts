@@ -161,8 +161,21 @@ export function buildPreferencesBlock(prefs: UserPreferences, language: AppLangu
     : `\n\n【커플 취향 (온보딩 기반)】\n${lines.join('\n')}`;
 }
 
-export function buildPrompt(input: FeelingInput, mode: string, prefs?: UserPreferences, language: AppLanguage = 'ko'): string {
+export function buildPrompt(
+  input: FeelingInput,
+  mode: string,
+  prefs?: UserPreferences,
+  language: AppLanguage = 'ko',
+  placesBlock = '',
+): string {
   const isEnglish = language === 'en';
+  const hasPlaces = placesBlock.length > 0;
+  // 실제 장소가 주입될 때만 카드 JSON 골격에 place 필드를 노출한다.
+  const placesSchema = hasPlaces
+    ? (isEnglish
+      ? `,\n      "place_name": "Real place name from the list",\n      "place_address": "Its address",\n      "map_url": "Its map link"`
+      : `,\n      "place_name": "목록의 실제 장소명",\n      "place_address": "그 장소 주소",\n      "map_url": "그 장소 지도 링크"`)
+    : '';
   const avoidText = input.avoid.length > 0
     ? (isEnglish
       ? `Things to avoid: ${input.avoid.map(a => AVOID_MAP_EN[a] ?? a).join(', ')}`
@@ -188,7 +201,7 @@ export function buildPrompt(input: FeelingInput, mode: string, prefs?: UserPrefe
 - Distance: ${DISTANCE_MAP_EN[input.distance] ?? input.distance}
 - Vibe: ${MOOD_MAP_EN[input.mood] ?? input.mood}
 - Time available: ${DURATION_MAP_EN[input.duration] ?? input.duration}
-${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
+${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}${placesBlock}
 
 Reply with JSON only. Do not include any other text.
 
@@ -200,7 +213,7 @@ Reply with JSON only. Do not include any other text.
       "estimated_time": "Estimated time",
       "estimated_budget": "Estimated cost per person",
       "tags": ["Tag 1", "Tag 2", "Tag 3"],
-      "why_recommended": "Why this fits well (within 50 characters, warm tone)"${stepsSchema}
+      "why_recommended": "Why this fits well (within 50 characters, warm tone)"${stepsSchema}${placesSchema}
     }
   ]
 }
@@ -216,7 +229,7 @@ Tag examples: low travel, good when tired, cheap, low risk, indoor, outdoor, rom
 - 이동 거리: ${DISTANCE_MAP[input.distance] ?? input.distance}
 - 분위기: ${MOOD_MAP[input.mood] ?? input.mood}
 - 가능 시간: ${DURATION_MAP[input.duration] ?? input.duration}
-${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
+${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}${placesBlock}
 
 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
 
@@ -228,7 +241,7 @@ ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
       "estimated_time": "예상 소요 시간",
       "estimated_budget": "1인 예상 비용",
       "tags": ["태그1", "태그2", "태그3"],
-      "why_recommended": "이 데이트가 잘 맞는 이유 (50자 이내, 따뜻한 말투)"${stepsSchema}
+      "why_recommended": "이 데이트가 잘 맞는 이유 (50자 이내, 따뜻한 말투)"${stepsSchema}${placesSchema}
     }
   ]
 }
@@ -237,31 +250,8 @@ ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}
 }
 
 export type SoftMessageInput = {
-  reasons: string[];
-  freeText?: string;
+  freeText: string;
   tone?: string;
-};
-
-const REASON_MAP: Record<string, string> = {
-  tired: '피곤해요',
-  budget: '예산이 부담돼요',
-  far: '멀리 가기 싫어요',
-  sorry: '거절하기 미안해요',
-  near: '가까운 곳이 좋아요',
-  crowded: '사람 많은 곳은 싫어요',
-  time: '시간이 촉박해요',
-  weather: '날씨가 맞지 않아요',
-};
-
-const REASON_MAP_EN: Record<string, string> = {
-  tired: 'I am tired',
-  budget: 'Budget feels tight',
-  far: 'I do not want to travel far',
-  sorry: 'I feel bad saying no',
-  near: 'A nearby place is better',
-  crowded: 'Crowded places are not my thing',
-  time: 'I am short on time',
-  weather: 'The weather is not great',
 };
 
 // soft-message 탭의 톤 선택("다정하게"/"가볍게"/"솔직하게")을 실제 프롬프트 지침으로 반영한다.
@@ -280,44 +270,44 @@ const TONE_GUIDE_MAP_EN: Record<string, string> = {
 
 export function buildSoftMessagePrompt(input: SoftMessageInput, language: AppLanguage): string {
   const isEnglish = language === 'en';
-  const reasonText = input.reasons.map(r => (isEnglish ? REASON_MAP_EN[r] ?? r : REASON_MAP[r] ?? r)).join(', ');
-  const freeTextPart = input.freeText ? `\n${isEnglish ? 'Additional note' : '추가 메모'}: ${input.freeText}` : '';
   const toneGuide = input.tone ? (isEnglish ? TONE_GUIDE_MAP_EN[input.tone] : TONE_GUIDE_MAP[input.tone]) : undefined;
   const toneRule = toneGuide ? `\n- ${toneGuide}` : '';
 
   if (isEnglish) {
     return `You are an expert at gently expressing hard-to-say feelings between couples.
-Please write a warm, gentle message based on the situation below.
+Below is a message the user wrote in their own words, meant for their partner. Rewrite it into a warm, gentle version while keeping the original meaning and intent.
 
-【Situation】
-- What I want to say: ${reasonText}${freeTextPart}
+【Original message】
+${input.freeText}
 
 Reply with JSON only. Do not include any other text.
 
 {
-  "message": "A gentle message to send to my partner (2-3 sentences, warm and sincere)"
+  "message": "A gentle rewrite to send to my partner (2-3 sentences, warm and sincere)"
 }
 
 Rules:
-- Even if you are saying no or setting a boundary, the message should still feel loving
+- Keep the original meaning and intent unchanged
+- Even if it is saying no or setting a boundary, the message should still feel loving
 - Include soft language that shows you still care
 - Avoid overly formal language and keep it natural, like a couple would speak
 - Keep it concise, within 2-3 sentences${toneRule}`;
   }
 
   return `당신은 커플 사이에서 말하기 어려운 마음을 부드럽게 전달해주는 전문가입니다.
-아래 상황을 보고, 상대방에게 부드럽고 따뜻하게 전달할 수 있는 문장을 만들어주세요.
+아래는 사용자가 상대방에게 하고 싶은 말을 자신의 표현으로 적은 원문입니다. 의미와 의도는 그대로 유지하면서, 상대방에게 부드럽고 따뜻하게 전달할 수 있는 문장으로 다시 표현해주세요.
 
-【상황】
-- 전달하고 싶은 마음: ${reasonText}${freeTextPart}
+【원문】
+${input.freeText}
 
 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
 
 {
-  "message": "상대방에게 보낼 부드러운 문장 (2~3문장, 진심이 느껴지는 따뜻한 말투)"
+  "message": "다시 표현한 부드러운 문장 (2~3문장, 진심이 느껴지는 따뜻한 말투)"
 }
 
 규칙:
+- 원문의 의미와 의도는 바꾸지 마세요
 - 거절이나 부담을 표현하면서도 상대에 대한 애정이 느껴져야 합니다
 - "~해서 미안해", "그래도 같이 있고 싶어" 같은 따뜻한 표현을 넣으세요
 - 너무 격식체는 피하고, 자연스러운 연인 말투로 작성하세요

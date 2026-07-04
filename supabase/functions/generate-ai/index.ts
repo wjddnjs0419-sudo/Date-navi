@@ -25,6 +25,10 @@ const CARDS_SCHEMA = {
           estimated_budget: { type: 'string' },
           tags: { type: 'array', items: { type: 'string' } },
           why_recommended: { type: 'string' },
+          // 카카오 로컬 실제 장소 (location 입력 시에만 채워짐 — optional)
+          place_name: { type: 'string' },
+          place_address: { type: 'string' },
+          map_url: { type: 'string' },
           // make_course 모드 전용 동선 단계 (optional — required 미포함이라 다른 모드는 생략 가능)
           steps: {
             type: 'array',

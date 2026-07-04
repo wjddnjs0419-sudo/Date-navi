@@ -11,7 +11,7 @@ import {
   ChevronRight, Leaf, Palette,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Badge, Chip, SoftCard } from '../../components/ui';
+import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
 
 const CARD_STYLES = [
   { bg: 'linear-gradient(135deg, #FFD3D9 0%, #F1ECFF 100%)', bg2: C.pinkMid, Icon: Heart, iconColor: C.pinkDeep },
@@ -41,7 +41,6 @@ export default function ResultScreen() {
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [sending, setSending] = useState(false);
-  const [opening, setOpening] = useState<number | null>(null);
   // 후보는 params 로만 넘어와 아직 DB 에 없다. 저장하며 확보한 id 를 인덱스별로 재사용해
   // 같은 카드를 중복 insert 하지 않는다.
   const [savedIds, setSavedIds] = useState<Record<number, string>>({});
@@ -71,24 +70,13 @@ export default function ResultScreen() {
       estimated_budget: card.estimated_budget,
       tags: card.tags,
       why_recommended: card.why_recommended,
+      place_name: card.place_name ?? null,
+      place_address: card.place_address ?? null,
+      map_url: card.map_url ?? null,
     });
     if (error) throw error;
     setSavedIds(prev => ({ ...prev, [i]: cardId }));
     return cardId;
-  }
-
-  // 후보 카드 탭 → 저장 후 상세로 이동. 상세에서 반응·코멘트·확정한다.
-  async function openDetail(i: number) {
-    if (opening !== null) return;
-    setOpening(i);
-    try {
-      const cardId = await saveCard(i);
-      if (cardId) router.push(`/card/${cardId}` as any);
-    } catch {
-      Alert.alert('오류', '후보를 여는 중 문제가 생겼어요.');
-    } finally {
-      setOpening(null);
-    }
   }
 
   // 보내기 전에 선택 카드를 저장해 id 를 확보하고, 그 id 로 공유 화면을 연다.
@@ -141,14 +129,14 @@ export default function ResultScreen() {
         </View>
 
         <Text style={[s2.heading, { marginTop: 12 }]}>오늘은 이런 데이트가{'\n'}잘 맞아 보여요</Text>
-        <Text style={s2.subText}>카드를 누르면 반응·코멘트를 남기고 확정할 수 있어요.</Text>
+        <Text style={s2.subText}>저장하면 우리 후보에서 반응·코멘트를 남길 수 있어요.</Text>
 
         {cards.map((card, i) => {
           const style = CARD_STYLES[i % CARD_STYLES.length];
           const isFeatured = i === selectedIndex;
           return isFeatured ? (
-            /* 메인 카드 — 탭하면 저장 후 상세(반응·확정)로 이동 */
-            <TouchableOpacity key={i} style={s2.featuredCard} activeOpacity={0.92} onPress={() => openDetail(i)}>
+            /* 메인 카드 — 저장은 명시적으로 '저장/보내기' 버튼에서만. 탭으로 저장하지 않는다. */
+            <View key={i} style={s2.featuredCard}>
               <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
                 {i === 0 && (
                   <View style={{ position: 'absolute', top: 16, left: 16 }}>
@@ -163,6 +151,10 @@ export default function ResultScreen() {
                 <Text style={s2.featuredCategory}>COZY · INDOOR</Text>
                 <Text style={s2.featuredTitle}>{card.title}</Text>
                 <Text style={s2.featuredDesc}>{card.summary}</Text>
+
+                {!!card.place_name && (
+                  <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={{ marginTop: 12 }} />
+                )}
 
                 <View style={s2.metaGrid}>
                   <View style={s2.metaBox}>
@@ -227,10 +219,10 @@ export default function ResultScreen() {
                   <Text style={s2.retryBtnText}>다시 추천받기</Text>
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           ) : (
-            /* 서브 카드 */
-            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => openDetail(i)}>
+            /* 서브 카드 — 탭하면 저장 없이 그 카드를 크게(선택) 본다 */
+            <SoftCard key={i} style={{ marginTop: 12 }} onPress={() => setSelectedIndex(i)}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[s2.subIcon, { backgroundColor: style.bg2 }]}>
                   <style.Icon size={26} strokeWidth={1.5} color={style.iconColor} />
@@ -247,6 +239,12 @@ export default function ResultScreen() {
                       <Wallet size={11} color={C.textMuted} />
                       <Text style={s2.subMeta}>{card.estimated_budget}</Text>
                     </View>
+                    {!!card.place_name && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 }}>
+                        <MapPin size={11} color={C.pinkDeep} />
+                        <Text style={[s2.subMeta, { color: C.pinkDeep }]} numberOfLines={1}>{card.place_name}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <ChevronRight size={16} color={C.textFaint} />

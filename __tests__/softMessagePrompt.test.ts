@@ -1,6 +1,6 @@
 import { buildSoftMessagePrompt } from '../lib/prompt';
 
-const base = { reasons: ['tired'] };
+const base = { freeText: '오늘은 좀 피곤해서 짧게 보고 싶어' };
 
 describe('buildSoftMessagePrompt 톤별 지침 (ko)', () => {
   it('다정하게: 다정함을 강조하는 지침 포함', () => {
@@ -26,6 +26,11 @@ describe('buildSoftMessagePrompt 톤별 지침 (ko)', () => {
 
   it('톤이 없으면 추가 지침 없이도 정상 동작', () => {
     const p = buildSoftMessagePrompt(base, 'ko');
-    expect(p).toContain('피곤해요');
+    expect(p).toContain('오늘은 좀 피곤해서 짧게 보고 싶어');
+  });
+
+  it('사용자가 적은 원문이 프롬프트에 그대로 포함된다', () => {
+    const p = buildSoftMessagePrompt({ freeText: '이번엔 데이트 짧게 하면 안될까' }, 'ko');
+    expect(p).toContain('이번엔 데이트 짧게 하면 안될까');
   });
 });

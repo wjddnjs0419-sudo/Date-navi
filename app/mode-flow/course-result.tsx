@@ -12,7 +12,7 @@ import { computeTrailNodes, buildTrailPath, parseStepsFromSummary, type CourseSt
 import { supabase } from '../../lib/supabase';
 import { Clock, Wallet, Send, Bookmark } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Badge } from '../../components/ui';
+import { BackBar, BigButton, Badge, PlaceRow } from '../../components/ui';
 
 // 가로 S자 동선 트레일 배치 옵션
 const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 150, padX: 48, padY: 56 };
@@ -116,6 +116,9 @@ export default function CourseResultScreen() {
         estimated_budget: card.estimated_budget,
         tags: card.tags,
         why_recommended: card.why_recommended,
+        place_name: card.place_name ?? null,
+        place_address: card.place_address ?? null,
+        map_url: card.map_url ?? null,
       });
       if (error) throw error;
       router.push({ pathname: '/share/send', params: { cardId } } as any);
@@ -158,6 +161,9 @@ export default function CourseResultScreen() {
         estimated_budget: card.estimated_budget,
         tags: card.tags,
         why_recommended: card.why_recommended,
+        place_name: card.place_name ?? null,
+        place_address: card.place_address ?? null,
+        map_url: card.map_url ?? null,
       });
       if (error) throw error;
       setSaved(true);
@@ -207,6 +213,10 @@ export default function CourseResultScreen() {
               </View>
 
               <CourseTrail steps={steps} width={width - 40} summary={card.summary} />
+
+              {!!card.place_name && (
+                <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={{ marginTop: 12 }} />
+              )}
 
               <View style={s.btnRow}>
                 <TouchableOpacity style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>

@@ -42,6 +42,28 @@ describe('make_course 프롬프트', () => {
   });
 });
 
+describe('실제 장소 블록 주입', () => {
+  const block = '\n\n【실제 주변 장소 목록】\n- 성수동 카페 (카페) · 서울 성동구 1 · http://p/1';
+  it('placesBlock을 주면 프롬프트에 그대로 포함된다', () => {
+    const p = buildPrompt(base, 'feeling', undefined, 'ko', block);
+    expect(p).toContain('성수동 카페');
+  });
+  it('placesBlock이 있으면 JSON 골격에 place_name 필드가 들어간다', () => {
+    const p = buildPrompt(base, 'feeling', undefined, 'ko', block);
+    expect(p).toContain('"place_name":');
+    expect(p).toContain('"place_address":');
+    expect(p).toContain('"map_url":');
+  });
+  it('placesBlock이 없으면 place_name 필드 미포함', () => {
+    expect(buildPrompt(base, 'feeling')).not.toContain('"place_name":');
+  });
+  it('en에서도 placesBlock 주입 + place 필드 포함', () => {
+    const p = buildPrompt(base, 'feeling', undefined, 'en', block);
+    expect(p).toContain('성수동 카페');
+    expect(p).toContain('"place_name":');
+  });
+});
+
 describe('make_course JSON 골격에 steps 필드', () => {
   it('ko: make_course면 JSON 스키마에 "steps": 포함', () => {
     expect(buildPrompt(base, 'make_course')).toContain('"steps":');

@@ -14,7 +14,7 @@ const SOFT_MESSAGE_STEPS = ['마음 확인하는 중', '다정한 표현 고르�
 
 export default function SoftMessageResultScreen() {
   const router = useRouter();
-  const { card, tone, free } = useLocalSearchParams<{ card: string; tone: string; free?: string }>();
+  const { tone, free } = useLocalSearchParams<{ tone: string; free: string }>();
 
   const [loading, setLoading] = useState(true);
   const [genStep, setGenStep] = useState(0);
@@ -32,7 +32,7 @@ export default function SoftMessageResultScreen() {
     (async () => {
       try {
         const text = await generateSoftMessage(
-          { reasons: [card ?? ''], freeText: free?.trim() || undefined, tone },
+          { freeText: free?.trim() ?? '', tone },
           'ko',
         );
         setEditedText(text);
@@ -70,7 +70,7 @@ export default function SoftMessageResultScreen() {
         id: `sm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         couple_id: profile.couple_id,
         user_id: user.id,
-        reason_tags: card ? [card] : [],
+        reason_tags: [],
         free_text: free?.trim() || null,
         generated_text: editedText,
         used: true,
