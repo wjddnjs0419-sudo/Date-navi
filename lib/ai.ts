@@ -7,11 +7,15 @@ export type { CourseStep };
 import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, type KakaoPlace, type PlaceFocus } from './place';
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
-// 실패하면 빈 배열 → 장소 없는 기존 프롬프트로 자연스럽게 폴백한다.
-async function searchPlaces(location: string, radius: number, focus: PlaceFocus | null): Promise<KakaoPlace[]> {
+// location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
+async function searchPlaces(
+  query: { location?: string; coords?: GeoCoords },
+  radius: number,
+  focus: PlaceFocus | null,
+): Promise<KakaoPlace[]> {
   try {
     const { data, error } = await supabase.functions.invoke('place-search', {
-      body: { location, radius, focus: focus ?? undefined },
+      body: { location: query.location, coords: query.coords, radius, focus: focus ?? undefined },
     });
     if (error) throw error;
     const places = (data as { places?: KakaoPlace[] })?.places;
@@ -236,12 +240,16 @@ export async function generateDateCards(
   language: AppLanguage = 'ko',
 ): Promise<DateCard[]> {
   try {
-    // 위치가 있으면 실제 장소를 먼저 가져와 프롬프트에 주입한다.
+    // 위치(텍스트 또는 GPS 좌표)가 있으면 실제 장소를 먼저 가져와 프롬프트에 주입한다.
     // freeText에 "카페"/"맛집" 등 카테고리가 콕 집혀 있으면 그 카테고리만 검색해 후보를 좁힌다.
     let placesBlock = '';
-    if (input.location) {
+    if (input.location || input.coords) {
       const focus = detectPlaceFocus(input.freeText);
-      const places = await searchPlaces(input.location, distanceToRadius(input.distance), focus);
+      const places = await searchPlaces(
+        { location: input.location, coords: input.coords },
+        distanceToRadius(input.distance),
+        focus,
+      );
       placesBlock = formatPlacesBlock(places, language, focus?.label);
     }
     const prompt = buildPrompt(input, mode, prefs, language, placesBlock);
