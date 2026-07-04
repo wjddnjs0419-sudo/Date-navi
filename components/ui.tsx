@@ -377,7 +377,11 @@ export function LocationField({
         ]);
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // 드물게 GPS 조회가 무한 대기하면 버튼이 영구 비활성화되므로 10초 타임아웃을 건다.
+      const pos = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('gps-timeout')), 10000)),
+      ]);
       // 카카오 규약: x=경도(longitude), y=위도(latitude)
       onCoordsChange({ x: String(pos.coords.longitude), y: String(pos.coords.latitude) });
       onChangeText(GPS_ACTIVE_TEXT);

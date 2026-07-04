@@ -39,6 +39,13 @@ describe('mode별 FeelingInput 빌더', () => {
     expect(buildLightInput({ duration: '1h' }).coords).toBeUndefined();
     expect(buildCourseInput({ idea: '한강', budget: '', duration: '' }).coords).toBeUndefined();
   });
+  it('coords가 있으면 location 텍스트는 버린다 (GPS placeholder 저장 방지)', () => {
+    const coords = { x: '127.05', y: '37.54' };
+    expect(buildLightInput({ duration: '1h', location: '내 위치 사용 중', coords }).location).toBeUndefined();
+    expect(buildPickInput({ energy: 'low', budget: 'medium', distance: 'near', duration: '2-3h', location: '내 위치 사용 중', coords }).location).toBeUndefined();
+    expect(buildFeelingInput({ mood: 'quiet', budget: 'low', duration: '1h', location: '내 위치 사용 중', coords }).location).toBeUndefined();
+    expect(buildCourseInput({ idea: '한강', budget: '', duration: '', location: '내 위치 사용 중', coords }).location).toBeUndefined();
+  });
 
   it('course: 아이디어 freeText + 예산/시간 반영, 빈 값은 기본값', () => {
     const input = buildCourseInput({ idea: '한강 피크닉', budget: '', duration: '' });

@@ -14,7 +14,8 @@ export function buildPickInput(a: PickArgs): FeelingInput {
     mood: 'comfortable',
     duration: a.duration,
     avoid: [],
-    location: norm(a.location),
+    // GPS 사용 시 입력창의 placeholder 문구가 location으로 저장되지 않게 버린다.
+    location: a.coords ? undefined : norm(a.location),
     coords: a.coords,
   };
 }
@@ -28,7 +29,7 @@ export function buildFeelingInput(a: FeelingArgs): FeelingInput {
     duration: a.duration,
     avoid: [],
     freeText: norm(a.freeText),
-    location: norm(a.location),
+    location: a.coords ? undefined : norm(a.location),
     coords: a.coords,
   };
 }
@@ -41,7 +42,7 @@ export function buildLightInput(a: LightArgs): FeelingInput {
     mood: 'comfortable',
     duration: a.duration,
     avoid: [],
-    location: norm(a.location),
+    location: a.coords ? undefined : norm(a.location),
     coords: a.coords,
   };
 }
@@ -57,7 +58,7 @@ export function buildCourseInput(a: CourseArgs): FeelingInput {
     duration: a.duration || '2-3h',
     avoid: [],
     freeText: a.idea.trim() || undefined,
-    location: norm(a.location),
+    location: a.coords ? undefined : norm(a.location),
     coords: a.coords,
   };
 }
