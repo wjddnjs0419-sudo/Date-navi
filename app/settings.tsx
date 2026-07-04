@@ -6,10 +6,11 @@ import {
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
+import * as ExpoLocation from 'expo-location';
 import { supabase } from '../lib/supabase';
 import {
   User, Users, Lock, Bell, Globe, Shield,
-  HelpCircle, FileText, LogOut, Trash2, Camera, Heart, ChevronRight,
+  HelpCircle, FileText, LogOut, Trash2, Camera, Heart, ChevronRight, MapPin,
 } from 'lucide-react-native';
 import { C } from '../constants/colors';
 import { ListGroup, ListRow, SectionLabel } from '../components/ui';
@@ -137,6 +138,36 @@ export default function SettingsScreen() {
     );
   }
 
+  async function handleLocation() {
+    const { status, canAskAgain } = await ExpoLocation.getForegroundPermissionsAsync();
+
+    // 아직 한 번도 안 물어봤으면 OS 권한 팝업을 띄운다.
+    if (status === 'undetermined' && canAskAgain) {
+      const res = await ExpoLocation.requestForegroundPermissionsAsync();
+      if (res.status === 'granted') {
+        Alert.alert('위치 켜짐', '이제 내 위치로 데이트 장소를 추천받을 수 있어요.');
+      } else {
+        Alert.alert('위치 꺼짐', '나중에 설정에서 위치 권한을 켤 수 있어요.', [
+          { text: '확인', style: 'cancel' },
+          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        ]);
+      }
+      return;
+    }
+
+    // 이미 결정된 상태면(허용/거부) OS 설정에서 직접 바꾸게 안내.
+    Alert.alert(
+      '위치 설정',
+      status === 'granted'
+        ? '위치 권한이 켜져 있어요. 끄려면 설정을 열어주세요.'
+        : '위치 권한이 꺼져 있어요. 켜려면 설정을 열어주세요.',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '설정 열기', onPress: () => Linking.openSettings() },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center' }}>
@@ -232,6 +263,12 @@ export default function SettingsScreen() {
               label={t.rowNotifications}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
               onPress={handleNotifications}
+            />
+            <ListRow
+              icon={<MapPin size={16} strokeWidth={1.8} color={C.text} />}
+              label={t.rowLocation}
+              trailing={<ChevronRight size={14} color={C.textFaint} />}
+              onPress={handleLocation}
             />
             <ListRow
               icon={<Globe size={16} strokeWidth={1.8} color={C.text} />}

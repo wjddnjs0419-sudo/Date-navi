@@ -83,6 +83,7 @@ type Copy = {
     prefsTitle: string;
     rowNotifications: string;
     rowLanguage: string;
+    rowLocation: string;
     infoTitle: string;
     rowHelp: string;
     rowTerms: string;
@@ -395,6 +396,7 @@ const COPY: Record<AppLanguage, Copy> = {
       prefsTitle: '환경설정',
       rowNotifications: '알림',
       rowLanguage: '언어',
+      rowLocation: '위치 정보',
       infoTitle: '정보',
       rowHelp: '도움말',
       rowTerms: '이용약관',
@@ -843,6 +845,7 @@ const COPY: Record<AppLanguage, Copy> = {
       prefsTitle: 'Preferences',
       rowNotifications: 'Notifications',
       rowLanguage: 'Language',
+      rowLocation: 'Location',
       infoTitle: 'Info',
       rowHelp: 'Help',
       rowTerms: 'Terms of Service',
