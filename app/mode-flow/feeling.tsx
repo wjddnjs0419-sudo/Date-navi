@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, SafeAr
 import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Chip } from '../../components/ui';
+import { BackBar, BigButton, Chip, LocationField } from '../../components/ui';
 
 const MOODS = [
   { v: 'comfortable', label: '편안하게' },
@@ -21,13 +21,17 @@ export default function FeelingScreen() {
   const [mood, setMood] = useState('comfortable');
   const [budget, setBudget] = useState('아끼기');
   const [duration, setDuration] = useState('2~3시간');
+  const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
   function handleGenerate() {
     const input = buildFeelingInput({
       mood,
       freeText,
+      location,
       budget: budget === '아끼기' ? 'low' : budget === '적당히' ? 'medium' : 'high',
       duration: duration === '1시간' ? '1h' : duration === '2~3시간' ? '2-3h' : duration === '반나절' ? 'half_day' : 'full_day',
+      coords: coords ?? undefined,
     });
     router.replace({
       pathname: '/mode-flow/generating',
@@ -82,6 +86,8 @@ export default function FeelingScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
 
           <View style={{ height: 120 }} />
         </ScrollView>

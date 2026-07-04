@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton } from '../../components/ui';
+import { BackBar, BigButton, LocationField } from '../../components/ui';
 
 export default function CourseScreen() {
   const router = useRouter();
@@ -14,13 +14,15 @@ export default function CourseScreen() {
   const [idea, setIdea] = useState('');
   const [budget, setBudget] = useState('');
   const [duration, setDuration] = useState('');
+  const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
   function handleGenerate() {
     if (!idea.trim()) {
       Alert.alert(c.errorEmpty);
       return;
     }
-    const input = buildCourseInput({ idea, budget, duration });
+    const input = buildCourseInput({ idea, budget, duration, location, coords: coords ?? undefined });
     router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'make_course', input: JSON.stringify(input) },
@@ -81,6 +83,8 @@ export default function CourseScreen() {
             );
           })}
         </View>
+
+        <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
 
         <View style={{ height: 24 }} />
         <BigButton onPress={handleGenerate} variant={idea.trim() ? 'primary' : 'disabled'}>{c.generateButton}</BigButton>

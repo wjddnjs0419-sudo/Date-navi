@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } fr
 import { useRouter } from 'expo-router';
 import { buildPickInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton } from '../../components/ui';
+import { BackBar, BigButton, LocationField } from '../../components/ui';
 
 const ENERGY = [
   { v: 'low', label: '피곤해' },
@@ -32,9 +32,11 @@ export default function PickScreen() {
   const [distance, setDistance] = useState('near');
   const [budget, setBudget] = useState('low');
   const [duration, setDuration] = useState('2-3h');
+  const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
   function handleGenerate() {
-    const input = buildPickInput({ energy, budget, distance, duration });
+    const input = buildPickInput({ energy, budget, distance, duration, location, coords: coords ?? undefined });
     router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'pick_for_me', input: JSON.stringify(input) },
@@ -76,6 +78,7 @@ export default function PickScreen() {
           <Row label="이동 거리" items={DISTANCES} value={distance} onSelect={setDistance} />
           <Row label="예산" items={BUDGETS} value={budget} onSelect={setBudget} />
           <Row label="시간" items={DURATIONS} value={duration} onSelect={setDuration} />
+          <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
           <View style={{ height: 120 }} />
         </ScrollView>
         <View style={s.footer}>

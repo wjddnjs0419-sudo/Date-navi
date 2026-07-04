@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Leaf } from 'lucide-react-native';
 import { buildLightInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton } from '../../components/ui';
+import { BackBar, BigButton, LocationField } from '../../components/ui';
 
 const DURATIONS = [
   { v: '1h', label: '1시간' },
@@ -15,9 +15,11 @@ const DURATIONS = [
 export default function LightScreen() {
   const router = useRouter();
   const [duration, setDuration] = useState('1h');
+  const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
   function handleGenerate() {
-    const input = buildLightInput({ duration });
+    const input = buildLightInput({ duration, location, coords: coords ?? undefined });
     router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'light', input: JSON.stringify(input) },
@@ -43,6 +45,7 @@ export default function LightScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
         </View>
         <View style={s.footer}>
           <BigButton onPress={handleGenerate}>가벼운 후보 만들기</BigButton>
