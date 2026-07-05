@@ -10,17 +10,19 @@ import { Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
-
-const REASONS = [
-  '잘 사용하지 않아요',
-  '기능이 부족해요',
-  '다른 앱을 사용하고 있어요',
-  '개인정보가 걱정돼요',
-  '기타',
-];
+import { useI18n } from '../../lib/i18n';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const REASONS = [
+    t('account.deleteAccount.reasons.notUsing'),
+    t('account.deleteAccount.reasons.lackingFeatures'),
+    t('account.deleteAccount.reasons.usingOtherApp'),
+    t('account.deleteAccount.reasons.privacyConcern'),
+    t('account.deleteAccount.reasons.other'),
+  ];
+  const warningItems = t('account.deleteAccount.warningItems', { returnObjects: true }) as string[];
 
   const [reasonIdx, setReasonIdx] = useState<number | null>(null);
   const [agreed, setAgreed] = useState(false);
@@ -64,7 +66,7 @@ export default function DeleteAccountScreen() {
       await supabase.auth.signOut();
     } catch {
       setDeleting(false);
-      Alert.alert('오류', '탈퇴 처리 중 문제가 생겼어요. 다시 시도해주세요.');
+      Alert.alert(t('common.error'), t('account.deleteAccount.deleteError'));
     }
   }
 
@@ -73,24 +75,19 @@ export default function DeleteAccountScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.headingWrap}>
-          <Text style={s.heading}>정말 떠나시는 건가요?</Text>
-          <Text style={s.subText}>탈퇴하면 둘이 함께 만든 추억과 후보가 모두 사라져요.</Text>
+          <Text style={s.heading}>{t('account.deleteAccount.heading')}</Text>
+          <Text style={s.subText}>{t('account.deleteAccount.subText')}</Text>
         </View>
 
         <View style={s.warningBox}>
-          <Text style={s.warningTitle}>탈퇴하면 이런 정보가 사라져요</Text>
-          {[
-            '함께한 데이트 기록과 사진',
-            '둘 다 끌린 후보 목록',
-            '상대방과의 커플 연결',
-            '닉네임과 계정 정보',
-          ].map(item => (
+          <Text style={s.warningTitle}>{t('account.deleteAccount.warningTitle')}</Text>
+          {warningItems.map(item => (
             <Text key={item} style={s.warningItem}>· {item}</Text>
           ))}
         </View>
 
         <View style={s.reasonSection}>
-          <SectionLabel>떠나는 이유 (선택)</SectionLabel>
+          <SectionLabel>{t('account.deleteAccount.reasonLabel')}</SectionLabel>
           <ListGroup>
             {REASONS.map((reason, i, arr) => (
               <ListRow
@@ -128,7 +125,7 @@ export default function DeleteAccountScreen() {
             {agreed && <Check size={11} color={C.white} strokeWidth={3} />}
           </View>
           <Text style={s.agreeText}>
-            위 내용을 모두 확인했고, 탈퇴 후에는 데이터를 복구할 수 없다는 것에 동의합니다.
+            {t('account.deleteAccount.agreeText')}
           </Text>
         </TouchableOpacity>
 
@@ -140,10 +137,10 @@ export default function DeleteAccountScreen() {
           onPress={handleDelete}
           variant={deleting ? 'disabled' : agreed ? 'primary' : 'disabled'}
         >
-          {deleting ? <ActivityIndicator color={C.white} size="small" /> : agreed ? '탈퇴하기' : '동의가 필요해요'}
+          {deleting ? <ActivityIndicator color={C.white} size="small" /> : agreed ? t('account.deleteAccount.deleteCta') : t('account.deleteAccount.needAgreeCta')}
         </BigButton>
         <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()}>
-          <Text style={s.cancelBtnText}>조금 더 둘러볼게요</Text>
+          <Text style={s.cancelBtnText}>{t('account.deleteAccount.browseMoreCta')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

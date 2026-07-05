@@ -42,18 +42,17 @@ const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
   { type: 'next_time', color: '#8B5CF6', bg: '#F5F3FF' },
 ];
 
-const CONDITION_TAGS: { tag: ConditionTag; label: string; emoji: string; freeText: string }[] = [
-  { tag: 'change_place', label: '장소만 바꾸면', emoji: '📍', freeText: '비슷한 분위기, 더 가까운 장소로 바꿔서 추천해줘' },
-  { tag: 'closer', label: '가까우면', emoji: '🚶', freeText: '더 가까운 거리, 이동 10분 이내로 바꿔서 추천해줘' },
-  { tag: 'indoor', label: '실내면', emoji: '🏠', freeText: '실내 공간으로 바꿔서 추천해줘' },
-  { tag: 'budget_adjust', label: '예산 조정되면', emoji: '💰', freeText: '더 저렴한 예산으로 바꿔서 추천해줘' },
-];
-
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { strings: s, language } = useI18n();
-  const alertTitle = language === 'ko' ? '오류' : 'Error';
+  const { strings: s, t, language } = useI18n();
+  const alertTitle = s.common.error;
+  const CONDITION_TAGS: { tag: ConditionTag; label: string; emoji: string; freeText: string }[] = [
+    { tag: 'change_place', label: t('card.conditionTags.change_place.label'), emoji: '📍', freeText: t('card.conditionTags.change_place.freeText') },
+    { tag: 'closer', label: t('card.conditionTags.closer.label'), emoji: '🚶', freeText: t('card.conditionTags.closer.freeText') },
+    { tag: 'indoor', label: t('card.conditionTags.indoor.label'), emoji: '🏠', freeText: t('card.conditionTags.indoor.freeText') },
+    { tag: 'budget_adjust', label: t('card.conditionTags.budget_adjust.label'), emoji: '💰', freeText: t('card.conditionTags.budget_adjust.freeText') },
+  ];
 
   const [card, setCard] = useState<CardDetail | null>(null);
   const [myReaction, setMyReaction] = useState<ReactionType | null>(null);
@@ -152,10 +151,10 @@ export default function CardDetailScreen() {
         mood: 'comfortable',
         duration: '2-3h',
         avoid: condTag === 'indoor' ? ['outdoor'] : [],
-        freeText: `${card.title} 분위기와 비슷하지만 ${condInfo?.freeText ?? '조건을 바꿔서 추천해줘'}`,
+        freeText: `${t('card.regeneratePromptPrefix', { title: card.title })}${condInfo?.freeText ?? t('card.regenerateFallbackText')}`,
       };
       const prefs = await getUserPreferences();
-      const newCards = await generateDateCards(input, card.mode || 'pick_for_me', prefs, 'ko');
+      const newCards = await generateDateCards(input, card.mode || 'pick_for_me', prefs, language);
       for (const nc of newCards) {
         await supabase.from('date_cards').insert({
           couple_id: coupleId,
@@ -175,9 +174,9 @@ export default function CardDetailScreen() {
         });
       }
       Alert.alert(
-        '새 후보 생성 완료',
-        `"${condInfo?.label}" 조건으로 비슷한 데이트 후보 3개를 만들었어요. 우리 후보 탭에서 확인해보세요!`,
-        [{ text: '확인' }],
+        t('card.regenerateAlertTitle'),
+        t('card.regenerateAlertMessage', { label: condInfo?.label }),
+        [{ text: t('common.ok') }],
       );
     } catch {
       Alert.alert(alertTitle, s.card.saveError);
@@ -281,8 +280,8 @@ export default function CardDetailScreen() {
           {/* 조건부 반응 — burden 선택 시 노출 */}
           {myReaction === 'burden' && (
             <View style={styles.conditionBox}>
-              <Text style={styles.conditionTitle}>어떤 조건이 맞으면 좋을까요?</Text>
-              <Text style={styles.conditionSub}>조건을 선택하면 앱이 맞춤 후보를 새로 찾아드려요</Text>
+              <Text style={styles.conditionTitle}>{t('card.conditionSectionTitle')}</Text>
+              <Text style={styles.conditionSub}>{t('card.conditionSectionSub')}</Text>
               <View style={styles.conditionGrid}>
                 {CONDITION_TAGS.map(c => {
                   const selected = myConditionTag === c.tag;
@@ -314,7 +313,7 @@ export default function CardDetailScreen() {
                   ) : (
                     <Text style={styles.altBtnText}>
                       {CONDITION_TAGS.find(c => c.tag === myConditionTag)?.emoji}{' '}
-                      {CONDITION_TAGS.find(c => c.tag === myConditionTag)?.label} 조건으로 다시 찾아줘
+                      {t('card.regenerateWithCondition', { label: CONDITION_TAGS.find(c => c.tag === myConditionTag)?.label })}
                     </Text>
                   )}
                 </TouchableOpacity>

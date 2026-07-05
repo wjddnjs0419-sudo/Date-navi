@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { CalendarHeart, Clock, MapPin, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, SoftCard, Chip } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type PlanCard = {
   id: string;
@@ -21,6 +22,7 @@ type PlanCard = {
 
 export default function PlansScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [plans, setPlans] = useState<PlanCard[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,8 +63,8 @@ export default function PlansScreen() {
         <BackBar />
 
         <View style={s.headingBlock}>
-          <Text style={s.heading}>데이트 계획</Text>
-          <Text style={s.sub}>확정한 데이트를 모아봤어요. 다녀온 뒤엔 어땠는지 남겨주세요.</Text>
+          <Text style={s.heading}>{t('plans.heading')}</Text>
+          <Text style={s.sub}>{t('plans.subtitle')}</Text>
         </View>
 
         {loading ? (
@@ -72,8 +74,8 @@ export default function PlansScreen() {
             <View style={[s.emptyIcon, s.emptyIconBg]}>
               <CalendarHeart size={44} strokeWidth={1.5} color={C.pinkDeep} />
             </View>
-            <Text style={s.emptyTitle}>확정한 데이트가 없어요</Text>
-            <Text style={s.emptySub}>후보 중 마음에 드는 데이트를{'\n'}"이번 데이트로 정하기"로 확정해보세요.</Text>
+            <Text style={s.emptyTitle}>{t('plans.emptyTitle')}</Text>
+            <Text style={s.emptySub}>{t('plans.emptySub')}</Text>
           </View>
         ) : (
           <View style={s.planList}>
@@ -101,14 +103,14 @@ export default function PlansScreen() {
                     </View>
                   )}
                   {!p.confirmed_date && !p.confirmed_time && !p.confirmed_place && (
-                    <Text style={s.metaEmpty}>날짜·장소는 아직 정하지 않았어요.</Text>
+                    <Text style={s.metaEmpty}>{t('plans.noDateTimePlace')}</Text>
                   )}
                 </View>
 
                 {p.tags.length > 0 && (
                   <View style={s.chips}>
-                    {p.tags.slice(0, 3).map((t) => (
-                      <Chip key={t} tone="gray">{t}</Chip>
+                    {p.tags.slice(0, 3).map((tag) => (
+                      <Chip key={tag} tone="gray">{tag}</Chip>
                     ))}
                   </View>
                 )}
@@ -119,7 +121,7 @@ export default function PlansScreen() {
                   activeOpacity={0.85}
                 >
                   <Check size={14} color={C.white} strokeWidth={2.5} />
-                  <Text style={s.doneBtnText}>데이트 끝났어요 · 어땠어요?</Text>
+                  <Text style={s.doneBtnText}>{t('plans.reviewCta')}</Text>
                 </TouchableOpacity>
               </SoftCard>
             ))}

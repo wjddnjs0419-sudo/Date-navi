@@ -8,13 +8,15 @@ import { Camera } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 export default function PhotoScreen() {
   const router = useRouter();
-  const [initial] = useState('나');
+  const { t } = useI18n();
+  const [initial] = useState(t('onboarding.photo.initial'));
 
   function handlePickPhoto() {
-    Alert.alert('사진 선택', '갤러리에서 사진을 선택하는 기능은 곧 추가될 예정이에요.');
+    Alert.alert(t('onboarding.photo.pickTitle'), t('onboarding.photo.pickBody'));
   }
 
   return (
@@ -27,8 +29,8 @@ export default function PhotoScreen() {
         </View>
 
         <View style={s.headingBlock}>
-          <Text style={s.heading}>{'프로필 사진을\n골라주세요'}</Text>
-          <Text style={s.subText}>지금 건너뛰어도 괜찮아요.</Text>
+          <Text style={s.heading}>{t('onboarding.photo.title')}</Text>
+          <Text style={s.subText}>{t('onboarding.photo.sub')}</Text>
         </View>
 
         <View style={s.avatarWrap}>
@@ -41,15 +43,15 @@ export default function PhotoScreen() {
         </View>
 
         <TouchableOpacity style={s.changeBtn} onPress={handlePickPhoto}>
-          <Text style={s.changeBtnText}>사진 변경하기</Text>
+          <Text style={s.changeBtnText}>{t('onboarding.photo.change')}</Text>
         </TouchableOpacity>
 
-        <Text style={s.hint}>연인에게도 이 사진이 보여요.</Text>
+        <Text style={s.hint}>{t('onboarding.photo.hint')}</Text>
 
         <View style={s.spacer} />
 
         <BigButton onPress={() => router.replace('/onboarding/anniversary' as any)}>
-          다음
+          {t('onboarding.photo.next')}
         </BigButton>
       </View>
     </SafeAreaView>

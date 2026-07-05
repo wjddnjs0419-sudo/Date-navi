@@ -8,14 +8,17 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { C } from '../../../constants/colors';
 import { G } from '../../../constants/theme';
-import { BackBar, BigButton } from '../../../components/ui';
-import { DurationWheelPicker } from '../../../components/pickers';
-
-const TIME_OPTIONS = ['1~2시간', '2~3시간', '반나절', '하루 종일'];
+import { BackBar, BigButton, OptionCardPicker } from '../../../components/ui';
+import { useI18n } from '../../../lib/i18n';
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useI18n();
+  const TIME_OPTIONS = [
+    t('card.new.timeOptions.oneToTwo'), t('card.new.timeOptions.twoToThree'),
+    t('card.new.timeOptions.halfDay'), t('card.new.timeOptions.fullDay'),
+  ];
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,9 +51,9 @@ export default function EditCardScreen() {
 
   const canSave = title.trim().length > 0;
   const timeOptions = [
-    { value: '', label: '선택 안 함' },
-    ...(time && !TIME_OPTIONS.includes(time) ? [{ value: time, label: `기존 값 · ${time}` }] : []),
-    ...TIME_OPTIONS.map((t) => ({ value: t, label: t })),
+    { value: '', label: t('card.new.noneOption') },
+    ...(time && !TIME_OPTIONS.includes(time) ? [{ value: time, label: t('card.edit.existingValueOption', { time }) }] : []),
+    ...TIME_OPTIONS.map((opt) => ({ value: opt, label: opt })),
   ];
 
   async function handleSave() {
@@ -69,7 +72,7 @@ export default function EditCardScreen() {
       if (error) throw error;
       router.back();
     } catch {
-      Alert.alert('오류', '수정 중 문제가 발생했어요.');
+      Alert.alert(t('common.error'), t('card.edit.saveError'));
     } finally {
       setSaving(false);
     }
@@ -92,48 +95,48 @@ export default function EditCardScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, s.headingTop]}>후보 수정하기</Text>
-        <Text style={s.subText}>내용을 바꾼 뒤 저장하면 후보에 반영돼요.</Text>
+        <Text style={[s.heading, s.headingTop]}>{t('card.edit.heading')}</Text>
+        <Text style={s.subText}>{t('card.edit.subtitle')}</Text>
 
-        <Text style={s.label}>제목 *</Text>
+        <Text style={s.label}>{t('card.edit.titleLabel')}</Text>
         <View style={[s.inputWrap, title.length > 0 && s.inputWrapActive]}>
           <TextInput
             style={s.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="제목"
+            placeholder={t('card.edit.titlePlaceholder')}
             placeholderTextColor={C.textFaint}
             maxLength={60}
           />
         </View>
 
-        <Text style={s.label}>설명</Text>
+        <Text style={s.label}>{t('card.edit.descLabel')}</Text>
         <View style={s.inputWrap}>
           <TextInput
             style={[s.input, s.inputMultiline]}
             value={summary}
             onChangeText={setSummary}
-            placeholder="어떤 데이트인지 적어주세요"
+            placeholder={t('card.edit.descPlaceholder')}
             placeholderTextColor={C.textFaint}
             multiline
             maxLength={300}
           />
         </View>
 
-        <Text style={s.label}>예상 시간</Text>
-        <DurationWheelPicker
+        <Text style={s.label}>{t('card.edit.timeLabel')}</Text>
+        <OptionCardPicker
           options={timeOptions}
           value={time}
           onChange={setTime}
         />
 
-        <Text style={s.label}>예산</Text>
+        <Text style={s.label}>{t('card.edit.budgetLabel')}</Text>
         <View style={s.inputWrap}>
           <TextInput
             style={s.input}
             value={budget}
             onChangeText={setBudget}
-            placeholder="예: 5만원 내외"
+            placeholder={t('card.edit.budgetPlaceholder')}
             placeholderTextColor={C.textFaint}
             maxLength={30}
           />
@@ -147,7 +150,7 @@ export default function EditCardScreen() {
           onPress={handleSave}
           variant={!canSave || saving ? 'disabled' : 'primary'}
         >
-          {saving ? <ActivityIndicator color={C.white} size="small" /> : '저장하기'}
+          {saving ? <ActivityIndicator color={C.white} size="small" /> : t('card.edit.saveCta')}
         </BigButton>
       </View>
     </SafeAreaView>

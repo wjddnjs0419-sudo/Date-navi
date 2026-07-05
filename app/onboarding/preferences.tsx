@@ -16,51 +16,53 @@ import {
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, InfoNote } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type Step = 1 | 2 | 3 | 4;
 
-const PREFERRED_OPTIONS = [
-  { id: 'restaurant', label: '맛집', Icon: Utensils },
-  { id: 'cafe', label: '카페', Icon: Coffee },
-  { id: 'walk', label: '산책', Icon: Trees },
-  { id: 'home', label: '집데이트', Icon: Sofa },
-  { id: 'culture', label: '전시 / 문화', Icon: Palette },
-  { id: 'activity', label: '액티비티', Icon: Bike },
-];
-
-const AVOID_OPTIONS = [
-  { id: 'far', label: '먼 이동', Icon: Car },
-  { id: 'expensive', label: '큰 지출', Icon: Wallet },
-  { id: 'crowded', label: '사람 많은 곳', Icon: Users },
-  { id: 'long_walk', label: '오래 걷기', Icon: Footprints },
-  { id: 'complex_reservation', label: '예약 복잡한 곳', Icon: CalendarClock },
-  { id: 'late_night', label: '늦은 시간', Icon: MoonStar },
-];
-
-const MOOD_OPTIONS = [
-  { id: 'rest', label: '편하게 쉬기', Icon: Smile },
-  { id: 'laugh', label: '많이 웃기', Icon: Laugh },
-  { id: 'quiet', label: '조용히 대화', Icon: Moon },
-  { id: 'new', label: '새로운 경험', Icon: Sparkles },
-  { id: 'photo', label: '사진 남기기', Icon: Camera },
-  { id: 'special', label: '특별한 하루', Icon: Gift },
-];
-
-const LONG_DISTANCE_OPTIONS = [
-  { id: 'yes', label: '네, 자주 떨어져 있어요' },
-  { id: 'no', label: '아니요, 자주 만나요' },
-  { id: 'sometimes', label: '상황에 따라 달라요' },
-];
-
-const STEP_TITLES: Record<Step, string> = {
-  1: '데이트할 때 더 끌리는 건?',
-  2: '요즘 데이트에서 원하는 건?',
-  3: '이런 건 조금 부담스러워요',
-  4: '장거리 커플인가요?',
-};
-
 export default function PreferencesScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const PREFERRED_OPTIONS = [
+    { id: 'restaurant', label: t('onboarding.preferences.preferredOptions.restaurant'), Icon: Utensils },
+    { id: 'cafe', label: t('onboarding.preferences.preferredOptions.cafe'), Icon: Coffee },
+    { id: 'walk', label: t('onboarding.preferences.preferredOptions.walk'), Icon: Trees },
+    { id: 'home', label: t('onboarding.preferences.preferredOptions.home'), Icon: Sofa },
+    { id: 'culture', label: t('onboarding.preferences.preferredOptions.culture'), Icon: Palette },
+    { id: 'activity', label: t('onboarding.preferences.preferredOptions.activity'), Icon: Bike },
+  ];
+
+  const AVOID_OPTIONS = [
+    { id: 'far', label: t('onboarding.preferences.avoidOptions.far'), Icon: Car },
+    { id: 'expensive', label: t('onboarding.preferences.avoidOptions.expensive'), Icon: Wallet },
+    { id: 'crowded', label: t('onboarding.preferences.avoidOptions.crowded'), Icon: Users },
+    { id: 'long_walk', label: t('onboarding.preferences.avoidOptions.long_walk'), Icon: Footprints },
+    { id: 'complex_reservation', label: t('onboarding.preferences.avoidOptions.complex_reservation'), Icon: CalendarClock },
+    { id: 'late_night', label: t('onboarding.preferences.avoidOptions.late_night'), Icon: MoonStar },
+  ];
+
+  const MOOD_OPTIONS = [
+    { id: 'rest', label: t('onboarding.preferences.moodOptions.rest'), Icon: Smile },
+    { id: 'laugh', label: t('onboarding.preferences.moodOptions.laugh'), Icon: Laugh },
+    { id: 'quiet', label: t('onboarding.preferences.moodOptions.quiet'), Icon: Moon },
+    { id: 'new', label: t('onboarding.preferences.moodOptions.new'), Icon: Sparkles },
+    { id: 'photo', label: t('onboarding.preferences.moodOptions.photo'), Icon: Camera },
+    { id: 'special', label: t('onboarding.preferences.moodOptions.special'), Icon: Gift },
+  ];
+
+  const LONG_DISTANCE_OPTIONS = [
+    { id: 'yes', label: t('onboarding.preferences.longDistanceOptions.yes') },
+    { id: 'no', label: t('onboarding.preferences.longDistanceOptions.no') },
+    { id: 'sometimes', label: t('onboarding.preferences.longDistanceOptions.sometimes') },
+  ];
+
+  const STEP_TITLES: Record<Step, string> = {
+    1: t('onboarding.preferences.stepTitles.1'),
+    2: t('onboarding.preferences.stepTitles.2'),
+    3: t('onboarding.preferences.stepTitles.3'),
+    4: t('onboarding.preferences.stepTitles.4'),
+  };
+
   const [step, setStep] = useState<Step>(1);
   const [preferred, setPreferred] = useState<string[]>([]);
   const [mood, setMood] = useState<string[]>([]);
@@ -92,7 +94,7 @@ export default function PreferencesScreen() {
 
       await logEvent('onboarding_completed', { skipped: skip });
     } catch {
-      Alert.alert('오류', '저장 중 오류가 발생했어요.');
+      Alert.alert(t('common.error'), t('onboarding.preferences.saveError'));
       setSaving(false);
       return;
     }
@@ -130,7 +132,7 @@ export default function PreferencesScreen() {
                 selected={preferred}
                 onToggle={(id) => toggle(preferred, setPreferred, id)}
               />
-              <Text style={s.hint}>여러 개 골라도 괜찮아요</Text>
+              <Text style={s.hint}>{t('onboarding.preferences.multiSelectHint')}</Text>
             </>
           )}
 
@@ -152,7 +154,7 @@ export default function PreferencesScreen() {
                 onToggle={(id) => toggle(avoid, setAvoid, id)}
               />
               <InfoNote>
-                상대에게 바로 공유되는 정보가 아니에요. 추천을 더 편하게 만들기 위한 정보예요.
+                {t('onboarding.preferences.avoidInfoNote')}
               </InfoNote>
             </>
           )}
@@ -185,10 +187,10 @@ export default function PreferencesScreen() {
           <BigButton onPress={handleNext} variant={saving ? 'disabled' : 'primary'}>
             {saving
               ? <ActivityIndicator color={C.white} size="small" />
-              : step === 4 ? '첫 추천 받아보기' : '다음'}
+              : step === 4 ? t('onboarding.preferences.finishCta') : t('common.next')}
           </BigButton>
           <TouchableOpacity onPress={() => handleSave(true)} style={s.skipBtn}>
-            <Text style={s.skipText}>건너뛰기</Text>
+            <Text style={s.skipText}>{t('common.skip')}</Text>
           </TouchableOpacity>
         </View>
       </View>

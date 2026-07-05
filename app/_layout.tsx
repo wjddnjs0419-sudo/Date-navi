@@ -3,10 +3,23 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ExpoLinking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
+import { PENDING_INVITE_CODE_KEY, parseInviteCodeFromUrl } from '../lib/couple-invite';
 
 SplashScreen.preventAutoHideAsync();
+
+async function rememberInviteUrl(url?: string | null) {
+  const code = parseInviteCodeFromUrl(url);
+  if (code) await AsyncStorage.setItem(PENDING_INVITE_CODE_KEY, code);
+  return code;
+}
+
+async function getPendingInviteCode() {
+  return AsyncStorage.getItem(PENDING_INVITE_CODE_KEY);
+}
 
 async function getDestination(session: Session | null): Promise<string> {
   if (!session) return '/(auth)';
@@ -18,7 +31,12 @@ async function getDestination(session: Session | null): Promise<string> {
     .maybeSingle();
 
   if (!profile?.display_name) return '/onboarding/nickname';
-  if (!profile.couple_id) return '/onboarding/couple-connect';
+  if (!profile.couple_id) {
+    const pendingCode = await getPendingInviteCode();
+    return pendingCode
+      ? `/onboarding/couple-connect?code=${encodeURIComponent(pendingCode)}`
+      : '/onboarding/couple-connect';
+  }
 
   const { data: prefs } = await supabase
     .from('user_preferences')
@@ -34,21 +52,44 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    async function routeForSession(session: Session | null) {
       const dest = await getDestination(session);
       router.replace(dest as any);
+    }
+
+    (async () => {
+      try {
+        await rememberInviteUrl(await ExpoLinking.getInitialURL());
+        const { data: { session } } = await supabase.auth.getSession();
+        await routeForSession(session);
+      } finally {
+        await SplashScreen.hideAsync();
+      }
+    })();
+
+    const urlSubscription = ExpoLinking.addEventListener('url', ({ url }) => {
+      void (async () => {
+        const code = await rememberInviteUrl(url);
+        if (!code) return;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        await routeForSession(session);
+      })();
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') { router.replace('/(auth)'); return; }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setTimeout(() => {
-          getDestination(session).then((dest) => router.replace(dest as any));
+          void routeForSession(session);
         }, 0);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      urlSubscription.remove();
+    };
   }, []);
 
   return (

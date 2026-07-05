@@ -10,6 +10,7 @@ import { Heart, RotateCcw } from 'lucide-react-native';
 import { C } from '../../../constants/colors';
 import { G } from '../../../constants/theme';
 import { BackBar, Badge } from '../../../components/ui';
+import { useI18n } from '../../../lib/i18n';
 
 type CardInfo = { title: string; summary: string };
 type Memory = {
@@ -28,8 +29,9 @@ function CommentRow({ userId, content, createdAt, wantAgain, profiles }: {
   userId: string; content: string; createdAt: string; wantAgain?: boolean;
   profiles: Record<string, Profile>;
 }) {
+  const { t } = useI18n();
   const p = profiles[userId];
-  const initial = p?.display_name?.slice(0, 1) ?? '나';
+  const initial = p?.display_name?.slice(0, 1) ?? t('card.memory.meFallback');
   return (
     <View style={s.commentRow}>
       {p?.profile_photo_url ? (
@@ -41,12 +43,12 @@ function CommentRow({ userId, content, createdAt, wantAgain, profiles }: {
       )}
       <View style={s.flex1}>
         <View style={s.commentHeader}>
-          <Text style={s.commentName}>{p?.display_name ?? '나'}</Text>
+          <Text style={s.commentName}>{p?.display_name ?? t('card.memory.meFallback')}</Text>
           <Text style={s.commentDate}>{formatDate(createdAt)}</Text>
           {wantAgain && (
             <View style={s.againTag}>
               <RotateCcw size={10} color={C.pinkDeep} />
-              <Text style={s.againText}>다시 하고 싶어</Text>
+              <Text style={s.againText}>{t('card.memory.wantAgainTag')}</Text>
             </View>
           )}
         </View>
@@ -58,6 +60,7 @@ function CommentRow({ userId, content, createdAt, wantAgain, profiles }: {
 
 export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [card, setCard] = useState<CardInfo | null>(null);
   const [memory, setMemory] = useState<Memory | null>(null);
@@ -139,7 +142,7 @@ export default function MemoryDetailScreen() {
       setComments(prev => [...prev, data]);
       setNewComment('');
     } catch {
-      Alert.alert('오류', '댓글 등록 중 문제가 생겼어요.');
+      Alert.alert(t('common.error'), t('card.memory.commentError'));
     } finally {
       setPosting(false);
     }
@@ -158,7 +161,7 @@ export default function MemoryDetailScreen() {
       <SafeAreaView style={G.screen}>
         <ScrollView contentContainerStyle={s.content}>
           <BackBar />
-          <Text style={s.empty}>추억을 찾을 수 없어요.</Text>
+          <Text style={s.empty}>{t('card.memory.detailNotFound')}</Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -190,22 +193,22 @@ export default function MemoryDetailScreen() {
             </View>
           )}
 
-          <Badge tone="pink">우리 추억</Badge>
-          <Text style={s.title}>{card?.title ?? memory.title ?? '추억'}</Text>
+          <Badge tone="pink">{t('card.memory.badge')}</Badge>
+          <Text style={s.title}>{card?.title ?? memory.title ?? t('memories.untitled')}</Text>
           {!!card?.summary && <Text style={s.summary}>{card.summary}</Text>}
 
-          <Text style={s.sectionLabel}>후기</Text>
+          <Text style={s.sectionLabel}>{t('card.memory.reviewSectionLabel')}</Text>
           <CommentRow
             userId={memory.user_id}
-            content={memory.review?.trim() || '내용 없음'}
+            content={memory.review?.trim() || t('card.memory.noReviewText')}
             createdAt={memory.created_at}
             wantAgain={memory.want_again}
             profiles={profiles}
           />
 
-          <Text style={s.sectionLabel}>댓글</Text>
+          <Text style={s.sectionLabel}>{t('card.memory.commentsSectionLabel')}</Text>
           {comments.length === 0 ? (
-            <Text style={s.empty}>아직 댓글이 없어요.</Text>
+            <Text style={s.empty}>{t('card.memory.noCommentsText')}</Text>
           ) : (
             comments.map(c => (
               <CommentRow
@@ -226,7 +229,7 @@ export default function MemoryDetailScreen() {
             style={s.input}
             value={newComment}
             onChangeText={setNewComment}
-            placeholder="댓글을 남겨보세요"
+            placeholder={t('card.memory.commentPlaceholder')}
             placeholderTextColor={C.textFaint}
             multiline
           />
@@ -236,7 +239,7 @@ export default function MemoryDetailScreen() {
             disabled={!newComment.trim() || posting}
             activeOpacity={0.85}
           >
-            <Text style={s.sendBtnText}>{posting ? '등록 중' : '남기기'}</Text>
+            <Text style={s.sendBtnText}>{posting ? t('card.memory.commentPosting') : t('card.memory.commentSubmit')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

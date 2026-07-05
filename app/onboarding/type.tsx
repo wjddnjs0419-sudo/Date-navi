@@ -9,17 +9,19 @@ import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 const OPTIONS = [
-  { id: 'planner', label: '자주 계획하는 편이에요' },
-  { id: 'together', label: '같이 정하는 편이에요' },
-  { id: 'chooser', label: '고르는 건 괜찮지만 계획은 어려워요' },
-  { id: 'shy', label: '의견을 말하기가 조금 어려워요' },
-  { id: 'flexible', label: '그때그때 달라요' },
+  { id: 'planner', labelKey: 'onboarding.type.options.planner' },
+  { id: 'together', labelKey: 'onboarding.type.options.together' },
+  { id: 'chooser', labelKey: 'onboarding.type.options.chooser' },
+  { id: 'shy', labelKey: 'onboarding.type.options.shy' },
+  { id: 'flexible', labelKey: 'onboarding.type.options.flexible' },
 ];
 
 export default function TypeScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,9 +55,9 @@ export default function TypeScreen() {
         </View>
 
         <View style={s.headingBlock}>
-          <Text style={s.heading}>{'데이트 계획,\n보통 어떻게 하세요?'}</Text>
+          <Text style={s.heading}>{t('onboarding.type.title')}</Text>
           <Text style={s.subText}>
-            유형을 정하는 게 아니라, 첫 추천을 더 잘 맞추기 위한 힌트예요.
+            {t('onboarding.type.sub')}
           </Text>
         </View>
 
@@ -69,7 +71,7 @@ export default function TypeScreen() {
                 activeOpacity={0.7}
                 style={[s.option, sel && s.optionSel]}
               >
-                <Text style={[s.optionText, sel && s.optionTextSel]}>{o.label}</Text>
+                <Text style={[s.optionText, sel && s.optionTextSel]}>{t(o.labelKey)}</Text>
                 {sel && <Check size={16} strokeWidth={2.5} color={C.pink} />}
               </TouchableOpacity>
             );
@@ -81,7 +83,7 @@ export default function TypeScreen() {
         <BigButton onPress={handleStart} variant={loading ? 'disabled' : 'primary'}>
           {loading
             ? <ActivityIndicator color={C.white} size="small" />
-            : '시작하기'}
+            : t('onboarding.type.start')}
         </BigButton>
       </View>
     </SafeAreaView>

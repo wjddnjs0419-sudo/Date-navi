@@ -8,20 +8,22 @@ import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 export default function NicknameScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleNext() {
     const trimmed = nickname.trim();
-    if (!trimmed) { Alert.alert('닉네임을 입력해주세요.'); return; }
+    if (!trimmed) { Alert.alert(t('onboarding.nickname.empty')); return; }
 
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('로그인 정보를 찾을 수 없어요.');
+      if (!user) throw new Error(t('onboarding.nickname.noUser'));
 
       const { error } = await supabase
         .from('date_planner_profiles')
@@ -33,7 +35,7 @@ export default function NicknameScreen() {
 
       router.replace('/onboarding/photo' as any);
     } catch (e: any) {
-      Alert.alert('오류', e.message || '저장 중 오류가 발생했어요.');
+      Alert.alert(t('common.error'), e.message || t('onboarding.nickname.saveError'));
     } finally {
       setLoading(false);
     }
@@ -53,17 +55,17 @@ export default function NicknameScreen() {
           </View>
 
           <View style={s.headingBlock}>
-            <Text style={s.heading}>어떻게 불러드릴까요?</Text>
-            <Text style={s.subText}>닉네임은 언제든 바꿀 수 있어요.</Text>
+            <Text style={s.heading}>{t('onboarding.nickname.title')}</Text>
+            <Text style={s.subText}>{t('onboarding.nickname.sub')}</Text>
           </View>
 
           <View style={s.fieldSection}>
             <View style={s.fieldBox}>
-              <Text style={s.fieldLabel}>닉네임</Text>
+              <Text style={s.fieldLabel}>{t('onboarding.nickname.label')}</Text>
               <View style={s.fieldRow}>
                 <TextInput
                   style={s.fieldInput}
-                  placeholder="닉네임을 입력해주세요"
+                  placeholder={t('onboarding.nickname.placeholder')}
                   placeholderTextColor={C.textFaint}
                   value={nickname}
                   onChangeText={setNickname}
@@ -75,13 +77,13 @@ export default function NicknameScreen() {
                 <Text style={s.charCount}>{nickname.length} / 12</Text>
               </View>
             </View>
-            <Text style={s.hint}>한글·영문·숫자 12자 이내로 입력해주세요.</Text>
+            <Text style={s.hint}>{t('onboarding.nickname.hint')}</Text>
           </View>
 
           <View style={s.spacer} />
 
           <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
-            {loading ? '저장 중...' : '다음'}
+            {loading ? t('onboarding.nickname.saving') : t('onboarding.nickname.next')}
           </BigButton>
         </View>
       </SafeAreaView>

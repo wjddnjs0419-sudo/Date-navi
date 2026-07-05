@@ -19,6 +19,8 @@ import { ListGroup, ListRow, SectionLabel } from '../components/ui';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 
+type CoupleConnectionStatus = 'none' | 'waiting' | 'linked';
+
 function toDateOnly(value?: string | null) {
   if (!value) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -45,7 +47,7 @@ export default function SettingsScreen() {
 
   const [displayName, setDisplayName] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [inviteCode, setInviteCode] = useState('');
+  const [coupleStatus, setCoupleStatus] = useState<CoupleConnectionStatus>('none');
   const [daysConnected, setDaysConnected] = useState<number | null>(null);
   const [relationshipStartDate, setRelationshipStartDate] = useState('');
   const [draftRelationshipDate, setDraftRelationshipDate] = useState(defaultIsoDate());
@@ -62,7 +64,7 @@ export default function SettingsScreen() {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
-          setInviteCode('');
+          setCoupleStatus('none');
           setPartnerName('');
           setDaysConnected(null);
           setRelationshipStartDate('');
@@ -81,25 +83,31 @@ export default function SettingsScreen() {
               // 초대 코드는 profiles가 아니라 date_planner_couples.code에 있다.
               const { data: coupleRow } = await supabase
                 .from('date_planner_couples')
-                .select('created_at, code')
+                .select('created_at, code, status, owner_user_id, partner_user_id')
                 .eq('id', profile.couple_id)
                 .maybeSingle();
 
-              if (coupleRow?.code) setInviteCode(coupleRow.code);
-
-              const startDate = toDateOnly(profile.anniversary_date) || toDateOnly(coupleRow?.created_at);
-              const days = daysSince(startDate);
-              setRelationshipStartDate(startDate);
-              setDaysConnected(days);
+              setCoupleStatus(coupleRow ? (coupleRow.status === 'linked' && coupleRow.partner_user_id ? 'linked' : 'waiting') : 'none');
 
               const { data: partnerProfile } = await supabase
                 .from('date_planner_profiles')
-                .select('display_name')
+                .select('display_name, anniversary_date')
                 .eq('couple_id', profile.couple_id)
                 .neq('user_id', user.id)
                 .maybeSingle();
 
               if (partnerProfile?.display_name) setPartnerName(partnerProfile.display_name);
+
+              const ownerAnniversary = coupleRow?.owner_user_id === user.id
+                ? profile.anniversary_date
+                : partnerProfile?.anniversary_date;
+              const startDate = toDateOnly(ownerAnniversary)
+                || toDateOnly(profile.anniversary_date)
+                || toDateOnly(partnerProfile?.anniversary_date)
+                || toDateOnly(coupleRow?.created_at);
+              const days = daysSince(startDate);
+              setRelationshipStartDate(startDate);
+              setDaysConnected(days);
             } else if (profile.anniversary_date) {
               const startDate = toDateOnly(profile.anniversary_date);
               setRelationshipStartDate(startDate);
@@ -151,20 +159,15 @@ export default function SettingsScreen() {
     if (savingRelationshipDate) return;
     setSavingRelationshipDate(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('no user');
-
       const { error } = await supabase
-        .from('date_planner_profiles')
-        .update({ anniversary_date: draftRelationshipDate, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
+        .rpc('set_date_planner_couple_anniversary', { p_anniversary_date: draftRelationshipDate });
       if (error) throw error;
 
       setRelationshipStartDate(draftRelationshipDate);
       setDaysConnected(daysSince(draftRelationshipDate));
       setRelationshipPickerOpen(false);
     } catch {
-      Alert.alert('오류', '사귀기 시작한 날을 저장하지 못했어요. 다시 시도해주세요.');
+      Alert.alert(strings.common.error, t.relationshipDateSaveError);
     } finally {
       setSavingRelationshipDate(false);
     }
@@ -177,11 +180,11 @@ export default function SettingsScreen() {
     if (status === 'undetermined' && canAskAgain) {
       const res = await Notifications.requestPermissionsAsync();
       if (res.status === 'granted') {
-        Alert.alert('알림 켜짐', '이제 알림을 받을 수 있어요.');
+        Alert.alert(t.notificationOnTitle, t.notificationOnBody);
       } else {
-        Alert.alert('알림 꺼짐', '나중에 설정에서 알림을 켤 수 있어요.', [
-          { text: '확인', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        Alert.alert(t.notificationOffTitle, t.notificationOffBody, [
+          { text: strings.common.ok, style: 'cancel' },
+          { text: strings.common.settingsOpen, onPress: () => Linking.openSettings() },
         ]);
       }
       return;
@@ -189,13 +192,13 @@ export default function SettingsScreen() {
 
     // 이미 결정된 상태면(허용/거부) iOS 설정에서 직접 바꾸게 안내.
     Alert.alert(
-      '알림 설정',
+      t.notificationSettingsTitle,
       status === 'granted'
-        ? '알림이 켜져 있어요. 끄려면 설정을 열어주세요.'
-        : '알림이 꺼져 있어요. 켜려면 설정을 열어주세요.',
+        ? t.notificationEnabledBody
+        : t.notificationDisabledBody,
       [
-        { text: '취소', style: 'cancel' },
-        { text: '설정 열기', onPress: () => Linking.openSettings() },
+        { text: strings.common.cancel, style: 'cancel' },
+        { text: strings.common.settingsOpen, onPress: () => Linking.openSettings() },
       ],
     );
   }
@@ -207,11 +210,11 @@ export default function SettingsScreen() {
     if (status === 'undetermined' && canAskAgain) {
       const res = await ExpoLocation.requestForegroundPermissionsAsync();
       if (res.status === 'granted') {
-        Alert.alert('위치 켜짐', '이제 내 위치로 데이트 장소를 추천받을 수 있어요.');
+        Alert.alert(t.locationOnTitle, t.locationOnBody);
       } else {
-        Alert.alert('위치 꺼짐', '나중에 설정에서 위치 권한을 켤 수 있어요.', [
-          { text: '확인', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        Alert.alert(t.locationOffTitle, t.locationOffBody, [
+          { text: strings.common.ok, style: 'cancel' },
+          { text: strings.common.settingsOpen, onPress: () => Linking.openSettings() },
         ]);
       }
       return;
@@ -219,13 +222,13 @@ export default function SettingsScreen() {
 
     // 이미 결정된 상태면(허용/거부) OS 설정에서 직접 바꾸게 안내.
     Alert.alert(
-      '위치 설정',
+      t.locationSettingsTitle,
       status === 'granted'
-        ? '위치 권한이 켜져 있어요. 끄려면 설정을 열어주세요.'
-        : '위치 권한이 꺼져 있어요. 켜려면 설정을 열어주세요.',
+        ? t.locationEnabledBody
+        : t.locationDisabledBody,
       [
-        { text: '취소', style: 'cancel' },
-        { text: '설정 열기', onPress: () => Linking.openSettings() },
+        { text: strings.common.cancel, style: 'cancel' },
+        { text: strings.common.settingsOpen, onPress: () => Linking.openSettings() },
       ],
     );
   }
@@ -238,10 +241,15 @@ export default function SettingsScreen() {
     );
   }
 
-  const initials = displayName.slice(0, 1) || '나';
+  const initials = displayName.slice(0, 1) || t.meInitial;
   const dayLabel = daysConnected !== null
     ? t.daysWith(partnerName || t.partnerFallback, daysConnected)
     : null;
+  const coupleStatusLabel = coupleStatus === 'linked'
+    ? (partnerName || t.rowCoupleLinked)
+    : coupleStatus === 'waiting'
+      ? t.rowCoupleWaiting
+      : t.rowCoupleNone;
 
   return (
     <SafeAreaView style={G.screen}>
@@ -303,7 +311,7 @@ export default function SettingsScreen() {
             <ListRow
               icon={<Users size={16} strokeWidth={1.8} color={C.text} />}
               label={t.rowCouple}
-              value={inviteCode || '—'}
+              value={coupleStatusLabel}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
               onPress={() => router.push('/onboarding/couple-connect' as any)}
             />
@@ -336,7 +344,7 @@ export default function SettingsScreen() {
             <ListRow
               icon={<Globe size={16} strokeWidth={1.8} color={C.text} />}
               label={t.rowLanguage}
-              value={language === 'ko' ? '한국어' : 'English'}
+              value={strings.language[language]}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
               onPress={handleLanguage}
               divider={false}
@@ -393,10 +401,10 @@ export default function SettingsScreen() {
       </ScrollView>
       <PickerSheet
         visible={relationshipPickerOpen}
-        title="사귀기 시작한 날"
+        title={t.relationshipDateTitle}
         onCancel={() => setRelationshipPickerOpen(false)}
         onConfirm={handleSaveRelationshipDate}
-        confirmLabel={savingRelationshipDate ? '저장 중...' : '완료'}
+        confirmLabel={savingRelationshipDate ? t.savingDone : strings.common.done}
       >
         <DateWheelPicker
           value={draftRelationshipDate}

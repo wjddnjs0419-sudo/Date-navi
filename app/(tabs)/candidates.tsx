@@ -12,16 +12,10 @@ import { G } from '../../constants/theme';
 import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
+import { useI18n } from '../../lib/i18n';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor' | 'budget_adjust';
-
-const CONDITION_LABEL: Record<ConditionTag, string> = {
-  change_place: '📍 장소만 바꾸면',
-  closer: '🚶 가까우면',
-  indoor: '🏠 실내면',
-  budget_adjust: '💰 예산 조정되면',
-};
 
 type CardWithReactions = {
   id: string; title: string; summary: string;
@@ -36,17 +30,33 @@ type BucketItem = {
   myReaction: 'love' | 'next_time' | null;
   partnerReaction: 'love' | 'next_time' | null;
 };
-type FilterTab = '둘 다 끌림' | '조건부로 좋음' | '다음에 하기' | '전체' | '다음에 만나면';
-
-const RX_LABEL: Record<ReactionType, string> = {
-  love: '완전 끌려', like: '좋아', burden: '부담돼', next_time: '다음에',
-};
+type FilterTab = 'all' | 'both' | 'conditional' | 'nextTime' | 'bucket';
 
 export default function CandidatesScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const CONDITION_LABEL: Record<ConditionTag, string> = {
+    change_place: t('candidates.conditionLabels.change_place'),
+    closer: t('candidates.conditionLabels.closer'),
+    indoor: t('candidates.conditionLabels.indoor'),
+    budget_adjust: t('candidates.conditionLabels.budget_adjust'),
+  };
+  const RX_LABEL: Record<ReactionType, string> = {
+    love: t('candidates.rxLabel.love'),
+    like: t('candidates.rxLabel.like'),
+    burden: t('candidates.rxLabel.burden'),
+    next_time: t('candidates.rxLabel.next_time'),
+  };
+  const FILTER_LABEL: Record<FilterTab, string> = {
+    all: t('candidates.filterAll'),
+    both: t('candidates.filterBoth'),
+    conditional: t('candidates.filterConditional'),
+    nextTime: t('candidates.filterNextTime'),
+    bucket: t('candidates.filterBucket'),
+  };
   const [cards, setCards] = useState<CardWithReactions[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('전체');
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
   const [bucketItems, setBucketItems] = useState<BucketItem[]>([]);
   const [bucketLoading, setBucketLoading] = useState(false);
@@ -55,13 +65,13 @@ export default function CandidatesScreen() {
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [pendingProposals, setPendingProposals] = useState<{ cardId: string; title: string }[]>([]);
 
-  const FILTERS: FilterTab[] = ['전체', '둘 다 끌림', '조건부로 좋음', '다음에 하기', '다음에 만나면'];
+  const FILTERS: FilterTab[] = ['all', 'both', 'conditional', 'nextTime', 'bucket'];
 
   useFocusEffect(
     useCallback(() => {
       loadCards();
       loadProposals();
-      if (activeFilter === '다음에 만나면') loadBucketItems();
+      if (activeFilter === 'bucket') loadBucketItems();
     }, []),
   );
 
@@ -232,12 +242,12 @@ export default function CandidatesScreen() {
         .eq('id', bucketItem.id);
 
       Alert.alert(
-        '만남 확정!',
-        '버킷리스트 아이디어로 데이트 후보 3개를 만들었어요.',
-        [{ text: '확인', onPress: () => { setActiveFilter('전체'); loadCards(); } }],
+        t('candidates.confirmAlertTitle'),
+        t('candidates.confirmAlertMessage'),
+        [{ text: t('common.ok'), onPress: () => { setActiveFilter('all'); loadCards(); } }],
       );
     } catch {
-      Alert.alert('오류', '카드 생성 중 문제가 발생했어요. 다시 시도해주세요.');
+      Alert.alert(t('common.error'), t('candidates.confirmAlertError'));
     } finally {
       setConfirmingId(null);
     }
@@ -245,17 +255,17 @@ export default function CandidatesScreen() {
 
   function handleFilterChange(f: FilterTab) {
     setActiveFilter(f);
-    if (f === '다음에 만나면') loadBucketItems();
+    if (f === 'bucket') loadBucketItems();
   }
 
   function confirmDelete(cardId: string) {
-    Alert.alert('후보 삭제', '이 후보를 삭제할까요? 되돌릴 수 없어요.', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('candidates.deleteAlertTitle'), t('candidates.deleteAlertMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '삭제', style: 'destructive',
+        text: t('common.delete'), style: 'destructive',
         onPress: async () => {
           const { error } = await supabase.from('date_cards').delete().eq('id', cardId);
-          if (error) { Alert.alert('오류', '삭제 중 문제가 발생했어요.'); return; }
+          if (error) { Alert.alert(t('common.error'), t('candidates.deleteAlertError')); return; }
           loadCards();
         },
       },
@@ -264,14 +274,14 @@ export default function CandidatesScreen() {
 
   function classify(c: CardWithReactions): FilterTab {
     const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
-    if (c.myReaction === 'next_time' || c.partnerReaction === 'next_time') return '다음에 하기';
-    if (pos(c.myReaction) && pos(c.partnerReaction)) return '둘 다 끌림';
+    if (c.myReaction === 'next_time' || c.partnerReaction === 'next_time') return 'nextTime';
+    if (pos(c.myReaction) && pos(c.partnerReaction)) return 'both';
     if ((pos(c.myReaction) && c.partnerReaction === 'burden') ||
-        (c.myReaction === 'burden' && pos(c.partnerReaction))) return '조건부로 좋음';
-    return '전체';
+        (c.myReaction === 'burden' && pos(c.partnerReaction))) return 'conditional';
+    return 'all';
   }
 
-  const filtered = activeFilter === '전체'
+  const filtered = activeFilter === 'all'
     ? cards
     : cards.filter(c => classify(c) === activeFilter);
 
@@ -285,8 +295,8 @@ export default function CandidatesScreen() {
           {/* 헤더 */}
           <View style={s.headerRow}>
             <View>
-              <Text style={s.pageTitle}>우리 후보</Text>
-              <Text style={s.countText}>총 {cards.length}개의 후보</Text>
+              <Text style={s.pageTitle}>{t('candidates.pageTitle')}</Text>
+              <Text style={s.countText}>{t('candidates.countText', { count: cards.length })}</Text>
             </View>
             <TouchableOpacity
               style={s.addBtn}
@@ -294,7 +304,7 @@ export default function CandidatesScreen() {
               activeOpacity={0.8}
             >
               <Plus size={14} color={C.pinkDeep} />
-              <Text style={s.addBtnText}>직접 추가</Text>
+              <Text style={s.addBtnText}>{t('candidates.addManual')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -309,16 +319,16 @@ export default function CandidatesScreen() {
               <Chip
                 key={f}
                 selected={activeFilter === f}
-                tone={f === '다음에 만나면' ? 'lavender' : 'pink'}
+                tone={f === 'bucket' ? 'lavender' : 'pink'}
                 onPress={() => handleFilterChange(f)}
               >
-                {f}
+                {FILTER_LABEL[f]}
               </Chip>
             ))}
           </ScrollView>
 
           {/* 상대가 보낸 제안 */}
-          {activeFilter !== '다음에 만나면' && pendingProposals.length > 0 && (
+          {activeFilter !== 'bucket' && pendingProposals.length > 0 && (
             <TouchableOpacity
               style={s.proposalBanner}
               activeOpacity={0.85}
@@ -328,14 +338,14 @@ export default function CandidatesScreen() {
               } as any)}
             >
               <View style={s.flex1}>
-                <Text style={s.proposalTitle}>상대가 보낸 데이트 제안 {pendingProposals.length}개</Text>
-                <Text style={s.proposalSub} numberOfLines={1}>"{pendingProposals[0].title}" · 지금 확인하기 →</Text>
+                <Text style={s.proposalTitle}>{t('candidates.proposalTitle', { count: pendingProposals.length })}</Text>
+                <Text style={s.proposalSub} numberOfLines={1}>{t('candidates.proposalSub', { title: pendingProposals[0].title })}</Text>
               </View>
             </TouchableOpacity>
           )}
 
           {/* 버킷리스트 탭 */}
-          {activeFilter === '다음에 만나면' ? (
+          {activeFilter === 'bucket' ? (
             <BucketSection
               loading={bucketLoading}
               items={bucketItems}
@@ -353,8 +363,8 @@ export default function CandidatesScreen() {
                   <View style={[s.emptyIcon, s.bgLavender]}>
                     <Heart size={44} strokeWidth={1.5} color={C.lavenderFg} />
                   </View>
-                  <Text style={s.emptyTitle}>아직 데이트 후보가 없어요</Text>
-                  <Text style={s.emptySub}>오늘 끌리는 느낌만 알려주시면{'\n'}앱이 첫 후보를 만들어드릴게요.</Text>
+                  <Text style={s.emptyTitle}>{t('candidates.emptyStateTitle')}</Text>
+                  <Text style={s.emptySub}>{t('candidates.emptyStateSub')}</Text>
                 </View>
               ) : (
                 <View style={s.cardList}>
@@ -378,31 +388,31 @@ export default function CandidatesScreen() {
                               <Text style={s.cardTitle}>{card.title}</Text>
                               <View style={s.badgeRow}>
                                 {card.source === 'manual' && (
-                                  <Badge tone="lavender">직접 추가</Badge>
+                                  <Badge tone="lavender">{t('candidates.addManual')}</Badge>
                                 )}
                                 <Badge tone={card.myReaction === 'love' && card.partnerReaction === 'love' ? 'pink' : 'gray'}>
-                                  {card.myReaction === 'love' && card.partnerReaction === 'love' ? '이번 데이트' : '후보'}
+                                  {card.myReaction === 'love' && card.partnerReaction === 'love' ? t('candidates.thisDateBadge') : t('candidates.candidateBadge')}
                                 </Badge>
                               </View>
                             </View>
                             <View style={s.chips}>
-                              {(card.tags ?? []).slice(0, 2).map((t) => (
-                                <Chip key={t} tone="gray">{t}</Chip>
+                              {(card.tags ?? []).slice(0, 2).map((tag) => (
+                                <Chip key={tag} tone="gray">{tag}</Chip>
                               ))}
                             </View>
                           </View>
                         </View>
                         <View style={s.rxRow}>
                           <View style={s.rxBox}>
-                            <Text style={s.rxLabel}>나</Text>
-                            <Text style={s.rxValue}>{card.myReaction ? RX_LABEL[card.myReaction] : '반응 없음'}</Text>
+                            <Text style={s.rxLabel}>{t('candidates.me')}</Text>
+                            <Text style={s.rxValue}>{card.myReaction ? RX_LABEL[card.myReaction] : t('candidates.noReaction')}</Text>
                             {card.myConditionTag && (
                               <Text style={s.rxCondition}>{CONDITION_LABEL[card.myConditionTag]}</Text>
                             )}
                           </View>
                           <View style={s.rxBox}>
-                            <Text style={s.rxLabel}>상대</Text>
-                            <Text style={s.rxValue}>{card.partnerReaction ? RX_LABEL[card.partnerReaction] : '반응 없음'}</Text>
+                            <Text style={s.rxLabel}>{t('candidates.partner')}</Text>
+                            <Text style={s.rxValue}>{card.partnerReaction ? RX_LABEL[card.partnerReaction] : t('candidates.noReaction')}</Text>
                             {card.partnerConditionTag && (
                               <Text style={s.rxCondition}>{CONDITION_LABEL[card.partnerConditionTag]}</Text>
                             )}
@@ -421,7 +431,7 @@ export default function CandidatesScreen() {
         </ScrollView>
 
         {/* FAB */}
-        {activeFilter !== '다음에 만나면' && (
+        {activeFilter !== 'bucket' && (
           <TouchableOpacity
             style={s.fab}
             onPress={() => router.push({
@@ -431,7 +441,7 @@ export default function CandidatesScreen() {
             activeOpacity={0.85}
           >
             <Plus size={16} color={C.white} />
-            <Text style={s.fabText}>느낌 남기기</Text>
+            <Text style={s.fabText}>{t('candidates.fabAddFeeling')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -449,6 +459,7 @@ type BucketSectionProps = {
 };
 
 function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd }: BucketSectionProps) {
+  const { t } = useI18n();
   if (loading) return <ActivityIndicator color={C.lavenderFg} style={s.loader} />;
 
   if (items.length === 0) {
@@ -457,11 +468,11 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
         <View style={[s.emptyIcon, s.bgLavender]}>
           <Plane size={44} strokeWidth={1.5} color={C.lavenderFg} />
         </View>
-        <Text style={s.emptyTitle}>버킷리스트가 비어있어요</Text>
-        <Text style={s.emptySub}>다음에 만나면 하고 싶은 것들을{'\n'}자유롭게 저장해보세요.</Text>
+        <Text style={s.emptyTitle}>{t('candidates.bucketEmptyTitle')}</Text>
+        <Text style={s.emptySub}>{t('candidates.bucketEmptySub')}</Text>
         <TouchableOpacity style={s.addBucketBtn} onPress={onAdd} activeOpacity={0.8}>
           <Plus size={14} color={C.white} />
-          <Text style={s.addBucketBtnText}>아이디어 추가하기</Text>
+          <Text style={s.addBucketBtnText}>{t('candidates.bucketAddIdea')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -470,10 +481,10 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
   return (
     <View style={s.bucketWrap}>
       <View style={s.bucketHeader}>
-        <Text style={s.bucketHeaderText}>다음 만남에 하고 싶은 것들 ({items.length})</Text>
+        <Text style={s.bucketHeaderText}>{t('candidates.bucketHeaderCount', { count: items.length })}</Text>
         <TouchableOpacity onPress={onAdd} activeOpacity={0.8} style={s.bucketAddSmall}>
           <Plus size={12} color={C.lavenderFg} />
-          <Text style={s.bucketAddSmallText}>추가</Text>
+          <Text style={s.bucketAddSmallText}>{t('candidates.bucketAddSmall')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -492,7 +503,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
 
               {/* 반응 버튼 */}
               <View style={s.bucketRxRow}>
-                <Text style={s.bucketRxLabel}>내 반응</Text>
+                <Text style={s.bucketRxLabel}>{t('candidates.bucketMyReactionLabel')}</Text>
                 <View style={s.bucketRxBtns}>
                   <TouchableOpacity
                     style={[s.bucketRxBtn, item.myReaction === 'love' && s.bucketRxBtnActive]}
@@ -500,7 +511,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                     activeOpacity={0.8}
                   >
                     <Text style={[s.bucketRxBtnText, item.myReaction === 'love' && s.bucketRxBtnTextActive]}>
-                      ❤️ 끌려
+                      {t('candidates.bucketRxLove')}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -509,7 +520,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                     activeOpacity={0.8}
                   >
                     <Text style={[s.bucketRxBtnText, item.myReaction === 'next_time' && s.bucketRxBtnTextNext]}>
-                      🕐 다음에
+                      {t('candidates.bucketRxNext')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -519,7 +530,9 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
               {item.partnerReaction && (
                 <View style={s.partnerRxRow}>
                   <Text style={s.partnerRxText}>
-                    상대 반응: {item.partnerReaction === 'love' ? '❤️ 끌려' : '🕐 다음에'}
+                    {t('candidates.bucketPartnerReaction', {
+                      label: item.partnerReaction === 'love' ? t('candidates.bucketRxLove') : t('candidates.bucketRxNext'),
+                    })}
                   </Text>
                 </View>
               )}
@@ -538,7 +551,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                     <>
                       <Check size={14} color={C.white} strokeWidth={2.5} />
                       <Text style={s.confirmBtnText}>
-                        {bothLove ? '둘 다 설레네요! 만남 확정하기' : '만남 확정하고 코스 만들기'}
+                        {bothLove ? t('candidates.confirmBothLove') : t('candidates.confirmSingle')}
                       </Text>
                     </>
                   )}
@@ -599,8 +612,6 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingLeft: 16, paddingRight: 20, paddingVertical: 12,
     borderRadius: 30, backgroundColor: C.pink,
-    shadowColor: C.pink, shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 6,
   },
   fabText: { fontSize: 13, fontWeight: '600', color: C.white },
   proposalBanner: {

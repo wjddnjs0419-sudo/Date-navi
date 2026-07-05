@@ -11,11 +11,12 @@ import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard, InfoNote, GeneratingView } from '../../components/ui';
-
-const SOFT_MESSAGE_STEPS = ['마음 확인하는 중', '다정한 표현 고르는 중', '문장 다듬는 중'];
+import { useI18n } from '../../lib/i18n';
 
 export default function SoftMessageResultScreen() {
   const router = useRouter();
+  const { t, language } = useI18n();
+  const SOFT_MESSAGE_STEPS = t('softMessage.generatingSteps', { returnObjects: true }) as string[];
   const { tone, free } = useLocalSearchParams<{ tone: string; free: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -35,11 +36,11 @@ export default function SoftMessageResultScreen() {
       try {
         const text = await generateSoftMessage(
           { freeText: free?.trim() ?? '', tone },
-          'ko',
+          language,
         );
         setEditedText(text);
       } catch {
-        Alert.alert('오류', 'AI 문장 생성에 실패했어요. 다시 시도해주세요.');
+        Alert.alert(t('common.error'), t('softMessage.genErrorAlert'));
         router.back();
       } finally {
         clearInterval(interval);
@@ -63,7 +64,7 @@ export default function SoftMessageResultScreen() {
         .single();
 
       if (!profile?.couple_id) {
-        Alert.alert('연인과 연결 후 사용해주세요.');
+        Alert.alert(t('softMessage.needCoupleAlert'));
         return;
       }
 
@@ -78,9 +79,9 @@ export default function SoftMessageResultScreen() {
         used: true,
       });
 
-      Alert.alert('보냈어요', '상대방 알림함에서 확인할 수 있어요.');
+      Alert.alert(t('softMessage.sentAlertTitle'), t('softMessage.sentAlertMessage'));
     } catch {
-      Alert.alert('오류', '보내는 중 오류가 발생했어요.');
+      Alert.alert(t('common.error'), t('softMessage.sendErrorAlert'));
     } finally {
       setSaving(false);
     }
@@ -95,7 +96,7 @@ export default function SoftMessageResultScreen() {
   async function handleAdjust(instruction: 'warmer' | 'shorter') {
     setAdjusting(instruction);
     try {
-      const text = await adjustSoftMessage(editedText, instruction, 'ko');
+      const text = await adjustSoftMessage(editedText, instruction, language);
       setEditedText(text);
     } finally {
       setAdjusting(null);
@@ -103,13 +104,13 @@ export default function SoftMessageResultScreen() {
   }
 
   const ADJUST_ACTIONS: { key: string; label: string; onPress: () => void; loading?: boolean }[] = [
-    { key: 'warmer', label: '조금 더 다정하게', onPress: () => handleAdjust('warmer'), loading: adjusting === 'warmer' },
-    { key: 'shorter', label: '짧게 줄이기', onPress: () => handleAdjust('shorter'), loading: adjusting === 'shorter' },
-    { key: 'edit', label: '직접 수정하기', onPress: () => textInputRef.current?.focus() },
+    { key: 'warmer', label: t('softMessage.adjustWarmer'), onPress: () => handleAdjust('warmer'), loading: adjusting === 'warmer' },
+    { key: 'shorter', label: t('softMessage.adjustShorter'), onPress: () => handleAdjust('shorter'), loading: adjusting === 'shorter' },
+    { key: 'edit', label: t('softMessage.adjustEdit'), onPress: () => textInputRef.current?.focus() },
   ];
 
   if (loading) {
-    return <GeneratingView heading={'다정한 문장을\n만드는 중이에요'} steps={SOFT_MESSAGE_STEPS} step={genStep} />;
+    return <GeneratingView heading={t('softMessage.generatingHeading')} steps={SOFT_MESSAGE_STEPS} step={genStep} />;
   }
 
   return (
@@ -121,7 +122,7 @@ export default function SoftMessageResultScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, s.headingTop]}>이렇게 말해볼까요?</Text>
+        <Text style={[s.heading, s.headingTop]}>{t('softMessage.resultHeading2')}</Text>
 
         <SoftCard style={s.messageCard}>
           <View style={s.toneRow}>
@@ -155,13 +156,13 @@ export default function SoftMessageResultScreen() {
           ))}
         </View>
 
-        <InfoNote>문장은 바로 전송되지 않아요. 확인하고 보낼 수 있어요.</InfoNote>
+        <InfoNote>{t('softMessage.sendingNote')}</InfoNote>
         <View style={s.footerSpacer} />
       </ScrollView>
 
       <View style={s.footer}>
         <BigButton onPress={handleCopy} variant={copied ? 'secondary' : 'primary'}>
-          {copied ? '복사됨 ✓' : '문장 복사하기'}
+          {copied ? t('softMessage.copiedCta') : t('softMessage.copyCta')}
         </BigButton>
         <TouchableOpacity
           style={[s.saveBtn, saving && s.saveBtnSaving]}
@@ -170,7 +171,7 @@ export default function SoftMessageResultScreen() {
         >
           {saving
             ? <ActivityIndicator color={C.pinkDeep} size="small" />
-            : <Text style={s.saveBtnText}>보내기</Text>}
+            : <Text style={s.saveBtnText}>{t('softMessage.sendCta')}</Text>}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -10,6 +10,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, SoftCard } from '../../components/ui';
 import { DateWheelPicker, parseIsoDate } from '../../components/pickers';
+import { useI18n } from '../../lib/i18n';
 
 const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() - i));
 
@@ -22,6 +23,7 @@ function daysBetween(dateStr: string) {
 
 export default function AnniversaryScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [year, setYear] = useState('2024');
   const [month, setMonth] = useState('03');
   const [day, setDay] = useState('14');
@@ -37,9 +39,7 @@ export default function AnniversaryScreen() {
       if (!user) throw new Error('no user');
 
       await supabase
-        .from('date_planner_profiles')
-        .update({ anniversary_date: dateStr, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
+        .rpc('set_date_planner_couple_anniversary', { p_anniversary_date: dateStr });
     } catch {
       // 에러 무시하고 다음 단계 진행
     } finally {
@@ -62,8 +62,8 @@ export default function AnniversaryScreen() {
         </View>
 
         <View style={s.headingBlock}>
-          <Text style={s.heading}>{'사귀기 시작한 날을\n알려주세요'}</Text>
-          <Text style={s.subText}>기념일 알림과 추억 정리에 사용돼요.</Text>
+          <Text style={s.heading}>{t('onboarding.anniversary.heading')}</Text>
+          <Text style={s.subText}>{t('onboarding.anniversary.subtitle')}</Text>
         </View>
 
         <View style={s.dateRow}>
@@ -85,20 +85,20 @@ export default function AnniversaryScreen() {
           <SoftCard style={s.daysCard}>
             <View style={s.daysRow}>
               <Heart size={14} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
-              <Text style={s.daysText}>오늘로 {days}일째</Text>
+              <Text style={s.daysText}>{t('onboarding.anniversary.daysCountText', { days })}</Text>
             </View>
-            <Text style={s.daysHint}>100일·200일·1주년 같은 날에 살짝 알려드릴게요.</Text>
+            <Text style={s.daysHint}>{t('onboarding.anniversary.daysHint')}</Text>
           </SoftCard>
         )}
 
         <TouchableOpacity style={s.skipBtn} onPress={handleSkip}>
-          <Text style={s.skipText}>나중에 입력할게요</Text>
+          <Text style={s.skipText}>{t('onboarding.anniversary.skipCta')}</Text>
         </TouchableOpacity>
 
         <View style={s.spacer} />
 
         <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
-          {loading ? '저장 중...' : '다음'}
+          {loading ? t('common.saving') : t('common.next')}
         </BigButton>
       </View>
     </SafeAreaView>

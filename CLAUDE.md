@@ -24,6 +24,7 @@ rg -n "^##|^###" PLAN.md RESULT.md
 - **Plan Before Code**: 코드 수정 전 반드시 계획을 제안하고 명시적 승인을 받는다.
 - **Validate**: 변경 후 항상 루트에서 `npm run validate`(= `tsc --noEmit`) 실행. 에러는 사용자 개입 없이 스스로 수정한다.
 - **No Hardcoding**: 환경변수와 타입 시스템 활용. 마법 문자열·ID 금지.
+- **i18n Sync**: 화면에 보이는 문구를 추가·수정할 땐 `locales/ko.json`과 `locales/en.json`을 같은 작업에서 함께 갱신한다. 한쪽 언어만 반영된 상태로 작업 완료 보고 금지.
 - **Ratchet**: 스스로 해결한 빌드/린트 오류는 `AGENTS.md` Anti-Patterns에 1줄 추가.
 
 ---

@@ -2,10 +2,13 @@ import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { useRef, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { LinearGradient } from 'expo-linear-gradient';
+import { C } from '../constants/colors';
+import { useI18n } from '../lib/i18n';
 
 const logo = require('../assets/logo.png');
 
 export default function Index() {
+  const { t } = useI18n();
   const scale = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(8)).current;
@@ -29,7 +32,9 @@ export default function Index() {
 
   return (
     <LinearGradient
-      colors={['#FCE9E5', '#FFF8F3']}
+      colors={C.bgGradient}
+      start={C.bgGradientStart}
+      end={C.bgGradientEnd}
       style={s.container}
     >
       <View style={s.center}>
@@ -38,7 +43,7 @@ export default function Index() {
         </Animated.View>
         <Animated.View style={[s.titleBlock, { opacity }]}>
           <Text style={s.appName}>Date Navi</Text>
-          <Text style={s.tagline}>우리 데이트의 작은 나침반이 되어줄게요.</Text>
+          <Text style={s.tagline}>{t('splash.tagline')}</Text>
         </Animated.View>
       </View>
       <View style={s.bottom}>
@@ -47,7 +52,7 @@ export default function Index() {
             <View key={i} style={[s.dot, { opacity: 0.3 + i * 0.25 }]} />
           ))}
         </View>
-        <Text style={s.loadingText}>둘의 마음을 모으는 중</Text>
+        <Text style={s.loadingText}>{t('splash.loading')}</Text>
       </View>
     </LinearGradient>
   );

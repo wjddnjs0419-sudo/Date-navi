@@ -156,3 +156,4 @@ handleGenerateAiOptions()
 - `gemini-1.5-flash` 모델 사용 금지 — deprecated. `gemini-2.0-flash` 사용.
 - 회원가입 폼에 mock 기본값(`"지우"`, `"jiwoo@example.com"`) pre-fill 금지 — Supabase 모드에서 실제 사용자 데이터처럼 혼동 유발.
 - `isSupabaseMode` 무관하게 "로컬 mock 데이터" notice 출력 금지 — Supabase 모드에서는 초기 notice 빈 문자열로 시작.
+- JSON 리소스에서 온 배열을 `.map()`할 때 `strings`가 느슨한 타입이면 콜백 인자 타입을 명시한다.

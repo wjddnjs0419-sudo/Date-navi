@@ -11,15 +11,17 @@ import { Heart, Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type CardInfo = { id: string; title: string; summary: string; tags: string[] };
 
 export default function SendScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const router = useRouter();
+  const { t, language } = useI18n();
 
   const [card, setCard] = useState<CardInfo | null>(null);
-  const [message, setMessage] = useState('이거 우리 같이 가보면 어때? 😊');
+  const [message, setMessage] = useState(t('share.send.defaultMessage'));
   const [loading, setLoading] = useState(!!cardId);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
@@ -44,8 +46,8 @@ export default function SendScreen() {
     setGenerating(true);
     try {
       const text = await generateInviteMessage(
-        { title: card?.title ?? '선택한 데이트 후보', summary: card?.summary, tags: card?.tags },
-        'ko',
+        { title: card?.title ?? t('share.cardTitleFallback'), summary: card?.summary, tags: card?.tags },
+        language,
       );
       setMessage(text);
     } finally {
@@ -89,8 +91,8 @@ export default function SendScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.introWrap}>
-          <Text style={s.heading}>이 후보를 상대에게{'\n'}보내볼까요?</Text>
-          <Text style={s.subText}>상대방이 부담 없이 반응할 수 있게 부드럽게 전달돼요.</Text>
+          <Text style={s.heading}>{t('share.send.heading')}</Text>
+          <Text style={s.subText}>{t('share.send.subText')}</Text>
         </View>
 
         {loading ? (
@@ -103,11 +105,11 @@ export default function SendScreen() {
               </View>
             </View>
             <View style={s.cardBody}>
-              <Text style={s.cardTitle}>{card?.title ?? '선택한 데이트 후보'}</Text>
-              <Text style={s.cardDesc}>{card?.summary ?? '멀리 가지 않고 편하게 쉬는 데이트'}</Text>
+              <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
+              <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
               <View style={s.tagsRow}>
-                {(card?.tags ?? ['이동 적음', '돈 적게 듦', '피곤한 날']).slice(0, 3).map(t => (
-                  <Chip key={t} tone="gray">{t}</Chip>
+                {(card?.tags ?? t('share.send.tagsFallback', { returnObjects: true }) as string[]).slice(0, 3).map((tag) => (
+                  <Chip key={tag} tone="gray">{tag}</Chip>
                 ))}
               </View>
             </View>
@@ -115,14 +117,14 @@ export default function SendScreen() {
         )}
 
         <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>함께 보낼 한마디</Text>
+          <Text style={s.sectionLabel}>{t('share.send.sectionLabel')}</Text>
           <View style={s.messageBox}>
             <TextInput
               style={s.messageInput}
               value={message}
               onChangeText={setMessage}
               multiline
-              placeholder="한마디를 입력하세요"
+              placeholder={t('share.send.messagePlaceholder')}
               placeholderTextColor={C.textFaint}
             />
           </View>
@@ -135,7 +137,7 @@ export default function SendScreen() {
               ? <ActivityIndicator size="small" color={C.lavenderFg} />
               : <>
                   <Sparkles size={13} color={C.lavenderFg} />
-                  <Text style={s.suggestBtnText}>한마디 추천받기</Text>
+                  <Text style={s.suggestBtnText}>{t('share.send.suggestCta')}</Text>
                 </>}
           </TouchableOpacity>
         </View>
@@ -145,10 +147,10 @@ export default function SendScreen() {
 
       <View style={s.footer}>
         <BigButton onPress={handleSend} variant={sending ? 'disabled' : 'primary'}>
-          상대에게 보내기
+          {t('share.send.sendCta')}
         </BigButton>
         <TouchableOpacity style={s.textBtn} onPress={() => router.back()}>
-          <Text style={s.textBtnText}>수정하기</Text>
+          <Text style={s.textBtnText}>{t('share.send.editCta')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

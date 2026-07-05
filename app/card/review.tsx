@@ -58,11 +58,11 @@ export default function ReviewScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
-        '사진 접근 권한 필요',
-        '추억 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.',
+        s.card.memory.photoPermTitle,
+        s.card.memory.photoPermMessage,
         [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+          { text: s.common.cancel, style: 'cancel' },
+          { text: s.card.memory.openSettingsCta, onPress: () => Linking.openSettings() },
         ],
       );
       return;
@@ -93,7 +93,7 @@ export default function ReviewScreen() {
       const { data: pub } = supabase.storage.from('memories').getPublicUrl(path);
       setPhotoUrl(pub.publicUrl);
     } catch {
-      Alert.alert('오류', '사진 업로드 중 문제가 생겼어요.');
+      Alert.alert(s.common.error, s.card.memory.photoUploadError);
     } finally {
       setUploadingPhoto(false);
     }
@@ -120,7 +120,7 @@ export default function ReviewScreen() {
       await supabase.from('date_cards').update({ status: 'done' }).eq('id', id);
       router.replace('/(tabs)/memories');
     } catch {
-      Alert.alert('오류', c.saveError);
+      Alert.alert(s.common.error, c.saveError);
     } finally {
       setSaving(false);
     }
@@ -149,7 +149,7 @@ export default function ReviewScreen() {
 
           <Text style={styles.sectionLabel}>{c.ratingLabel}</Text>
           <View style={styles.ratingGrid}>
-            {c.ratings.map((item) => {
+            {c.ratings.map((item: { key: keyof typeof RATING_ICONS; label: string }) => {
               const sel = rating === item.key;
               return (
                 <TouchableOpacity
@@ -190,12 +190,12 @@ export default function ReviewScreen() {
             ) : photoUrl ? (
               <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
             ) : (
-              <Text style={styles.photoText}>📷 사진 추가하기</Text>
+              <Text style={styles.photoText}>{s.card.memory.addPhotoCta}</Text>
             )}
           </TouchableOpacity>
 
           <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
-            {saving ? '저장 중...' : c.saveButton}
+            {saving ? s.common.saving : c.saveButton}
           </BigButton>
         </ScrollView>
       </KeyboardAvoidingView>

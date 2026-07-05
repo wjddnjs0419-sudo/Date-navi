@@ -58,11 +58,11 @@ export default function NewMemoryScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
-        '사진 접근 권한 필요',
-        '추억 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.',
+        s.card.memory.photoPermTitle,
+        s.card.memory.photoPermMessage,
         [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+          { text: s.common.cancel, style: 'cancel' },
+          { text: s.card.memory.openSettingsCta, onPress: () => Linking.openSettings() },
         ],
       );
       return;
@@ -93,14 +93,14 @@ export default function NewMemoryScreen() {
       const { data: pub } = supabase.storage.from('memories').getPublicUrl(path);
       setPhotoUrl(pub.publicUrl);
     } catch {
-      Alert.alert('오류', '사진 업로드 중 문제가 생겼어요.');
+      Alert.alert(s.common.error, s.card.memory.photoUploadError);
     } finally {
       setUploadingPhoto(false);
     }
   }
 
   async function handleSave() {
-    if (!photoUrl) { Alert.alert('', '사진을 추가해주세요.'); return; }
+    if (!photoUrl) { Alert.alert('', s.card.memory.photoRequiredError); return; }
     if (!rating) { Alert.alert('', c.noRatingError); return; }
     if (!myUserId || !coupleId) { Alert.alert('', c.missingCoupleError); return; }
     if (saving) return;
@@ -120,7 +120,7 @@ export default function NewMemoryScreen() {
       if (error) throw error;
       router.replace('/(tabs)/memories');
     } catch {
-      Alert.alert('오류', c.saveError);
+      Alert.alert(s.common.error, c.saveError);
     } finally {
       setSaving(false);
     }
@@ -143,8 +143,8 @@ export default function NewMemoryScreen() {
           <BackBar />
 
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>새 추억 남기기</Text>
-            <Text style={styles.sub}>사진과 함께 그날의 기억을 남겨보세요.</Text>
+            <Text style={styles.heading}>{s.card.memory.newHeading}</Text>
+            <Text style={styles.sub}>{s.card.memory.newSub}</Text>
           </View>
 
           <TouchableOpacity
@@ -158,16 +158,16 @@ export default function NewMemoryScreen() {
             ) : photoUrl ? (
               <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
             ) : (
-              <Text style={styles.photoText}>📷 사진 추가하기</Text>
+              <Text style={styles.photoText}>{s.card.memory.addPhotoCta}</Text>
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>제목</Text>
+          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{s.card.memory.titleLabel}</Text>
           <TextInput
             style={styles.titleInput}
             value={title}
             onChangeText={setTitle}
-            placeholder="예: 한강 피크닉"
+            placeholder={s.card.memory.titlePlaceholder}
             placeholderTextColor={C.textFaint}
             maxLength={40}
             returnKeyType="next"
@@ -175,7 +175,7 @@ export default function NewMemoryScreen() {
 
           <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{c.ratingLabel}</Text>
           <View style={styles.ratingGrid}>
-            {c.ratings.map((item) => {
+            {c.ratings.map((item: { key: keyof typeof RATING_ICONS; label: string }) => {
               const sel = rating === item.key;
               return (
                 <TouchableOpacity
@@ -206,7 +206,7 @@ export default function NewMemoryScreen() {
           />
 
           <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
-            {saving ? '저장 중...' : c.saveButton}
+            {saving ? s.common.saving : c.saveButton}
           </BigButton>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -10,14 +10,19 @@ import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, SoftCard } from '../../components/ui';
-import { DurationWheelPicker } from '../../components/pickers';
-
-const TIME_OPTIONS = ['1~2시간', '2~3시간', '반나절', '하루 종일'];
-const BUDGET_OPTIONS = ['아끼기', '적당히', '특별하게'];
+import { BackBar, BigButton, SoftCard, OptionCardPicker } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 export default function NewCardScreen() {
   const router = useRouter();
+  const { t, language } = useI18n();
+  const TIME_OPTIONS = [
+    t('card.new.timeOptions.oneToTwo'), t('card.new.timeOptions.twoToThree'),
+    t('card.new.timeOptions.halfDay'), t('card.new.timeOptions.fullDay'),
+  ];
+  const BUDGET_OPTIONS = [
+    t('card.new.budgetOptions.saving'), t('card.new.budgetOptions.moderate'), t('card.new.budgetOptions.special'),
+  ];
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selTime, setSelTime] = useState<number | null>(null);
@@ -42,7 +47,7 @@ export default function NewCardScreen() {
         .single();
 
       if (!profile?.couple_id) {
-        Alert.alert('연인과 연결 후 사용해주세요.');
+        Alert.alert(t('card.new.needCoupleAlert'));
         return;
       }
 
@@ -62,7 +67,7 @@ export default function NewCardScreen() {
           },
           'make_course',
           prefs,
-          'ko',
+          language,
         );
         const card = cards[0];
 
@@ -99,7 +104,7 @@ export default function NewCardScreen() {
 
       router.replace('/(tabs)/candidates');
     } catch {
-      Alert.alert('오류', '후보 추가 중 오류가 발생했어요.');
+      Alert.alert(t('common.error'), t('card.new.saveError'));
     } finally {
       setSaving(false);
     }
@@ -114,30 +119,30 @@ export default function NewCardScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, s.headingTop]}>아이디어를 후보로{'\n'}등록할게요</Text>
-        <Text style={s.subText}>제목만 입력해도 바로 후보가 돼요.</Text>
+        <Text style={[s.heading, s.headingTop]}>{t('card.new.heading')}</Text>
+        <Text style={s.subText}>{t('card.new.subtitle')}</Text>
 
         {/* 제목 */}
-        <Text style={s.label}>아이디어 제목 *</Text>
+        <Text style={s.label}>{t('card.new.titleLabel')}</Text>
         <View style={[s.inputWrap, title.length > 0 && s.inputWrapActive]}>
           <TextInput
             style={s.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="예: 동네 맛집 포장 + 집 영화"
+            placeholder={t('card.new.titlePlaceholder')}
             placeholderTextColor={C.textFaint}
             maxLength={60}
           />
         </View>
 
         {/* 설명 */}
-        <Text style={s.label}>설명 (선택)</Text>
+        <Text style={s.label}>{t('card.new.descLabel')}</Text>
         <View style={s.inputWrap}>
           <TextInput
             style={[s.input, s.inputMultiline]}
             value={description}
             onChangeText={setDescription}
-            placeholder="어떤 느낌인지 간단히 적어주세요"
+            placeholder={t('card.new.descPlaceholder')}
             placeholderTextColor={C.textFaint}
             multiline
             maxLength={200}
@@ -145,11 +150,11 @@ export default function NewCardScreen() {
         </View>
 
         {/* 예상 시간 */}
-        <Text style={s.label}>예상 시간 (선택)</Text>
-        <DurationWheelPicker
+        <Text style={s.label}>{t('card.new.timeLabel')}</Text>
+        <OptionCardPicker
           options={[
-            { value: '', label: '선택 안 함' },
-            ...TIME_OPTIONS.map((t) => ({ value: t, label: t })),
+            { value: '', label: t('card.new.noneOption') },
+            ...TIME_OPTIONS.map((time) => ({ value: time, label: time })),
           ]}
           value={selTime !== null ? TIME_OPTIONS[selTime] : ''}
           onChange={(v) => {
@@ -159,7 +164,7 @@ export default function NewCardScreen() {
         />
 
         {/* 예산 */}
-        <Text style={s.label}>예산 (선택)</Text>
+        <Text style={s.label}>{t('card.new.budgetLabel')}</Text>
         <View style={s.budgetRow}>
           {BUDGET_OPTIONS.map((b, i) => {
             const sel = i === selBudget;
@@ -183,9 +188,9 @@ export default function NewCardScreen() {
               <Sparkles size={16} color={useAI ? C.lavenderFg : C.textSub} />
               <View style={s.toggleBody}>
                 <Text style={[s.toggleTitle, useAI && s.toggleTitleOn]}>
-                  AI가 카드로 정리해줘
+                  {t('card.new.aiToggleTitle')}
                 </Text>
-                <Text style={s.toggleSub}>입력한 내용을 AI가 정제해서 카드로 만들어줘요</Text>
+                <Text style={s.toggleSub}>{t('card.new.aiToggleSub')}</Text>
               </View>
             </View>
             <Switch
@@ -207,7 +212,7 @@ export default function NewCardScreen() {
         >
           {saving
             ? <ActivityIndicator color={C.white} size="small" />
-            : useAI ? 'AI로 카드 만들기 ✨' : '후보로 추가하기'}
+            : useAI ? t('card.new.aiSaveCta') : t('card.new.saveCta')}
         </BigButton>
       </View>
     </SafeAreaView>
@@ -231,7 +236,6 @@ const s = StyleSheet.create({
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
   input: { fontSize: 14, color: C.text, lineHeight: 22 },
   inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
-  timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   budgetRow: { flexDirection: 'row', gap: 8 },
   chipBtn: {
     borderRadius: 14,

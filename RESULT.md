@@ -4,6 +4,194 @@
 
 ---
 
+## 2026-07-05 세션 AD — 세션 AC 이후 미반영 화면 i18n 마무리
+
+### 배경
+
+Date Navi 기반 UI 전면 교체(uncommitted 작업)가 세션 AC의 i18n 작업 이전 버전 화면들을 새로 작성하면서, 홈/후보/추억/모드 탭 등 다수 화면이 다시 하드코딩 한국어로 돌아간 상태였다. 사용자가 "마이페이지 빼고 하나도 안 된 것 같다"고 보고해 재조사 후 처리.
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `locales/ko.json`, `locales/en.json` | `home`, `candidates`, `memories`, `share.*`, `card.*`, `account.*`, `plans`, `mode.tabModes` 등에 신규 키 대량 추가 (기존 미사용 레거시 키는 건드리지 않고 신규 키로 추가) |
+| `app/(tabs)/index.tsx`, `candidates.tsx`, `memories.tsx`, `mode.tsx` | 전체 하드코딩 한국어를 `useI18n().t()`로 교체 |
+| `app/share/reaction.tsx`, `mutual.tsx`, `send.tsx` | 전체 i18n 처리. `send.tsx`는 `generateInviteMessage` 호출에 하드코딩 `'ko'` 대신 현재 언어 전달 |
+| `app/card/new.tsx`, `edit/[id].tsx`, `[id].tsx`, `memory/new.tsx`, `memory/[id].tsx`, `memory/edit/[id].tsx`, `review.tsx` | 잔여 하드코딩 처리. AI 재생성 호출부(`card/new.tsx`, `card/[id].tsx`)도 언어 하드코딩 제거 |
+| `app/account/edit-profile.tsx`, `delete-account.tsx`, `change-password.tsx`, `notifications.tsx` | 전체 i18n 처리 (신규 `account` 네임스페이스) |
+| `app/plans/index.tsx` | 전체 i18n 처리 (신규 `plans` 네임스페이스) |
+| `app/(tabs)/soft-message.tsx`, `app/soft-message/result.tsx` | 전체 i18n 처리 (신규 `softMessage.*` 키 추가). AI 호출(`generateSoftMessage`, `adjustSoftMessage`)도 언어 하드코딩 제거 |
+| `app/onboarding/anniversary.tsx`, `connected.tsx`, `preferences.tsx`, `couple-connect.tsx` | 전체 i18n 처리 (신규 `onboarding.anniversary`, `onboarding.connected`, `onboarding.preferences` 추가, `couple-connect.tsx`는 Alert 제목 잔여분만) |
+| `app/card/new.tsx`, `edit/[id].tsx` | "예상 시간" 입력을 드래그형 `DurationWheelPicker`에서 mode-flow 화면들과 동일한 `OptionCardPicker`(가로 배지 선택형, 공통 컴포넌트)로 교체 |
+| `components/pickers.tsx` | 더 이상 쓰이지 않게 된 `DurationWheelPicker`와 관련 스타일 제거 |
+| `components/ui.tsx` | `OptionCardPicker`가 옵션 5개 이상(줄바꿈 발생)일 때 두 번째 줄이 아래 콘텐츠와 겹치는 버그 수정 — `flexWrap` + `flex:1` 조합의 RN/Yoga 레이아웃 버그였음. `flexWrap` 대신 옵션을 행(기본 4열) 단위로 직접 나눠 렌더링하도록 변경 |
+| `CLAUDE.md` | **i18n Sync** 원칙 추가 — 문구 추가/수정 시 `ko.json`/`en.json` 동시 갱신 의무화 |
+
+### 기술 결정
+
+- `candidates.tsx`의 필터 탭 상태(`FilterTab`)처럼 한국어 문자열을 state 값으로 직접 쓰던 곳은 안정적인 영문 키(`all`/`both`/`conditional`/`nextTime`/`bucket`)로 바꾸고 표시용 라벨만 `t()`로 분리 — 세션 AC가 mode-flow 화면에 적용한 패턴과 동일.
+- `card/new.tsx`의 시간/예산 옵션, `account/edit-profile.tsx`의 계획 성향 옵션처럼 사용자가 고른 값이 DB에 그대로 저장되는 경우, `t()`로 만든 현재 언어의 문구를 저장하도록 했다 — 제목/설명 같은 사용자 작성 콘텐츠와 동일하게 "작성 시점 언어로 저장, 이후 번역 안 함" 원칙 적용.
+- 기존 locale JSON에 남아있던 리디자인 이전 버전의 미사용 키(`candidates.title`, `candidates.tabs`, `mode.modes`, `softMessage.reasons`, `preferences.*` 등)는 삭제하지 않고 그대로 둔 채 신규 키를 추가했다 — 다른 곳에서 참조 중인지 확신이 서지 않는 키를 건드리지 않기 위함(`candidates.reactionLabels`는 실제로 `account/notifications.tsx`에서 사용 중임을 확인).
+- 카드 등록 화면의 "예상 시간" 피커는 유저가 요청한 대로, 이미 `mode-flow/pick.tsx` 등에서 쓰던 `OptionCardPicker` 공통 컴포넌트로 교체해 앱 전체에서 이런 종류의 선택 UI가 하나로 통일되게 했다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+`app/`, `components/` 전체를 재스캔해 시각적 한국어 하드코딩이 남아있지 않음을 확인함 (주석, `console.warn` 디버그 로그, `lib/prompt.ts`/`lib/ai.ts`/`lib/place.ts`의 AI 프롬프트 언어 분기, `components/pickers.tsx`의 기존 값 파싱 로직은 의도적으로 제외).
+
+---
+
+## 2026-07-05 세션 AC — 영어 지원 i18n 구조 정리
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `package.json`, `package-lock.json` | `i18next`, `react-i18next` 추가. 기존 `expo-localization`, AsyncStorage와 함께 Expo Go 호환 i18n 구성 |
+| `locales/ko.json`, `locales/en.json` | 기존 `lib/i18n.ts` 인라인 COPY를 JSON 번역 파일로 이관하고 신규 화면 문구 키 추가 |
+| `lib/i18n.ts` | i18next 초기화, 기기 언어 감지, AsyncStorage `datemate.language` 저장값 우선 적용, `t()` 제공. 기존 `strings.*` 호출 호환 shim 유지 |
+| `app/(auth)/index.tsx` | 시작/이메일 인증 화면 문구와 에러를 `t()` 키로 교체. 소셜 버튼 동적 inline style을 stylesheet variant로 정리 |
+| `components/ui.tsx`, `components/pickers.tsx` | 위치 입력, 장소 링크, 날짜/시간 picker 문구 및 날짜 포맷을 현지화 |
+| `app/mode-flow/*` 주요 화면 | pick/feeling/light/generating/result/course-result/bucketlist 화면의 visible shell copy를 `t()` 키로 교체. 옵션 state는 한국어 label 대신 stable value 사용 |
+| `app/legal/terms.tsx`, `app/legal/privacy.tsx` | `language === "ko" ? ... : ...` 문서 분기를 제거하고 locale JSON 배열 렌더링으로 전환 |
+| `app/onboarding/nickname.tsx`, `photo.tsx`, `type.tsx` | 온보딩 visible copy/alert/placeholder를 `t()` 키로 교체 |
+| `app/settings.tsx`, `app/(tabs)/_layout.tsx`, `app/index.tsx`, `app/card/confirm.tsx`, `app/card/[id].tsx` | 탭 라벨, 설정 권한 Alert, splash copy, 확정 날짜 화면의 하드코딩 문구 일부 현지화 |
+| `AGENTS.md` | JSON 리소스 배열 `.map()` 타입 추론 관련 Anti-Pattern 1줄 추가 |
+
+### 기술 결정
+
+- Expo 문서가 `expo-localization`과 `react-i18next` 같은 localization library 조합을 권장하고 Expo Go 포함을 명시하므로, 기존 커스텀 provider를 i18next 기반으로 교체했다.
+- 기존 화면을 한 번에 전부 재작성하지 않도록 `useI18n()`은 `t()`와 기존 `strings.*`를 함께 제공한다.
+- 최초 실행 감지는 `ko`/`en`만 지원하고 그 외 언어는 한국어 fallback으로 수정했다. 저장된 언어가 있으면 저장값이 항상 우선한다.
+- 사용자 생성 콘텐츠, AI/API 결과 문자열, 프롬프트/파싱용 한국어, 주석/테스트 문자열은 번역 대상으로 보지 않았다.
+
+### 남은 하드코딩
+
+- `share/*`, `card/new|edit|memory/*`, `account/*`, `plans`, `tabs/home|candidates|memories`에 아직 일부 visible Korean copy가 남아 있다. 이번 세션에서는 핵심 i18n 구조와 주요 진입/모드/설정/법적 문서 흐름을 우선 처리했다.
+- `lib/prompt.ts`, `lib/ai.ts`, `lib/place.ts`의 `language === 'en'` 분기는 AI 프롬프트와 장소 검색 지시문 생성용이라 유지했다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+---
+
+## 2026-07-05 세션 AB — 커플 연결 UX/관리 플로우 개선
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `app/onboarding/couple-connect.tsx` | 연결 전/초대 대기/연결 완료 상태를 분리한 화면으로 재구성. 기존 `skipConnect()`와 "나중에 연결할게요" 버튼 제거 |
+| `app/onboarding/couple-connect.tsx` | 기존 waiting 코드가 있으면 새 코드 생성 대신 `DN-` 코드와 공유 버튼을 즉시 표시 |
+| `app/onboarding/couple-connect.tsx` | 연결 완료 상태에서 파트너 이름, 커플 기념일 수정, 커플 연결 해제 row 제공 |
+| `app/onboarding/couple-connect.tsx` | `useLocalSearchParams`로 `?code=DN-XXXX` 딥링크 코드를 받아 입력칸에 자동 반영 |
+| `app/_layout.tsx` | 앱 진입 URL의 invite code를 AsyncStorage에 보관해 로그인/가입 후 커플 연결 화면으로 전달 |
+| `lib/couple-invite.ts` | 초대 코드 정규화, URL 파싱, pending invite storage key 공통 유틸 추가 |
+| `app/settings.tsx` | 마이페이지 커플 연결 row 값을 raw code 대신 `미연결/초대 대기중/파트너명` 상태 표시로 변경 |
+| `lib/i18n.ts` | 커플 연결/관리 플로우 ko/en 문구와 settings 커플 상태 문구 추가 |
+| `supabase/migrations/20260705090000_disconnect_date_planner_couple.sql` | `disconnect_date_planner_couple()` RPC 추가. 양쪽 profile `couple_id`를 null 처리하고 couple row는 waiting으로 복귀 |
+| `supabase/migrations/20260705091000_set_date_planner_couple_anniversary.sql` | 커플 기념일을 양쪽 profile에 함께 저장하는 `set_date_planner_couple_anniversary()` RPC 추가 |
+| `docs/supabase-schema.sql` | 연결 해제 RPC 문서화 |
+| `PLAN.md` | 승인 계획을 Done으로 정리하고 기존 보류 항목 보존 |
+
+### 기술 결정
+
+- 초대 공유는 Expo Router deep link + OS 공유 시트 기반으로 구현했다. 카카오톡은 별도 SDK 없이 공유 시트에서 선택하는 방식이다.
+- 후속 수정: 개발 환경에서 `ExpoLinking.createURL()`이 `exp://...` 링크를 공유하는 문제를 막기 위해 `scheme: 'datemate'`를 명시했다. 공유 URL은 `datemate://onboarding/couple-connect?code=DN-XXXX` 형태가 된다.
+- 후속 수정: 초대 코드 카드의 작은 `대기중` 뱃지는 카드 밖으로 삐져 보일 수 있어 제거했다. 대기 상태는 화면 제목/설명으로만 전달한다.
+- 후속 수정: 딥링크로 앱이 바로 열리면 `app/index.tsx`가 마운트되지 않아 스플래시가 내려가지 않는 문제를 막기 위해 `_layout` 초기 라우팅의 `finally`에서 `SplashScreen.hideAsync()`를 호출한다. 앱 실행 중 링크 이벤트도 코드 저장 후 즉시 목적지로 라우팅한다.
+- 후속 수정: 커플 기념일 저장이 본인 profile만 바꾸던 문제를 `set_date_planner_couple_anniversary()` RPC로 고쳐 양쪽 profile을 함께 업데이트한다. 마이페이지/커플 관리/추억 탭의 기념일 읽기 기준은 커플 owner 날짜 우선으로 맞췄고, 새 커플 연결 시에도 초기 기념일을 양쪽에 동기화한다.
+- 커플 연결 해제는 RLS 한계 때문에 `security definer` RPC로 처리한다. 공유 카드/반응/추억은 삭제하지 않고 보존한다.
+- 기존 솔로용 waiting row 생성은 제거했다. 앞으로 커플 연결 전에는 `profile.couple_id`를 만들지 않는다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+### 다음 세션 할 일 / 주의
+
+1. Supabase SQL Editor 또는 CLI로 `20260705090000_disconnect_date_planner_couple.sql`, `20260705091000_set_date_planner_couple_anniversary.sql` migration 적용 필요
+2. 실기기에서 공유 시트 → 카카오톡 공유 → 링크 열기 → 코드 자동 입력 → 연결 완료 흐름 확인
+3. 연결 해제 후 양쪽 계정의 마이페이지 상태가 `미연결`으로 바뀌는지 확인
+
+---
+
+## 2026-07-05 세션 AA — CTA 색상 통일 및 모드 하단 여백 조정
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `app/(tabs)/index.tsx` | 메인 `데이트 후보 만들기` CTA를 그라디언트에서 `C.pink` 단색으로 변경해 모드 시작 버튼과 색상 통일 |
+| `app/(tabs)/candidates.tsx` | `느낌 남기기` FAB의 그림자/elevation 효과 제거. 버튼 색상은 `C.pink` 유지 |
+| `app/(tabs)/mode.tsx` | 하단 `이 모드로 시작하기` 버튼 영역의 위/아래 패딩과 스크롤 하단 spacer를 조정해 마지막 `다음에 만나면` 카드가 가리지 않도록 수정 |
+| `app/(tabs)/mode.tsx` | 후속 수정 — footer의 `position: absolute`를 제거해 버튼이 카드 위를 덮지 않고 레이아웃 공간을 차지하도록 변경 |
+| `app/(tabs)/mode.tsx` | 추가 후속 수정 — 하단 버튼을 ScrollView 내부의 마지막 요소로 이동해 `다음에 만나면` 카드와 버튼이 겹칠 수 없는 구조로 변경 |
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+---
+
+## 2026-07-05 세션 Z — 모드 시간 선택 카드형 UI 복원
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `components/ui.tsx` | 가로 카드 선택용 `OptionCardPicker` 공통 컴포넌트 추가 |
+| `app/mode-flow/pick.tsx` | 후보 만들기 시간 선택을 세로 wheel picker에서 카드 선택 UI로 변경 |
+| `app/mode-flow/feeling.tsx` | 느낌 기반 후보 만들기 시간 선택을 카드 선택 UI로 변경 |
+| `app/mode-flow/light.tsx` | 가벼운 후보 만들기 시간 선택을 카드 선택 UI로 변경 |
+| `app/mode-flow/course.tsx` | 코스 만들기 시간 선택을 카드 선택 UI로 변경 |
+
+### 기술 결정
+
+- 카드/후보 직접 생성·수정 화면의 `DurationWheelPicker`는 유지하고, 모드 플로우의 후보 생성 시간 선택만 되돌렸다.
+- 시간 선택 UI는 기존 버튼/카드 톤과 맞춰 `C.white`, `C.pinkLight`, `C.pinkBorder` 토큰을 사용한다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+---
+
+## 2026-07-05 세션 Y — 앱 배경 핑크/화이트 그라디언트 정리
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `constants/colors.ts` | 기존 누런 배경 토큰을 연한 핑크/화이트 계열로 변경하고 `bgGradient`, `bgGradientStart`, `bgGradientEnd` 공통 토큰 추가 |
+| `app/(tabs)/index.tsx` | 홈 화면 전체 배경을 공통 대각선 그라디언트로 적용. 상단 헤더 배너도 같은 토큰을 써 전체 배경과 통일 |
+| `app/index.tsx` | 초기 스플래시 배경도 공통 그라디언트 토큰 사용으로 변경 |
+
+### 기술 결정
+
+- 색상 값은 화면 인라인 하드코딩 대신 `constants/colors.ts`의 디자인 토큰으로 관리한다.
+- `C.bg`/`C.bgSplash`는 그라디언트를 쓸 수 없는 기존 `backgroundColor` 자리의 fallback으로 핑크 화이트 계열 단색을 유지한다.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+```
+
+---
+
 ## 2026-07-05 세션 X — 사귄 날짜 수정 및 함께한 날 기준 통일
 
 ### 변경 사항 요약

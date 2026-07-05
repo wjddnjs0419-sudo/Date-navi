@@ -5,8 +5,10 @@ import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BigButton } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 function ConnectAnimation() {
+  const { t } = useI18n();
   const leftX = useRef(new Animated.Value(-120)).current;
   const rightX = useRef(new Animated.Value(120)).current;
   const heartScale = useRef(new Animated.Value(0)).current;
@@ -43,7 +45,7 @@ function ConnectAnimation() {
       </Animated.View>
 
       <Animated.View style={[anim.avatar, { transform: [{ translateX: leftX }] }]}>
-        <Text style={anim.avatarInitial}>나</Text>
+        <Text style={anim.avatarInitial}>{t('card.memory.meFallback')}</Text>
       </Animated.View>
 
       <Animated.View style={[anim.avatar, anim.avatarB, { transform: [{ translateX: rightX }] }]}>
@@ -55,20 +57,21 @@ function ConnectAnimation() {
 
 export default function CoupleConnectedScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.container}>
         <View style={s.content}>
           <ConnectAnimation />
-          <Text style={s.heading}>{'이제 둘이 함께\n정할 수 있어요'}</Text>
+          <Text style={s.heading}>{t('onboarding.connected.heading')}</Text>
           <Text style={s.sub}>
-            {'완벽한 계획이 아니어도 괜찮아요.\n끌리는 마음만 남겨주세요.'}
+            {t('onboarding.connected.subtitle')}
           </Text>
         </View>
 
         <View style={s.footer}>
           <BigButton onPress={() => router.replace('/onboarding/preferences' as any)}>
-            우리 취향 알아보기
+            {t('onboarding.connected.ctaText')}
           </BigButton>
         </View>
       </View>

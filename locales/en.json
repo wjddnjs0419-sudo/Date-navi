@@ -1,0 +1,1515 @@
+{
+  "language": {
+    "ko": "Korean",
+    "en": "English"
+  },
+  "common": {
+    "back": "←",
+    "next": "Next",
+    "done": "Done",
+    "save": "Save",
+    "skip": "Skip",
+    "loading": "Loading...",
+    "retry": "Try again",
+    "error": "Error",
+    "notice": "Notice",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "settingsOpen": "Open Settings",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "seeAll": "See all",
+    "delete": "Delete"
+  },
+  "tabs": {
+    "home": "Home",
+    "mode": "Date Mode",
+    "candidates": "Candidates",
+    "softMessage": "Soft Message",
+    "memories": "Memories"
+  },
+  "settings": {
+    "title": "My Account",
+    "subtitle": "Manage your nickname, password, and language.",
+    "languageTitle": "App language",
+    "languageSubtitle": "Choose the language DateMate should use.",
+    "currentLanguage": "Current language",
+    "korean": "Korean",
+    "english": "English",
+    "accountTitle": "Account",
+    "logout": "Log out",
+    "nicknameTitle": "Change nickname",
+    "nicknamePlaceholder": "Nickname",
+    "nicknameSave": "Update",
+    "nicknameSaving": "Saving...",
+    "nicknameSuccess": "Nickname updated.",
+    "nicknameEmpty": "Please enter a nickname.",
+    "nicknameError": "Could not update nickname.",
+    "passwordTitle": "Change password",
+    "passwordPlaceholder": "New password (6+ characters)",
+    "passwordSave": "Update",
+    "passwordSaving": "Updating...",
+    "passwordSuccess": "Password updated.",
+    "passwordShort": "Password must be at least 6 characters.",
+    "passwordError": "Could not update password.",
+    "deleteTitle": "Delete account",
+    "deleteWarning": "Deleting your account will permanently remove your profile, preferences, and message history. Shared date cards and reactions will remain visible to your partner.",
+    "deleteButton": "Delete account",
+    "deleteConfirmTitle": "Are you sure?",
+    "deleteConfirmMessage": "Type \"delete\" below to confirm.",
+    "deleteConfirmPlaceholder": "delete",
+    "deleteConfirmKeyword": "delete",
+    "deleteConfirmAction": "Confirm deletion",
+    "deleteCancel": "Cancel",
+    "deleteError": "Something went wrong. Please try again later.",
+    "deleteDeleting": "Deleting...",
+    "nameEmpty": "No nickname",
+    "partnerFallback": "your partner",
+    "daysWith": "Day {{days}} with {{partner}}",
+    "statDates": "Dates together",
+    "statWantAgain": "Want again",
+    "rowNickname": "Nickname",
+    "rowCouple": "Partner connection",
+    "rowCoupleNone": "Not connected",
+    "rowCoupleWaiting": "Invite pending",
+    "rowCoupleLinked": "Connected",
+    "rowPassword": "Change password",
+    "prefsTitle": "Preferences",
+    "rowNotifications": "Notifications",
+    "rowLanguage": "Language",
+    "rowLocation": "Location",
+    "infoTitle": "Info",
+    "rowHelp": "Help",
+    "rowTerms": "Terms of Service",
+    "rowPrivacy": "Privacy Policy",
+    "langPickTitle": "Select language",
+    "langPickMessage": "Choose your app language.",
+    "cancel": "Cancel",
+    "helpTitle": "Help",
+    "helpMessage": "For any questions, contact jake051096@gmail.com.",
+    "relationshipDateSaveError": "Could not save your relationship start date. Please try again.",
+    "notificationOnTitle": "Notifications on",
+    "notificationOnBody": "You can receive notifications now.",
+    "notificationOffTitle": "Notifications off",
+    "notificationOffBody": "You can turn notifications on later in Settings.",
+    "notificationSettingsTitle": "Notification settings",
+    "notificationEnabledBody": "Notifications are on. Open Settings to turn them off.",
+    "notificationDisabledBody": "Notifications are off. Open Settings to turn them on.",
+    "locationOnTitle": "Location on",
+    "locationOnBody": "You can now get date place suggestions using your location.",
+    "locationOffTitle": "Location off",
+    "locationOffBody": "You can turn location permission on later in Settings.",
+    "locationSettingsTitle": "Location settings",
+    "locationEnabledBody": "Location permission is on. Open Settings to turn it off.",
+    "locationDisabledBody": "Location permission is off. Open Settings to turn it on.",
+    "meInitial": "Me",
+    "relationshipDateTitle": "Relationship start date",
+    "savingDone": "Saving..."
+  },
+  "auth": {
+    "appName": "DateMate 💕",
+    "subtitle": "You do not have to plan every date alone.",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password (6+ chars)",
+    "signIn": "Log in",
+    "signingIn": "Working...",
+    "signUp": "Sign up",
+    "toSignUp": "No account yet? Sign up",
+    "toSignIn": "Already have an account? Log in",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "languageHint": "Language",
+    "errorEmail": "Please enter your email.",
+    "errorPassword": "Password must be at least 6 characters.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorInvalidLogin": "The email or password is incorrect.",
+    "errorRegistered": "This email is already registered.",
+    "errorNeedConfirmation": "You need to confirm your email.",
+    "errorInvalidEmail": "Please enter a valid email address.",
+    "errorRateLimit": "Please try again later.",
+    "errorNetwork": "Please check your network connection.",
+    "welcomeHeading": "Settle \"what should we do today?\"\nwith less pressure",
+    "welcomeBody": "Bring together your tastes and today's mood\nto get date ideas that fit both of you.",
+    "kakaoStart": "Continue with Kakao",
+    "googleStart": "Continue with Google",
+    "appleStart": "Continue with Apple",
+    "or": "or",
+    "emailStart": "Continue with email",
+    "legalAgree": "By signing up, you agree to the {{terms}} and {{privacy}}.",
+    "emailHeading": "Continue with email",
+    "emailBody": "Enter the email and password you'll use to sign in.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordCreatePlaceholder": "At least 8 characters with letters and numbers",
+    "requiredAgreement": "(Required) Agree to {{terms}} · {{privacy}}",
+    "submitSignUp": "Sign up",
+    "hasAccount": "Already have an account? ",
+    "noAccount": "Need an account? ",
+    "legalPrefix": "By signing up, you agree to the ",
+    "legalMiddle": " and ",
+    "legalSuffix": ".",
+    "requiredPrefix": "(Required) Agree to ",
+    "requiredMiddle": " · ",
+    "requiredSuffix": ""
+  },
+  "home": {
+    "dateHeader": "{{weekday}}, {{month}}/{{day}}",
+    "weekdaysFull": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "greeting": "How should we\ndecide today?",
+    "subtitle": "No need for a perfect plan — just go with what feels right.",
+    "connectBanner": "Connect with your partner to decide together",
+    "todayHelp": "Today's help",
+    "modes": {
+      "pickForMe": {
+        "title": "Let the app pick",
+        "desc": "Just pick today's mood and the app decides your date."
+      },
+      "tellFeeling": {
+        "title": "I'll just say the vibe",
+        "desc": "Share how you feel and get a matching date idea."
+      },
+      "course": {
+        "title": "Organize it into a course",
+        "desc": "Bundle scattered picks into a clean day-long course."
+      },
+      "softMessage": {
+        "title": "Say it gently",
+        "desc": "Polish what you want to say so it lands well."
+      }
+    },
+    "startCta": "Start",
+    "upcomingTitle": "Upcoming dates",
+    "dateUnset": "Date not set",
+    "mutualTitle": "A pick you both liked",
+    "partnerReactionsTitle": "Your partner's reaction",
+    "partnerReactionPrefix": "{{name}} left ",
+    "partnerReactionSuffix": "",
+    "partnerQuoteMock": "Somewhere close is nice",
+    "partnerTimeMock": "5 min ago",
+    "createCta": "Create date options"
+  },
+  "nickname": {
+    "title": "What should we call you?",
+    "subtitle": "Choose the nickname your partner will see.",
+    "placeholder": "Nickname",
+    "next": "Next",
+    "saving": "Saving...",
+    "alertEmpty": "Please enter a nickname.",
+    "alertNoUser": "Could not find your login session.",
+    "alertError": "Something went wrong."
+  },
+  "coupleConnect": {
+    "title": "Connect with your partner",
+    "subtitle": "Create an invite code and share the link\nso your partner can connect right away.",
+    "manageTitle": "Manage partner connection",
+    "manageSubtitle": "Check your partner and anniversary,\nor disconnect if you need to.",
+    "waitingTitle": "Ready to send your invite?",
+    "waitingSubtitle": "No need to create another code.\nShare this link and wait for your partner to join.",
+    "partnerSection": "Your partner",
+    "relationshipSection": "Your relationship",
+    "partnerName": "Name",
+    "partnerFallback": "Partner",
+    "anniversary": "Couple anniversary",
+    "disconnect": "Disconnect partner",
+    "disconnectTitle": "Disconnect partner?",
+    "disconnectMessage": "This only removes the profile connection. Shared candidates and memories will be kept.",
+    "disconnectConfirm": "Disconnect",
+    "disconnectDoneTitle": "Disconnected",
+    "disconnectDoneMessage": "Send a new invite link when you want to reconnect.",
+    "disconnectError": "Could not disconnect your partner. Please try again later.",
+    "alertAnniversaryError": "Could not save the anniversary. Please try again.",
+    "myInviteCode": "My invite code",
+    "waitingBadge": "Waiting",
+    "shareInviteLink": "Share invite link",
+    "creatingButton": "Creating...",
+    "connectingButton": "Connecting...",
+    "savingButton": "Saving...",
+    "done": "Done",
+    "cancel": "Cancel",
+    "or": "or",
+    "notSet": "Not set",
+    "linkHint": "You can send the link even if your partner has not signed up yet.",
+    "createTitle": "Create a code",
+    "createDesc": "Share your code with your partner.",
+    "share": "Share",
+    "wait": "I will wait for my partner to join →",
+    "createButton": "Create code",
+    "inputTitle": "Enter a code",
+    "inputDesc": "Type the code your partner sent you.",
+    "codePlaceholder": "6-digit code",
+    "connectButton": "Connect",
+    "alertNoUser": "Could not find your login session.",
+    "alertDuplicateTitle": "A code already exists",
+    "alertDuplicateDesc": "Use the code you created earlier or enter your partner's code.",
+    "alertNetwork": "Please check your network connection.",
+    "alertCreateError": "Something went wrong while creating the code. Please try again.",
+    "alertCodeEmpty": "Please enter a code.",
+    "alertCodeNotFoundTitle": "Code not found",
+    "alertCodeNotFoundDesc": "Please check the code again.\nMake sure the letters are capitalized correctly.",
+    "alertOwnCodeTitle": "This is your own code",
+    "alertOwnCodeDesc": "Share this code with your partner and have them enter it instead.",
+    "alertJoinNetwork": "Please check your network connection.",
+    "alertJoinError": "Something went wrong while connecting. Please try again.",
+    "shareMessage": "Connect with me on Date Navi.\nInvite code: {{code}}"
+  },
+  "preferences": {
+    "stepTitles": [
+      "What kind of date sounds good?",
+      "What would you rather avoid?",
+      "Are you long-distance?",
+      "When it comes to planning dates..."
+    ],
+    "stepSubs": [
+      "You can choose more than one",
+      "A little honesty helps the suggestions",
+      "Tell us what your usual setup looks like",
+      "Pick the one that feels closest"
+    ],
+    "preferredOptions": [
+      "Restaurants",
+      "Cafes",
+      "Walks",
+      "Home dates",
+      "Culture / Exhibitions",
+      "Activities"
+    ],
+    "avoidOptions": [
+      "Long travel",
+      "Big spending",
+      "Crowded places",
+      "Long walks",
+      "Complicated reservations"
+    ],
+    "longDistanceOptions": [
+      {
+        "value": true,
+        "label": "Yes, we are long-distance"
+      },
+      {
+        "value": false,
+        "label": "No, we live in the same area"
+      }
+    ],
+    "planningStyles": [
+      "Usually the planner",
+      "We decide together",
+      "I can choose, but planning is hard",
+      "I struggle to express my opinion",
+      "It depends on the day"
+    ],
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Done",
+    "back": "←",
+    "saving": "Saving...",
+    "alertSaveError": "Could not save your preferences. Please try again."
+  },
+  "mode": {
+    "title": "How can I\nhelp today?",
+    "modes": [
+      {
+        "id": "pick_for_me",
+        "emoji": "🎲",
+        "label": "Pick for me",
+        "desc": "Answer a few prompts and get three date ideas"
+      },
+      {
+        "id": "feeling_only",
+        "emoji": "🌸",
+        "label": "Just the vibe",
+        "desc": "Choose the mood you want. That is enough."
+      },
+      {
+        "id": "make_course",
+        "emoji": "🗺️",
+        "label": "Make it a plan",
+        "desc": "Turn a rough idea into a simple course"
+      },
+      {
+        "id": "soft_message",
+        "emoji": "💬",
+        "label": "Say it gently",
+        "desc": "Turn a hard-to-say feeling into a kinder message"
+      },
+      {
+        "id": "light_date",
+        "emoji": "🧸",
+        "label": "Keep it easy",
+        "desc": "Low-effort dates for tired days"
+      },
+      {
+        "id": "special_date",
+        "emoji": "🌟",
+        "label": "Make it special",
+        "desc": "Something a little more memorable"
+      },
+      {
+        "id": "next_time",
+        "emoji": "📅",
+        "label": "Next time",
+        "desc": "Save ideas for the next time you meet"
+      },
+      {
+        "id": "low_risk",
+        "emoji": "🛡️",
+        "label": "Low risk",
+        "desc": "Comfortable picks that are hard to mess up"
+      }
+    ],
+    "tabHeading": "How should the app\nhelp you today?",
+    "tabSubtitle": "Things change every time — just pick the help you need right now.",
+    "tabStartCta": "Start this mode",
+    "tabModes": {
+      "pick_for_me": {
+        "title": "Let the app pick",
+        "desc": "Just pick your conditions and get 3 candidates."
+      },
+      "feeling": {
+        "title": "I'll just say the vibe",
+        "desc": "It's fine to just share the mood you want."
+      },
+      "make_course": {
+        "title": "Organize it into a course",
+        "desc": "Turn a rough idea into time, budget, and things to bring."
+      },
+      "light": {
+        "title": "Keep it light",
+        "desc": "Good for tired days or when you want to save money."
+      },
+      "next_meet": {
+        "title": "Next time we meet",
+        "desc": "A bucket list for long-distance couples' next meetup."
+      }
+    }
+  },
+  "feeling": {
+    "modeTitles": {
+      "pick_for_me": "Let me pick for you",
+      "feeling_only": "Just tell me the vibe",
+      "light_date": "Keep it light",
+      "low_risk": "Keep it low-risk",
+      "special_date": "A special date",
+      "next_time": "Plan for next time",
+      "make_course": "Turn it into a course",
+      "soft_message": "Say it softly"
+    },
+    "steps": [
+      {
+        "key": "energy",
+        "question": "How is your energy\ntoday?",
+        "options": [
+          {
+            "label": "Tired",
+            "emoji": "😴",
+            "value": "low"
+          },
+          {
+            "label": "Okay",
+            "emoji": "😊",
+            "value": "medium"
+          },
+          {
+            "label": "Full of energy",
+            "emoji": "🎉",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "budget",
+        "question": "What budget\nare you thinking about?",
+        "options": [
+          {
+            "label": "Keep it cheap",
+            "emoji": "💰",
+            "value": "low"
+          },
+          {
+            "label": "Moderate",
+            "emoji": "💳",
+            "value": "medium"
+          },
+          {
+            "label": "Make it special",
+            "emoji": "✨",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "distance",
+        "question": "How far are\nyou okay going?",
+        "options": [
+          {
+            "label": "Nearby",
+            "emoji": "🏠",
+            "value": "near"
+          },
+          {
+            "label": "Any distance",
+            "emoji": "🚗",
+            "value": "any"
+          },
+          {
+            "label": "Far is okay",
+            "emoji": "🚂",
+            "value": "far"
+          }
+        ]
+      },
+      {
+        "key": "mood",
+        "question": "What kind of vibe\ndo you want?",
+        "options": [
+          {
+            "label": "Comfortable",
+            "emoji": "🛋️",
+            "value": "comfortable"
+          },
+          {
+            "label": "Fun",
+            "emoji": "🎡",
+            "value": "fun"
+          },
+          {
+            "label": "Romantic",
+            "emoji": "🌹",
+            "value": "romantic"
+          }
+        ]
+      },
+      {
+        "key": "duration",
+        "question": "How much time\ncan you spend?",
+        "options": [
+          {
+            "label": "1 hour",
+            "emoji": "⏰",
+            "value": "1h"
+          },
+          {
+            "label": "2-3 hours",
+            "emoji": "⏱️",
+            "value": "2-3h"
+          },
+          {
+            "label": "Half day",
+            "emoji": "🌤️",
+            "value": "half_day"
+          },
+          {
+            "label": "All day",
+            "emoji": "☀️",
+            "value": "full_day"
+          }
+        ]
+      }
+    ],
+    "finalStep": "Final step",
+    "avoidQuestion": "Anything you want to avoid?\n(optional)",
+    "avoidOptions": [
+      {
+        "label": "Long walks",
+        "value": "long_walk"
+      },
+      {
+        "label": "Crowded places",
+        "value": "crowded"
+      },
+      {
+        "label": "Outdoor activities",
+        "value": "outdoor"
+      },
+      {
+        "label": "Expensive places",
+        "value": "expensive"
+      },
+      {
+        "label": "Complicated reservations",
+        "value": "reservation"
+      }
+    ],
+    "additionalLabel": "Anything else to add? (optional)",
+    "additionalPlaceholder": "For example: somewhere nice for photos would be great",
+    "generateButton": "✨ Make date ideas",
+    "back": "←"
+  },
+  "course": {
+    "modeLabel": "Make it a plan",
+    "title": "What kind of date\ndo you have in mind?",
+    "ideaLabel": "Your date idea",
+    "ideaPlaceholder": "e.g. I want to visit an exhibition, how about a picnic?",
+    "ideaHint": "A rough idea is totally fine.",
+    "budgetLabel": "What is your budget?",
+    "budgetOptions": [
+      {
+        "label": "Keep it cheap",
+        "emoji": "💰",
+        "value": "low"
+      },
+      {
+        "label": "Moderate",
+        "emoji": "💳",
+        "value": "medium"
+      },
+      {
+        "label": "Make it special",
+        "emoji": "✨",
+        "value": "high"
+      }
+    ],
+    "durationLabel": "How much time do you have?",
+    "durationOptions": [
+      {
+        "label": "2-3 hours",
+        "emoji": "⏱️",
+        "value": "2-3h"
+      },
+      {
+        "label": "Half day",
+        "emoji": "🌤️",
+        "value": "half_day"
+      },
+      {
+        "label": "All day",
+        "emoji": "☀️",
+        "value": "full_day"
+      }
+    ],
+    "generateButton": "🗺️ Build a course",
+    "back": "←",
+    "errorEmpty": "Please enter a date idea first."
+  },
+  "result": {
+    "title": "Date ideas",
+    "loadingTitle": "Making date ideas",
+    "loadingSubtitle": "Just a moment ✨",
+    "errorTitle": "Could not make suggestions",
+    "errorSubtitle": "Please check your network\nand try again later.",
+    "retryButton": "← Go back",
+    "backToMode": "Try again",
+    "saveButton": "💾 Save to our candidates",
+    "saved": "✅ Saved to our candidates!",
+    "goToFirst": "React to the first card →",
+    "goToCandidates": "View all candidates",
+    "cardTitle": "How about\none of these?",
+    "saveNetworkError": "The network is unstable. Please try again.",
+    "saveLoginError": "You need to log in first.",
+    "saveCoupleError": "You can save after connecting with your partner.",
+    "saveGeneralError": "Something went wrong while saving. Please try again."
+  },
+  "candidates": {
+    "title": "Our candidates 💌",
+    "tabs": [
+      {
+        "key": "all",
+        "label": "All"
+      },
+      {
+        "key": "both",
+        "label": "Both like it 🔥"
+      },
+      {
+        "key": "conditional",
+        "label": "Conditional 😊"
+      },
+      {
+        "key": "next",
+        "label": "Next time ⏰"
+      }
+    ],
+    "modeLabels": {
+      "pick_for_me": "Pick for me",
+      "feeling_only": "Just vibes",
+      "make_course": "Turn it into a plan",
+      "soft_message": "Say it softly",
+      "light_date": "Keep it light",
+      "special_date": "Make it special",
+      "next_time": "Next time",
+      "low_risk": "Low risk"
+    },
+    "reactionLabels": {
+      "love": {
+        "emoji": "🔥",
+        "label": "Really into it"
+      },
+      "like": {
+        "emoji": "😊",
+        "label": "Looks good"
+      },
+      "burden": {
+        "emoji": "😅",
+        "label": "Feels heavy today"
+      },
+      "next_time": {
+        "emoji": "⏰",
+        "label": "Next time"
+      }
+    },
+    "emptyTitle": "No candidates yet.",
+    "emptySubtitle": "Create a few cards in Date Mode.",
+    "emptyTabSubtitle": "No candidates match this tab.",
+    "goMode": "Start Date Mode →",
+    "loading": "Loading candidates...",
+    "error": "Could not load candidates. Please try again later.",
+    "tapHint": "Tap to react →",
+    "pageTitle": "Our candidates",
+    "countText": "{{count}} candidates total",
+    "addManual": "Add manually",
+    "filterAll": "All",
+    "filterBoth": "Both liked",
+    "filterConditional": "Conditional",
+    "filterNextTime": "Next time",
+    "filterBucket": "Next meetup",
+    "proposalTitle": "{{count}} date proposals from your partner",
+    "proposalSub": "\"{{title}}\" · Check it now →",
+    "emptyStateTitle": "No date candidates yet",
+    "emptyStateSub": "Just tell us today's mood\nand we'll make your first candidates.",
+    "thisDateBadge": "This date",
+    "candidateBadge": "Candidate",
+    "me": "Me",
+    "partner": "Partner",
+    "noReaction": "No reaction",
+    "fabAddFeeling": "Share a mood",
+    "bucketEmptyTitle": "Your bucket list is empty",
+    "bucketEmptySub": "Freely save things you'd like to do\nnext time you meet.",
+    "bucketAddIdea": "Add an idea",
+    "bucketHeaderCount": "Things to do next time ({{count}})",
+    "bucketAddSmall": "Add",
+    "bucketMyReactionLabel": "My reaction",
+    "bucketRxLove": "❤️ Into it",
+    "bucketRxNext": "🕐 Next time",
+    "bucketPartnerReaction": "Partner's reaction: {{label}}",
+    "confirmBothLove": "You're both excited! Confirm the meetup",
+    "confirmSingle": "Confirm the meetup and build a course",
+    "confirmAlertTitle": "Meetup confirmed!",
+    "confirmAlertMessage": "Created 3 date candidates from your bucket list idea.",
+    "confirmAlertError": "Something went wrong creating cards. Please try again.",
+    "deleteAlertTitle": "Delete candidate",
+    "deleteAlertMessage": "Delete this candidate? This can't be undone.",
+    "deleteAlertError": "Something went wrong deleting it.",
+    "rxLabel": {
+      "love": "Really into it",
+      "like": "Like it",
+      "burden": "Feels like a lot",
+      "next_time": "Next time"
+    },
+    "conditionLabels": {
+      "change_place": "📍 If we change the place",
+      "closer": "🚶 If it's closer",
+      "indoor": "🏠 If it's indoors",
+      "budget_adjust": "💰 If the budget adjusts"
+    }
+  },
+  "softMessage": {
+    "title": "Say it gently 💬",
+    "subtitle": "Choose what feels hard to say.\nDateMate will make it softer.",
+    "stepTitle": "How are you feeling? (choose more than one)",
+    "stepSubtitle": "Anything else you want to add? (optional)",
+    "reasons": [
+      {
+        "key": "tired",
+        "label": "I am tired",
+        "emoji": "😴"
+      },
+      {
+        "key": "budget",
+        "label": "Budget feels tight",
+        "emoji": "💸"
+      },
+      {
+        "key": "far",
+        "label": "I do not want to travel far",
+        "emoji": "🏠"
+      },
+      {
+        "key": "sorry",
+        "label": "I feel bad saying no",
+        "emoji": "🥺"
+      },
+      {
+        "key": "near",
+        "label": "A nearby place is better",
+        "emoji": "📍"
+      },
+      {
+        "key": "crowded",
+        "label": "Crowded places are not my thing",
+        "emoji": "😬"
+      },
+      {
+        "key": "time",
+        "label": "I am short on time",
+        "emoji": "⏰"
+      },
+      {
+        "key": "weather",
+        "label": "The weather is not great",
+        "emoji": "🌧️"
+      }
+    ],
+    "additionalLabel": "Anything else you want to say? (optional)",
+    "additionalPlaceholder": "For example: I really want to go together next week",
+    "createButton": "Make a message ✨",
+    "resultTitle": "Say it gently 💬",
+    "resultSubtitle": "Here is a softer version.\nEdit it, then copy it when it feels right.",
+    "messageLabel": "My message",
+    "autoSendNotice": "✋ DateMate never sends this automatically. You stay in control.",
+    "copyButton": "📋 Copy to clipboard",
+    "copiedButton": "✅ Copied!",
+    "saveButton": "Save",
+    "resetButton": "Make again",
+    "errorNeedReason": "Please choose at least one feeling to express.",
+    "errorCoupleRequired": "You need to connect with your partner first.",
+    "errorSave": "Something went wrong while saving.",
+    "composeHeading": "Is there something\nhard to say?",
+    "composeSubtitle": "Write it comfortably and the app will turn it into a gentle message.",
+    "freeTextPlaceholder": "Write what you want to say, comfortably",
+    "situationLabel": "Is this your situation? (optional)",
+    "toneSectionLabel": "Choose a tone",
+    "tones": {
+      "warm": "Warm",
+      "light": "Light",
+      "honest": "Honest"
+    },
+    "quickCards": {
+      "tired": "I'm a bit tired today",
+      "budget": "I want to save a bit of money",
+      "far": "Going far is hard",
+      "crowded": "Crowded places feel like a lot",
+      "changeDate": "I like the idea, but want to change the date",
+      "placeOkMoodGood": "The place isn't great, but the mood is",
+      "stillWantTogether": "I still want to be together"
+    },
+    "generateCta": "Write it for me",
+    "generatingSteps": [
+      "Checking your feelings",
+      "Picking warm phrasing",
+      "Polishing the message"
+    ],
+    "generatingHeading": "Crafting a warm\nmessage for you",
+    "resultHeading2": "How about saying it like this?",
+    "adjustWarmer": "A bit warmer",
+    "adjustShorter": "Make it shorter",
+    "adjustEdit": "Edit it myself",
+    "sendingNote": "This isn't sent automatically — review it, then send.",
+    "copyCta": "Copy message",
+    "copiedCta": "Copied ✓",
+    "sendCta": "Send",
+    "needCoupleAlert": "Please connect with your partner first.",
+    "genErrorAlert": "Something went wrong generating the message. Please try again.",
+    "sentAlertTitle": "Sent",
+    "sentAlertMessage": "Your partner can check it in their notifications.",
+    "sendErrorAlert": "Something went wrong sending it."
+  },
+  "memories": {
+    "title": "Memories",
+    "subtitle": "Dates you have already done together",
+    "loading": "Loading memories...",
+    "emptyTitle": "No completed dates yet",
+    "emptySubtitle": "Open a date card and tap\n\"Completed this date\"",
+    "wantAgainYes": "I want to go again",
+    "wantAgainNo": "Once is enough",
+    "modeLabels": {
+      "pick_for_me": "Pick for me",
+      "feeling_only": "Just vibes",
+      "make_course": "Turn it into a plan",
+      "soft_message": "Say it softly",
+      "light_date": "Keep it light",
+      "special_date": "Make it special",
+      "next_time": "Next time",
+      "low_risk": "Low risk"
+    },
+    "pageTitle": "Our memories",
+    "countText": "{{count}} dates together so far",
+    "deleteAlertTitle": "Delete memory",
+    "deleteAlertMessage": "Delete this memory? This can't be undone.",
+    "deleteAlertError": "Something went wrong deleting it.",
+    "deleteAlertForbidden": "You can only delete memories you left.",
+    "emptyStateTitle": "No memories yet",
+    "emptyStateSub": "Confirm a date and leave a review\nand it'll show up here.",
+    "statDaysTogether": "Days together",
+    "statWantAgain": "Want again",
+    "statThisMonth": "This month",
+    "recentBadge": "Recent memory",
+    "wantAgainBadge": "Want to again",
+    "untitled": "Memory"
+  },
+  "card": {
+    "title": "Date card",
+    "loading": "Loading card...",
+    "missing": "Could not load the card.",
+    "reactionTitle": "My reaction",
+    "reactionSubtitle": "Pick the feeling that fits best",
+    "partnerWaiting": "⏳ Waiting for your partner’s reaction...",
+    "partnerReaction": "Partner reaction: {{emoji}} {{label}}",
+    "memoryButton": "Completed this date",
+    "memoryDone": "This date is marked complete",
+    "saveError": "Could not save. Please try again.",
+    "confirmButton": "Make this the date? →",
+    "reactionLabels": {
+      "love": {
+        "emoji": "🔥",
+        "label": "Really into it"
+      },
+      "like": {
+        "emoji": "😊",
+        "label": "Looks good"
+      },
+      "burden": {
+        "emoji": "😅",
+        "label": "Feels heavy today"
+      },
+      "next_time": {
+        "emoji": "⏰",
+        "label": "Next time"
+      }
+    },
+    "modeLabels": {
+      "pick_for_me": "Pick for me",
+      "feeling_only": "Just vibes",
+      "make_course": "Turn it into a plan",
+      "soft_message": "Say it softly",
+      "light_date": "Keep it light",
+      "special_date": "Make it special",
+      "next_time": "Next time",
+      "low_risk": "Low risk"
+    },
+    "conditionTags": {
+      "change_place": {
+        "label": "If we change the place",
+        "freeText": "Keep a similar vibe but recommend somewhere closer"
+      },
+      "closer": {
+        "label": "If it's closer",
+        "freeText": "Recommend something within a 10-minute trip"
+      },
+      "indoor": {
+        "label": "If it's indoors",
+        "freeText": "Recommend an indoor space instead"
+      },
+      "budget_adjust": {
+        "label": "If the budget adjusts",
+        "freeText": "Recommend something with a cheaper budget"
+      }
+    },
+    "regenerateFallbackText": "Adjust the conditions and recommend again",
+    "regenerateAlertTitle": "New candidates created",
+    "regenerateAlertMessage": "Created 3 similar date candidates for \"{{label}}\". Check them in the Candidates tab!",
+    "conditionSectionTitle": "What condition would make it work?",
+    "conditionSectionSub": "Pick a condition and the app will find new matching candidates",
+    "regenerateWithCondition": "Find again with the \"{{label}}\" condition",
+    "new": {
+      "heading": "Let's register this idea\nas a candidate",
+      "subtitle": "Just a title is enough to make it a candidate.",
+      "titleLabel": "Idea title *",
+      "titlePlaceholder": "e.g. Takeout from a local spot + movie at home",
+      "descLabel": "Description (optional)",
+      "descPlaceholder": "Briefly describe the vibe",
+      "timeLabel": "Estimated time (optional)",
+      "noneOption": "None selected",
+      "budgetLabel": "Budget (optional)",
+      "aiToggleTitle": "Have AI organize it into a card",
+      "aiToggleSub": "AI will refine what you entered into a card",
+      "aiSaveCta": "Create card with AI ✨",
+      "saveCta": "Add as candidate",
+      "needCoupleAlert": "Please connect with your partner first.",
+      "saveError": "Something went wrong adding the candidate.",
+      "timeOptions": {
+        "oneToTwo": "1-2 hours",
+        "twoToThree": "2-3 hours",
+        "halfDay": "Half day",
+        "fullDay": "All day"
+      },
+      "budgetOptions": {
+        "saving": "Budget-friendly",
+        "moderate": "Moderate",
+        "special": "Special"
+      }
+    },
+    "edit": {
+      "heading": "Edit candidate",
+      "subtitle": "Save your changes to update the candidate.",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "Title",
+      "descLabel": "Description",
+      "descPlaceholder": "Describe what kind of date this is",
+      "timeLabel": "Estimated time",
+      "noneOption": "None selected",
+      "existingValueOption": "Current value · {{time}}",
+      "budgetLabel": "Budget",
+      "budgetPlaceholder": "e.g. around $40",
+      "saveCta": "Save",
+      "saveError": "Something went wrong updating it."
+    },
+    "memory": {
+      "newHeading": "Leave a new memory",
+      "newSub": "Save the day's memory along with a photo.",
+      "editHeading": "Edit memory",
+      "editSub": "Save your changes to update the memory.",
+      "addPhotoCta": "📷 Add a photo",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Picnic by the river",
+      "reviewLabel": "One-line review",
+      "reviewPlaceholder": "How was the date?",
+      "wantAgainLabel": "Want to do this again?",
+      "wantAgainYes": "Yes, again",
+      "wantAgainNo": "Once was enough",
+      "photoPermTitle": "Photo access needed",
+      "photoPermMessage": "Allow photo access in Settings to add a memory photo.",
+      "openSettingsCta": "Open Settings",
+      "photoUploadError": "Something went wrong uploading the photo.",
+      "photoRequiredError": "Please add a photo.",
+      "saveError": "Something went wrong updating it.",
+      "editForbidden": "You can only edit memories you left.",
+      "detailNotFound": "Couldn't find this memory.",
+      "reviewSectionLabel": "Review",
+      "commentsSectionLabel": "Comments",
+      "noReviewText": "No content",
+      "noCommentsText": "No comments yet.",
+      "commentPlaceholder": "Leave a comment",
+      "commentPosting": "Posting",
+      "commentSubmit": "Post",
+      "commentError": "Something went wrong posting the comment.",
+      "wantAgainTag": "Want again",
+      "meFallback": "Me",
+      "badge": "Our memory"
+    },
+    "regeneratePromptPrefix": "Similar vibe to {{title}}, but "
+  },
+  "confirm": {
+    "heading": "Make this the date?",
+    "sub": "You can always change the date or time later.",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "placeLabel": "Place note",
+    "itemsLabel": "Things to prepare",
+    "datePlaceholder": "e.g. May 26 (Tue)",
+    "timePlaceholder": "e.g. 7pm",
+    "placePlaceholder": "e.g. Hongdae restaurant",
+    "itemsPlaceholder": "e.g. Umbrella, camera",
+    "saveButton": "Save as this date",
+    "keepButton": "Keep it as a candidate",
+    "saveError": "Could not save. Please try again.",
+    "errorTitle": "Error",
+    "cancelPlanTitle": "Cancel plan",
+    "cancelPlanMessage": "Cancel this date plan? The card will be deleted completely.",
+    "close": "Close",
+    "cancelPlanAction": "Cancel plan",
+    "cancelPlanError": "Something went wrong while canceling.",
+    "upcomingTitle": "Upcoming date",
+    "dateTimeUnset": "Date/time not set",
+    "unset": "Not set",
+    "reviewDone": "We went on this date · How was it?",
+    "editPlan": "Edit plan",
+    "cancelPlan": "Cancel plan",
+    "saving": "Saving...",
+    "back": "Back"
+  },
+  "review": {
+    "heading": "How was the date?",
+    "sub": "A quick note helps future picks get better.",
+    "ratingLabel": "Overall?",
+    "ratings": [
+      {
+        "key": "love",
+        "label": "Want to do it again"
+      },
+      {
+        "key": "good",
+        "label": "It was great"
+      },
+      {
+        "key": "ok",
+        "label": "It was fine"
+      },
+      {
+        "key": "change",
+        "label": "A few tweaks next time"
+      }
+    ],
+    "reviewLabel": "One-line review",
+    "reviewPlaceholder": "What would you say in one line?",
+    "saveButton": "Save as memory",
+    "noRatingError": "Please pick an overall rating.",
+    "saveError": "Could not save. Please try again.",
+    "missingCoupleError": "Could not load couple info."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadSuffix": " unread",
+    "allRead": "All caught up",
+    "clearAll": "Clear all",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "We'll let you know here when your\npartner reacts or new picks arrive.",
+    "groupToday": "Today",
+    "groupWeek": "This week",
+    "groupEarlier": "Earlier",
+    "reactionTitle": "Your partner reacted",
+    "newCardTitle": "New date picks arrived",
+    "softMessageTitle": "A gentle message arrived",
+    "timeJustNow": "just now",
+    "timeMinutes": "m ago",
+    "timeHours": "h ago",
+    "timeYesterday": "yesterday",
+    "timeDays": "d ago",
+    "modalCopyButton": "Copy",
+    "modalCloseButton": "Close",
+    "copiedLabel": "Copied ✓"
+  },
+  "location": {
+    "gpsActive": "Using my location",
+    "permissionTitle": "Location permission is off",
+    "permissionBody": "Turn on location permission in Settings to use your current location.",
+    "fetchError": "Could not get your location",
+    "fetchErrorBody": "Try again in a moment or enter a neighborhood manually.",
+    "label": "Where are you meeting? (Optional)",
+    "placeholder": "Ex: Seongsu-dong, Hongdae Station",
+    "hint": "Add a neighborhood and we can suggest real nearby places.",
+    "map": "Map →"
+  },
+  "pickers": {
+    "dateFallback": "Select date",
+    "done": "Done",
+    "cancel": "Cancel",
+    "am": "AM",
+    "pm": "PM",
+    "month": "{{month}}",
+    "day": "{{day}}",
+    "hour": "{{hour}}",
+    "minute": "{{minute}} min",
+    "dateLabel": "{{month}}/{{day}} ({{weekday}})",
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
+  },
+  "modeFlow": {
+    "option": {
+      "energy": {
+        "low": "Tired",
+        "medium": "Okay",
+        "high": "Energized"
+      },
+      "distance": {
+        "near": "Nearby",
+        "any": "Flexible"
+      },
+      "budget": {
+        "low": "Save money",
+        "medium": "Moderate",
+        "high": "Special"
+      },
+      "duration": {
+        "oneHour": "1 hour",
+        "twoThreeHours": "2-3 hours",
+        "halfDay": "Half day",
+        "fullDay": "Full day"
+      },
+      "mood": {
+        "comfortable": "Comfortable",
+        "fun": "Lively",
+        "romantic": "Romantic",
+        "quiet": "Quiet",
+        "new": "Something new"
+      }
+    },
+    "pick": {
+      "heading": "Tell us the conditions\nand we'll choose",
+      "sub": "Pick a few basics and we'll suggest three date ideas.",
+      "energy": "Energy",
+      "distance": "Distance",
+      "budget": "Budget",
+      "duration": "Time",
+      "generate": "Create date ideas"
+    },
+    "feeling": {
+      "heading": "Just tell us the vibe\nyou want today",
+      "sub": "A rough feeling is enough. We'll turn the mood into date cards.",
+      "placeholder": "Ex: I want somewhere quiet with good conversation today.",
+      "mood": "Mood",
+      "budget": "Budget",
+      "duration": "Time",
+      "generate": "Create date ideas"
+    },
+    "light": {
+      "heading": "Keep it light\ntoday",
+      "sub": "Low effort, low pressure, and nearby ideas for an easy date.",
+      "duration": "How long will you be together?",
+      "generate": "Create light ideas"
+    },
+    "generating": {
+      "courseSteps": [
+        "Checking your tastes and mood",
+        "Planning the route",
+        "Finding a low-risk course"
+      ],
+      "defaultSteps": [
+        "Checking today's energy",
+        "Balancing budget and travel",
+        "Finding the best date ideas"
+      ],
+      "courseHeading": "Planning a course\nthat fits both of you",
+      "defaultHeading": "Choosing ideas\nthat fit both of you",
+      "courseError": "Something went wrong while creating the course.",
+      "defaultError": "Something went wrong while creating recommendations.",
+      "errorTitle": "Something went wrong",
+      "errorSuffix": "We'll try again."
+    },
+    "result": {
+      "coupleRequired": "Connect with your partner first.",
+      "sendErrorTitle": "Error",
+      "sendError": "Something went wrong while sending.",
+      "saveError": "Something went wrong while saving.",
+      "errorTitle": "Something went wrong",
+      "errorSub": "Something went wrong while creating recommendations.\nWe'll try again.",
+      "retry": "Try again",
+      "aiBadge": "AI pick",
+      "nowBadge": "Just now",
+      "heading": "These date ideas\nlook right for today",
+      "sub": "Save them to react and comment from Our Ideas.",
+      "bestBadge": "Best fit",
+      "time": "Time",
+      "budget": "Budget",
+      "movement": "Travel",
+      "walk": "Walk",
+      "send": "Send to partner",
+      "save": "Save",
+      "goCandidates": "View idea list →",
+      "retryRecommend": "Recommend again"
+    },
+    "courseResult": {
+      "coupleRequired": "Connect with your partner first.",
+      "sendErrorTitle": "Error",
+      "sendError": "Something went wrong while sending.",
+      "saveError": "Something went wrong while saving.",
+      "errorTitle": "Something went wrong",
+      "retry": "Try again",
+      "badge": "AI course",
+      "heading": "How about this course?",
+      "sub": "Swipe to compare three options.",
+      "send": "Send to partner",
+      "save": "Save"
+    },
+    "bucketlist": {
+      "empty": "Enter an idea first",
+      "loginRequired": "Please log in first",
+      "coupleRequired": "Connect with your partner first.",
+      "savedTitle": "Saved!",
+      "savedBody": "You can find it under \"Next time\" in Our Ideas.",
+      "saveError": "Something went wrong while saving. Please try again.",
+      "modeLabel": "Next time",
+      "title": "What do you want to do\nnext time you meet?",
+      "sub": "Places, activities, or vibes all work.\nWrite any idea that comes to mind.",
+      "label": "Idea",
+      "placeholder": "Ex) Night drive, ocean-view cafe, a relaxed weekend trip...",
+      "tipTitle": "💡 Try ideas like these",
+      "tipText": "· Brunch at an ocean-view cafe\n· Go for a night drive\n· Spend the day at a theme park\n· A small camping trip just for us",
+      "save": "Save to bucket list"
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Terms of Service",
+      "updated": "Last updated: May 23, 2026",
+      "sections": [
+        {
+          "title": "1. Service overview",
+          "body": "DateMate is an app that helps couples reduce the burden of planning dates and express their preferences more comfortably."
+        },
+        {
+          "title": "2. Using the service",
+          "body": "- Anyone aged 14 or older can sign up.\n- One account per person.\n- The information you provide when signing up must be accurate."
+        },
+        {
+          "title": "3. Prohibited behavior",
+          "body": "The following behavior is not allowed:\n\n- Using someone else’s information or signing up with false information\n- Using the service to harm others\n- Interfering with the normal operation of the service\n- Using the service for commercial purposes"
+        },
+        {
+          "title": "4. AI recommendation disclaimer",
+          "body": "The date suggestions and message recommendations provided by the service are AI-generated references.\nWe do not guarantee the accuracy or safety of the recommendations, and the final decision is up to the user."
+        },
+        {
+          "title": "5. Service changes and suspension",
+          "body": "We may change or discontinue features after prior notice according to our operating policies."
+        },
+        {
+          "title": "6. Account deletion",
+          "body": "You may delete your account at any time.\nWhen the account is deleted, all data is removed immediately."
+        },
+        {
+          "title": "7. Contact",
+          "body": "For questions about using the service, please contact us at:\n\nEmail: jake051096@gmail.com"
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "Last updated: May 23, 2026",
+      "sections": [
+        {
+          "title": "1. Information we collect",
+          "body": "DateMate collects the following data to provide the service:\n- Email address (sign up and login)\n- Nickname (display name inside the app)\n- Couple preference data (favorite vibes, avoid conditions, and more)\n- Date cards and reaction history\n- Service usage event logs"
+        },
+        {
+          "title": "2. How we use your information",
+          "body": "We only use the collected information for the following purposes:\n- Couple matching and date recommendation features\n- AI-powered personalized date suggestions\n- Service quality improvements and usage analytics"
+        },
+        {
+          "title": "3. Retention period",
+          "body": "When you delete your account, we remove your personal information immediately.\nIf local laws require us to retain some data, we keep it for the required period."
+        },
+        {
+          "title": "4. Third-party sharing",
+          "body": "We do not share your personal information with third parties.\nHowever, we use the Anthropic Claude AI API to generate date suggestions.\nOnly the input conditions (such as energy and budget) are sent. Identifiers such as name or email are not sent."
+        },
+        {
+          "title": "5. Your rights",
+          "body": "You may request access, correction, or deletion of your personal information at any time.\nWe also provide an option to delete shared data when you disconnect the couple link."
+        },
+        {
+          "title": "6. Contact",
+          "body": "For privacy-related questions, please contact us at:\nEmail: jake051096@gmail.com"
+        }
+      ]
+    }
+  },
+  "onboarding": {
+    "nickname": {
+      "empty": "Please enter a nickname.",
+      "noUser": "Could not find your login information.",
+      "saveError": "Something went wrong while saving.",
+      "title": "What should we call you?",
+      "sub": "You can change your nickname anytime.",
+      "label": "Nickname",
+      "placeholder": "Enter a nickname",
+      "hint": "Use Korean, English, or numbers within 12 characters.",
+      "saving": "Saving...",
+      "next": "Next"
+    },
+    "photo": {
+      "initial": "Me",
+      "pickTitle": "Choose photo",
+      "pickBody": "Gallery photo selection will be added soon.",
+      "title": "Choose a\nprofile photo",
+      "sub": "You can skip this for now.",
+      "change": "Change photo",
+      "hint": "Your partner will be able to see this photo too.",
+      "next": "Next"
+    },
+    "type": {
+      "title": "How do you usually\nplan dates?",
+      "sub": "This is just a hint to make your first recommendations fit better.",
+      "start": "Get started",
+      "options": {
+        "planner": "I usually plan often",
+        "together": "We usually decide together",
+        "chooser": "I can choose, but planning is hard",
+        "shy": "Sharing opinions feels a little hard",
+        "flexible": "It depends each time"
+      }
+    },
+    "anniversary": {
+      "heading": "When did you two\nstart dating?",
+      "subtitle": "Used for anniversary reminders and organizing memories.",
+      "daysCountText": "{{days}} days together today",
+      "daysHint": "We'll gently remind you on days like 100, 200, or your anniversary.",
+      "skipCta": "I'll add it later"
+    },
+    "connected": {
+      "heading": "Now you can\ndecide together",
+      "subtitle": "It doesn't have to be a perfect plan.\nJust share what you're drawn to.",
+      "ctaText": "See our preferences"
+    },
+    "preferences": {
+      "stepTitles": {
+        "1": "What kind of date do you like more?",
+        "2": "What do you want out of dates these days?",
+        "3": "These feel a bit like a lot",
+        "4": "Are you a long-distance couple?"
+      },
+      "preferredOptions": {
+        "restaurant": "Restaurants",
+        "cafe": "Cafes",
+        "walk": "Walks",
+        "home": "Staying in",
+        "culture": "Exhibits / culture",
+        "activity": "Activities"
+      },
+      "avoidOptions": {
+        "far": "Long travel",
+        "expensive": "Big spending",
+        "crowded": "Crowded places",
+        "long_walk": "Long walks",
+        "complex_reservation": "Complicated reservations",
+        "late_night": "Late nights"
+      },
+      "moodOptions": {
+        "rest": "Relaxing",
+        "laugh": "Lots of laughs",
+        "quiet": "Quiet conversation",
+        "new": "New experiences",
+        "photo": "Taking photos",
+        "special": "A special day"
+      },
+      "longDistanceOptions": {
+        "yes": "Yes, we're often apart",
+        "no": "No, we meet often",
+        "sometimes": "It depends"
+      },
+      "multiSelectHint": "It's fine to pick more than one",
+      "avoidInfoNote": "This isn't shared with your partner directly. It just helps us recommend more comfortably.",
+      "finishCta": "See your first picks",
+      "saveError": "Something went wrong saving."
+    }
+  },
+  "splash": {
+    "tagline": "A small compass for our dates.",
+    "loading": "Bringing both hearts together"
+  },
+  "share": {
+    "cardTitleFallback": "Selected date candidate",
+    "cardDescFallback": "A relaxed date without going far",
+    "reaction": {
+      "partnerFallback": "your partner",
+      "senderSent": "{{name}} sent this",
+      "justNow": "Just now",
+      "heading": "How about this date?",
+      "chooseReaction": "Pick the reaction that fits best",
+      "noteLabel": "A note (optional)",
+      "notePlaceholder": "e.g. I like this, but next week might work better than this weekend.",
+      "submitCta": "Send reaction",
+      "options": {
+        "full": "Really into it",
+        "good": "Like it",
+        "niceFeel": "Feels good",
+        "closer": "Good if it's closer",
+        "burdenToday": "Feels like a lot today",
+        "nextTime": "Want to next time",
+        "ifMoneyComes": "Let's do it once we have the budget",
+        "notFarWalk": "Good if we don't walk far"
+      }
+    },
+    "mutual": {
+      "heading": "Candidates you both liked",
+      "subText": "They don't have to match perfectly — here are picks that work if conditions align.",
+      "emptyText": "No candidates you've both reacted to yet",
+      "cardTitleFallback": "Date candidate",
+      "myReactionLabel": "My reaction",
+      "partnerReactionLabel": "Partner's reaction",
+      "confirmCta": "Choose this for the date",
+      "seeMoreCta": "See more similar candidates",
+      "sectionLabels": {
+        "mutual": "Candidates you both liked",
+        "conditional": "Good if conditions match",
+        "deferred": "Heavy today, good for next time"
+      },
+      "notes": {
+        "mutual": "You both like this. Want to make it your date?",
+        "conditional": "Looks good if you match each other's conditions.",
+        "deferred": "We'll bring this back up next time."
+      }
+    },
+    "send": {
+      "defaultMessage": "Want to check this out together? 😊",
+      "heading": "Send this candidate\nto your partner?",
+      "subText": "It's delivered gently so your partner can react without pressure.",
+      "tagsFallback": [
+        "Low travel",
+        "Low cost",
+        "Good for tired days"
+      ],
+      "sectionLabel": "A note to send along",
+      "messagePlaceholder": "Type a note",
+      "suggestCta": "Suggest a note",
+      "sendCta": "Send to partner",
+      "editCta": "Edit"
+    }
+  },
+  "account": {
+    "editProfile": {
+      "heading": "Edit profile",
+      "changePhotoCta": "Change photo",
+      "nicknameLabel": "Nickname",
+      "nicknameHint": "2-12 characters, letters or numbers",
+      "planningLabel": "When planning a date, I usually...",
+      "planningOptions": {
+        "often": "Plan things often",
+        "together": "Decide together",
+        "okPickHardPlan": "I'm fine picking, but planning is hard",
+        "hardToSayOpinion": "It's a bit hard to voice my opinion",
+        "depends": "It depends each time"
+      },
+      "saveCta": "Save changes",
+      "photoPermTitle": "Photo access needed",
+      "photoPermMessage": "Allow photo access in Settings to add a profile photo.",
+      "nicknameRequiredError": "Please enter a nickname.",
+      "saveSuccessTitle": "Saved",
+      "saveSuccessMessage": "Your profile has been updated.",
+      "saveError": "Something went wrong saving it."
+    },
+    "deleteAccount": {
+      "heading": "Are you sure you want to leave?",
+      "subText": "Deleting your account removes all memories and candidates you made together.",
+      "warningTitle": "This information will be lost",
+      "warningItems": [
+        "Shared date records and photos",
+        "Candidates you both liked",
+        "Your couple connection with your partner",
+        "Your nickname and account info"
+      ],
+      "reasonLabel": "Reason for leaving (optional)",
+      "reasons": {
+        "notUsing": "I don't use it much",
+        "lackingFeatures": "It's missing features",
+        "usingOtherApp": "I'm using another app",
+        "privacyConcern": "I'm worried about privacy",
+        "other": "Other"
+      },
+      "agreeText": "I've reviewed everything above and understand that data can't be recovered after deletion.",
+      "deleteCta": "Delete account",
+      "needAgreeCta": "Agreement required",
+      "browseMoreCta": "Let me look around a bit more",
+      "deleteError": "Something went wrong deleting your account. Please try again."
+    },
+    "changePassword": {
+      "heading": "Change password",
+      "subText": "Keep your account safe with a strong password.",
+      "currentLabel": "Current password",
+      "currentPlaceholder": "Enter current password",
+      "newLabel": "New password",
+      "newPlaceholder": "Enter new password",
+      "confirmLabel": "Confirm new password",
+      "confirmPlaceholder": "Enter it once more",
+      "infoNote": "We recommend 8+ characters combining at least 2 of: letters, numbers, symbols.",
+      "saveCta": "Change password",
+      "errorTitle": "Password error",
+      "tooShortError": "Your new password must be at least 8 characters.",
+      "mismatchError": "The new passwords don't match.",
+      "successTitle": "Changed",
+      "successMessage": "Your password has been changed.",
+      "saveError": "Something went wrong changing your password."
+    }
+  },
+  "plans": {
+    "heading": "Date plans",
+    "subtitle": "Here are your confirmed dates. Leave a review after you go.",
+    "emptyTitle": "No confirmed dates yet",
+    "emptySub": "Pick a candidate you like and confirm it\nwith \"Choose this for the date.\"",
+    "noDateTimePlace": "Date and place haven't been set yet.",
+    "reviewCta": "Date's done · How was it?"
+  }
+}

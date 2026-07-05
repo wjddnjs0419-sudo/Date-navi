@@ -1,6 +1,9 @@
 export const C = {
-  bg: '#FFF8F3',
-  bgSplash: '#FCE9E5',
+  bg: '#FFF9FC',
+  bgSplash: '#FFF1F6',
+  bgGradient: ['#FFF1F6', '#FFFFFF'] as const,
+  bgGradientStart: { x: 0, y: 0 } as const,
+  bgGradientEnd: { x: 1, y: 1 } as const,
   pink: '#F26B7A',
   pinkDeep: '#C24B57',
   pinkLight: '#FFEEF0',

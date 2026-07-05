@@ -14,6 +14,7 @@ import {
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 const CARD_STYLES = [
   { bg2: C.pinkMid, Icon: Heart, iconColor: C.pinkDeep },
@@ -24,6 +25,7 @@ const CARD_STYLES = [
 export default function ResultScreen() {
   const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
   const router = useRouter();
+  const { t } = useI18n();
 
   // 카드는 generating 화면에서 생성해 params로 넘겨준다.
   const cards = useMemo<DateCard[]>(() => {
@@ -54,7 +56,7 @@ export default function ResultScreen() {
     if (!user) return null;
     const { data: profile } = await supabase
       .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
-    if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return null; }
+    if (!profile?.couple_id) { Alert.alert(t('modeFlow.result.coupleRequired')); return null; }
 
     const card = cards[i];
     const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -88,7 +90,7 @@ export default function ResultScreen() {
       const cardId = await saveCard(selectedIndex);
       if (cardId) router.push({ pathname: '/share/send', params: { cardId } } as any);
     } catch {
-      Alert.alert('오류', '보내기 중 문제가 생겼어요.');
+      Alert.alert(t('modeFlow.result.sendErrorTitle'), t('modeFlow.result.sendError'));
     } finally {
       setSending(false);
     }
@@ -101,7 +103,7 @@ export default function ResultScreen() {
       if (!cardId) return;
       setSaved(true);
     } catch {
-      setErrorMsg('저장 중 오류가 발생했어요.');
+      setErrorMsg(t('modeFlow.result.saveError'));
     } finally {
       setSaving(false);
     }
@@ -113,9 +115,9 @@ export default function ResultScreen() {
         <View style={s2.errIcon}>
           <Sparkles size={44} strokeWidth={1.5} color={C.textSub} />
         </View>
-        <Text style={s2.errTitle}>잠깐 문제가 생겼어요</Text>
-        <Text style={s2.errSub}>추천을 만드는 중 문제가 생겼어요.{'\n'}다시 한 번 시도해볼게요.</Text>
-        <BigButton onPress={regenerate} style={s2.errRetryBtn}>다시 시도하기</BigButton>
+        <Text style={s2.errTitle}>{t('modeFlow.result.errorTitle')}</Text>
+        <Text style={s2.errSub}>{t('modeFlow.result.errorSub')}</Text>
+        <BigButton onPress={regenerate} style={s2.errRetryBtn}>{t('modeFlow.result.retry')}</BigButton>
       </SafeAreaView>
     );
   }
@@ -126,12 +128,12 @@ export default function ResultScreen() {
         <BackBar />
 
         <View style={s2.badgeRow}>
-          <Badge tone="pink">AI 추천</Badge>
-          <Badge>방금 전</Badge>
+          <Badge tone="pink">{t('modeFlow.result.aiBadge')}</Badge>
+          <Badge>{t('modeFlow.result.nowBadge')}</Badge>
         </View>
 
-        <Text style={[s2.heading, s2.headingGap]}>오늘은 이런 데이트가{'\n'}잘 맞아 보여요</Text>
-        <Text style={s2.subText}>저장하면 우리 후보에서 반응·코멘트를 남길 수 있어요.</Text>
+        <Text style={[s2.heading, s2.headingGap]}>{t('modeFlow.result.heading')}</Text>
+        <Text style={s2.subText}>{t('modeFlow.result.sub')}</Text>
 
         {cards.map((card, i) => {
           const style = CARD_STYLES[i % CARD_STYLES.length];
@@ -142,7 +144,7 @@ export default function ResultScreen() {
               <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
                 {i === 0 && (
                   <View style={s2.bannerBadge}>
-                    <Badge tone="pink">가장 잘 맞아요</Badge>
+                    <Badge tone="pink">{t('modeFlow.result.bestBadge')}</Badge>
                   </View>
                 )}
                 <View style={[s2.featuredIcon, s2.featuredIconBg]}>
@@ -161,18 +163,18 @@ export default function ResultScreen() {
                 <View style={s2.metaGrid}>
                   <View style={s2.metaBox}>
                     <Clock size={14} color={C.creamFg} />
-                    <Text style={s2.metaLabel}>시간</Text>
+                    <Text style={s2.metaLabel}>{t('modeFlow.result.time')}</Text>
                     <Text style={s2.metaValue}>{card.estimated_time}</Text>
                   </View>
                   <View style={s2.metaBox}>
                     <Wallet size={14} color={C.creamFg} />
-                    <Text style={s2.metaLabel}>예산</Text>
+                    <Text style={s2.metaLabel}>{t('modeFlow.result.budget')}</Text>
                     <Text style={s2.metaValue}>{card.estimated_budget}</Text>
                   </View>
                   <View style={s2.metaBox}>
                     <MapPin size={14} color={C.creamFg} />
-                    <Text style={s2.metaLabel}>이동</Text>
-                    <Text style={s2.metaValue}>도보</Text>
+                    <Text style={s2.metaLabel}>{t('modeFlow.result.movement')}</Text>
+                    <Text style={s2.metaValue}>{t('modeFlow.result.walk')}</Text>
                   </View>
                 </View>
 
@@ -192,7 +194,7 @@ export default function ResultScreen() {
                     disabled={sending}
                   >
                     {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}
-                    <Text style={s2.sendBtnText}>상대에게 보내기</Text>
+                    <Text style={s2.sendBtnText}>{t('modeFlow.result.send')}</Text>
                   </TouchableOpacity>
                   {!saved && (
                     <TouchableOpacity style={s2.bookmarkBtn} onPress={handleSave} disabled={saving}>
@@ -200,7 +202,7 @@ export default function ResultScreen() {
                         ? <ActivityIndicator size="small" color={C.pinkDeep} />
                         : <>
                             <Bookmark size={14} color={C.pinkDeep} />
-                            <Text style={s2.bookmarkBtnText}>저장</Text>
+                            <Text style={s2.bookmarkBtnText}>{t('modeFlow.result.save')}</Text>
                           </>}
                     </TouchableOpacity>
                   )}
@@ -210,7 +212,7 @@ export default function ResultScreen() {
                     style={s2.goBtn}
                     onPress={() => router.replace('/(tabs)/candidates' as any)}
                   >
-                    <Text style={s2.goBtnText}>후보 목록으로 보기 →</Text>
+                    <Text style={s2.goBtnText}>{t('modeFlow.result.goCandidates')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -218,7 +220,7 @@ export default function ResultScreen() {
                   onPress={regenerate}
                 >
                   <RefreshCw size={12} color={C.textSub} />
-                  <Text style={s2.retryBtnText}>다시 추천받기</Text>
+                  <Text style={s2.retryBtnText}>{t('modeFlow.result.retryRecommend')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

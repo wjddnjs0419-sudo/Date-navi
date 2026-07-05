@@ -11,10 +11,12 @@ import { supabase } from '../../../../lib/supabase';
 import { C } from '../../../../constants/colors';
 import { G } from '../../../../constants/theme';
 import { BackBar, BigButton } from '../../../../components/ui';
+import { useI18n } from '../../../../lib/i18n';
 
 export default function EditMemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { strings } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,11 +57,11 @@ export default function EditMemoryScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
-        '사진 접근 권한 필요',
-        '추억 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.',
+        strings.card.memory.photoPermTitle,
+        strings.card.memory.photoPermMessage,
         [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+          { text: strings.common.cancel, style: 'cancel' },
+          { text: strings.card.memory.openSettingsCta, onPress: () => Linking.openSettings() },
         ],
       );
       return;
@@ -90,7 +92,7 @@ export default function EditMemoryScreen() {
       const { data: pub } = supabase.storage.from('memories').getPublicUrl(path);
       setPhotoUrl(pub.publicUrl);
     } catch {
-      Alert.alert('오류', '사진 업로드 중 문제가 생겼어요.');
+      Alert.alert(strings.common.error, strings.card.memory.photoUploadError);
     } finally {
       setUploadingPhoto(false);
     }
@@ -111,10 +113,10 @@ export default function EditMemoryScreen() {
         .eq('id', id)
         .select('id');
       if (error) throw error;
-      if (!data?.length) { Alert.alert('알림', '본인이 남긴 추억만 수정할 수 있어요.'); return; }
+      if (!data?.length) { Alert.alert(strings.common.notice, strings.card.memory.editForbidden); return; }
       router.back();
     } catch {
-      Alert.alert('오류', '수정 중 문제가 발생했어요.');
+      Alert.alert(strings.common.error, strings.card.memory.saveError);
     } finally {
       setSaving(false);
     }
@@ -137,8 +139,8 @@ export default function EditMemoryScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, s.headingTop]}>추억 수정하기</Text>
-        <Text style={s.subText}>내용을 바꾼 뒤 저장하면 추억에 반영돼요.</Text>
+        <Text style={[s.heading, s.headingTop]}>{strings.card.memory.editHeading}</Text>
+        <Text style={s.subText}>{strings.card.memory.editSub}</Text>
 
         <TouchableOpacity
           style={s.photoPlaceholder}
@@ -151,19 +153,19 @@ export default function EditMemoryScreen() {
           ) : photoUrl ? (
             <Image source={{ uri: photoUrl }} style={s.photoPreview} />
           ) : (
-            <Text style={s.photoText}>📷 사진 추가하기</Text>
+            <Text style={s.photoText}>{strings.card.memory.addPhotoCta}</Text>
           )}
         </TouchableOpacity>
 
         {isFreeform && (
           <>
-            <Text style={s.label}>제목</Text>
+            <Text style={s.label}>{strings.card.memory.titleLabel}</Text>
             <View style={s.inputWrap}>
               <TextInput
                 style={s.input}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="예: 한강 피크닉"
+                placeholder={strings.card.memory.titlePlaceholder}
                 placeholderTextColor={C.textFaint}
                 maxLength={40}
               />
@@ -171,22 +173,22 @@ export default function EditMemoryScreen() {
           </>
         )}
 
-        <Text style={s.label}>한 줄 후기</Text>
+        <Text style={s.label}>{strings.card.memory.reviewLabel}</Text>
         <View style={s.inputWrap}>
           <TextInput
             style={[s.input, s.inputMultiline]}
             value={reviewText}
             onChangeText={setReviewText}
-            placeholder="어떤 데이트였나요?"
+            placeholder={strings.card.memory.reviewPlaceholder}
             placeholderTextColor={C.textFaint}
             multiline
             maxLength={100}
           />
         </View>
 
-        <Text style={s.label}>다시 하고 싶어요?</Text>
+        <Text style={s.label}>{strings.card.memory.wantAgainLabel}</Text>
         <View style={s.wantAgainRow}>
-          {[{ value: true, label: '또 가고 싶어요' }, { value: false, label: '한 번이면 충분' }].map((item) => {
+          {[{ value: true, label: strings.card.memory.wantAgainYes }, { value: false, label: strings.card.memory.wantAgainNo }].map((item) => {
             const on = wantAgain === item.value;
             return (
               <TouchableOpacity
@@ -206,7 +208,7 @@ export default function EditMemoryScreen() {
 
       <View style={s.footer}>
         <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
-          {saving ? <ActivityIndicator color={C.white} size="small" /> : '저장하기'}
+          {saving ? <ActivityIndicator color={C.white} size="small" /> : strings.common.save}
         </BigButton>
       </View>
     </SafeAreaView>

@@ -5,25 +5,35 @@ import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, LocationField } from '../../components/ui';
-import { DurationWheelPicker } from '../../components/pickers';
+import { BackBar, BigButton, Chip, LocationField, OptionCardPicker } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 const MOODS = [
-  { v: 'comfortable', label: '편안하게' },
-  { v: 'fun', label: '활기차게' },
-  { v: 'romantic', label: '로맨틱하게' },
-  { v: 'quiet', label: '조용하게' },
-  { v: 'new', label: '새롭게' },
+  { v: 'comfortable', labelKey: 'modeFlow.option.mood.comfortable' },
+  { v: 'fun', labelKey: 'modeFlow.option.mood.fun' },
+  { v: 'romantic', labelKey: 'modeFlow.option.mood.romantic' },
+  { v: 'quiet', labelKey: 'modeFlow.option.mood.quiet' },
+  { v: 'new', labelKey: 'modeFlow.option.mood.new' },
 ];
-const BUDGETS = ['아끼기', '적당히', '특별하게'];
-const DURATIONS = ['1시간', '2~3시간', '반나절', '하루'];
+const BUDGETS = [
+  { value: 'low', labelKey: 'modeFlow.option.budget.low' },
+  { value: 'medium', labelKey: 'modeFlow.option.budget.medium' },
+  { value: 'high', labelKey: 'modeFlow.option.budget.high' },
+];
+const DURATIONS = [
+  { value: '1h', labelKey: 'modeFlow.option.duration.oneHour' },
+  { value: '2-3h', labelKey: 'modeFlow.option.duration.twoThreeHours' },
+  { value: 'half_day', labelKey: 'modeFlow.option.duration.halfDay' },
+  { value: 'full_day', labelKey: 'modeFlow.option.duration.fullDay' },
+];
 
 export default function FeelingScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [freeText, setFreeText] = useState('');
   const [mood, setMood] = useState('comfortable');
-  const [budget, setBudget] = useState('아끼기');
-  const [duration, setDuration] = useState('2~3시간');
+  const [budget, setBudget] = useState('low');
+  const [duration, setDuration] = useState('2-3h');
   const [location, setLocation] = useState('');
   const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
@@ -32,8 +42,8 @@ export default function FeelingScreen() {
       mood,
       freeText,
       location,
-      budget: budget === '아끼기' ? 'low' : budget === '적당히' ? 'medium' : 'high',
-      duration: duration === '1시간' ? '1h' : duration === '2~3시간' ? '2-3h' : duration === '반나절' ? 'half_day' : 'full_day',
+      budget,
+      duration,
       coords: coords ?? undefined,
     });
     router.replace({
@@ -48,14 +58,14 @@ export default function FeelingScreen() {
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <BackBar />
           <View style={s.headerWrap}>
-            <Text style={s.heading}>오늘 끌리는 느낌만{'\n'}알려주세요</Text>
-            <Text style={s.subText}>대충 말해도 괜찮아요. 분위기를 데이트 카드로 정리해드릴게요.</Text>
+            <Text style={s.heading}>{t('modeFlow.feeling.heading')}</Text>
+            <Text style={s.subText}>{t('modeFlow.feeling.sub')}</Text>
           </View>
 
           <View style={s.freeInputWrap}>
             <TextInput
               style={s.freeInput}
-              placeholder="예: 오늘은 조용히 대화하면서 분위기 있는 데가 좋아."
+              placeholder={t('modeFlow.feeling.placeholder')}
               placeholderTextColor={C.textFaint}
               value={freeText}
               onChangeText={setFreeText}
@@ -63,27 +73,27 @@ export default function FeelingScreen() {
             />
           </View>
 
-          <Text style={s.sectionLabel}>분위기</Text>
+          <Text style={s.sectionLabel}>{t('modeFlow.feeling.mood')}</Text>
           <View style={s.chips}>
             {MOODS.map(m => (
               <Chip key={m.v} selected={mood === m.v} tone="pink" onPress={() => setMood(m.v)}>
-                {m.label}
+                {t(m.labelKey)}
               </Chip>
             ))}
           </View>
 
-          <Text style={s.sectionLabel}>예산</Text>
+          <Text style={s.sectionLabel}>{t('modeFlow.feeling.budget')}</Text>
           <View style={s.triRow}>
             {BUDGETS.map(b => (
-              <TouchableOpacity key={b} onPress={() => setBudget(b)} activeOpacity={0.7} style={[s.triBtn, budget === b && s.triBtnOn]}>
-                <Text style={[s.triBtnText, budget === b && s.triBtnTextOn]}>{b}</Text>
+              <TouchableOpacity key={b.value} onPress={() => setBudget(b.value)} activeOpacity={0.7} style={[s.triBtn, budget === b.value && s.triBtnOn]}>
+                <Text style={[s.triBtnText, budget === b.value && s.triBtnTextOn]}>{t(b.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={s.sectionLabel}>시간</Text>
-          <DurationWheelPicker
-            options={DURATIONS.map((d) => ({ value: d, label: d }))}
+          <Text style={s.sectionLabel}>{t('modeFlow.feeling.duration')}</Text>
+          <OptionCardPicker
+            options={DURATIONS.map((d) => ({ value: d.value, label: t(d.labelKey) }))}
             value={duration}
             onChange={setDuration}
           />
@@ -93,7 +103,7 @@ export default function FeelingScreen() {
           <View style={s.footerSpacer} />
         </ScrollView>
         <View style={s.footer}>
-          <BigButton onPress={handleGenerate}>데이트 후보 만들기</BigButton>
+          <BigButton onPress={handleGenerate}>{t('modeFlow.feeling.generate')}</BigButton>
         </View>
       </View>
     </SafeAreaView>
@@ -115,11 +125,6 @@ const s = StyleSheet.create({
   triBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
   triBtnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
   triBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
-  quadRow: { flexDirection: 'row', gap: 8 },
-  quadBtn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
-  quadBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  quadBtnText: { fontSize: 12, color: C.inkSoft, fontWeight: '500' },
-  quadBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
   footerSpacer: { height: 120 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
 });

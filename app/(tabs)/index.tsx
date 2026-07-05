@@ -14,6 +14,7 @@ import {
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type Partner = { display_name: string } | null;
@@ -25,12 +26,15 @@ type UpcomingPlan = {
 
 const POSITIVE = ['love', 'like'];
 
-const MODES = [
-  { title: '앱이 골라줘', desc: '오늘 끌리는 느낌만 고르면 앱이 데이트를 정해줘요.', Icon: Gift, bg: C.pinkLight, fg: C.pinkDeep },
-  { title: '느낌만 말할게', desc: '기분만 편하게 말하면 어울리는 데이트를 찾아줘요.', Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
-  { title: '코스로 정리해줘', desc: '흩어진 후보들을 깔끔한 하루 코스로 묶어줘요.', Icon: Map, bg: C.mint, fg: C.mintFg },
-  { title: '부드럽게 말해줘', desc: '하고 싶은 말을 상대가 듣기 좋게 다듬어줘요.', Icon: Mail, bg: C.cream, fg: C.creamFg },
-];
+function useModes() {
+  const { t } = useI18n();
+  return [
+    { title: t('home.modes.pickForMe.title'), desc: t('home.modes.pickForMe.desc'), Icon: Gift, bg: C.pinkLight, fg: C.pinkDeep },
+    { title: t('home.modes.tellFeeling.title'), desc: t('home.modes.tellFeeling.desc'), Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
+    { title: t('home.modes.course.title'), desc: t('home.modes.course.desc'), Icon: Map, bg: C.mint, fg: C.mintFg },
+    { title: t('home.modes.softMessage.title'), desc: t('home.modes.softMessage.desc'), Icon: Mail, bg: C.cream, fg: C.creamFg },
+  ];
+}
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_GAP = 12;
@@ -39,6 +43,8 @@ const SNAP = CARD_W + CARD_GAP;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const MODES = useModes();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partner, setPartner] = useState<Partner>(null);
   const [loading, setLoading] = useState(true);
@@ -150,28 +156,38 @@ export default function HomeScreen() {
   }
 
   const today = new Date();
-  const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  const dateStr = `${dayNames[today.getDay()]}, ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const weekdaysFull = t('home.weekdaysFull', { returnObjects: true }) as string[];
+  const dateStr = t('home.dateHeader', {
+    weekday: weekdaysFull[today.getDay()],
+    month: today.getMonth() + 1,
+    day: today.getDate(),
+  });
   const firstName = profile?.display_name?.charAt(0) ?? '?';
 
   return (
-    <SafeAreaView style={G.screen}>
+    <LinearGradient
+      colors={C.bgGradient}
+      start={C.bgGradientStart}
+      end={C.bgGradientEnd}
+      style={G.screen}
+    >
+    <SafeAreaView style={s.safeArea}>
       <ScrollView
         style={s.container}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 헤더 배너 — 그라디언트 */}
+        {/* 헤더 배너 */}
         <LinearGradient
-          colors={['#FFE8EC', '#FFF5F0', '#FFF8F3']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={C.bgGradient}
+          start={C.bgGradientStart}
+          end={C.bgGradientEnd}
           style={s.heroBanner}
         >
           <View style={s.headerRow}>
             <View>
               <Text style={s.dateText}>{dateStr}</Text>
-              <Text style={s.greetText}>오늘은 어떻게{'\n'}정해볼까요?</Text>
+              <Text style={s.greetText}>{t('home.greeting')}</Text>
             </View>
             <View style={s.headerActions}>
               <TouchableOpacity
@@ -193,7 +209,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={s.subText}>완벽한 계획 말고, 끌리는 느낌만 골라도 괜찮아요.</Text>
+          <Text style={s.subText}>{t('home.subtitle')}</Text>
         </LinearGradient>
 
         <View style={s.content}>
@@ -204,16 +220,16 @@ export default function HomeScreen() {
             style={s.connectBanner}
             onPress={() => router.push('/onboarding/couple-connect' as any)}
           >
-            <Text style={s.connectText}>연인과 연결하면 함께 정할 수 있어요</Text>
+            <Text style={s.connectText}>{t('home.connectBanner')}</Text>
             <ChevronRight size={16} color={C.pinkDeep} />
           </TouchableOpacity>
         )}
 
         {/* 오늘 필요한 도움 — 가로 스와이프 카드 */}
         <View style={s.sectionRow}>
-          <Text style={s.sectionTitle}>오늘 필요한 도움</Text>
+          <Text style={s.sectionTitle}>{t('home.todayHelp')}</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/mode')}>
-            <Text style={s.sectionLink}>전체 보기</Text>
+            <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -243,7 +259,7 @@ export default function HomeScreen() {
               <Text style={s.modeItemLabel}>{m.title}</Text>
               <Text style={s.modeItemDesc}>{m.desc}</Text>
               <View style={s.modeCardFooter}>
-                <Text style={[s.modeCardCta, { color: m.fg }]}>시작하기</Text>
+                <Text style={[s.modeCardCta, { color: m.fg }]}>{t('home.startCta')}</Text>
                 <ChevronRight size={16} color={m.fg} />
               </View>
             </TouchableOpacity>
@@ -262,9 +278,9 @@ export default function HomeScreen() {
         {upcoming.length > 0 && (
           <>
             <View style={s.sectionRow}>
-              <Text style={s.sectionTitle}>다가오는 데이트</Text>
+              <Text style={s.sectionTitle}>{t('home.upcomingTitle')}</Text>
               <TouchableOpacity onPress={() => router.push('/plans' as any)}>
-                <Text style={s.sectionLink}>전체 보기</Text>
+                <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
               </TouchableOpacity>
             </View>
             <View style={s.upcomingList}>
@@ -296,7 +312,7 @@ export default function HomeScreen() {
                           </View>
                         )}
                         {!p.confirmed_date && !p.confirmed_time && !p.confirmed_place && (
-                          <Text style={s.planMetaText}>날짜 미정</Text>
+                          <Text style={s.planMetaText}>{t('home.dateUnset')}</Text>
                         )}
                       </View>
                     </View>
@@ -312,9 +328,9 @@ export default function HomeScreen() {
         {topCandidate && (
           <>
             <View style={s.sectionRow}>
-              <Text style={s.sectionTitle}>둘 다 끌린 후보</Text>
+              <Text style={s.sectionTitle}>{t('home.mutualTitle')}</Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/candidates')}>
-                <Text style={s.sectionLink}>전체 보기</Text>
+                <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
               </TouchableOpacity>
             </View>
             <SoftCard onPress={() => router.push(`/card/${topCandidate.id}` as any)}>
@@ -338,7 +354,7 @@ export default function HomeScreen() {
         {/* 파트너 반응 */}
         {partner && (
           <View style={s.partnerSection}>
-            <Text style={s.sectionTitle}>상대가 남긴 반응</Text>
+            <Text style={s.sectionTitle}>{t('home.partnerReactionsTitle')}</Text>
             <SoftCard style={s.partnerCard} onPress={() => router.push('/share/mutual' as any)}>
               <View style={s.partnerRow}>
                 <View style={s.partnerAvatar}>
@@ -346,11 +362,11 @@ export default function HomeScreen() {
                 </View>
                 <View style={s.flex1}>
                   <Text style={s.partnerText}>
-                    {partner.display_name}가{' '}
-                    <Text style={s.partnerQuote}>"가까우면 좋아"</Text>
-                    를 남겼어요
+                    {t('home.partnerReactionPrefix', { name: partner.display_name })}
+                    <Text style={s.partnerQuote}>"{t('home.partnerQuoteMock')}"</Text>
+                    {t('home.partnerReactionSuffix')}
                   </Text>
-                  <Text style={s.partnerTime}>5분 전</Text>
+                  <Text style={s.partnerTime}>{t('home.partnerTimeMock')}</Text>
                 </View>
                 <ChevronRight size={16} color={C.textFaint} />
               </View>
@@ -358,7 +374,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* AI 추천 빠른 시작 — 그라디언트 버튼 */}
+        {/* AI 추천 빠른 시작 */}
         <TouchableOpacity
           style={s.startBtnWrap}
           onPress={() => router.push({
@@ -367,24 +383,21 @@ export default function HomeScreen() {
           } as any)}
           activeOpacity={0.85}
         >
-          <LinearGradient
-            colors={['#FF6B85', '#FF4F6D', '#E8395A']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={s.startBtn}
-          >
+          <View style={s.startBtn}>
             <Sparkles size={18} color={C.white} />
-            <Text style={s.startBtnText}>데이트 후보 만들기</Text>
-          </LinearGradient>
+            <Text style={s.startBtnText}>{t('home.createCta')}</Text>
+          </View>
         </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   flex1: { flex: 1 },
   centerContent: { alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingBottom: 32 },
@@ -472,6 +485,7 @@ const s = StyleSheet.create({
     gap: 8,
     borderRadius: 18,
     paddingVertical: 16,
+    backgroundColor: C.pink,
   },
   startBtnText: { fontSize: 15, fontWeight: '600', color: C.white },
 });

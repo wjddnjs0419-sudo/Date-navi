@@ -7,21 +7,21 @@ import { useRouter } from 'expo-router';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton, Chip } from '../../components/ui';
-
-export const SOFT_CARDS = [
-  '오늘은 조금 피곤해',
-  '돈을 조금 아끼고 싶어',
-  '멀리 가긴 어려워',
-  '사람 많은 곳은 부담돼',
-  '아이디어는 좋은데 날짜를 바꾸고 싶어',
-  '장소는 별로지만 분위기는 좋아',
-  '그래도 같이 있고 싶어',
-];
-
-export const SOFT_TONES = ['다정하게', '가볍게', '솔직하게'];
+import { useI18n } from '../../lib/i18n';
 
 export default function SoftMessageScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const SOFT_CARDS = [
+    t('softMessage.quickCards.tired'),
+    t('softMessage.quickCards.budget'),
+    t('softMessage.quickCards.far'),
+    t('softMessage.quickCards.crowded'),
+    t('softMessage.quickCards.changeDate'),
+    t('softMessage.quickCards.placeOkMoodGood'),
+    t('softMessage.quickCards.stillWantTogether'),
+  ];
+  const SOFT_TONES = [t('softMessage.tones.warm'), t('softMessage.tones.light'), t('softMessage.tones.honest')];
   const [selTone, setSelTone] = useState(0);
   const [freeText, setFreeText] = useState('');
 
@@ -45,22 +45,22 @@ export default function SoftMessageScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={s.heading}>말하기 어려운{'\n'}마음이 있나요?</Text>
-          <Text style={s.subText}>편하게 적어주시면 앱이 부드러운 문장으로 바꿔드릴게요.</Text>
+          <Text style={s.heading}>{t('softMessage.composeHeading')}</Text>
+          <Text style={s.subText}>{t('softMessage.composeSubtitle')}</Text>
 
           <View style={[s.freeInputWrap, s.freeInputWrapSpacing]}>
             <TextInput
               style={s.freeInput}
               value={freeText}
               onChangeText={setFreeText}
-              placeholder="하고 싶은 말을 편하게 적어주세요"
+              placeholder={t('softMessage.freeTextPlaceholder')}
               placeholderTextColor={C.textFaint}
               multiline
               maxLength={200}
             />
           </View>
 
-          <Text style={s.sectionLabel}>이런 상황인가요? (선택)</Text>
+          <Text style={s.sectionLabel}>{t('softMessage.situationLabel')}</Text>
           <View style={s.chipWrap}>
             {SOFT_CARDS.map((c) => (
               <Chip key={c} tone="pink" onPress={() => setFreeText(c)}>
@@ -69,18 +69,18 @@ export default function SoftMessageScreen() {
             ))}
           </View>
 
-          <Text style={s.sectionLabel}>톤 선택</Text>
+          <Text style={s.sectionLabel}>{t('softMessage.toneSectionLabel')}</Text>
           <View style={s.toneRow}>
-            {SOFT_TONES.map((t, i) => {
+            {SOFT_TONES.map((tone, i) => {
               const sel = i === selTone;
               return (
                 <TouchableOpacity
-                  key={t}
+                  key={tone}
                   onPress={() => setSelTone(i)}
                   activeOpacity={0.7}
                   style={[s.toneBtn, sel && s.toneBtnOn]}
                 >
-                  <Text style={[s.toneBtnText, sel && s.toneBtnTextOn]}>{t}</Text>
+                  <Text style={[s.toneBtnText, sel && s.toneBtnTextOn]}>{tone}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -94,7 +94,7 @@ export default function SoftMessageScreen() {
             onPress={handleGenerate}
             variant={freeText.trim() === '' ? 'disabled' : 'primary'}
           >
-            문장 만들어줘
+            {t('softMessage.generateCta')}
           </BigButton>
         </View>
       </View>

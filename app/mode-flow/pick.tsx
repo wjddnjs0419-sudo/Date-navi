@@ -5,32 +5,33 @@ import { useRouter } from 'expo-router';
 import { buildPickInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, LocationField } from '../../components/ui';
-import { DurationWheelPicker } from '../../components/pickers';
+import { BackBar, BigButton, LocationField, OptionCardPicker } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 const ENERGY = [
-  { v: 'low', label: '피곤해' },
-  { v: 'medium', label: '보통' },
-  { v: 'high', label: '쌩쌩해' },
+  { v: 'low', labelKey: 'modeFlow.option.energy.low' },
+  { v: 'medium', labelKey: 'modeFlow.option.energy.medium' },
+  { v: 'high', labelKey: 'modeFlow.option.energy.high' },
 ];
 const DISTANCES = [
-  { v: 'near', label: '가까이' },
-  { v: 'any', label: '상관없음' },
+  { v: 'near', labelKey: 'modeFlow.option.distance.near' },
+  { v: 'any', labelKey: 'modeFlow.option.distance.any' },
 ];
 const BUDGETS = [
-  { v: 'low', label: '아끼기' },
-  { v: 'medium', label: '적당히' },
-  { v: 'high', label: '특별하게' },
+  { v: 'low', labelKey: 'modeFlow.option.budget.low' },
+  { v: 'medium', labelKey: 'modeFlow.option.budget.medium' },
+  { v: 'high', labelKey: 'modeFlow.option.budget.high' },
 ];
 const DURATIONS = [
-  { v: '1h', label: '1시간' },
-  { v: '2-3h', label: '2~3시간' },
-  { v: 'half_day', label: '반나절' },
-  { v: 'full_day', label: '하루' },
+  { v: '1h', labelKey: 'modeFlow.option.duration.oneHour' },
+  { v: '2-3h', labelKey: 'modeFlow.option.duration.twoThreeHours' },
+  { v: 'half_day', labelKey: 'modeFlow.option.duration.halfDay' },
+  { v: 'full_day', labelKey: 'modeFlow.option.duration.fullDay' },
 ];
 
 export default function PickScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [energy, setEnergy] = useState('medium');
   const [distance, setDistance] = useState('near');
   const [budget, setBudget] = useState('low');
@@ -47,7 +48,7 @@ export default function PickScreen() {
   }
 
   function Row({ label, items, value, onSelect }: {
-    label: string; items: { v: string; label: string }[]; value: string; onSelect: (v: string) => void;
+    label: string; items: { v: string; labelKey: string }[]; value: string; onSelect: (v: string) => void;
   }) {
     return (
       <>
@@ -60,7 +61,7 @@ export default function PickScreen() {
               activeOpacity={0.7}
               style={[s.btn, value === it.v && s.btnOn]}
             >
-              <Text style={[s.btnText, value === it.v && s.btnTextOn]}>{it.label}</Text>
+              <Text style={[s.btnText, value === it.v && s.btnTextOn]}>{t(it.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -74,15 +75,15 @@ export default function PickScreen() {
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           <BackBar />
           <View style={s.headerWrap}>
-            <Text style={s.heading}>조건만 알려주세요{'\n'}앱이 골라드릴게요</Text>
-            <Text style={s.subText}>고민 없이 조건만 고르면 후보 3개를 뽑아드려요.</Text>
+            <Text style={s.heading}>{t('modeFlow.pick.heading')}</Text>
+            <Text style={s.subText}>{t('modeFlow.pick.sub')}</Text>
           </View>
-          <Row label="컨디션" items={ENERGY} value={energy} onSelect={setEnergy} />
-          <Row label="이동 거리" items={DISTANCES} value={distance} onSelect={setDistance} />
-          <Row label="예산" items={BUDGETS} value={budget} onSelect={setBudget} />
-          <Text style={s.sectionLabel}>시간</Text>
-          <DurationWheelPicker
-            options={DURATIONS.map((d) => ({ value: d.v, label: d.label }))}
+          <Row label={t('modeFlow.pick.energy')} items={ENERGY} value={energy} onSelect={setEnergy} />
+          <Row label={t('modeFlow.pick.distance')} items={DISTANCES} value={distance} onSelect={setDistance} />
+          <Row label={t('modeFlow.pick.budget')} items={BUDGETS} value={budget} onSelect={setBudget} />
+          <Text style={s.sectionLabel}>{t('modeFlow.pick.duration')}</Text>
+          <OptionCardPicker
+            options={DURATIONS.map((d) => ({ value: d.v, label: t(d.labelKey) }))}
             value={duration}
             onChange={setDuration}
           />
@@ -90,7 +91,7 @@ export default function PickScreen() {
           <View style={s.footerSpacer} />
         </ScrollView>
         <View style={s.footer}>
-          <BigButton onPress={handleGenerate}>데이트 후보 만들기</BigButton>
+          <BigButton onPress={handleGenerate}>{t('modeFlow.pick.generate')}</BigButton>
         </View>
       </View>
     </SafeAreaView>

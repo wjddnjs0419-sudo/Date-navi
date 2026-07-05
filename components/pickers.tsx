@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { C } from '../constants/colors';
 import { BigButton } from './ui';
+import { useI18n, type AppLanguage } from '../lib/i18n';
+import en from '../locales/en.json';
+import ko from '../locales/ko.json';
 
 export type PickerOption = { label: string; value: string };
 
@@ -42,12 +45,21 @@ export function parseIsoDate(value: string) {
   return { year, month, day };
 }
 
-export function formatDateLabel(value: string, fallback = '날짜 선택') {
+const pickerCopy = { ko: ko.pickers, en: en.pickers } as const;
+
+function pickerText(language: AppLanguage) {
+  return pickerCopy[language] ?? pickerCopy.ko;
+}
+
+export function formatDateLabel(value: string, fallback?: string, language: AppLanguage = 'ko') {
+  const copy = pickerText(language);
   const parsed = parseIsoDate(value);
-  if (!parsed) return value || fallback;
+  if (!parsed) return value || fallback || copy.dateFallback;
   const d = new Date(`${parsed.year}-${parsed.month}-${parsed.day}T00:00:00`);
-  const weekday = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-  return `${Number(parsed.month)}월 ${Number(parsed.day)}일 (${weekday})`;
+  return copy.dateLabel
+    .replace('{{month}}', String(Number(parsed.month)))
+    .replace('{{day}}', String(Number(parsed.day)))
+    .replace('{{weekday}}', copy.weekdays[d.getDay()]);
 }
 
 export function defaultIsoDate() {
@@ -58,10 +70,10 @@ export function defaultIsoDate() {
 function parseTimeParts(value: string) {
   const compact = value.replace(/\s/g, '');
   const ampm = compact.includes('오전') || /\bAM\b/i.test(value)
-    ? '오전'
+    ? 'AM'
     : compact.includes('오후') || compact.includes('저녁') || /\bPM\b/i.test(value)
-      ? '오후'
-      : '오후';
+      ? 'PM'
+      : 'PM';
   const colon = compact.match(/(\d{1,2}):(\d{2})/);
   const hourOnly = compact.match(/(\d{1,2})시?/);
   const hour = colon?.[1] ?? hourOnly?.[1] ?? '7';
@@ -74,7 +86,8 @@ function parseTimeParts(value: string) {
 }
 
 export function formatTimeValue(period: string, hour: string, minute: string) {
-  return `${period} ${Number(hour)}:${minute}`;
+  const normalizedPeriod = period === '오전' ? 'AM' : period === '오후' ? 'PM' : period;
+  return `${normalizedPeriod} ${Number(hour)}:${minute}`;
 }
 
 export function WheelPicker({
@@ -195,7 +208,7 @@ export function PickerSheet({
   children,
   onCancel,
   onConfirm,
-  confirmLabel = '완료',
+  confirmLabel,
 }: {
   visible: boolean;
   title: string;
@@ -204,6 +217,7 @@ export function PickerSheet({
   onConfirm: () => void;
   confirmLabel?: string;
 }) {
+  const { t } = useI18n();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
       <View style={sheetS.wrap}>
@@ -214,9 +228,9 @@ export function PickerSheet({
           {children}
           <View style={sheetS.actions}>
             <Pressable style={sheetS.cancelBtn} onPress={onCancel}>
-              <Text style={sheetS.cancelText}>취소</Text>
+              <Text style={sheetS.cancelText}>{t('pickers.cancel')}</Text>
             </Pressable>
-            <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel}</BigButton>
+            <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel ?? t('pickers.done')}</BigButton>
           </View>
         </View>
       </View>
@@ -235,6 +249,7 @@ export function DateWheelPicker({
   minYear?: number;
   maxYear?: number;
 }) {
+  const { t } = useI18n();
   const now = new Date();
   const parsed = parseIsoDate(value) ?? parseIsoDate(defaultIsoDate())!;
   const from = minYear ?? now.getFullYear();
@@ -249,16 +264,16 @@ export function DateWheelPicker({
   const monthOptions = useMemo(
     () => Array.from({ length: 12 }, (_, i) => {
       const month = pad2(i + 1);
-      return { value: month, label: `${i + 1}월` };
+      return { value: month, label: t('pickers.month', { month: i + 1 }) };
     }),
-    [],
+    [t],
   );
   const dayOptions = useMemo(
     () => Array.from({ length: daysInMonth(parsed.year, parsed.month) }, (_, i) => {
       const day = pad2(i + 1);
-      return { value: day, label: `${i + 1}일` };
+      return { value: day, label: t('pickers.day', { day: i + 1 }) };
     }),
-    [parsed.year, parsed.month],
+    [parsed.year, parsed.month, t],
   );
 
   function update(partial: Partial<typeof parsed>) {
@@ -279,13 +294,17 @@ export function DateWheelPicker({
 }
 
 export function TimeWheelPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { t } = useI18n();
   const parts = parseTimeParts(value);
-  const periods = useMemo(() => ['오전', '오후'].map((v) => ({ value: v, label: v })), []);
+  const periods = useMemo(() => [
+    { value: 'AM', label: t('pickers.am') },
+    { value: 'PM', label: t('pickers.pm') },
+  ], [t]);
   const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => {
     const hour = String(i + 1);
-    return { value: hour, label: `${i + 1}시` };
-  }), []);
-  const minutes = useMemo(() => ['00', '30'].map((v) => ({ value: v, label: `${v}분` })), []);
+    return { value: hour, label: t('pickers.hour', { hour: i + 1 }) };
+  }), [t]);
+  const minutes = useMemo(() => ['00', '30'].map((v) => ({ value: v, label: t('pickers.minute', { minute: v }) })), [t]);
 
   function update(next: Partial<typeof parts>) {
     onChange(formatTimeValue(next.period ?? parts.period, next.hour ?? parts.hour, next.minute ?? parts.minute));
@@ -297,20 +316,6 @@ export function TimeWheelPicker({ value, onChange }: { value: string; onChange: 
       <WheelPicker options={hours} value={parts.hour} onChange={(hour) => update({ hour })} style={pickerS.shortWheel} />
       <WheelPicker options={minutes} value={parts.minute} onChange={(minute) => update({ minute })} style={pickerS.shortWheel} />
     </View>
-  );
-}
-
-export function DurationWheelPicker({
-  options,
-  value,
-  onChange,
-}: {
-  options: PickerOption[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <WheelPicker options={options} value={value} onChange={onChange} style={pickerS.durationWheel} />
   );
 }
 
@@ -357,7 +362,6 @@ const pickerS = StyleSheet.create({
   },
   yearWheel: { flex: 1.2 },
   shortWheel: { flex: 1 },
-  durationWheel: { width: '100%' },
 });
 
 const sheetS = StyleSheet.create({

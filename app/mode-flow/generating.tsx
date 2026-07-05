@@ -8,36 +8,22 @@ import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { BigButton, GeneratingView } from '../../components/ui';
 
-const COURSE_STEPS = [
-  '취향과 분위기 확인 중',
-  '장소 동선 짜는 중',
-  '실패 확률 낮은 코스 찾는 중',
-];
-
-const DEFAULT_STEPS = [
-  '오늘 컨디션 확인 중',
-  '예산과 이동 부담 줄이는 중',
-  '최적의 데이트 코스 찾는 중',
-];
-
 export default function GeneratingScreen() {
   const { mode, input } = useLocalSearchParams<{ mode: string; input: string }>();
   const router = useRouter();
-  const { language } = useI18n();
+  const { language, t } = useI18n();
   const [step, setStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [retryKey, setRetryKey] = useState(0);
 
   const isCourse = mode === 'make_course';
-  const STEPS = isCourse ? COURSE_STEPS : DEFAULT_STEPS;
-  const heading = isCourse
-    ? '둘에게 맞는 코스를\n짜는 중이에요'
-    : '둘에게 맞는 후보를\n고르는 중이에요';
+  const steps = t(isCourse ? 'modeFlow.generating.courseSteps' : 'modeFlow.generating.defaultSteps', { returnObjects: true }) as string[];
+  const heading = t(isCourse ? 'modeFlow.generating.courseHeading' : 'modeFlow.generating.defaultHeading');
 
   useEffect(() => {
     // 단계 표시는 실제 생성 시간 동안 진행하다 마지막 단계에서 대기한다.
     const interval = setInterval(() => {
-      setStep(s => Math.min(s + 1, STEPS.length - 1));
+      setStep(s => Math.min(s + 1, steps.length - 1));
     }, 1200);
 
     let cancelled = false;
@@ -55,7 +41,7 @@ export default function GeneratingScreen() {
           params: { mode: m, input: input ?? '{}', cards: JSON.stringify(result) },
         } as any);
       } catch {
-        if (!cancelled) setErrorMsg(isCourse ? '코스를 만드는 중 문제가 생겼어요.' : '추천을 만드는 중 문제가 생겼어요.');
+        if (!cancelled) setErrorMsg(t(isCourse ? 'modeFlow.generating.courseError' : 'modeFlow.generating.defaultError'));
       }
     })();
 
@@ -63,7 +49,7 @@ export default function GeneratingScreen() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [input, language, mode, retryKey]);
+  }, [input, language, mode, retryKey, steps.length, t]);
 
   if (errorMsg !== '') {
     return (
@@ -71,14 +57,14 @@ export default function GeneratingScreen() {
         <View style={[s.iconWrap, s.iconWrapGray]}>
           <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
         </View>
-        <Text style={s.heading}>잠깐 문제가 생겼어요</Text>
-        <Text style={s.errSub}>{errorMsg}{'\n'}다시 한 번 시도해볼게요.</Text>
-        <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>다시 시도하기</BigButton>
+        <Text style={s.heading}>{t('modeFlow.generating.errorTitle')}</Text>
+        <Text style={s.errSub}>{errorMsg}{'\n'}{t('modeFlow.generating.errorSuffix')}</Text>
+        <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
       </View>
     );
   }
 
-  return <GeneratingView heading={heading} steps={STEPS} step={step} />;
+  return <GeneratingView heading={heading} steps={steps} step={step} />;
 }
 
 const s = StyleSheet.create({

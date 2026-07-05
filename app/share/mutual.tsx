@@ -10,6 +10,7 @@ import { Sparkles, Clock, Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type MutualCard = {
   id: string;
@@ -24,12 +25,6 @@ type MutualCard = {
   section: 'mutual' | 'conditional' | 'deferred';
 };
 
-const SECTION_STYLES = {
-  mutual:      { fg: C.pinkDeep,    bg: C.pinkLight,   label: '둘 다 끌린 후보' },
-  conditional: { fg: C.lavenderFg,  bg: C.lavender,    label: '조건만 맞추면 좋은 후보' },
-  deferred:    { fg: C.creamFg,     bg: C.cream,       label: '오늘은 부담되지만 다음에 좋은 후보' },
-};
-
 const REACTION_SECTION_MAP: Record<string, MutualCard['section']> = {
   love:      'mutual',
   like:      'conditional',
@@ -37,15 +32,20 @@ const REACTION_SECTION_MAP: Record<string, MutualCard['section']> = {
   next_time: 'deferred',
 };
 
-const REACTION_LABEL_MAP: Record<string, string> = {
-  love:      '완전 끌려',
-  like:      '좋아',
-  burden:    '부담돼',
-  next_time: '다음에',
-};
-
 export default function MutualScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const SECTION_STYLES = {
+    mutual:      { fg: C.pinkDeep,    bg: C.pinkLight,   label: t('share.mutual.sectionLabels.mutual') },
+    conditional: { fg: C.lavenderFg,  bg: C.lavender,    label: t('share.mutual.sectionLabels.conditional') },
+    deferred:    { fg: C.creamFg,     bg: C.cream,       label: t('share.mutual.sectionLabels.deferred') },
+  };
+  const REACTION_LABEL_MAP: Record<string, string> = {
+    love: t('candidates.rxLabel.love'),
+    like: t('candidates.rxLabel.like'),
+    burden: t('candidates.rxLabel.burden'),
+    next_time: t('candidates.rxLabel.next_time'),
+  };
   const [sections, setSections] = useState<Record<string, MutualCard[]>>({
     mutual: [], conditional: [], deferred: [],
   });
@@ -114,7 +114,7 @@ export default function MutualScreen() {
             result[section].push({
               id: cardId,
               section,
-              title: cardInfo?.title ?? '데이트 후보',
+              title: cardInfo?.title ?? t('share.mutual.cardTitleFallback'),
               summary: cardInfo?.summary ?? '',
               estimatedTime: cardInfo?.estimated_time ?? '',
               estimatedBudget: cardInfo?.estimated_budget ?? '',
@@ -122,10 +122,10 @@ export default function MutualScreen() {
               myReaction: REACTION_LABEL_MAP[mine.reaction_type] ?? mine.reaction_type,
               partnerReaction: REACTION_LABEL_MAP[partner.reaction_type] ?? partner.reaction_type,
               note: section === 'mutual'
-                ? '둘 다 좋아하는 후보예요. 이번 데이트로 정해볼까요?'
+                ? t('share.mutual.notes.mutual')
                 : section === 'conditional'
-                ? '서로의 조건을 맞추면 좋아 보여요.'
-                : '다음에 다시 꺼내볼게요.',
+                ? t('share.mutual.notes.conditional')
+                : t('share.mutual.notes.deferred'),
             });
           }
           setSections(result);
@@ -133,7 +133,7 @@ export default function MutualScreen() {
           setLoading(false);
         }
       })();
-    }, []),
+    }, [t]),
   );
 
   const totalCount = Object.values(sections).flat().length;
@@ -144,8 +144,8 @@ export default function MutualScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.introWrap}>
-          <Text style={s.heading}>둘 다 괜찮아한 후보예요</Text>
-          <Text style={s.subText}>완전히 같지 않아도 괜찮아요. 조건을 맞추면 좋은 후보를 모아봤어요.</Text>
+          <Text style={s.heading}>{t('share.mutual.heading')}</Text>
+          <Text style={s.subText}>{t('share.mutual.subText')}</Text>
         </View>
 
         {loading ? (
@@ -155,7 +155,7 @@ export default function MutualScreen() {
         ) : totalCount === 0 ? (
           <View style={s.emptyWrap}>
             <Sparkles size={44} strokeWidth={1.5} color={C.textMuted} />
-            <Text style={s.emptyText}>아직 서로 반응한 후보가 없어요</Text>
+            <Text style={s.emptyText}>{t('share.mutual.emptyText')}</Text>
           </View>
         ) : (
           (['mutual', 'conditional', 'deferred'] as const).map(key => {
@@ -198,19 +198,19 @@ export default function MutualScreen() {
 
                     {card.tags.length > 0 && (
                       <View style={s.tagsRow}>
-                        {card.tags.slice(0, 3).map(t => (
-                          <Chip key={t} tone="gray">{t}</Chip>
+                        {card.tags.slice(0, 3).map(tag => (
+                          <Chip key={tag} tone="gray">{tag}</Chip>
                         ))}
                       </View>
                     )}
 
                     <View style={s.reactionRow}>
                       <View style={s.reactionBox}>
-                        <Text style={s.reactionBoxLabel}>내 반응</Text>
+                        <Text style={s.reactionBoxLabel}>{t('share.mutual.myReactionLabel')}</Text>
                         <Text style={s.reactionBoxValue}>{card.myReaction}</Text>
                       </View>
                       <View style={s.reactionBox}>
-                        <Text style={s.reactionBoxLabel}>상대 반응</Text>
+                        <Text style={s.reactionBoxLabel}>{t('share.mutual.partnerReactionLabel')}</Text>
                         <Text style={s.reactionBoxValue}>{card.partnerReaction}</Text>
                       </View>
                     </View>
@@ -238,10 +238,10 @@ export default function MutualScreen() {
             }
           }}
         >
-          이번 데이트로 정하기
+          {t('share.mutual.confirmCta')}
         </BigButton>
         <TouchableOpacity style={s.textBtn} onPress={() => router.replace('/(tabs)/' as any)}>
-          <Text style={s.textBtnText}>비슷한 후보 더 보기</Text>
+          <Text style={s.textBtnText}>{t('share.mutual.seeMoreCta')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

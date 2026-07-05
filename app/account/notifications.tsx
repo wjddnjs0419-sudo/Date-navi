@@ -214,7 +214,7 @@ export default function NotificationsScreen() {
             </View>
             <Text style={s.modalMessage}>{selected?.payload?.message}</Text>
             <BigButton onPress={copySelectedMessage} variant={copied ? 'secondary' : 'primary'} style={s.modalCopyBtn}>
-              {copied ? '복사됨 ✓' : t.modalCopyButton}
+              {copied ? strings.notifications.copiedLabel : t.modalCopyButton}
             </BigButton>
             <TouchableOpacity onPress={closeModal} style={s.modalCloseBtn}>
               <Text style={s.modalCloseText}>{t.modalCloseButton}</Text>

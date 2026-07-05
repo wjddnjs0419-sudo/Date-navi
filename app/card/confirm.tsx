@@ -31,7 +31,7 @@ const ROW_ICONS = ['📅', '🕐', '📍', '🛍️'];
 export default function ConfirmScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { strings: s } = useI18n();
+  const { strings: s, language } = useI18n();
   const c = s.confirm;
 
   const [card, setCard] = useState<CardSummary | null>(null);
@@ -44,7 +44,7 @@ export default function ConfirmScreen() {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [draftDate, setDraftDate] = useState(defaultIsoDate());
-  const [draftTime, setDraftTime] = useState('오후 7:00');
+  const [draftTime, setDraftTime] = useState('PM 7:00');
   const [place, setPlace] = useState('');
   const [items, setItems] = useState('');
 
@@ -92,20 +92,20 @@ export default function ConfirmScreen() {
       await load();
       setEditing(false);
     } catch {
-      Alert.alert('오류', c.saveError);
+      Alert.alert(c.errorTitle, c.saveError);
     } finally {
       setSaving(false);
     }
   }
 
   function handleCancelPlan() {
-    Alert.alert('계획 취소', '이 데이트 계획을 취소할까요? 카드가 완전히 삭제돼요.', [
-      { text: '닫기', style: 'cancel' },
+    Alert.alert(c.cancelPlanTitle, c.cancelPlanMessage, [
+      { text: c.close, style: 'cancel' },
       {
-        text: '계획 취소', style: 'destructive',
+        text: c.cancelPlanAction, style: 'destructive',
         onPress: async () => {
           const { error } = await supabase.from('date_cards').delete().eq('id', id);
-          if (error) { Alert.alert('오류', '취소 중 문제가 발생했어요.'); return; }
+          if (error) { Alert.alert(c.errorTitle, c.cancelPlanError); return; }
           router.back();
         },
       },
@@ -118,7 +118,7 @@ export default function ConfirmScreen() {
   }
 
   function openTimePicker() {
-    setDraftTime(time || '오후 7:00');
+    setDraftTime(time || 'PM 7:00');
     setTimePickerOpen(true);
   }
 
@@ -133,7 +133,7 @@ export default function ConfirmScreen() {
   }
 
   const detailRows = [
-    { icon: ROW_ICONS[0], label: c.dateLabel, value: formatDateLabel(date, '') },
+    { icon: ROW_ICONS[0], label: c.dateLabel, value: formatDateLabel(date, '', language) },
     { icon: ROW_ICONS[1], label: c.timeLabel, value: time },
     { icon: ROW_ICONS[2], label: c.placeLabel, value: place },
     { icon: ROW_ICONS[3], label: c.itemsLabel, value: items },
@@ -145,14 +145,14 @@ export default function ConfirmScreen() {
 
   // ── 읽기 상세 모드 ──────────────────────────────────────────────
   if (!editing) {
-    const dateLine = [formatDateLabel(date, ''), time].filter(Boolean).join(' · ') || '날짜·시간 미정';
+    const dateLine = [formatDateLabel(date, '', language), time].filter(Boolean).join(' · ') || c.dateTimeUnset;
     return (
       <SafeAreaView style={styles.safe}>
         <ScrollView style={styles.flex1} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <BackBar />
 
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>다가오는 데이트</Text>
+            <Text style={styles.heading}>{c.upcomingTitle}</Text>
             <Text style={styles.sub}>{dateLine}</Text>
           </View>
 
@@ -176,7 +176,7 @@ export default function ConfirmScreen() {
                     <Text style={styles.detailIcon}>{row.icon}</Text>
                     <Text style={styles.detailLabel}>{row.label}</Text>
                     <Text style={[styles.detailValue, !row.value && styles.detailValueEmpty]} numberOfLines={1}>
-                      {row.value || '미정'}
+                      {row.value || c.unset}
                     </Text>
                   </View>
                 ))}
@@ -191,11 +191,11 @@ export default function ConfirmScreen() {
               activeOpacity={0.85}
             >
               <Check size={14} color={C.white} strokeWidth={2.5} />
-              <Text style={styles.doneBtnText}>데이트 다녀왔어요 · 어땠어요?</Text>
+              <Text style={styles.doneBtnText}>{c.reviewDone}</Text>
             </TouchableOpacity>
-            <BigButton variant="secondary" onPress={() => setEditing(true)}>계획 수정하기</BigButton>
+            <BigButton variant="secondary" onPress={() => setEditing(true)}>{c.editPlan}</BigButton>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.7}>
-              <Text style={styles.cancelBtnText}>계획 취소하기</Text>
+              <Text style={styles.cancelBtnText}>{c.cancelPlan}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -239,7 +239,7 @@ export default function ConfirmScreen() {
               <View style={styles.flex1}>
                 <Text style={styles.rowLabel}>{c.dateLabel}</Text>
                 <Text style={[styles.pickerValue, !date && styles.pickerValueEmpty]}>
-                  {date ? formatDateLabel(date) : c.datePlaceholder}
+                  {date ? formatDateLabel(date, undefined, language) : c.datePlaceholder}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -278,10 +278,10 @@ export default function ConfirmScreen() {
 
           <View style={styles.actions}>
             <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
-              {saving ? '저장 중...' : c.saveButton}
+              {saving ? c.saving : c.saveButton}
             </BigButton>
             <BigButton variant="text" onPress={() => (isPlan ? setEditing(false) : router.back())}>
-              {isPlan ? '돌아가기' : c.keepButton}
+              {isPlan ? c.back : c.keepButton}
             </BigButton>
           </View>
         </ScrollView>

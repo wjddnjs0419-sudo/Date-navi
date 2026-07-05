@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import { C } from '../constants/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GeoCoords } from '../lib/ai';
+import { useI18n } from '../lib/i18n';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'text' | 'disabled';
@@ -191,6 +192,71 @@ const chipS = StyleSheet.create({
   label: { fontSize: 12 },
 });
 
+// ─── OptionCardPicker ────────────────────────────────────────────────────────
+// flexWrap과 flex:1을 같은 컨테이너에 함께 쓰면 두 번째 줄이 아래 요소와
+// 겹치는 RN/Yoga 레이아웃 버그가 있어, 줄바꿈 대신 행을 직접 나눠 렌더링한다.
+type OptionCard = { value: string; label: string; emoji?: string };
+export function OptionCardPicker({
+  options,
+  value,
+  onChange,
+  columns = 4,
+}: {
+  options: OptionCard[];
+  value: string;
+  onChange: (value: string) => void;
+  columns?: number;
+}) {
+  const rows: OptionCard[][] = [];
+  for (let i = 0; i < options.length; i += columns) {
+    rows.push(options.slice(i, i + columns));
+  }
+  return (
+    <View style={optionCardS.wrap}>
+      {rows.map((row, rowIdx) => (
+        <View key={rowIdx} style={optionCardS.row}>
+          {row.map((option) => {
+            const selected = value === option.value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => onChange(option.value)}
+                activeOpacity={0.72}
+                style={[optionCardS.card, selected && optionCardS.cardSelected]}
+              >
+                {option.emoji && <Text style={optionCardS.emoji}>{option.emoji}</Text>}
+                <Text style={[optionCardS.label, selected && optionCardS.labelSelected]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+}
+const optionCardS = StyleSheet.create({
+  wrap: { gap: 8 },
+  row: { flexDirection: 'row', gap: 8 },
+  card: {
+    flex: 1,
+    minWidth: 76,
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.white,
+    borderWidth: 1.5,
+    borderColor: C.border,
+  },
+  cardSelected: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
+  emoji: { fontSize: 18, marginBottom: 4 },
+  label: { fontSize: 13, color: C.inkSoft, fontWeight: '600', textAlign: 'center' },
+  labelSelected: { color: C.pinkDeep },
+});
+
 // ─── Badge ────────────────────────────────────────────────────────────────────
 type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender';
 const BADGE_TONES: Record<BadgeTone, { bg: string; fg: string }> = {
@@ -351,8 +417,6 @@ const sectionS = StyleSheet.create({
 // 데이트 지역(동네) 입력. 값이 있으면 카카오 로컬로 실제 장소를 붙인다. 선택 입력.
 // onCoordsChange를 넘기면 우측에 GPS 토글 버튼이 생긴다. GPS 사용 중에는
 // 입력창이 "내 위치 사용 중" 고정 문구로 비활성화되고, 아이콘 재탭으로만 해제된다.
-const GPS_ACTIVE_TEXT = '내 위치 사용 중';
-
 export function LocationField({
   value, onChangeText, coords, onCoordsChange, style,
 }: {
@@ -362,6 +426,7 @@ export function LocationField({
   onCoordsChange?: (c: GeoCoords | null) => void;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { t } = useI18n();
   const [locating, setLocating] = useState(false);
   const gpsOn = !!coords;
 
@@ -379,9 +444,9 @@ export function LocationField({
         ({ status } = await Location.requestForegroundPermissionsAsync());
       }
       if (status !== 'granted') {
-        Alert.alert('위치 권한이 꺼져 있어요', '내 위치를 사용하려면 설정에서 위치 권한을 켜주세요.', [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+        Alert.alert(t('location.permissionTitle'), t('location.permissionBody'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.settingsOpen'), onPress: () => Linking.openSettings() },
         ]);
         return;
       }
@@ -392,9 +457,9 @@ export function LocationField({
       ]);
       // 카카오 규약: x=경도(longitude), y=위도(latitude)
       onCoordsChange({ x: String(pos.coords.longitude), y: String(pos.coords.latitude) });
-      onChangeText(GPS_ACTIVE_TEXT);
+      onChangeText(t('location.gpsActive'));
     } catch {
-      Alert.alert('위치를 가져오지 못했어요', '잠시 후 다시 시도하거나 직접 입력해주세요.');
+      Alert.alert(t('location.fetchError'), t('location.fetchErrorBody'));
     } finally {
       setLocating(false);
     }
@@ -402,12 +467,12 @@ export function LocationField({
 
   return (
     <View style={style}>
-      <Text style={locS.label}>어디서 만나요? (선택)</Text>
+      <Text style={locS.label}>{t('location.label')}</Text>
       <View style={locS.inputWrap}>
         <MapPin size={18} color={C.pink} strokeWidth={2} />
         <TextInput
           style={[locS.input, gpsOn && locS.inputGps]}
-          placeholder="예: 성수동, 홍대입구역"
+          placeholder={t('location.placeholder')}
           placeholderTextColor={C.textFaint}
           value={value}
           onChangeText={onChangeText}
@@ -425,7 +490,7 @@ export function LocationField({
           </TouchableOpacity>
         )}
       </View>
-      <Text style={locS.hint}>동네를 알려주면 실제 장소·맛집으로 추천해드려요.</Text>
+      <Text style={locS.hint}>{t('location.hint')}</Text>
     </View>
   );
 }
@@ -451,6 +516,7 @@ const locS = StyleSheet.create({
 export function PlaceRow({
   name, address, url, style,
 }: { name?: string; address?: string; url?: string; style?: StyleProp<ViewStyle> }) {
+  const { t } = useI18n();
   if (!name) return null;
   return (
     <TouchableOpacity
@@ -464,7 +530,7 @@ export function PlaceRow({
         <Text style={placeS.name} numberOfLines={1}>{name}</Text>
         {!!address && <Text style={placeS.addr} numberOfLines={1}>{address}</Text>}
       </View>
-      {!!url && <Text style={placeS.link}>지도 →</Text>}
+      {!!url && <Text style={placeS.link}>{t('location.map')}</Text>}
     </TouchableOpacity>
   );
 }

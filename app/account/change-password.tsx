@@ -10,9 +10,11 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, InfoNote } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -24,31 +26,31 @@ export default function ChangePasswordScreen() {
 
   async function handleSave() {
     if (newPw.length < 8) {
-      Alert.alert('비밀번호 오류', '새 비밀번호는 8자 이상이어야 해요.');
+      Alert.alert(t('account.changePassword.errorTitle'), t('account.changePassword.tooShortError'));
       return;
     }
     if (newPw !== confirmPw) {
-      Alert.alert('비밀번호 오류', '새 비밀번호가 일치하지 않아요.');
+      Alert.alert(t('account.changePassword.errorTitle'), t('account.changePassword.mismatchError'));
       return;
     }
     setSaving(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPw });
       if (error) throw error;
-      Alert.alert('변경 완료', '비밀번호가 변경됐어요.', [
-        { text: '확인', onPress: () => router.back() },
+      Alert.alert(t('account.changePassword.successTitle'), t('account.changePassword.successMessage'), [
+        { text: t('common.ok'), onPress: () => router.back() },
       ]);
     } catch {
-      Alert.alert('오류', '비밀번호 변경 중 문제가 생겼어요.');
+      Alert.alert(t('common.error'), t('account.changePassword.saveError'));
     } finally {
       setSaving(false);
     }
   }
 
   const fields = [
-    { label: '현재 비밀번호', placeholder: '현재 비밀번호 입력', value: currentPw, onChange: setCurrentPw, show: showCurrent, toggleShow: () => setShowCurrent(v => !v) },
-    { label: '새 비밀번호', placeholder: '새 비밀번호 입력', value: newPw, onChange: setNewPw, show: showNew, toggleShow: () => setShowNew(v => !v) },
-    { label: '새 비밀번호 확인', placeholder: '다시 한 번 입력', value: confirmPw, onChange: setConfirmPw, show: showConfirm, toggleShow: () => setShowConfirm(v => !v) },
+    { label: t('account.changePassword.currentLabel'), placeholder: t('account.changePassword.currentPlaceholder'), value: currentPw, onChange: setCurrentPw, show: showCurrent, toggleShow: () => setShowCurrent(v => !v) },
+    { label: t('account.changePassword.newLabel'), placeholder: t('account.changePassword.newPlaceholder'), value: newPw, onChange: setNewPw, show: showNew, toggleShow: () => setShowNew(v => !v) },
+    { label: t('account.changePassword.confirmLabel'), placeholder: t('account.changePassword.confirmPlaceholder'), value: confirmPw, onChange: setConfirmPw, show: showConfirm, toggleShow: () => setShowConfirm(v => !v) },
   ];
 
   const isReady = currentPw.length > 0 && newPw.length >= 8 && newPw === confirmPw;
@@ -58,8 +60,8 @@ export default function ChangePasswordScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <BackBar />
         <View style={s.headingWrap}>
-          <Text style={s.heading}>비밀번호 변경</Text>
-          <Text style={s.subText}>안전한 비밀번호로 계정을 지켜주세요.</Text>
+          <Text style={s.heading}>{t('account.changePassword.heading')}</Text>
+          <Text style={s.subText}>{t('account.changePassword.subText')}</Text>
         </View>
 
         <View style={s.fieldList}>
@@ -87,7 +89,7 @@ export default function ChangePasswordScreen() {
         </View>
 
         <InfoNote style={s.infoNote}>
-          8자 이상, 영문·숫자·특수문자 중 2가지 이상 조합을 추천해요.
+          {t('account.changePassword.infoNote')}
         </InfoNote>
 
         <View style={s.bottomSpacer} />
@@ -95,7 +97,7 @@ export default function ChangePasswordScreen() {
 
       <View style={s.footer}>
         <BigButton onPress={handleSave} variant={saving ? 'disabled' : isReady ? 'primary' : 'disabled'}>
-          {saving ? <ActivityIndicator color={C.white} size="small" /> : '비밀번호 변경'}
+          {saving ? <ActivityIndicator color={C.white} size="small" /> : t('account.changePassword.saveCta')}
         </BigButton>
       </View>
     </SafeAreaView>

@@ -13,6 +13,7 @@ import { supabase } from '../../lib/supabase';
 import { Clock, Wallet, Send, Bookmark } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Badge, PlaceRow } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 // 가로 S자 동선 트레일 배치 옵션
 const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 150, padX: 48, padY: 56 };
@@ -75,6 +76,7 @@ export default function CourseResultScreen() {
   const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { t } = useI18n();
 
   // 카드는 generating 화면에서 생성해 params로 넘겨준다.
   const cards = useMemo<DateCard[]>(() => {
@@ -99,7 +101,7 @@ export default function CourseResultScreen() {
       if (!user) return;
       const { data: profile } = await supabase
         .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
-      if (!profile?.couple_id) { Alert.alert('연인과 연결 후 사용해주세요.'); return; }
+      if (!profile?.couple_id) { Alert.alert(t('modeFlow.courseResult.coupleRequired')); return; }
 
       const card = cards[page];
       const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -123,7 +125,7 @@ export default function CourseResultScreen() {
       if (error) throw error;
       router.push({ pathname: '/share/send', params: { cardId } } as any);
     } catch {
-      Alert.alert('오류', '보내기 중 문제가 생겼어요.');
+      Alert.alert(t('modeFlow.courseResult.sendErrorTitle'), t('modeFlow.courseResult.sendError'));
     } finally {
       setSending(false);
     }
@@ -168,7 +170,7 @@ export default function CourseResultScreen() {
       if (error) throw error;
       setSaved(true);
     } catch {
-      setErrorMsg('저장 중 오류가 발생했어요.');
+      setErrorMsg(t('modeFlow.courseResult.saveError'));
     } finally {
       setSaving(false);
     }
@@ -181,8 +183,8 @@ export default function CourseResultScreen() {
   if (errorMsg !== '' && cards.length === 0) {
     return (
       <SafeAreaView style={s.center}>
-        <Text style={s.errTitle}>잠깐 문제가 생겼어요</Text>
-        <BigButton onPress={regenerate} style={s.errRetryBtn}>다시 시도하기</BigButton>
+        <Text style={s.errTitle}>{t('modeFlow.courseResult.errorTitle')}</Text>
+        <BigButton onPress={regenerate} style={s.errRetryBtn}>{t('modeFlow.courseResult.retry')}</BigButton>
       </SafeAreaView>
     );
   }
@@ -191,9 +193,9 @@ export default function CourseResultScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <BackBar />
       <View style={s.headerArea}>
-        <Badge tone="pink">AI 코스</Badge>
-        <Text style={s.heading}>이런 코스는 어때요?</Text>
-        <Text style={s.sub}>밀어서 후보 3개를 비교해보세요.</Text>
+        <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
+        <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
+        <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
       </View>
 
       <ScrollView
@@ -220,12 +222,12 @@ export default function CourseResultScreen() {
 
               <View style={s.btnRow}>
                 <TouchableOpacity style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>
-                  {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>상대에게 보내기</Text>
+                  {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>{t('modeFlow.courseResult.send')}</Text>
                 </TouchableOpacity>
                 {!saved && (
                   <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
                     {saving ? <ActivityIndicator size="small" color={C.pinkDeep} />
-                      : <><Bookmark size={14} color={C.pinkDeep} /><Text style={s.saveText}>저장</Text></>}
+                      : <><Bookmark size={14} color={C.pinkDeep} /><Text style={s.saveText}>{t('modeFlow.courseResult.save')}</Text></>}
                   </TouchableOpacity>
                 )}
               </View>

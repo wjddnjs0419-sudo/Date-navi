@@ -10,31 +10,28 @@ import { Heart } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
-const REACTIONS = [
-  '완전 끌려', '좋아', '느낌은 좋아', '가까우면 좋아',
-  '오늘은 조금 부담돼', '다음에 하고 싶어', '돈 들어오면 하자', '오래 걷지 않으면 좋아',
+const REACTION_OPTIONS: { id: string; type: string }[] = [
+  { id: 'full', type: 'love' },
+  { id: 'good', type: 'love' },
+  { id: 'niceFeel', type: 'like' },
+  { id: 'closer', type: 'like' },
+  { id: 'burdenToday', type: 'burden' },
+  { id: 'nextTime', type: 'next_time' },
+  { id: 'ifMoneyComes', type: 'next_time' },
+  { id: 'notFarWalk', type: 'like' },
 ];
-
-const REACTION_TYPE_MAP: Record<string, string> = {
-  '완전 끌려': 'love',
-  '좋아': 'love',
-  '느낌은 좋아': 'like',
-  '가까우면 좋아': 'like',
-  '오늘은 조금 부담돼': 'burden',
-  '다음에 하고 싶어': 'next_time',
-  '돈 들어오면 하자': 'next_time',
-  '오래 걷지 않으면 좋아': 'like',
-};
 
 export default function ReactionScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const router = useRouter();
+  const { t } = useI18n();
 
   const [selectedIdx, setSelectedIdx] = useState(3);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-  const [partnerName, setPartnerName] = useState('상대방');
+  const [partnerName, setPartnerName] = useState(t('share.reaction.partnerFallback'));
   const [card, setCard] = useState<{ title: string; summary: string } | null>(null);
   const [sentMessage, setSentMessage] = useState('');
 
@@ -93,7 +90,7 @@ export default function ReactionScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const reactionType = REACTION_TYPE_MAP[REACTIONS[selectedIdx]] ?? 'like';
+      const reactionType = REACTION_OPTIONS[selectedIdx]?.type ?? 'like';
       await supabase
         .from('reactions')
         .upsert(
@@ -117,12 +114,12 @@ export default function ReactionScreen() {
             <Text style={s.senderAvatarText}>{partnerName.slice(0, 1)}</Text>
           </View>
           <View>
-            <Text style={s.senderName}>{partnerName}이 보냈어요</Text>
-            <Text style={s.senderTime}>방금 전</Text>
+            <Text style={s.senderName}>{t('share.reaction.senderSent', { name: partnerName })}</Text>
+            <Text style={s.senderTime}>{t('share.reaction.justNow')}</Text>
           </View>
         </View>
 
-        <Text style={[s.heading, s.headingSpacing]}>이 데이트 어때요?</Text>
+        <Text style={[s.heading, s.headingSpacing]}>{t('share.reaction.heading')}</Text>
 
         <View style={s.cardBox}>
           <View style={s.cardBanner}>
@@ -131,8 +128,8 @@ export default function ReactionScreen() {
             </View>
           </View>
           <View style={s.cardBody}>
-            <Text style={s.cardTitle}>{card?.title ?? '선택한 데이트 후보'}</Text>
-            <Text style={s.cardDesc}>{card?.summary ?? '멀리 가지 않고 편하게 쉬는 데이트'}</Text>
+            <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
+            <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
             {!!sentMessage && (
               <View style={s.noteBox}>
                 <Text style={s.noteText}>"{sentMessage}"</Text>
@@ -142,18 +139,18 @@ export default function ReactionScreen() {
         </View>
 
         <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>마음에 드는 반응을 골라주세요</Text>
+          <Text style={s.sectionLabel}>{t('share.reaction.chooseReaction')}</Text>
           <View style={s.reactionGrid}>
-            {REACTIONS.map((t, i) => {
+            {REACTION_OPTIONS.map((opt, i) => {
               const sel = i === selectedIdx;
               return (
                 <TouchableOpacity
-                  key={t}
+                  key={opt.id}
                   style={[s.reactionBtn, sel && s.reactionBtnOn]}
                   onPress={() => setSelectedIdx(i)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[s.reactionBtnText, sel && s.reactionBtnTextOn]}>{t}</Text>
+                  <Text style={[s.reactionBtnText, sel && s.reactionBtnTextOn]}>{t(`share.reaction.options.${opt.id}`)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -161,13 +158,13 @@ export default function ReactionScreen() {
         </View>
 
         <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>한마디 (선택)</Text>
+          <Text style={s.sectionLabel}>{t('share.reaction.noteLabel')}</Text>
           <View style={s.noteInputBox}>
             <TextInput
               style={s.noteInput}
               value={note}
               onChangeText={setNote}
-              placeholder="예: 이거 좋은데 이번 주말보단 다음 주가 좋을 것 같아."
+              placeholder={t('share.reaction.notePlaceholder')}
               placeholderTextColor={C.textFaint}
               multiline
             />
@@ -179,7 +176,7 @@ export default function ReactionScreen() {
 
       <View style={s.footer}>
         <BigButton onPress={handleSubmit} variant={saving ? 'disabled' : 'primary'}>
-          {saving ? <ActivityIndicator color={C.white} size="small" /> : '반응 남기기'}
+          {saving ? <ActivityIndicator color={C.white} size="small" /> : t('share.reaction.submitCta')}
         </BigButton>
       </View>
     </SafeAreaView>

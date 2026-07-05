@@ -5,8 +5,7 @@ import { useRouter } from 'expo-router';
 import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, LocationField } from '../../components/ui';
-import { DurationWheelPicker } from '../../components/pickers';
+import { BackBar, BigButton, LocationField, OptionCardPicker } from '../../components/ui';
 
 export default function CourseScreen() {
   const router = useRouter();
@@ -52,7 +51,7 @@ export default function CourseScreen() {
 
         <Text style={s2.sectionLabel}>{c.budgetLabel}</Text>
         <View style={s2.optionRow}>
-          {c.budgetOptions.map(opt => {
+          {c.budgetOptions.map((opt: { label: string; emoji: string; value: string }) => {
             const sel = budget === opt.value;
             return (
               <TouchableOpacity
@@ -69,9 +68,11 @@ export default function CourseScreen() {
         </View>
 
         <Text style={s2.sectionLabel}>{c.durationLabel}</Text>
-        <View style={s2.wheelBlock}>
-          <DurationWheelPicker
-            options={c.durationOptions.map((opt) => ({ value: opt.value, label: `${opt.emoji} ${opt.label}` }))}
+        <View style={s2.durationBlock}>
+          <OptionCardPicker
+            options={c.durationOptions.map((opt: { label: string; emoji: string; value: string }) => (
+              { value: opt.value, label: opt.label, emoji: opt.emoji }
+            ))}
             value={duration || c.durationOptions[0]?.value}
             onChange={setDuration}
           />
@@ -108,5 +109,5 @@ const s2 = StyleSheet.create({
   optionEmoji: { fontSize: 22 },
   optionLabel: { fontSize: 13, fontWeight: '600', color: C.textSub, textAlign: 'center' },
   optionLabelSelected: { color: C.pinkDeep },
-  wheelBlock: { marginBottom: 28 },
+  durationBlock: { marginBottom: 28 },
 });

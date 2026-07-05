@@ -8,21 +8,23 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { Plane } from 'lucide-react-native';
+import { useI18n } from '../../lib/i18n';
 
 export default function BucketlistScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [item, setItem] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     if (!item.trim()) {
-      Alert.alert('아이디어를 입력해주세요');
+      Alert.alert(t('modeFlow.bucketlist.empty'));
       return;
     }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { Alert.alert('로그인이 필요해요'); return; }
+      if (!user) { Alert.alert(t('modeFlow.bucketlist.loginRequired')); return; }
 
       const { data: profile } = await supabase
         .from('date_planner_profiles')
@@ -31,7 +33,7 @@ export default function BucketlistScreen() {
         .maybeSingle();
 
       if (!profile?.couple_id) {
-        Alert.alert('커플 연결 후 사용할 수 있어요');
+        Alert.alert(t('modeFlow.bucketlist.coupleRequired'));
         return;
       }
 
@@ -46,12 +48,12 @@ export default function BucketlistScreen() {
 
       setItem('');
       Alert.alert(
-        '저장했어요!',
-        '우리 후보 탭의 "다음에 만나면" 에서 확인할 수 있어요.',
-        [{ text: '확인', onPress: () => router.push('/(tabs)/candidates' as any) }],
+        t('modeFlow.bucketlist.savedTitle'),
+        t('modeFlow.bucketlist.savedBody'),
+        [{ text: t('common.ok'), onPress: () => router.push('/(tabs)/candidates' as any) }],
       );
     } catch {
-      Alert.alert('저장 중 오류가 발생했어요. 다시 시도해주세요.');
+      Alert.alert(t('modeFlow.bucketlist.saveError'));
     } finally {
       setSaving(false);
     }
@@ -68,7 +70,7 @@ export default function BucketlistScreen() {
         </TouchableOpacity>
         <View style={s.modeBadge}>
           <Plane size={13} color={C.lavenderFg} strokeWidth={2} />
-          <Text style={s.modeLabel}>다음에 만나면</Text>
+          <Text style={s.modeLabel}>{t('modeFlow.bucketlist.modeLabel')}</Text>
         </View>
       </View>
 
@@ -77,13 +79,13 @@ export default function BucketlistScreen() {
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={s.title}>{'다음에 만나면\n뭐 하고 싶어요?'}</Text>
-        <Text style={s.subtitle}>장소, 활동, 느낌 모두 괜찮아요.{'\n'}떠오르는 아이디어를 자유롭게 써주세요.</Text>
+        <Text style={s.title}>{t('modeFlow.bucketlist.title')}</Text>
+        <Text style={s.subtitle}>{t('modeFlow.bucketlist.sub')}</Text>
 
-        <Text style={s.inputLabel}>아이디어</Text>
+        <Text style={s.inputLabel}>{t('modeFlow.bucketlist.label')}</Text>
         <TextInput
           style={s.textInput}
-          placeholder="예) 드라이브하면서 야경 보고 싶어, 오션뷰 카페 가보고 싶어..."
+          placeholder={t('modeFlow.bucketlist.placeholder')}
           placeholderTextColor="#C0C0C0"
           value={item}
           onChangeText={setItem}
@@ -94,8 +96,8 @@ export default function BucketlistScreen() {
         <Text style={s.charCount}>{item.length} / 200</Text>
 
         <View style={s.tipBox}>
-          <Text style={s.tipTitle}>💡 이렇게 써봐요</Text>
-          <Text style={s.tipText}>· 오션뷰 카페에서 브런치 먹기{'\n'}· 드라이브하면서 야경 보기{'\n'}· 테마파크 하루 종일 놀기{'\n'}· 두 사람만의 캠핑</Text>
+          <Text style={s.tipTitle}>{t('modeFlow.bucketlist.tipTitle')}</Text>
+          <Text style={s.tipText}>{t('modeFlow.bucketlist.tipText')}</Text>
         </View>
       </ScrollView>
 
@@ -109,7 +111,7 @@ export default function BucketlistScreen() {
           {saving ? (
             <ActivityIndicator color={C.white} />
           ) : (
-            <Text style={s.saveBtnText}>버킷리스트에 저장하기</Text>
+            <Text style={s.saveBtnText}>{t('modeFlow.bucketlist.save')}</Text>
           )}
         </TouchableOpacity>
       </View>

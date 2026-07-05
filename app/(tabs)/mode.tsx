@@ -8,17 +8,18 @@ import { Gift, MessageCircle, Map, Leaf, Plane, Check } from 'lucide-react-nativ
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
-
-const MODES = [
-  { id: 'pick_for_me', title: '앱이 골라줘', desc: '조건만 고르면 후보 3개를 뽑아드릴게요.', Icon: Gift },
-  { id: 'feeling', title: '느낌만 말할게', desc: '하고 싶은 분위기만 남겨도 괜찮아요.', Icon: MessageCircle },
-  { id: 'make_course', title: '코스로 정리해줘', desc: '러프한 아이디어를 시간, 예산, 준비물까지 정리해요.', Icon: Map },
-  { id: 'light', title: '가볍게 하고 싶어', desc: '피곤한 날, 돈 아끼는 날에 좋아요.', Icon: Leaf },
-  { id: 'next_meet', title: '다음에 만나면', desc: '장거리 커플의 다음 만남 버킷리스트.', Icon: Plane },
-];
+import { useI18n } from '../../lib/i18n';
 
 export default function ModeScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const MODES = [
+    { id: 'pick_for_me', title: t('mode.tabModes.pick_for_me.title'), desc: t('mode.tabModes.pick_for_me.desc'), Icon: Gift },
+    { id: 'feeling', title: t('mode.tabModes.feeling.title'), desc: t('mode.tabModes.feeling.desc'), Icon: MessageCircle },
+    { id: 'make_course', title: t('mode.tabModes.make_course.title'), desc: t('mode.tabModes.make_course.desc'), Icon: Map },
+    { id: 'light', title: t('mode.tabModes.light.title'), desc: t('mode.tabModes.light.desc'), Icon: Leaf },
+    { id: 'next_meet', title: t('mode.tabModes.next_meet.title'), desc: t('mode.tabModes.next_meet.desc'), Icon: Plane },
+  ];
   const [selIdx, setSelIdx] = useState(0);
 
   function handleStart() {
@@ -41,8 +42,8 @@ export default function ModeScreen() {
           contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={s.heading}>오늘은 앱이 어떻게{'\n'}도와주면 좋을까요?</Text>
-          <Text style={s.subText}>상황은 매번 달라질 수 있어요. 지금 필요한 도움만 골라주세요.</Text>
+          <Text style={s.heading}>{t('mode.tabHeading')}</Text>
+          <Text style={s.subText}>{t('mode.tabSubtitle')}</Text>
 
           <View style={s.modeList}>
             {MODES.map((m, i) => {
@@ -69,13 +70,10 @@ export default function ModeScreen() {
             })}
           </View>
 
-          <View style={s.bottomSpacer} />
+          <View style={s.footer}>
+            <BigButton onPress={handleStart}>{t('mode.tabStartCta')}</BigButton>
+          </View>
         </ScrollView>
-
-        {/* 고정 하단 버튼 */}
-        <View style={s.footer}>
-          <BigButton onPress={handleStart}>이 모드로 시작하기</BigButton>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -83,8 +81,7 @@ export default function ModeScreen() {
 
 const s = StyleSheet.create({
   flex1: { flex: 1 },
-  bottomSpacer: { height: 120 },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 36 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 20 },
   modeList: { gap: 10 },
@@ -110,13 +107,6 @@ const s = StyleSheet.create({
   modeTitleOn: { color: C.pinkDeep },
   modeDesc: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: 4 },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
-    backgroundColor: C.bg,
+    marginTop: 24,
   },
 });

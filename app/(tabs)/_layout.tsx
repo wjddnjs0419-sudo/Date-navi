@@ -2,11 +2,13 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Sparkles, Heart, Mail, Image as ImageIcon } from 'lucide-react-native';
 import { C } from '../../constants/theme';
+import { useI18n } from '../../lib/i18n';
 
 export default function TabsLayout() {
   // 홈 인디케이터가 있는 기기는 인셋만큼 탭바를 키워 라벨이 가려지지 않게 하고,
   // 인셋이 없는 기기(SE·Android)는 최소 12로 유지해 콘텐츠 높이(50)를 동일하게 맞춘다.
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const bottomPad = Math.max(insets.bottom, 12);
   return (
     <Tabs
@@ -28,7 +30,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '홈',
+          title: t('tabs.home'),
           tabBarIcon: ({ focused, color }) => (
             <Home size={20} color={color} strokeWidth={focused ? 2.4 : 1.8} />
           ),
@@ -37,7 +39,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="mode"
         options={{
-          title: '모드',
+          title: t('tabs.mode'),
           tabBarIcon: ({ focused, color }) => (
             <Sparkles size={20} color={color} strokeWidth={focused ? 2.4 : 1.8} />
           ),
@@ -46,7 +48,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="candidates"
         options={{
-          title: '우리 후보',
+          title: t('tabs.candidates'),
           tabBarIcon: ({ focused, color }) => (
             <Heart size={20} color={color} strokeWidth={focused ? 2.4 : 1.8} />
           ),
@@ -55,7 +57,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="soft-message"
         options={{
-          title: '마음 전하기',
+          title: t('tabs.softMessage'),
           tabBarIcon: ({ focused, color }) => (
             <Mail size={20} color={color} strokeWidth={focused ? 2.4 : 1.8} />
           ),
@@ -64,7 +66,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="memories"
         options={{
-          title: '추억',
+          title: t('tabs.memories'),
           tabBarIcon: ({ focused, color }) => (
             <ImageIcon size={20} color={color} strokeWidth={focused ? 2.4 : 1.8} />
           ),

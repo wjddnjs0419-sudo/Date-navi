@@ -9,6 +9,7 @@ import { Camera, Heart, Clock, Wallet, ChevronRight } from 'lucide-react-native'
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { Badge, Chip, SwipeableCard } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type MemoryItem = {
   id: string; card_id: string | null; title: string | null; review: string;
@@ -43,6 +44,7 @@ function daysSince(dateStr: string) {
 
 export default function MemoriesScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [relationshipDays, setRelationshipDays] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,13 +63,24 @@ export default function MemoriesScreen() {
         .maybeSingle();
 
       let startDate = toDateOnly(profile?.anniversary_date);
-      if (!startDate && profile?.couple_id) {
+      if (profile?.couple_id) {
         const { data: coupleRow } = await supabase
           .from('date_planner_couples')
-          .select('created_at')
+          .select('created_at, owner_user_id')
           .eq('id', profile.couple_id)
           .maybeSingle();
-        startDate = toDateOnly(coupleRow?.created_at);
+
+        if (coupleRow?.owner_user_id !== user.id) {
+          const { data: ownerProfile } = await supabase
+            .from('date_planner_profiles')
+            .select('anniversary_date')
+            .eq('user_id', coupleRow?.owner_user_id)
+            .maybeSingle();
+
+          startDate = toDateOnly(ownerProfile?.anniversary_date) || startDate;
+        }
+
+        startDate = startDate || toDateOnly(coupleRow?.created_at);
       }
       setRelationshipDays(daysSince(startDate));
 
@@ -94,7 +107,7 @@ export default function MemoriesScreen() {
 
       setItems(mems.map(m => ({
         ...m,
-        card_title: (m.card_id ? cardMap[m.card_id]?.title : null) ?? m.title ?? '추억',
+        card_title: (m.card_id ? cardMap[m.card_id]?.title : null) ?? m.title ?? t('memories.untitled'),
         card_mode: (m.card_id && cardMap[m.card_id]?.mode) ?? '',
         card_time: (m.card_id && cardMap[m.card_id]?.estimated_time) ?? '',
         card_budget: (m.card_id && cardMap[m.card_id]?.estimated_budget) ?? '',
@@ -103,19 +116,19 @@ export default function MemoriesScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(useCallback(() => { loadMemories(); }, [loadMemories]));
 
   function confirmDeleteMemory(memoryId: string) {
-    Alert.alert('추억 삭제', '이 추억을 삭제할까요? 되돌릴 수 없어요.', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('memories.deleteAlertTitle'), t('memories.deleteAlertMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '삭제', style: 'destructive',
+        text: t('common.delete'), style: 'destructive',
         onPress: async () => {
           const { data, error } = await supabase.from('date_memories').delete().eq('id', memoryId).select('id');
-          if (error) { Alert.alert('오류', '삭제 중 문제가 발생했어요.'); return; }
-          if (!data?.length) { Alert.alert('알림', '본인이 남긴 추억만 삭제할 수 있어요.'); return; }
+          if (error) { Alert.alert(t('common.error'), t('memories.deleteAlertError')); return; }
+          if (!data?.length) { Alert.alert(t('common.notice'), t('memories.deleteAlertForbidden')); return; }
           loadMemories();
         },
       },
@@ -130,8 +143,8 @@ export default function MemoriesScreen() {
         {/* 헤더 */}
         <View style={s.header}>
           <View>
-            <Text style={s.pageTitle}>우리 추억</Text>
-            <Text style={s.countText}>지금까지 함께한 데이트 {items.length}개</Text>
+            <Text style={s.pageTitle}>{t('memories.pageTitle')}</Text>
+            <Text style={s.countText}>{t('memories.countText', { count: items.length })}</Text>
           </View>
           <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/card/memory/new')} activeOpacity={0.8}>
             <Camera size={17} color={C.textSub} />
@@ -147,10 +160,8 @@ export default function MemoriesScreen() {
             <View style={[s.emptyIcon, s.bgLavender]}>
               <Heart size={44} strokeWidth={1.5} color={C.lavenderFg} />
             </View>
-            <Text style={s.emptyTitle}>아직 추억이 없어요</Text>
-            <Text style={s.emptySub}>
-              데이트를 확정하고 후기를 남기면{'\n'}여기에 쌓여요.
-            </Text>
+            <Text style={s.emptyTitle}>{t('memories.emptyStateTitle')}</Text>
+            <Text style={s.emptySub}>{t('memories.emptyStateSub')}</Text>
           </View>
         ) : (
           <FlatList
@@ -163,9 +174,9 @@ export default function MemoriesScreen() {
                 {/* 통계 */}
                 <View style={s.statsRow}>
                   {[
-                    { label: '함께한 날', value: relationshipDays !== null ? String(relationshipDays) : '—' },
-                    { label: '다시 하고싶어', value: String(wantAgainCount) },
-                    { label: '이번 달', value: String(items.filter(i => {
+                    { label: t('memories.statDaysTogether'), value: relationshipDays !== null ? String(relationshipDays) : '—' },
+                    { label: t('memories.statWantAgain'), value: String(wantAgainCount) },
+                    { label: t('memories.statThisMonth'), value: String(items.filter(i => {
                       const d = new Date(i.created_at);
                       const now = new Date();
                       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -179,7 +190,7 @@ export default function MemoriesScreen() {
                 </View>
                 {/* "최근 추억" 섹션 레이블 */}
                 <View style={s.sectionLabelRow}>
-                  <Badge tone="pink">최근 추억</Badge>
+                  <Badge tone="pink">{t('memories.recentBadge')}</Badge>
                 </View>
               </View>
             }
@@ -205,7 +216,7 @@ export default function MemoriesScreen() {
                       {item.want_again && (
                         <View style={s.wantAgainBadge}>
                           <Heart size={11} color={C.pinkDeep} fill={C.pinkDeep} />
-                          <Text style={s.wantAgainText}>다시 하고 싶어</Text>
+                          <Text style={s.wantAgainText}>{t('memories.wantAgainBadge')}</Text>
                         </View>
                       )}
                     </View>
@@ -233,8 +244,8 @@ export default function MemoriesScreen() {
                       ) : null}
                       {item.card_tags.length > 0 ? (
                         <View style={s.chipRow}>
-                          {item.card_tags.slice(0, 3).map((t) => (
-                            <Chip key={t} tone="gray">{t}</Chip>
+                          {item.card_tags.slice(0, 3).map((tag) => (
+                            <Chip key={tag} tone="gray">{tag}</Chip>
                           ))}
                         </View>
                       ) : null}

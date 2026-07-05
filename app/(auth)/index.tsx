@@ -11,24 +11,28 @@ import { Mail, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 type Mode = 'welcome' | 'email';
 
-function toLocalizedError(message: string): string {
-  if (message.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않아요.';
-  if (message.includes('User already registered')) return '이미 가입된 이메일이에요.';
-  if (message.includes('Password should be at least')) return '비밀번호는 6자 이상이어야 해요.';
-  if (message.includes('Email not confirmed')) return '이메일 인증이 필요해요.';
-  if (message.includes('Invalid email') || message.includes('valid email')) return '이메일 형식이 올바르지 않아요.';
-  if (message.includes('rate limit') || message.includes('Too many')) return '잠시 후 다시 시도해주세요.';
+type SocialVariant = 'kakao' | 'google' | 'apple';
+
+function toLocalizedError(message: string, t: (key: string) => string): string {
+  if (message.includes('Invalid login credentials')) return t('auth.errorInvalidLogin');
+  if (message.includes('User already registered')) return t('auth.errorRegistered');
+  if (message.includes('Password should be at least')) return t('auth.errorPassword');
+  if (message.includes('Email not confirmed')) return t('auth.errorNeedConfirmation');
+  if (message.includes('Invalid email') || message.includes('valid email')) return t('auth.errorInvalidEmail');
+  if (message.includes('rate limit') || message.includes('Too many')) return t('auth.errorRateLimit');
   if (message.includes('Network') || message.includes('fetch') || message.includes('Failed')) {
-    return '네트워크 연결을 확인해주세요.';
+    return t('auth.errorNetwork');
   }
-  return '오류가 발생했어요. 다시 시도해주세요.';
+  return t('auth.errorGeneric');
 }
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('welcome');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,9 +43,9 @@ export default function AuthScreen() {
 
   async function handleAuth() {
     setErrorMsg('');
-    if (!email.trim()) { setErrorMsg('이메일을 입력해주세요.'); return; }
-    if (!email.includes('@')) { setErrorMsg('이메일 형식이 올바르지 않아요.'); return; }
-    if (password.length < 6) { setErrorMsg('비밀번호는 6자 이상이어야 해요.'); return; }
+    if (!email.trim()) { setErrorMsg(t('auth.errorEmail')); return; }
+    if (!email.includes('@')) { setErrorMsg(t('auth.errorInvalidEmail')); return; }
+    if (password.length < 6) { setErrorMsg(t('auth.errorPassword')); return; }
 
     setLoading(true);
     try {
@@ -59,7 +63,7 @@ export default function AuthScreen() {
         await logEvent('login', { method: 'email' });
       }
     } catch (e: any) {
-      setErrorMsg(toLocalizedError(e.message ?? ''));
+      setErrorMsg(toLocalizedError(e.message ?? '', t));
     } finally {
       setLoading(false);
     }
@@ -80,9 +84,9 @@ export default function AuthScreen() {
 
           {/* 헤드라인 */}
           <View style={s.headlineBlock}>
-            <Text style={s.heading}>"오늘 뭐 하지?"를{'\n'}가볍게 정해요</Text>
+            <Text style={s.heading}>{t('auth.welcomeHeading')}</Text>
             <Text style={s.subText}>
-              둘의 취향과 오늘의 상태를 모아{'\n'}데이트 후보를 추천해드려요.
+              {t('auth.welcomeBody')}
             </Text>
           </View>
 
@@ -91,27 +95,23 @@ export default function AuthScreen() {
           {/* 소셜 버튼 영역 */}
           <View style={s.btnArea}>
             <SocialButton
-              color="#FEE500"
-              textColor="#3D2A00"
-              label="카카오로 시작하기"
+              variant="kakao"
+              label={t('auth.kakaoStart')}
               onPress={() => setMode('email')}
             />
             <SocialButton
-              color={C.white}
-              textColor="#3D3D3D"
-              border={C.border}
-              label="구글로 시작하기"
+              variant="google"
+              label={t('auth.googleStart')}
               onPress={() => setMode('email')}
             />
             <SocialButton
-              color={C.dark}
-              textColor={C.white}
-              label="Apple로 시작하기"
+              variant="apple"
+              label={t('auth.appleStart')}
               onPress={() => setMode('email')}
             />
             <View style={s.divider}>
               <View style={s.dividerLine} />
-              <Text style={s.dividerText}>또는</Text>
+              <Text style={s.dividerText}>{t('auth.or')}</Text>
               <View style={s.dividerLine} />
             </View>
             <TouchableOpacity
@@ -121,11 +121,11 @@ export default function AuthScreen() {
               <View style={s.emailIcon}>
                 <Mail size={16} color={C.pinkDeep} />
               </View>
-              <Text style={[s.socialBtnText, s.emailBtnText]}>이메일로 시작하기</Text>
+              <Text style={[s.socialBtnText, s.emailBtnText]}>{t('auth.emailStart')}</Text>
             </TouchableOpacity>
             <Text style={s.legal}>
-              가입하면 <Text style={s.legalLink}>이용약관</Text>과{' '}
-              <Text style={s.legalLink}>개인정보처리방침</Text>에 동의하게 됩니다.
+              {t('auth.legalPrefix')}<Text style={s.legalLink}>{t('auth.terms')}</Text>
+              {t('auth.legalMiddle')}<Text style={s.legalLink}>{t('auth.privacy')}</Text>{t('auth.legalSuffix')}
             </Text>
           </View>
         </View>
@@ -150,14 +150,14 @@ export default function AuthScreen() {
             <Text style={s.backText}>‹</Text>
           </TouchableOpacity>
 
-          <Text style={s.heading}>이메일로 시작하기</Text>
+          <Text style={s.heading}>{t('auth.emailHeading')}</Text>
           <Text style={[s.subText, s.emailSub]}>
-            로그인에 사용할 이메일과 비밀번호를 알려주세요.
+            {t('auth.emailBody')}
           </Text>
 
           <View style={s.fieldGroup}>
             <View style={s.fieldBox}>
-              <Text style={s.fieldLabel}>이메일</Text>
+              <Text style={s.fieldLabel}>{t('auth.emailLabel')}</Text>
               <TextInput
                 style={s.fieldInput}
                 placeholder="you@datemate.app"
@@ -170,10 +170,10 @@ export default function AuthScreen() {
               />
             </View>
             <View style={s.fieldBox}>
-              <Text style={s.fieldLabel}>비밀번호</Text>
+              <Text style={s.fieldLabel}>{t('auth.passwordLabel')}</Text>
               <TextInput
                 style={s.fieldInput}
-                placeholder="영문·숫자 포함 8자 이상"
+                placeholder={t('auth.passwordCreatePlaceholder')}
                 placeholderTextColor={C.textFaint}
                 value={password}
                 onChangeText={(t) => { setPassword(t); setErrorMsg(''); }}
@@ -194,8 +194,8 @@ export default function AuthScreen() {
                 {agreed && <Check size={13} color={C.white} strokeWidth={3} />}
               </View>
               <Text style={s.checkLabel}>
-                (필수) <Text style={s.legalLink}>이용약관</Text>·
-                <Text style={s.legalLink}>개인정보처리방침</Text> 동의
+                {t('auth.requiredPrefix')}<Text style={s.legalLink}>{t('auth.terms')}</Text>
+                {t('auth.requiredMiddle')}<Text style={s.legalLink}>{t('auth.privacy')}</Text>{t('auth.requiredSuffix')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -211,7 +211,7 @@ export default function AuthScreen() {
               onPress={handleAuth}
               variant={loading ? 'disabled' : 'primary'}
             >
-              {loading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
+              {loading ? t('auth.signingIn') : isSignUp ? t('auth.submitSignUp') : t('auth.signIn')}
             </BigButton>
           </View>
 
@@ -220,9 +220,9 @@ export default function AuthScreen() {
             style={s.toggleBtn}
           >
             <Text style={s.toggleText}>
-              {isSignUp ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '}
+              {isSignUp ? t('auth.hasAccount') : t('auth.noAccount')}
               <Text style={s.toggleStrong}>
-                {isSignUp ? '로그인' : '회원가입'}
+                {isSignUp ? t('auth.signIn') : t('auth.submitSignUp')}
               </Text>
             </Text>
           </TouchableOpacity>
@@ -232,16 +232,26 @@ export default function AuthScreen() {
   );
 }
 
-function SocialButton({ color, textColor, border, label, onPress }: {
-  color: string; textColor: string; border?: string; label: string; onPress: () => void;
+function SocialButton({ variant, label, onPress }: {
+  variant: SocialVariant; label: string; onPress: () => void;
 }) {
+  const buttonStyle = {
+    kakao: s.socialBtnKakao,
+    google: s.socialBtnGoogle,
+    apple: s.socialBtnApple,
+  }[variant];
+  const textStyle = {
+    kakao: s.socialBtnTextKakao,
+    google: s.socialBtnTextGoogle,
+    apple: s.socialBtnTextApple,
+  }[variant];
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      style={[s.socialBtn, { backgroundColor: color, borderColor: border ?? 'transparent', borderWidth: border ? 1 : 0 }]}
+      style={[s.socialBtn, buttonStyle]}
     >
-      <Text style={[s.socialBtnText, { color: textColor }]}>{label}</Text>
+      <Text style={[s.socialBtnText, textStyle]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -279,7 +289,13 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     position: 'relative',
   },
+  socialBtnKakao: { backgroundColor: '#FEE500', borderColor: 'transparent', borderWidth: 1 },
+  socialBtnGoogle: { backgroundColor: C.white, borderColor: C.border, borderWidth: 1 },
+  socialBtnApple: { backgroundColor: C.dark, borderColor: 'transparent', borderWidth: 1 },
   socialBtnText: { fontSize: 15, fontWeight: '600' },
+  socialBtnTextKakao: { color: '#3D2A00' },
+  socialBtnTextGoogle: { color: '#3D3D3D' },
+  socialBtnTextApple: { color: C.white },
   emailBtn: { backgroundColor: C.white, borderColor: C.pinkBorder, borderWidth: 1 },
   emailIcon: { position: 'absolute', left: 20 },
   emailBtnText: { color: C.pinkDeep },

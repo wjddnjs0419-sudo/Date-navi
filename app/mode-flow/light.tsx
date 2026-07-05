@@ -6,17 +6,18 @@ import { Leaf } from 'lucide-react-native';
 import { buildLightInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, LocationField } from '../../components/ui';
-import { DurationWheelPicker } from '../../components/pickers';
+import { BackBar, BigButton, LocationField, OptionCardPicker } from '../../components/ui';
+import { useI18n } from '../../lib/i18n';
 
 const DURATIONS = [
-  { v: '1h', label: '1시간' },
-  { v: '2-3h', label: '2~3시간' },
-  { v: 'half_day', label: '반나절' },
+  { v: '1h', labelKey: 'modeFlow.option.duration.oneHour' },
+  { v: '2-3h', labelKey: 'modeFlow.option.duration.twoThreeHours' },
+  { v: 'half_day', labelKey: 'modeFlow.option.duration.halfDay' },
 ];
 
 export default function LightScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [duration, setDuration] = useState('1h');
   const [location, setLocation] = useState('');
   const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
@@ -37,19 +38,19 @@ export default function LightScreen() {
           <View style={s.iconBox}>
             <Leaf size={28} strokeWidth={1.8} color={C.creamFg} />
           </View>
-          <Text style={s.heading}>오늘은 가볍게{'\n'}만나요</Text>
-          <Text style={s.subText}>돈도 시간도 부담 없이. 가까운 곳에서 즐길 후보만 골라드릴게요.</Text>
+          <Text style={s.heading}>{t('modeFlow.light.heading')}</Text>
+          <Text style={s.subText}>{t('modeFlow.light.sub')}</Text>
 
-          <Text style={s.sectionLabel}>얼마나 함께할까요?</Text>
-          <DurationWheelPicker
-            options={DURATIONS.map((d) => ({ value: d.v, label: d.label }))}
+          <Text style={s.sectionLabel}>{t('modeFlow.light.duration')}</Text>
+          <OptionCardPicker
+            options={DURATIONS.map((d) => ({ value: d.v, label: t(d.labelKey) }))}
             value={duration}
             onChange={setDuration}
           />
           <LocationField value={location} onChangeText={setLocation} coords={coords} onCoordsChange={setCoords} />
         </View>
         <View style={s.footer}>
-          <BigButton onPress={handleGenerate}>가벼운 후보 만들기</BigButton>
+          <BigButton onPress={handleGenerate}>{t('modeFlow.light.generate')}</BigButton>
         </View>
       </View>
     </SafeAreaView>
@@ -63,10 +64,5 @@ const s = StyleSheet.create({
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, marginTop: 16 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 28, marginBottom: 8 },
-  row: { flexDirection: 'row', gap: 8 },
-  btn: { flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
-  btnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  btnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
-  btnTextOn: { color: C.pinkDeep, fontWeight: '600' },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
 });

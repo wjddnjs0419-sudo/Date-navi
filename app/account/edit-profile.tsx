@@ -12,17 +12,18 @@ import { Camera, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
-
-const PLANNING_STYLES = [
-  '자주 계획하는 편이에요',
-  '같이 정하는 편이에요',
-  '고르는 건 괜찮지만 계획은 어려워요',
-  '의견을 말하기가 조금 어려워요',
-  '그때그때 달라요',
-];
+import { useI18n } from '../../lib/i18n';
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+  const PLANNING_STYLES = [
+    t('account.editProfile.planningOptions.often'),
+    t('account.editProfile.planningOptions.together'),
+    t('account.editProfile.planningOptions.okPickHardPlan'),
+    t('account.editProfile.planningOptions.hardToSayOpinion'),
+    t('account.editProfile.planningOptions.depends'),
+  ];
 
   const [nickname, setNickname] = useState('');
   const [planningStyle, setPlanningStyle] = useState(2);
@@ -30,7 +31,7 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [initials, setInitials] = useState('나');
+  const [initials, setInitials] = useState(t('card.memory.meFallback'));
 
   useEffect(() => {
     (async () => {
@@ -73,11 +74,11 @@ export default function EditProfileScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
-        '사진 접근 권한 필요',
-        '프로필 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.',
+        t('account.editProfile.photoPermTitle'),
+        t('account.editProfile.photoPermMessage'),
         [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: () => Linking.openSettings() },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('card.memory.openSettingsCta'), onPress: () => Linking.openSettings() },
         ],
       );
       return;
@@ -125,7 +126,7 @@ export default function EditProfileScreen() {
 
       setPhotoUrl(publicUrl);
     } catch {
-      Alert.alert('오류', '사진 업로드 중 문제가 생겼어요.');
+      Alert.alert(t('common.error'), t('card.memory.photoUploadError'));
     } finally {
       setUploadingPhoto(false);
     }
@@ -133,7 +134,7 @@ export default function EditProfileScreen() {
 
   async function handleSave() {
     const trimmed = nickname.trim();
-    if (!trimmed) { Alert.alert('닉네임을 입력해주세요.'); return; }
+    if (!trimmed) { Alert.alert(t('account.editProfile.nicknameRequiredError')); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -167,10 +168,10 @@ export default function EditProfileScreen() {
         console.warn('planning_style 저장 예외:', e);
       }
 
-      Alert.alert('저장 완료', '프로필이 업데이트됐어요.');
+      Alert.alert(t('account.editProfile.saveSuccessTitle'), t('account.editProfile.saveSuccessMessage'));
       router.back();
     } catch {
-      Alert.alert('오류', '저장 중 문제가 생겼어요.');
+      Alert.alert(t('common.error'), t('account.editProfile.saveError'));
     } finally {
       setSaving(false);
     }
@@ -188,7 +189,7 @@ export default function EditProfileScreen() {
     <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <Text style={[s.heading, s.headingSpacing]}>프로필 수정</Text>
+        <Text style={[s.heading, s.headingSpacing]}>{t('account.editProfile.heading')}</Text>
 
         <View style={s.avatarWrap}>
           <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} disabled={uploadingPhoto}>
@@ -209,21 +210,21 @@ export default function EditProfileScreen() {
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={s.changePhotoWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
-            <Text style={s.changePhotoBtn}>사진 변경하기</Text>
+            <Text style={s.changePhotoBtn}>{t('account.editProfile.changePhotoCta')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={s.nicknameSection}>
-          <SectionLabel>닉네임</SectionLabel>
+          <SectionLabel>{t('account.editProfile.nicknameLabel')}</SectionLabel>
           <ListGroup>
             <ListRow
               label={
                 <TextInput
                   style={s.nicknameInput}
                   value={nickname}
-                  onChangeText={t => {
-                    setNickname(t);
-                    if (t.length > 0) setInitials(t.slice(0, 1));
+                  onChangeText={(value) => {
+                    setNickname(value);
+                    if (value.length > 0) setInitials(value.slice(0, 1));
                   }}
                   maxLength={12}
                   returnKeyType="done"
@@ -233,11 +234,11 @@ export default function EditProfileScreen() {
               trailing={<Text style={s.charCount}>{nickname.length}/12</Text>}
             />
           </ListGroup>
-          <Text style={s.fieldHint}>한글, 영문, 숫자 2~12자</Text>
+          <Text style={s.fieldHint}>{t('account.editProfile.nicknameHint')}</Text>
         </View>
 
         <View style={s.planningSection}>
-          <SectionLabel>나는 데이트 계획할 때 보통...</SectionLabel>
+          <SectionLabel>{t('account.editProfile.planningLabel')}</SectionLabel>
           <ListGroup>
             {PLANNING_STYLES.map((option, i, arr) => (
               <ListRow
@@ -266,7 +267,7 @@ export default function EditProfileScreen() {
 
       <View style={s.footer}>
         <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
-          {saving ? <ActivityIndicator color={C.white} size="small" /> : '변경사항 저장'}
+          {saving ? <ActivityIndicator color={C.white} size="small" /> : t('account.editProfile.saveCta')}
         </BigButton>
       </View>
     </SafeAreaView>
