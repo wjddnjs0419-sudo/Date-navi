@@ -10,6 +10,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { Badge, Chip, SwipeableCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { resolveMemoryScope } from '../../lib/memories';
 
 type MemoryItem = {
   id: string; card_id: string | null; title: string | null; review: string;
@@ -84,10 +85,11 @@ export default function MemoriesScreen() {
       }
       setRelationshipDays(daysSince(startDate));
 
+      const scope = resolveMemoryScope(profile?.couple_id, user.id);
       const { data: mems } = await supabase
         .from('date_memories')
         .select('id, card_id, title, review, want_again, created_at, photo_url')
-        .eq('user_id', user.id)
+        .eq(scope.column, scope.value)
         .order('created_at', { ascending: false });
 
       if (!mems?.length) { setItems([]); return; }
