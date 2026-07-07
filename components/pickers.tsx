@@ -209,6 +209,7 @@ export function PickerSheet({
   onCancel,
   onConfirm,
   confirmLabel,
+  centered,
 }: {
   visible: boolean;
   title: string;
@@ -216,18 +217,19 @@ export function PickerSheet({
   onCancel: () => void;
   onConfirm: () => void;
   confirmLabel?: string;
+  centered?: boolean;
 }) {
   const { t } = useI18n();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={sheetS.wrap}>
+    <Modal visible={visible} transparent animationType={centered ? 'fade' : 'slide'} onRequestClose={onCancel}>
+      <View style={[sheetS.wrap, centered && sheetS.wrapCentered]}>
         <Pressable style={sheetS.backdrop} onPress={onCancel} />
-        <View style={sheetS.panel}>
-          <View style={sheetS.handle} />
+        <View style={[sheetS.panel, centered && sheetS.panelCentered]}>
+          {!centered && <View style={sheetS.handle} />}
           <Text style={sheetS.title}>{title}</Text>
           {children}
           <View style={sheetS.actions}>
-            <Pressable style={sheetS.cancelBtn} onPress={onCancel}>
+            <Pressable style={[sheetS.cancelBtn, centered && sheetS.cancelBtnFlex]} onPress={onCancel}>
               <Text style={sheetS.cancelText}>{t('pickers.cancel')}</Text>
             </Pressable>
             <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel ?? t('pickers.done')}</BigButton>
@@ -369,6 +371,11 @@ const sheetS = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  wrapCentered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(31, 31, 36, 0.28)',
@@ -380,6 +387,11 @@ const sheetS = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 28,
+  },
+  panelCentered: {
+    borderRadius: 24,
+    width: '100%',
+    paddingTop: 24,
   },
   handle: {
     width: 40,
@@ -409,6 +421,10 @@ const sheetS = StyleSheet.create({
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
+  },
+  cancelBtnFlex: {
+    width: undefined,
+    flex: 1,
   },
   cancelText: {
     fontSize: 14,

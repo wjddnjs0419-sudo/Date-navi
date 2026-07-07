@@ -50,7 +50,7 @@ export default function PhotoScreen() {
 
         <View style={s.spacer} />
 
-        <BigButton onPress={() => router.replace('/onboarding/anniversary' as any)}>
+        <BigButton onPress={() => router.push('/onboarding/anniversary' as any)}>
           {t('onboarding.photo.next')}
         </BigButton>
       </View>

@@ -33,7 +33,7 @@ export default function NicknameScreen() {
         );
       if (error) throw error;
 
-      router.replace('/onboarding/photo' as any);
+      router.push('/onboarding/photo' as any);
     } catch (e: any) {
       Alert.alert(t('common.error'), e.message || t('onboarding.nickname.saveError'));
     } finally {
@@ -48,7 +48,7 @@ export default function NicknameScreen() {
     >
       <SafeAreaView style={s.safe}>
         <View style={s.container}>
-          <BackBar />
+          <BackBar onPress={() => router.replace('/(auth)' as any)} />
           <View style={s.progressRow}>
             <ProgressDots current={1} total={4} />
             <Text style={s.stepCount}>1 / 4</Text>

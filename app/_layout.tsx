@@ -7,7 +7,7 @@ import * as ExpoLinking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
-import { PENDING_INVITE_CODE_KEY, parseInviteCodeFromUrl } from '../lib/couple-invite';
+import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,7 +31,16 @@ async function getDestination(session: Session | null): Promise<string> {
     .maybeSingle();
 
   if (!profile?.display_name) return '/onboarding/nickname';
-  if (!profile.couple_id) {
+
+  const { data: coupleRow } = profile.couple_id
+    ? await supabase
+      .from('date_planner_couples')
+      .select('status, partner_user_id')
+      .eq('id', profile.couple_id)
+      .maybeSingle()
+    : { data: null };
+
+  if (!isCoupleRowLinked(coupleRow)) {
     const pendingCode = await getPendingInviteCode();
     return pendingCode
       ? `/onboarding/couple-connect?code=${encodeURIComponent(pendingCode)}`

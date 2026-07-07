@@ -44,7 +44,7 @@
 ## Phase 1 — 인증 & 커플 연결 ✅ 완료 (2026-05-23)
 
 - [x] 구글 로그인 추가 (2026-07-07) — 네이티브 SDK(`@react-native-google-signin`) + Supabase `signInWithIdToken`. EAS dev build(iOS 시뮬레이터)로 실제 로그인 검증 완료.
-- [ ] 카카오 로그인 추가 — 다음 세션. 네이티브 SDK 필요(카카오는 웹뷰 OAuth 대신 카카오톡 앱 연동 SDK 씀), EAS dev build 환경은 이미 구축됨(재사용 가능).
+- [x] 카카오 로그인 추가 (2026-07-07) — `@react-native-seoul/kakao-login` + Supabase `signInWithIdToken`. Supabase Kakao Provider Client ID는 REST API Key가 아니라 **Native App Key**로 설정해야 함(idToken의 aud가 Native App Key라 REST API Key로 두면 "Unacceptable audience" 에러). EAS dev build(iOS 시뮬레이터)로 실제 로그인 검증 완료. Android 플랫폼 등록은 보류.
 - [ ] 애플 로그인 추가
 - [x] 닉네임 입력 (최초 가입 시) — `app/onboarding/nickname.tsx`
 - [x] 커플 초대 코드 생성 — `app/onboarding/couple-connect.tsx`
@@ -263,9 +263,6 @@
 
 ## 완료된 항목
 
-- [Done] Phase 5.5 취향 데이터 AI 반영 — user_preferences를 generateDateCards 프롬프트에 주입 (2026-05-23)
-- [Done] Phase 8 모드별 차별화 UX — course.tsx 신규, 모드별 프롬프트 강조 분기 (2026-05-24)
-- [Done] 알림 Supabase 연동 — notifications 테이블/트리거 2개(reaction·new_card), 개별·전체 삭제, 빈 상태 UI, 벨 dot 조건부 (2026-05-28)
 - [Done] 마이페이지 버그픽스 — 커플연결 onPress 추가, settings 전체 i18n localize, 닉네임 저장 prefs upsert 분리 (2026-05-28)
 - [Done] AI 후보 생성 로딩 아이콘 pulse 애니메이션 추가 (2026-07-05)
 - [Done] 날짜/시간/소요시간 선택 UX를 드래그 picker로 전환 (2026-07-05)
@@ -273,3 +270,7 @@
 - [Done] 커플 연결 UX/관리 플로우 개선 — 나중에 연결 제거, 초대 링크 공유, 연결 상태/해제 관리 추가 (2026-07-05)
 - [Done] 영어 지원 i18n 구조 정리 — i18next/react-i18next, JSON locale 파일, 주요 화면 t() 키 전환 (2026-07-05)
 - [Done] Date Navi 리디자인으로 되돌아간 화면 i18n 재작업 — 홈/후보/추억/모드/공유/카드/계정/온보딩/마음전하기 전체, 카드 등록 "예상 시간"을 OptionCardPicker 공통 컴포넌트로 통일 (2026-07-05)
+- [Done] 온보딩 뒤로가기 버그 수정(각 단계 이동을 replace→push) + 닉네임 화면 뒤로가기 시 auth로 이동 + 커플연결(필수 단계) 화면에 로그아웃 탈출구 추가 — 커플 연결 전엔 계정 갇힘 문제 해결 (2026-07-07)
+- [Done] 온보딩 라우팅 게이트 버그 수정 — `couple_id` 존재만으로 통과시키던 걸 실제 `status==='linked' && partner_user_id` 확인(`isCoupleRowLinked`)으로 변경. 초대 코드만 만들고 파트너 없이도 온보딩 통과되던 문제 해결 (2026-07-07)
+- [Done] "DateMate" → "Date Navi" 리브랜딩 — app.json name/scheme(`datenavi`), locales 전체(앱 이름/약관/개인정보처리방침 포함), 저장 키(`datenavi.language` 등), package.json name, 이메일 placeholder 정리, EAS Display name도 "Date Navi"로 변경. `slug`(`datemate-app`)는 대시보드에서 변경 불가(프로젝트 재생성 필요)라 그대로 유지하기로 결정 — 내부 식별자일 뿐 사용자 노출 없음. 새 네이티브 빌드 필요 (2026-07-07)
+- [Done] 커플연결(필수 단계) 화면 뒤로가기 시 GO_BACK 콘솔 에러 대신 안내 모달 표시 — 기존 `PickerSheet` 재사용, "연결 전엔 못 나감 + 로그아웃" 안내 (2026-07-07)

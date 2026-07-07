@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "DateMate",
+    "name": "Date Navi",
     "slug": "datemate-app",
-    "scheme": "datemate",
+    "scheme": "datenavi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -52,6 +52,12 @@
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.985430467866-mq27avbj6pjh3kh291vo76plq3apgq5q"
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "6ff77dd4e4daa792699cfebdc3cdd9b1"
         }
       ],
       [

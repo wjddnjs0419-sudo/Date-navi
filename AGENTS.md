@@ -156,4 +156,6 @@ handleGenerateAiOptions()
 - `gemini-1.5-flash` 모델 사용 금지 — deprecated. `gemini-2.0-flash` 사용.
 - 회원가입 폼에 mock 기본값(`"지우"`, `"jiwoo@example.com"`) pre-fill 금지 — Supabase 모드에서 실제 사용자 데이터처럼 혼동 유발.
 - `isSupabaseMode` 무관하게 "로컬 mock 데이터" notice 출력 금지 — Supabase 모드에서는 초기 notice 빈 문자열로 시작.
+- Supabase Kakao Provider Client ID에 REST API Key 넣지 말 것 — `@react-native-seoul/kakao-login`(네이티브 SDK)이 발급하는 idToken의 `aud`는 REST API Key가 아니라 Native App Key라 "Unacceptable audience" 에러 발생. 필드 이름은 "REST API Key"지만 실제로는 aud 검증용이므로 Native App Key를 넣어야 함.
+- 온보딩/라우팅 게이트에서 FK 컬럼(`couple_id` 등) 존재 여부만으로 "완료됐다" 판단하지 말 것 — row는 생성됐지만 상대방 미연결(`status: 'waiting'`) 상태일 수 있음. 반드시 관련 테이블의 실제 상태 컬럼(`status`, `partner_user_id` 등)까지 확인.
 - JSON 리소스에서 온 배열을 `.map()`할 때 `strings`가 느슨한 타입이면 콜백 인자 타입을 명시한다.

@@ -81,6 +81,7 @@ export default function CoupleConnectScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [savingRelationshipDate, setSavingRelationshipDate] = useState(false);
+  const [backBlockedVisible, setBackBlockedVisible] = useState(false);
 
   const displayCode = formatInviteCode(couple?.code) || 'DN-????';
   const canJoin = !!inviteCodeBody(inputCode) && !busy;
@@ -162,6 +163,11 @@ export default function CoupleConnectScreen() {
     }, [loadConnection]),
   );
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.replace('/(auth)' as any);
+  }
+
   async function createCode() {
     if (busy) return;
     setBusy(true);
@@ -229,7 +235,7 @@ export default function CoupleConnectScreen() {
     if (!code) return;
 
     const url = ExpoLinking.createURL('/onboarding/couple-connect', {
-      scheme: 'datemate',
+      scheme: 'datenavi',
       queryParams: { code },
     });
     const message = `${t.shareMessage(code)}\n\n${url}`;
@@ -381,7 +387,7 @@ export default function CoupleConnectScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <BackBar />
+        <BackBar onPress={status === 'linked' ? undefined : () => setBackBlockedVisible(true)} />
 
         <View style={s.headingBlock}>
           <Text style={s.heading}>{heading}</Text>
@@ -472,6 +478,10 @@ export default function CoupleConnectScreen() {
             </View>
 
             <Text style={s.footerText}>{t.linkHint}</Text>
+
+            <TouchableOpacity onPress={handleLogout} style={s.logoutLink}>
+              <Text style={s.logoutLinkText}>{t.logoutLink}</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -489,6 +499,17 @@ export default function CoupleConnectScreen() {
           maxYear={new Date().getFullYear()}
           onChange={setDraftRelationshipDate}
         />
+      </PickerSheet>
+
+      <PickerSheet
+        visible={backBlockedVisible}
+        title={t.backBlockedTitle}
+        onCancel={() => setBackBlockedVisible(false)}
+        onConfirm={() => { setBackBlockedVisible(false); handleLogout(); }}
+        confirmLabel={strings.settings.logout}
+        centered
+      >
+        <Text style={s.backBlockedBody}>{t.backBlockedBody}</Text>
       </PickerSheet>
     </SafeAreaView>
   );
@@ -535,4 +556,7 @@ const s = StyleSheet.create({
   fieldInput: { fontSize: 18, color: C.text, letterSpacing: 3, fontWeight: '700' },
   joinBtnWrap: { marginTop: 12 },
   footerText: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 22 },
+  logoutLink: { alignItems: 'center', marginTop: 20 },
+  logoutLinkText: { fontSize: 12, color: C.textFaint, textDecorationLine: 'underline' },
+  backBlockedBody: { fontSize: 13, color: C.textSub, lineHeight: 20, textAlign: 'center' },
 });

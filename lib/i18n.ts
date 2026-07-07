@@ -8,7 +8,7 @@ import ko from '../locales/ko.json';
 
 export type AppLanguage = 'ko' | 'en';
 
-const STORAGE_KEY = 'datemate.language';
+const STORAGE_KEY = 'datenavi.language';
 const SUPPORTED_LANGUAGES: AppLanguage[] = ['ko', 'en'];
 
 const resources = {

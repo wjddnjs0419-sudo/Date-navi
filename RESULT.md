@@ -4,6 +4,55 @@
 
 ---
 
+## 2026-07-07 세션 AE — 카카오 로그인 통합 + 온보딩 버그 수정 + Date Navi 리브랜딩
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `package.json` | `@react-native-seoul/kakao-login` 추가 |
+| `app.json` | 카카오 로그인 config plugin 추가(`kakaoAppKey`), `name`/`scheme`을 `DateMate`/`datemate` → `Date Navi`/`datenavi`로 변경 |
+| `lib/kakaoAuth.ts`, `lib/kakaoAuthErrors.ts` | 신규 — `signInWithKakao()` (idToken → `supabase.auth.signInWithIdToken({provider:'kakao'})`), 에러 코드→i18n key 매핑. TDD로 에러 매핑 먼저 테스트 작성 후 구현 |
+| `app/(auth)/index.tsx` | 카카오 버튼 placeholder → 실제 로그인 연결 + `logEvent('login',{method:'kakao'})`, 이메일 placeholder `datenavi.app`로 정리 |
+| `lib/couple-invite.ts` | `isCoupleRowLinked()` 순수 함수 신규(TDD) — `status==='linked' && partner_user_id` 확인. 저장 키 `datemate.pendingInviteCode` → `datenavi.pendingInviteCode` |
+| `lib/i18n.ts` | 저장 키 `datemate.language` → `datenavi.language` |
+| `app/_layout.tsx` | 온보딩 라우팅 게이트 버그 수정 — `couple_id` 존재만으로 다음 단계 통과시키던 걸 `isCoupleRowLinked()`로 실제 연결 상태까지 확인하도록 변경 |
+| `app/onboarding/nickname.tsx`, `photo.tsx`, `anniversary.tsx`, `type.tsx` | 각 단계 이동을 `router.replace()` → `router.push()`로 변경(뒤로가기 히스토리 보존). 닉네임 화면은 `BackBar`에 `onPress={() => router.replace('/(auth)')}` 지정 |
+| `app/onboarding/couple-connect.tsx` | 딥링크 scheme `datemate` → `datenavi`. 미연결 상태에 "다른 계정으로 로그인하고 싶다면 로그아웃" 링크 추가. `BackBar` 뒤로가기 시(미연결 상태) `router.back()` 대신 안내 모달(`PickerSheet` 재사용, `centered`) 표시 |
+| `components/pickers.tsx` | `PickerSheet`에 `centered?: boolean` prop 추가 — 하단 시트 대신 화면 중앙에 뜨는 모달 변형(기존 날짜/시간 피커 용도는 그대로 유지). 취소/확인 버튼도 50:50 flex로 정리 |
+| `locales/ko.json`, `en.json` | 카카오 에러 메시지, 커플연결 로그아웃/뒤로가기 안내 문구 추가. `DateMate` 전체(앱 이름, 약관, 개인정보처리방침 포함) → `Date Navi`로 일괄 치환 |
+| `__tests__/kakaoAuth.test.ts`, `coupleLink.test.ts` | 신규 |
+
+### 버그 원인 분석
+
+1. **카카오 로그인 "Unacceptable audience in id_token" 실패**: Supabase 공식 문서는 Kakao Provider Client ID를 REST API Key로 안내하지만, `@react-native-seoul/kakao-login`(네이티브 SDK)이 발급하는 idToken의 실제 `aud`는 Native App Key였다. Supabase Auth 로그(`get_logs` service:'auth')로 실측 확인 후 Client ID를 Native App Key로 교체해 해결.
+2. **온보딩 중 뒤로가기 시 `GO_BACK not handled` 에러**: 각 단계 이동이 `router.replace()`라 뒤로가기 스택이 안 쌓임. `push()`로 전환.
+3. **커플 연결 안 해도 온보딩 통과되는 버그**: `app/_layout.tsx` 라우팅 게이트가 `profile.couple_id` 존재 여부만 확인 — "코드 생성" 버튼만 눌러도 `couple_id`가 채워지므로(파트너 미연결·`status:'waiting'`이어도) 다음 단계로 진입 가능했음. 실제 연결 상태(`status==='linked' && partner_user_id`)까지 확인하도록 수정.
+4. **커플연결(필수 단계) 화면에서 로그아웃/탈퇴 불가**: `settings.tsx`/`delete-account.tsx`는 온보딩 완료 후 `(tabs)`에서만 접근 가능해, 커플 연결을 못 하면 계정이 영구히 갇힘. 온보딩 중에도 로그아웃 가능한 경로 추가.
+
+### 기술 결정
+
+- 카카오 Native App Key는 `app.json` config plugin에 직접 값 명시(빌드 타임 네이티브 설정용, 구글 `iosUrlScheme`과 동일 패턴). 런타임에서 읽는 코드가 없어 `.env` 환경변수로 관리하지 않음.
+- EAS 프로젝트 `slug`(`datemate-app`)는 리브랜딩 대상에서 제외 — `eas project:info` 실측 결과 로컬 `app.json`의 slug와 원격 등록 slug가 불일치하면 CLI 명령 자체가 실패함(`projectId`만으로는 불충분). expo.dev 대시보드에서도 slug 자체는 재변경 불가(Display name만 가능)라 원상 유지로 확정. 사용자에게 노출되지 않는 내부 식별자라 리스크 대비 이득이 없다고 판단.
+- Android 카카오 로그인 플랫폼 등록은 보류 — iOS만 우선 검증.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+npx jest           # 통과 (11 suites, 89 tests)
+```
+
+EAS dev build(iOS 시뮬레이터) 2회 생성 — 카카오 로그인 실 기기 로그인 성공(Supabase Auth 로그로 `provider:'kakao', status:200` 확인), 리브랜딩 반영 빌드에서 `CFBundleDisplayName = "Date Navi"` 확인.
+
+### 다음 세션 할 일 / 주의
+
+1. Android 카카오 로그인 플랫폼 등록(패키지명 + 키 해시) 및 Android 빌드 검증
+2. 애플 로그인 추가
+3. 커플연결 화면의 새 "안내 모달" UX — 코드 반영·타입체크까지 확인, 사용자 최종 시뮬레이터 스크린샷 확인은 세션 종료 시점 기준 대기 중이었음
+
+---
+
 ## 2026-07-05 세션 AD — 세션 AC 이후 미반영 화면 i18n 마무리
 
 ### 배경

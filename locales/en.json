@@ -32,7 +32,7 @@
     "title": "My Account",
     "subtitle": "Manage your nickname, password, and language.",
     "languageTitle": "App language",
-    "languageSubtitle": "Choose the language DateMate should use.",
+    "languageSubtitle": "Choose the language Date Navi should use.",
     "currentLanguage": "Current language",
     "korean": "Korean",
     "english": "English",
@@ -107,7 +107,7 @@
     "savingDone": "Saving..."
   },
   "auth": {
-    "appName": "DateMate 💕",
+    "appName": "Date Navi 💕",
     "subtitle": "You do not have to plan every date alone.",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password (6+ chars)",
@@ -129,6 +129,7 @@
     "errorRateLimit": "Please try again later.",
     "errorNetwork": "Please check your network connection.",
     "errorGoogleFailed": "Google sign-in failed. Please try again.",
+    "errorKakaoFailed": "Kakao sign-in failed. Please try again.",
     "welcomeHeading": "Settle \"what should we do today?\"\nwith less pressure",
     "welcomeBody": "Bring together your tastes and today's mood\nto get date ideas that fit both of you.",
     "kakaoStart": "Continue with Kakao",
@@ -238,6 +239,9 @@
     "or": "or",
     "notSet": "Not set",
     "linkHint": "You can send the link even if your partner has not signed up yet.",
+    "logoutLink": "Want to sign in with a different account? Log out",
+    "backBlockedTitle": "Not connected yet",
+    "backBlockedBody": "You'll need to connect with your partner before moving on. Share your invite code and wait, or log out to sign in with a different account.",
     "createTitle": "Create a code",
     "createDesc": "Share your code with your partner.",
     "share": "Share",
@@ -712,7 +716,7 @@
   },
   "softMessage": {
     "title": "Say it gently 💬",
-    "subtitle": "Choose what feels hard to say.\nDateMate will make it softer.",
+    "subtitle": "Choose what feels hard to say.\nDate Navi will make it softer.",
     "stepTitle": "How are you feeling? (choose more than one)",
     "stepSubtitle": "Anything else you want to add? (optional)",
     "reasons": [
@@ -763,7 +767,7 @@
     "resultTitle": "Say it gently 💬",
     "resultSubtitle": "Here is a softer version.\nEdit it, then copy it when it feels right.",
     "messageLabel": "My message",
-    "autoSendNotice": "✋ DateMate never sends this automatically. You stay in control.",
+    "autoSendNotice": "✋ Date Navi never sends this automatically. You stay in control.",
     "copyButton": "📋 Copy to clipboard",
     "copiedButton": "✅ Copied!",
     "saveButton": "Save",
@@ -1229,7 +1233,7 @@
       "sections": [
         {
           "title": "1. Service overview",
-          "body": "DateMate is an app that helps couples reduce the burden of planning dates and express their preferences more comfortably."
+          "body": "Date Navi is an app that helps couples reduce the burden of planning dates and express their preferences more comfortably."
         },
         {
           "title": "2. Using the service",
@@ -1263,7 +1267,7 @@
       "sections": [
         {
           "title": "1. Information we collect",
-          "body": "DateMate collects the following data to provide the service:\n- Email address (sign up and login)\n- Nickname (display name inside the app)\n- Couple preference data (favorite vibes, avoid conditions, and more)\n- Date cards and reaction history\n- Service usage event logs"
+          "body": "Date Navi collects the following data to provide the service:\n- Email address (sign up and login)\n- Nickname (display name inside the app)\n- Couple preference data (favorite vibes, avoid conditions, and more)\n- Date cards and reaction history\n- Service usage event logs"
         },
         {
           "title": "2. How we use your information",

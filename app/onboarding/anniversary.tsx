@@ -45,11 +45,11 @@ export default function AnniversaryScreen() {
     } finally {
       setLoading(false);
     }
-    router.replace('/onboarding/type' as any);
+    router.push('/onboarding/type' as any);
   }
 
   function handleSkip() {
-    router.replace('/onboarding/type' as any);
+    router.push('/onboarding/type' as any);
   }
 
   return (

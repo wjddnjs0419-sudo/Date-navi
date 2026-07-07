@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
+import { signInWithKakao, getKakaoSignInErrorMessageKey } from '../../lib/kakaoAuth';
 import { Mail, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
@@ -42,6 +43,20 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [agreed, setAgreed] = useState(true);
+
+  async function handleKakaoSignIn() {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const { cancelled } = await signInWithKakao();
+      if (!cancelled) await logEvent('login', { method: 'kakao' });
+    } catch (e: any) {
+      const key = getKakaoSignInErrorMessageKey(e?.code);
+      if (key) setErrorMsg(t(key));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleGoogleSignIn() {
     setErrorMsg('');
@@ -114,7 +129,8 @@ export default function AuthScreen() {
             <SocialButton
               variant="kakao"
               label={t('auth.kakaoStart')}
-              onPress={() => setMode('email')}
+              onPress={handleKakaoSignIn}
+              disabled={loading}
             />
             <SocialButton
               variant="google"
@@ -183,7 +199,7 @@ export default function AuthScreen() {
               <Text style={s.fieldLabel}>{t('auth.emailLabel')}</Text>
               <TextInput
                 style={s.fieldInput}
-                placeholder="you@datemate.app"
+                placeholder="you@datenavi.app"
                 placeholderTextColor={C.textFaint}
                 value={email}
                 onChangeText={(t) => { setEmail(t); setErrorMsg(''); }}

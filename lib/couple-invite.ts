@@ -1,4 +1,10 @@
-export const PENDING_INVITE_CODE_KEY = 'datemate.pendingInviteCode';
+export const PENDING_INVITE_CODE_KEY = 'datenavi.pendingInviteCode';
+
+export function isCoupleRowLinked(
+  row?: { status: string; partner_user_id: string | null } | null,
+): boolean {
+  return !!row && row.status === 'linked' && !!row.partner_user_id;
+}
 
 export function normalizeInviteCode(value?: string | string[] | null) {
   const first = Array.isArray(value) ? value[0] : value;
