@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
+import { BackBar, BigButton, Chip, SoftCard, SuccessModal } from '../../components/ui';
 import {
   DateWheelPicker,
   PickerSheet,
@@ -38,6 +38,8 @@ export default function ConfirmScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [isPlan, setIsPlan] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -74,6 +76,7 @@ export default function ConfirmScreen() {
   async function handleSave() {
     if (saving) return;
     setSaving(true);
+    const wasConfirmed = isPlan;
     try {
       const { data, error } = await supabase
         .from('date_cards')
@@ -88,9 +91,11 @@ export default function ConfirmScreen() {
         .select('id');
       if (error) throw error;
       if (!data?.length) throw new Error('update affected no rows');
-      // 저장 후엔 읽기 상세로 전환해 정리된 일정을 보여준다.
-      await load();
+      // 저장 성공 시엔 이 화면에 머무르지 않고 확인 모달 후 홈으로 돌아간다.
+      // editing을 먼저 false로 바꿔 읽기 모드 화면(SuccessModal이 그려질 return 블록)으로 전환한 뒤 모달을 띄운다.
       setEditing(false);
+      setSuccessMessage(wasConfirmed ? c.savedMessage : c.confirmedMessage);
+      setSuccessVisible(true);
     } catch {
       Alert.alert(c.errorTitle, c.saveError);
     } finally {
@@ -148,6 +153,11 @@ export default function ConfirmScreen() {
     const dateLine = [formatDateLabel(date, '', language), time].filter(Boolean).join(' · ') || c.dateTimeUnset;
     return (
       <SafeAreaView style={styles.safe}>
+        <SuccessModal
+          visible={successVisible}
+          message={successMessage}
+          onHide={() => { setSuccessVisible(false); router.replace('/(tabs)/' as any); }}
+        />
         <ScrollView style={styles.flex1} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <BackBar />
 
