@@ -10,7 +10,7 @@ import { generateInviteMessage } from '../../lib/ai';
 import { Heart, Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip } from '../../components/ui';
+import { BackBar, BigButton, Chip, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 type CardInfo = { id: string; title: string; summary: string; tags: string[] };
@@ -25,6 +25,7 @@ export default function SendScreen() {
   const [loading, setLoading] = useState(!!cardId);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
     if (!cardId) return;
@@ -80,7 +81,7 @@ export default function SendScreen() {
         used: true,
       });
 
-      router.push({ pathname: '/share/reaction', params: cardId ? { cardId } : {} } as any);
+      setSuccessVisible(true);
     } finally {
       setSending(false);
     }
@@ -88,6 +89,11 @@ export default function SendScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <SuccessModal
+        visible={successVisible}
+        message={t('share.send.sentMessage')}
+        onHide={() => { setSuccessVisible(false); router.replace('/(tabs)/' as any); }}
+      />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.introWrap}>
