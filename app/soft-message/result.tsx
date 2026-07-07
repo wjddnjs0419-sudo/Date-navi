@@ -10,7 +10,7 @@ import { generateSoftMessage, adjustSoftMessage } from '../../lib/ai';
 import { Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, SoftCard, InfoNote, GeneratingView } from '../../components/ui';
+import { BackBar, BigButton, SoftCard, InfoNote, GeneratingView, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 export default function SoftMessageResultScreen() {
@@ -23,6 +23,7 @@ export default function SoftMessageResultScreen() {
   const [genStep, setGenStep] = useState(0);
   const [editedText, setEditedText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [adjusting, setAdjusting] = useState<'warmer' | 'shorter' | null>(null);
   const textInputRef = useRef<TextInput>(null);
@@ -79,7 +80,7 @@ export default function SoftMessageResultScreen() {
         used: true,
       });
 
-      Alert.alert(t('softMessage.sentAlertTitle'), t('softMessage.sentAlertMessage'));
+      setSuccessVisible(true);
     } catch {
       Alert.alert(t('common.error'), t('softMessage.sendErrorAlert'));
     } finally {
@@ -115,6 +116,11 @@ export default function SoftMessageResultScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <SuccessModal
+        visible={successVisible}
+        message={t('softMessage.sentSuccessMessage')}
+        onHide={() => { setSuccessVisible(false); router.replace('/(tabs)/' as any); }}
+      />
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
