@@ -1,6 +1,6 @@
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
-  AccessibilityInfo, Easing,
+  AccessibilityInfo, Easing, Modal,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
 import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed } from 'lucide-react-native';
@@ -734,4 +734,46 @@ const fieldS = StyleSheet.create({
   },
   label: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   content: {},
+});
+
+// ─── SuccessModal ─────────────────────────────────────────────────────────────
+const SUCCESS_MODAL_DURATION_MS = 1100;
+
+export function SuccessModal({
+  visible, message, onHide,
+}: { visible: boolean; message: string; onHide: () => void }) {
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(onHide, SUCCESS_MODAL_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [visible, onHide]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
+      <View style={successS.backdrop}>
+        <View style={successS.card}>
+          <View style={successS.iconWrap}>
+            <Check size={28} color={C.white} strokeWidth={3} />
+          </View>
+          <Text style={successS.message}>{message}</Text>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+const successS = StyleSheet.create({
+  backdrop: {
+    flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+  },
+  card: {
+    width: '100%', maxWidth: 280, backgroundColor: C.white,
+    borderRadius: 24, paddingVertical: 32, paddingHorizontal: 24,
+    alignItems: 'center', gap: 14,
+  },
+  iconWrap: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center',
+  },
+  message: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
 });
