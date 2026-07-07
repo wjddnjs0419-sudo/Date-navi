@@ -60,7 +60,6 @@ export default function NotificationsScreen() {
     await supabase.from('notifications').delete().in('id', ids);
   }
 
-
   function renderTitle(n: Notif): string {
     if (n.type === 'reaction') return t.reactionTitle;
     if (n.type === 'soft_message') return t.softMessageTitle;
