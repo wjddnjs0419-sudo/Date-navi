@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
+import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
+import { isErrorWithCode } from '@react-native-google-signin/google-signin';
 import { Mail, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
@@ -40,6 +42,21 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [agreed, setAgreed] = useState(true);
+
+  async function handleGoogleSignIn() {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const { cancelled } = await signInWithGoogle();
+      if (!cancelled) await logEvent('login', { method: 'google' });
+    } catch (e: any) {
+      const code = isErrorWithCode(e) ? e.code : undefined;
+      const key = getGoogleSignInErrorMessageKey(code);
+      if (key) setErrorMsg(t(key));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleAuth() {
     setErrorMsg('');
@@ -102,13 +119,19 @@ export default function AuthScreen() {
             <SocialButton
               variant="google"
               label={t('auth.googleStart')}
-              onPress={() => setMode('email')}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
             />
             <SocialButton
               variant="apple"
               label={t('auth.appleStart')}
               onPress={() => setMode('email')}
             />
+            {errorMsg !== '' && (
+              <View style={s.errorBox}>
+                <Text style={s.errorText}>{errorMsg}</Text>
+              </View>
+            )}
             <View style={s.divider}>
               <View style={s.dividerLine} />
               <Text style={s.dividerText}>{t('auth.or')}</Text>
@@ -232,8 +255,8 @@ export default function AuthScreen() {
   );
 }
 
-function SocialButton({ variant, label, onPress }: {
-  variant: SocialVariant; label: string; onPress: () => void;
+function SocialButton({ variant, label, onPress, disabled }: {
+  variant: SocialVariant; label: string; onPress: () => void; disabled?: boolean;
 }) {
   const buttonStyle = {
     kakao: s.socialBtnKakao,
@@ -248,8 +271,9 @@ function SocialButton({ variant, label, onPress }: {
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={disabled}
       activeOpacity={0.85}
-      style={[s.socialBtn, buttonStyle]}
+      style={[s.socialBtn, buttonStyle, disabled && s.socialBtnDisabled]}
     >
       <Text style={[s.socialBtnText, textStyle]}>{label}</Text>
     </TouchableOpacity>
@@ -292,6 +316,7 @@ const s = StyleSheet.create({
   socialBtnKakao: { backgroundColor: '#FEE500', borderColor: 'transparent', borderWidth: 1 },
   socialBtnGoogle: { backgroundColor: C.white, borderColor: C.border, borderWidth: 1 },
   socialBtnApple: { backgroundColor: C.dark, borderColor: 'transparent', borderWidth: 1 },
+  socialBtnDisabled: { opacity: 0.5 },
   socialBtnText: { fontSize: 15, fontWeight: '600' },
   socialBtnTextKakao: { color: '#3D2A00' },
   socialBtnTextGoogle: { color: '#3D3D3D' },

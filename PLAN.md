@@ -43,7 +43,9 @@
 
 ## Phase 1 — 인증 & 커플 연결 ✅ 완료 (2026-05-23)
 
-- [ ] 구글 / 애플 로그인 추가 (이메일은 완료)
+- [x] 구글 로그인 추가 (2026-07-07) — 네이티브 SDK(`@react-native-google-signin`) + Supabase `signInWithIdToken`. EAS dev build(iOS 시뮬레이터)로 실제 로그인 검증 완료.
+- [ ] 카카오 로그인 추가 — 다음 세션. 네이티브 SDK 필요(카카오는 웹뷰 OAuth 대신 카카오톡 앱 연동 SDK 씀), EAS dev build 환경은 이미 구축됨(재사용 가능).
+- [ ] 애플 로그인 추가
 - [x] 닉네임 입력 (최초 가입 시) — `app/onboarding/nickname.tsx`
 - [x] 커플 초대 코드 생성 — `app/onboarding/couple-connect.tsx`
 - [x] 초대 코드로 커플 연결 — RLS 정책 포함

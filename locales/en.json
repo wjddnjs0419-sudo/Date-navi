@@ -128,6 +128,7 @@
     "errorInvalidEmail": "Please enter a valid email address.",
     "errorRateLimit": "Please try again later.",
     "errorNetwork": "Please check your network connection.",
+    "errorGoogleFailed": "Google sign-in failed. Please try again.",
     "welcomeHeading": "Settle \"what should we do today?\"\nwith less pressure",
     "welcomeBody": "Bring together your tastes and today's mood\nto get date ideas that fit both of you.",
     "kakaoStart": "Continue with Kakao",
