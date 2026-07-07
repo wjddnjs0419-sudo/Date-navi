@@ -46,3 +46,4 @@ supabase/.branches/
 supabase/migrations_backup_*/
 
 .superpowers/
+.worktrees/
