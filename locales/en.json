@@ -194,8 +194,6 @@
     "partnerReactionsTitle": "Your partner's reaction",
     "partnerReactionPrefix": "{{name}} left ",
     "partnerReactionSuffix": "",
-    "partnerQuoteMock": "Somewhere close is nice",
-    "partnerTimeMock": "5 min ago",
     "createCta": "Create date options"
   },
   "nickname": {
@@ -813,6 +811,7 @@
     "genErrorAlert": "Something went wrong generating the message. Please try again.",
     "sentAlertTitle": "Sent",
     "sentAlertMessage": "Your partner can check it in their notifications.",
+    "sentSuccessMessage": "Your message is on its way",
     "sendErrorAlert": "Something went wrong sending it."
   },
   "memories": {
@@ -1017,6 +1016,8 @@
     "editPlan": "Edit plan",
     "cancelPlan": "Cancel plan",
     "saving": "Saving...",
+    "confirmedMessage": "Your date is confirmed",
+    "savedMessage": "Your changes are saved",
     "back": "Back"
   },
   "review": {
@@ -1441,7 +1442,8 @@
       "messagePlaceholder": "Type a note",
       "suggestCta": "Suggest a note",
       "sendCta": "Send to partner",
-      "editCta": "Edit"
+      "editCta": "Edit",
+      "sentMessage": "Your message is on its way"
     }
   },
   "account": {

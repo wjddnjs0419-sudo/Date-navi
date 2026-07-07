@@ -194,8 +194,6 @@
     "partnerReactionsTitle": "상대가 남긴 반응",
     "partnerReactionPrefix": "{{name}}가 ",
     "partnerReactionSuffix": "를 남겼어요",
-    "partnerQuoteMock": "가까우면 좋아",
-    "partnerTimeMock": "5분 전",
     "createCta": "데이트 후보 만들기"
   },
   "nickname": {
@@ -813,6 +811,7 @@
     "genErrorAlert": "AI 문장 생성에 실패했어요. 다시 시도해주세요.",
     "sentAlertTitle": "보냈어요",
     "sentAlertMessage": "상대방 알림함에서 확인할 수 있어요.",
+    "sentSuccessMessage": "마음을 전했어요",
     "sendErrorAlert": "보내는 중 오류가 발생했어요."
   },
   "memories": {
@@ -1017,6 +1016,8 @@
     "editPlan": "계획 수정하기",
     "cancelPlan": "계획 취소하기",
     "saving": "저장 중...",
+    "confirmedMessage": "데이트가 확정됐어요",
+    "savedMessage": "변경사항이 저장됐어요",
     "back": "돌아가기"
   },
   "review": {
@@ -1441,7 +1442,8 @@
       "messagePlaceholder": "한마디를 입력하세요",
       "suggestCta": "한마디 추천받기",
       "sendCta": "상대에게 보내기",
-      "editCta": "수정하기"
+      "editCta": "수정하기",
+      "sentMessage": "마음을 전했어요"
     }
   },
   "account": {
