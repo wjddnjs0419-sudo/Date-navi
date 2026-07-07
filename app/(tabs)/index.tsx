@@ -15,9 +15,12 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { pickLatestReaction, formatReactionText } from '../../lib/partnerReaction';
+import { relativeTime } from '../../lib/time';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type Partner = { display_name: string } | null;
+type PartnerReaction = { cardId: string; cardTitle: string; text: string; timeAgo: string } | null;
 type TopCandidate = { id: string; title: string; tags: string[] } | null;
 type UpcomingPlan = {
   id: string; title: string;
@@ -47,6 +50,7 @@ export default function HomeScreen() {
   const MODES = useModes();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partner, setPartner] = useState<Partner>(null);
+  const [partnerReaction, setPartnerReaction] = useState<PartnerReaction>(null);
   const [loading, setLoading] = useState(true);
   const [hasNotif, setHasNotif] = useState(false);
   const [activeMode, setActiveMode] = useState(0);
@@ -97,6 +101,41 @@ export default function HomeScreen() {
                   .eq('user_id', partnerId)
                   .maybeSingle();
                 setPartner(partnerProfile);
+
+                const { data: allCards } = await supabase
+                  .from('date_cards')
+                  .select('id, title')
+                  .eq('couple_id', myProfile.couple_id);
+
+                if (allCards?.length) {
+                  const { data: rxRows } = await supabase
+                    .from('reactions')
+                    .select('card_id, reaction_type, condition_tag, created_at')
+                    .eq('user_id', partnerId)
+                    .in('card_id', allCards.map(c => c.id))
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                  const latest = pickLatestReaction(rxRows ?? []);
+                  const cardTitle = latest ? allCards.find(c => c.id === latest.card_id)?.title : undefined;
+                  setPartnerReaction(latest && cardTitle ? {
+                    cardId: latest.card_id,
+                    cardTitle,
+                    text: formatReactionText(latest, {
+                      condition: (tag) => t(`card.conditionTags.${tag}.label`) || undefined,
+                      reaction: (type) => t(`candidates.rxLabel.${type}`),
+                    }),
+                    timeAgo: relativeTime(latest.created_at, {
+                      justNow: t('notifications.timeJustNow'),
+                      minutes: t('notifications.timeMinutes'),
+                      hours: t('notifications.timeHours'),
+                      yesterday: t('notifications.timeYesterday'),
+                      days: t('notifications.timeDays'),
+                    }),
+                  } : null);
+                } else {
+                  setPartnerReaction(null);
+                }
               }
             }
 
@@ -352,10 +391,10 @@ export default function HomeScreen() {
         )}
 
         {/* 파트너 반응 */}
-        {partner && (
+        {partner && partnerReaction && (
           <View style={s.partnerSection}>
             <Text style={s.sectionTitle}>{t('home.partnerReactionsTitle')}</Text>
-            <SoftCard style={s.partnerCard} onPress={() => router.push('/share/mutual' as any)}>
+            <SoftCard style={s.partnerCard} onPress={() => router.push(`/card/${partnerReaction.cardId}` as any)}>
               <View style={s.partnerRow}>
                 <View style={s.partnerAvatar}>
                   <Text style={s.partnerAvatarText}>{partner.display_name.charAt(0)}</Text>
@@ -363,10 +402,10 @@ export default function HomeScreen() {
                 <View style={s.flex1}>
                   <Text style={s.partnerText}>
                     {t('home.partnerReactionPrefix', { name: partner.display_name })}
-                    <Text style={s.partnerQuote}>"{t('home.partnerQuoteMock')}"</Text>
+                    <Text style={s.partnerQuote}>"{partnerReaction.text}"</Text>
                     {t('home.partnerReactionSuffix')}
                   </Text>
-                  <Text style={s.partnerTime}>{t('home.partnerTimeMock')}</Text>
+                  <Text style={s.partnerTime}>{partnerReaction.timeAgo}</Text>
                 </View>
                 <ChevronRight size={16} color={C.textFaint} />
               </View>
