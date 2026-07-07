@@ -11,6 +11,7 @@ import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { relativeTime } from '../../lib/time';
 
 type NotifType = 'reaction' | 'new_card' | 'soft_message';
 type Notif = {
@@ -59,17 +60,6 @@ export default function NotificationsScreen() {
     await supabase.from('notifications').delete().in('id', ids);
   }
 
-  function relativeTime(iso: string): string {
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const min = Math.floor(diffMs / 60000);
-    if (min < 1) return t.timeJustNow;
-    if (min < 60) return `${min}${t.timeMinutes}`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}${t.timeHours}`;
-    const day = Math.floor(hr / 24);
-    if (day === 1) return t.timeYesterday;
-    return `${day}${t.timeDays}`;
-  }
 
   function renderTitle(n: Notif): string {
     if (n.type === 'reaction') return t.reactionTitle;
@@ -183,7 +173,10 @@ export default function NotificationsScreen() {
                         <View style={s.itemTextWrap}>
                           <Text style={s.itemTitle}>{renderTitle(n)}</Text>
                           <Text style={s.itemBody} numberOfLines={2}>{renderBody(n)}</Text>
-                          <Text style={s.itemTime}>{relativeTime(n.created_at)}</Text>
+                          <Text style={s.itemTime}>{relativeTime(n.created_at, {
+                            justNow: t.timeJustNow, minutes: t.timeMinutes, hours: t.timeHours,
+                            yesterday: t.timeYesterday, days: t.timeDays,
+                          })}</Text>
                         </View>
                       }
                       trailing={<ChevronRight size={14} color={C.textFaint} />}
