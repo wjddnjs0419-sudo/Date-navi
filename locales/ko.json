@@ -530,7 +530,7 @@
         "value": "full_day"
       }
     ],
-    "generateButton": "🗺️ 코스 만들기",
+    "generateButton": "코스 만들기",
     "back": "←",
     "errorEmpty": "하고 싶은 아이디어를 입력해주세요."
   },

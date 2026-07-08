@@ -530,7 +530,7 @@
         "value": "full_day"
       }
     ],
-    "generateButton": "🗺️ Build a course",
+    "generateButton": "Build a course",
     "back": "←",
     "errorEmpty": "Please enter a date idea first."
   },
