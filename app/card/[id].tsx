@@ -15,7 +15,8 @@ import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
-import { PlaceRow } from '../../components/ui';
+import { PlaceRow, CourseStepList } from '../../components/ui';
+import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 
 type CardDetail = {
   id: string;
@@ -30,6 +31,7 @@ type CardDetail = {
   map_url?: string | null;
   mode: string;
   created_at: string;
+  steps?: CourseStep[] | null;
   // 원본 추천 입력. 조건 재생성 시 location/coords를 보존하려면 필요 (V2 §15).
   input_json?: Partial<FeelingInput> | null;
 };
@@ -227,7 +229,13 @@ export default function CardDetailScreen() {
           </View>
 
           <Text style={styles.title}>{card.title}</Text>
-          <Text style={styles.summary}>{card.summary}</Text>
+          {card.mode === 'make_course' ? (
+            <View style={styles.stepsWrap}>
+              <CourseStepList steps={resolveDisplaySteps(card)} summary={card.summary} />
+            </View>
+          ) : (
+            <Text style={styles.summary}>{card.summary}</Text>
+          )}
 
           {!!card.place_name && (
             <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={styles.placeRowSpacing} />
@@ -412,6 +420,7 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 24, fontWeight: '700', color: C.ink, marginBottom: 8, lineHeight: 32 },
   summary: { fontSize: 15, color: '#555', lineHeight: 22, marginBottom: 16 },
+  stepsWrap: { marginBottom: 16 },
   placeRowSpacing: { marginTop: 4, marginBottom: 20 },
 
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
