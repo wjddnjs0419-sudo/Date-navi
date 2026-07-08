@@ -1,4 +1,4 @@
-import { pickLatestReaction, formatReactionText, type ReactionRow } from '../lib/partnerReaction';
+import { pickLatestReaction, formatReactionText, filterActiveCards, type ReactionRow, type CardStatusRow } from '../lib/partnerReaction';
 
 describe('pickLatestReaction', () => {
   it('빈 배열이면 null', () => {
@@ -43,5 +43,29 @@ describe('formatReactionText', () => {
   it('다른 reaction_type도 정확히 매핑된다', () => {
     const row: ReactionRow = { card_id: 'x', reaction_type: 'burden', condition_tag: null, created_at: '2026-07-01T00:00:00Z' };
     expect(formatReactionText(row, labels)).toBe('부담돼');
+  });
+});
+
+describe('filterActiveCards', () => {
+  it('빈 배열이면 빈 배열', () => {
+    expect(filterActiveCards([])).toEqual([]);
+  });
+
+  it('status가 active인 카드만 남긴다', () => {
+    const cards: CardStatusRow[] = [
+      { id: 'a', title: '카페 데이트', status: 'active' },
+      { id: 'b', title: '확정된 데이트', status: 'confirmed' },
+      { id: 'c', title: '추억 완료된 데이트', status: 'done' },
+      { id: 'd', title: '다른 활성 후보', status: 'active' },
+    ];
+    expect(filterActiveCards(cards).map(c => c.id)).toEqual(['a', 'd']);
+  });
+
+  it('active 카드가 없으면 빈 배열', () => {
+    const cards: CardStatusRow[] = [
+      { id: 'a', title: '확정됨', status: 'confirmed' },
+      { id: 'b', title: '완료됨', status: 'done' },
+    ];
+    expect(filterActiveCards(cards)).toEqual([]);
   });
 });

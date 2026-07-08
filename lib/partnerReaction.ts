@@ -20,3 +20,13 @@ export function formatReactionText(
   const reactionLabel = labels.reaction(row.reaction_type);
   return conditionLabel ? `${conditionLabel} ${reactionLabel}` : reactionLabel;
 }
+
+export type CardStatusRow = {
+  id: string;
+  title: string;
+  status: string;
+};
+
+export function filterActiveCards(cards: CardStatusRow[]): CardStatusRow[] {
+  return cards.filter(card => card.status === 'active');
+}
