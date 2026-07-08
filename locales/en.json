@@ -636,8 +636,7 @@
     "conditionLabels": {
       "change_place": "📍 If we change the place",
       "closer": "🚶 If it's closer",
-      "indoor": "🏠 If it's indoors",
-      "budget_adjust": "💰 If the budget adjusts"
+      "indoor": "🏠 If it's indoors"
     }
   },
   "softMessage": {

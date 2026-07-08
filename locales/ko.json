@@ -636,8 +636,7 @@
     "conditionLabels": {
       "change_place": "📍 장소만 바꾸면",
       "closer": "🚶 가까우면",
-      "indoor": "🏠 실내면",
-      "budget_adjust": "💰 예산 조정되면"
+      "indoor": "🏠 실내면"
     }
   },
   "softMessage": {

@@ -16,7 +16,7 @@ import { useI18n } from '../../lib/i18n';
 import { getCardStyle } from '../../lib/tagStyle';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-type ConditionTag = 'change_place' | 'closer' | 'indoor' | 'budget_adjust';
+type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 type CardWithReactions = {
   id: string; title: string; summary: string;
@@ -40,7 +40,6 @@ export default function CandidatesScreen() {
     change_place: t('candidates.conditionLabels.change_place'),
     closer: t('candidates.conditionLabels.closer'),
     indoor: t('candidates.conditionLabels.indoor'),
-    budget_adjust: t('candidates.conditionLabels.budget_adjust'),
   };
   const RX_LABEL: Record<ReactionType, string> = {
     love: t('candidates.rxLabel.love'),
@@ -211,7 +210,6 @@ export default function CandidatesScreen() {
     try {
       const input: FeelingInput = {
         energy: 'high',
-        budget: 'medium',
         distance: 'far',
         mood: 'romantic',
         duration: 'full_day',
