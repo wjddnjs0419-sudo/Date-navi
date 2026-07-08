@@ -17,7 +17,7 @@
 
 ### DB 삭제 내역
 
-Supabase 프로젝트(`wqjguifsmtblgrhdfnji`, Date-Navi)에서 이메일 provider 계정 2개(`doro.claudia@gmail.com`, `wjddnjs0419@naver.com`) 삭제. CASCADE로 연관 데이터(`date_planner_profiles` 2, `date_planner_couples` 2, `date_cards` 11, `reactions` 5, `soft_messages` 10, `notifications` 8, `user_preferences` 2, `date_memories`/`comments` 2) 함께 삭제됨. 카카오 계정 1개만 정상 유지 확인.
+Supabase 프로젝트(`wqjguifsmtblgrhdfnji`, Date-Navi)에서 이메일 provider 계정 2개(`doro.claudia@gmail.com`, `wjddnjs0419@naver.com`) 삭제. CASCADE로 연관 데이터(`date_planner_profiles` 2, `date_planner_couples` 2, `date_cards` 11, `reactions` 5, `soft_messages` 10, `notifications` 8, `user_preferences` 2, `date_memories` 1, `date_memory_comments` 1) 함께 삭제됨. 카카오 계정 1개만 정상 유지 확인.
 
 ### 기술 결정
 
