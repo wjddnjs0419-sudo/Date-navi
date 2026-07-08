@@ -514,10 +514,11 @@ const locS = StyleSheet.create({
 // ─── PlaceRow ─────────────────────────────────────────────────────────────────
 // 카드에 붙은 실제 카카오 장소. url이 있으면 탭 시 지도(카카오 place) 링크를 연다.
 export function PlaceRow({
-  name, address, url, style,
-}: { name?: string; address?: string; url?: string; style?: StyleProp<ViewStyle> }) {
+  name, address, url, style, size = 'default',
+}: { name?: string; address?: string; url?: string; style?: StyleProp<ViewStyle>; size?: 'default' | 'compact' }) {
   const { t } = useI18n();
   if (!name) return null;
+  const compact = size === 'compact';
   return (
     <TouchableOpacity
       style={[placeS.wrap, style]}
@@ -525,12 +526,12 @@ export function PlaceRow({
       disabled={!url}
       onPress={url ? () => { Linking.openURL(url); } : undefined}
     >
-      <MapPin size={16} color={C.text} strokeWidth={2} style={placeS.icon} />
+      <MapPin size={compact ? 14 : 16} color={compact ? C.textSub : C.text} strokeWidth={2} style={placeS.icon} />
       <View style={placeS.body}>
-        <Text style={placeS.name} numberOfLines={1}>{name}</Text>
-        {!!address && <Text style={placeS.addr} numberOfLines={1}>{address}</Text>}
+        <Text style={[placeS.name, compact && placeS.nameCompact]} numberOfLines={1}>{name}</Text>
+        {!!address && <Text style={[placeS.addr, compact && placeS.addrCompact]} numberOfLines={1}>{address}</Text>}
       </View>
-      {!!url && <Text style={placeS.link}>{t('location.map')}</Text>}
+      {!!url && <Text style={[placeS.link, compact && placeS.linkCompact]}>{t('location.map')}</Text>}
     </TouchableOpacity>
   );
 }
@@ -539,8 +540,11 @@ const placeS = StyleSheet.create({
   icon: { marginTop: 1 },
   body: { flex: 1 },
   name: { fontSize: 15, fontWeight: '700', color: C.text },
+  nameCompact: { fontSize: 13, fontWeight: '600' },
   addr: { fontSize: 13, color: C.textSub, marginTop: 2 },
+  addrCompact: { fontSize: 11 },
   link: { fontSize: 13, fontWeight: '600', color: C.textSub, marginTop: 1 },
+  linkCompact: { fontSize: 11 },
 });
 
 // ─── InfoNote ─────────────────────────────────────────────────────────────────
