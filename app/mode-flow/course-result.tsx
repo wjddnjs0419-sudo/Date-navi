@@ -63,6 +63,7 @@ export default function CourseResultScreen() {
         place_name: card.place_name ?? null,
         place_address: card.place_address ?? null,
         map_url: card.map_url ?? null,
+        steps: card.steps ?? null,
       });
       if (error) throw error;
       router.push({ pathname: '/share/send', params: { cardId } } as any);
@@ -104,6 +105,7 @@ export default function CourseResultScreen() {
         place_name: card.place_name ?? null,
         place_address: card.place_address ?? null,
         map_url: card.map_url ?? null,
+        steps: card.steps ?? null,
       });
       if (error) throw error;
       setSaved(true);
