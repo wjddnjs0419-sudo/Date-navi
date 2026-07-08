@@ -109,7 +109,10 @@ export default function CardDetailScreen() {
             const partner = rxData.find(r => r.user_id !== user.id);
             if (mine) {
               setMyReaction(mine.reaction_type as ReactionType);
-              if (mine.condition_tag) setMyConditionTag(mine.condition_tag as ConditionTag);
+              // 레거시 데이터(예: 제거된 'budget_adjust')는 CONDITION_TAGS에 없으므로 무시한다.
+              if (mine.condition_tag && CONDITION_TAGS.some(c => c.tag === mine.condition_tag)) {
+                setMyConditionTag(mine.condition_tag as ConditionTag);
+              }
             }
             if (partner) setPartnerReaction(partner.reaction_type as ReactionType);
           }

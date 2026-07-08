@@ -139,12 +139,15 @@ export default function CandidatesScreen() {
         const rx = rxRows?.filter(r => r.card_id === card.id) ?? [];
         const mine = rx.find(r => r.user_id === user.id);
         const ptnr = rx.find(r => r.user_id !== user.id);
+        // 레거시 데이터(예: 제거된 'budget_adjust')는 CONDITION_LABEL에 없으므로 무시한다.
+        const validTag = (tag?: string | null): ConditionTag | null =>
+          tag && tag in CONDITION_LABEL ? (tag as ConditionTag) : null;
         return {
           ...card,
           myReaction: (mine?.reaction_type as ReactionType) ?? null,
           partnerReaction: (ptnr?.reaction_type as ReactionType) ?? null,
-          myConditionTag: (mine?.condition_tag as ConditionTag) ?? null,
-          partnerConditionTag: (ptnr?.condition_tag as ConditionTag) ?? null,
+          myConditionTag: validTag(mine?.condition_tag),
+          partnerConditionTag: validTag(ptnr?.condition_tag),
         };
       }));
     } finally {
