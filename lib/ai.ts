@@ -4,7 +4,7 @@ import { buildPrompt, buildAdjustSoftMessagePrompt, buildSoftMessagePrompt, type
 export type { SoftMessageInput };
 import type { CourseStep } from './course';
 export type { CourseStep };
-import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, type KakaoPlace, type PlaceFocus } from './place';
+import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, buildRetrievalPlan, type KakaoPlace, type PlaceFocus, type RetrievalPlan } from './place';
 import { resolveIntent, type PlanIntent } from './intent';
 import { buildCandidates, type Candidate } from './candidate';
 import { RECOMMENDATION_CONFIG } from './recommendationConfig';
@@ -25,15 +25,19 @@ import {
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
 // location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
+// retrieval(Adaptive)이 있으면 다중 키워드/카테고리 검색을 Edge가 오케스트레이션한다 (Phase 2).
+// 없으면 focus 기반 현행 단일 검색(자유생성 경로 하위호환).
 async function searchPlaces(
   query: { location?: string; coords?: GeoCoords },
   radius: number,
   focus: PlaceFocus | null,
+  retrieval?: RetrievalPlan,
 ): Promise<KakaoPlace[]> {
   try {
-    const { data, error } = await supabase.functions.invoke('place-search', {
-      body: { location: query.location, coords: query.coords, radius, focus: focus ?? undefined },
-    });
+    const body = retrieval
+      ? { location: query.location, coords: query.coords, radius, queries: retrieval.keywordQueries, categoryCodes: retrieval.categoryCodes }
+      : { location: query.location, coords: query.coords, radius, focus: focus ?? undefined };
+    const { data, error } = await supabase.functions.invoke('place-search', { body });
     if (error) throw error;
     const places = (data as { places?: KakaoPlace[] })?.places;
     return Array.isArray(places) ? places : [];
@@ -340,12 +344,13 @@ export async function generateDateCards(
         budget: input.budget,
         duration: input.duration,
       });
-      // Phase 2 전까지 현행 검색(focus 기반)을 재사용한다.
-      const focus = detectPlaceFocus(input.freeText);
+      // Adaptive Retrieval — intent의 다중 쿼리/카테고리로 후보 recall을 넓힌다 (Phase 2).
+      const retrieval = buildRetrievalPlan(intent);
       const places = await searchPlaces(
         { location: input.location, coords: input.coords },
         distanceToRadius(input.distance),
-        focus,
+        null,
+        retrieval,
       );
       const candidates = buildCandidates(places, intent);
       if (candidates.length > 0) {

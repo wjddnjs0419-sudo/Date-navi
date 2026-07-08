@@ -23,8 +23,21 @@ const CATEGORIES: { code: string; label: string }[] = [
 // 별도 카테고리 코드가 없는 술집은 키워드로 보강
 const KEYWORDS: { query: string; label: string }[] = [{ query: '술집', label: '술집' }];
 
-type Place = { name: string; category: string; address: string; url: string; x: string; y: string };
+const CODE_LABELS: Record<string, string> = { FD6: '음식점', CE7: '카페', AT4: '관광명소', CT1: '문화시설' };
+
+// Adaptive Retrieval Config (PLAN_GENERATION_ARCHITECTURE_V2.md §8·§19)
+const RETRIEVAL = {
+  minCandidateCount: 30,
+  maxCandidateCount: 80,
+  initialPageSize: 15,
+  maxPagesPerQuery: 2,
+  maxKakaoRequests: 8,
+  minIntentQueriesExecuted: 2,
+};
+
+type Place = { placeId: string; name: string; category: string; address: string; url: string; x: string; y: string };
 type KakaoDoc = {
+  id: string; // Kakao doc.id — 요청 간 안정 식별용 placeId (Phase 0)
   place_name: string;
   road_address_name?: string;
   address_name?: string;
@@ -37,6 +50,7 @@ const authHeaders = (key: string) => ({ Authorization: `KakaoAK ${key}` });
 
 function toPlace(doc: KakaoDoc, category: string): Place {
   return {
+    placeId: doc.id,
     name: doc.place_name,
     category,
     address: doc.road_address_name || doc.address_name || '',
@@ -56,20 +70,72 @@ async function geocode(key: string, location: string): Promise<{ x: string; y: s
   return doc ? { x: doc.x, y: doc.y } : null;
 }
 
-async function searchCategory(key: string, code: string, label: string, x: string, y: string, radius: number, size = 5): Promise<Place[]> {
-  const url = `${KAKAO_BASE}/search/category.json?category_group_code=${code}&x=${x}&y=${y}&radius=${radius}&sort=distance&size=${size}`;
+async function searchCategory(key: string, code: string, label: string, x: string, y: string, radius: number, size = 5, page = 1): Promise<Place[]> {
+  const url = `${KAKAO_BASE}/search/category.json?category_group_code=${code}&x=${x}&y=${y}&radius=${radius}&sort=distance&size=${size}&page=${page}`;
   const res = await fetch(url, { headers: authHeaders(key) });
   if (!res.ok) return [];
   const data = await res.json();
   return (data.documents ?? []).map((d: KakaoDoc) => toPlace(d, label));
 }
 
-async function searchKeyword(key: string, query: string, label: string, x: string, y: string, radius: number, size = 5): Promise<Place[]> {
-  const url = `${KAKAO_BASE}/search/keyword.json?query=${encodeURIComponent(query)}&x=${x}&y=${y}&radius=${radius}&sort=distance&size=${size}`;
+async function searchKeyword(key: string, query: string, label: string, x: string, y: string, radius: number, size = 5, page = 1): Promise<Place[]> {
+  const url = `${KAKAO_BASE}/search/keyword.json?query=${encodeURIComponent(query)}&x=${x}&y=${y}&radius=${radius}&sort=distance&size=${size}&page=${page}`;
   const res = await fetch(url, { headers: authHeaders(key) });
   if (!res.ok) return [];
   const data = await res.json();
   return (data.documents ?? []).map((d: KakaoDoc) => toPlace(d, label));
+}
+
+// Adaptive Retrieval — 다중 키워드/카테고리 검색을 부분 실패 허용(각 쿼리 독립 catch)으로 돌리고
+// placeId 기준 중복 제거, min/max·요청 예산·핵심쿼리 실행 수 기반 early stop을 적용한다 (§8).
+async function adaptiveRetrieve(
+  key: string, x: string, y: string, radius: number,
+  queries: string[], categoryCodes: string[], geocodeCost: number,
+): Promise<{ places: Place[]; successfulQueryCount: number; failedQueryCount: number; kakaoRequestCount: number }> {
+  const size = RETRIEVAL.initialPageSize;
+  const tasks: ((page: number) => Promise<Place[]>)[] = [
+    ...categoryCodes.map(code => (page: number) => searchCategory(key, code, CODE_LABELS[code] ?? code, x, y, radius, size, page)),
+    ...queries.map(q => (page: number) => searchKeyword(key, q, q, x, y, radius, size, page)),
+  ];
+
+  const seen = new Set<string>();
+  const places: Place[] = [];
+  let successful = 0;
+  let failed = 0;
+  let kakaoRequestCount = geocodeCost;
+
+  const merge = (res: Place[]) => {
+    for (const p of res) {
+      if (!p.placeId || seen.has(p.placeId)) continue;
+      seen.add(p.placeId);
+      places.push(p);
+    }
+  };
+
+  for (let page = 1; page <= RETRIEVAL.maxPagesPerQuery; page++) {
+    // page 2 이전에 early stop 판정: 충분한 후보 + 핵심 intent 쿼리 최소 실행 완료 (§8 재평가)
+    if (page > 1) {
+      const enoughQueries = successful >= Math.min(RETRIEVAL.minIntentQueriesExecuted, tasks.length);
+      if (places.length >= RETRIEVAL.minCandidateCount && enoughQueries) break;
+    }
+
+    const batch: Promise<{ ok: boolean; r: Place[] }>[] = [];
+    for (const run of tasks) {
+      if (kakaoRequestCount >= RETRIEVAL.maxKakaoRequests) break;
+      if (places.length >= RETRIEVAL.maxCandidateCount) break;
+      kakaoRequestCount++;
+      batch.push(run(page).then(r => ({ ok: true, r })).catch(() => ({ ok: false, r: [] as Place[] })));
+    }
+    if (batch.length === 0) break;
+
+    const settled = await Promise.all(batch);
+    for (const s of settled) {
+      if (s.ok) { successful++; merge(s.r); } else { failed++; }
+    }
+    if (places.length >= RETRIEVAL.maxCandidateCount) break;
+  }
+
+  return { places: places.slice(0, RETRIEVAL.maxCandidateCount), successfulQueryCount: successful, failedQueryCount: failed, kakaoRequestCount };
 }
 
 Deno.serve(async (req) => {
@@ -90,7 +156,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) return json({ error: 'Unauthorized' }, 401);
 
-    const { location, radius, focus, coords } = await req.json();
+    const { location, radius, focus, coords, queries, categoryCodes } = await req.json();
     // GPS 좌표가 오면 지오코딩 없이 그대로 사용한다 (x=경도, y=위도). 숫자 형식만 허용해 쿼리 주입을 막는다.
     const COORD_RE = /^-?\d+(\.\d+)?$/;
     const hasCoords = coords && typeof coords.x === 'string' && typeof coords.y === 'string'
@@ -99,10 +165,6 @@ Deno.serve(async (req) => {
       return json({ error: 'Invalid request' }, 400);
     }
     const safeRadius = Math.min(Math.max(Number(radius) || 3000, 500), 20000);
-    // freeText에서 "카페"/"맛집" 등 카테고리가 감지된 경우에만 채워짐 — 있으면 그 카테고리만 검색해 후보를 좁힌다.
-    const hasFocus = focus && typeof focus.label === 'string';
-    const focusCode = hasFocus && typeof focus.code === 'string' ? focus.code : undefined;
-    const focusQuery = hasFocus && typeof focus.query === 'string' ? focus.query : undefined;
 
     const key = Deno.env.get('KAKAO_REST_API_KEY');
     if (!key) return json({ error: 'Kakao key not configured' }, 500);
@@ -111,6 +173,31 @@ Deno.serve(async (req) => {
       ? { x: coords.x, y: coords.y }
       : await geocode(key, (location as string).trim());
     if (!coord) return json({ places: [] });
+    const geocodeCost = hasCoords ? 0 : 1;
+
+    // ── Adaptive Retrieval 경로 (Phase 2) — queries/categoryCodes가 오면 다중 쿼리 오케스트레이션 ──
+    const safeQueries = Array.isArray(queries)
+      ? queries.filter((q: unknown): q is string => typeof q === 'string' && !!q.trim()).slice(0, 8)
+      : [];
+    const safeCodes = Array.isArray(categoryCodes)
+      ? categoryCodes.filter((c: unknown): c is string => typeof c === 'string' && !!CODE_LABELS[c])
+      : [];
+    if (safeQueries.length > 0 || safeCodes.length > 0) {
+      const result = await adaptiveRetrieve(key, coord.x, coord.y, safeRadius, safeQueries, safeCodes, geocodeCost);
+      return json({
+        places: result.places,
+        _meta: {
+          successfulQueryCount: result.successfulQueryCount,
+          failedQueryCount: result.failedQueryCount,
+          kakaoRequestCount: result.kakaoRequestCount,
+        },
+      });
+    }
+
+    // ── 현행 경로 (자유생성 하위호환) — focus 감지 시 단일 카테고리/키워드, 아니면 기본 카테고리 세트 ──
+    const hasFocus = focus && typeof focus.label === 'string';
+    const focusCode = hasFocus && typeof focus.code === 'string' ? focus.code : undefined;
+    const focusQuery = hasFocus && typeof focus.query === 'string' ? focus.query : undefined;
 
     const results = focusCode
       ? await Promise.all([searchCategory(key, focusCode, focus.label, coord.x, coord.y, safeRadius, 15)])

@@ -1,4 +1,5 @@
-import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, type KakaoPlace } from '../lib/place';
+import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, buildRetrievalPlan, type KakaoPlace } from '../lib/place';
+import type { PlanIntent } from '../lib/intent';
 
 describe('distanceToRadius', () => {
   it('near는 1km', () => {
@@ -17,8 +18,8 @@ describe('distanceToRadius', () => {
 
 describe('formatPlacesBlock', () => {
   const places: KakaoPlace[] = [
-    { name: '성수동 카페', category: '카페', address: '서울 성동구 연무장길 1', url: 'http://place/1', x: '127.0', y: '37.5' },
-    { name: '연무장 술집', category: '술집', address: '서울 성동구 연무장길 2', url: 'http://place/2', x: '127.1', y: '37.6' },
+    { placeId: '1001', name: '성수동 카페', category: '카페', address: '서울 성동구 연무장길 1', url: 'http://place/1', x: '127.0', y: '37.5' },
+    { placeId: '1002', name: '연무장 술집', category: '술집', address: '서울 성동구 연무장길 2', url: 'http://place/2', x: '127.1', y: '37.6' },
   ];
 
   it('빈 목록이면 빈 문자열', () => {
@@ -64,6 +65,28 @@ describe('formatPlacesBlock', () => {
   it('영어 모드에서 focusLabel을 주면 카테고리 고정 지침이 추가된다', () => {
     const block = formatPlacesBlock(places, 'en', 'cafe');
     expect(block).toMatch(/all 3 cards/i);
+  });
+});
+
+describe('buildRetrievalPlan', () => {
+  const intent = (over: Partial<PlanIntent>): PlanIntent => ({
+    purpose: 'meal', placeTypes: [], atmosphere: [], budgetLevel: 'medium', duration: '2-3h',
+    searchQueries: [], positiveSignals: [], negativeSignals: [], ...over,
+  });
+
+  it('maps placeTypes to Kakao category codes (cafe/restaurant/culture/attraction)', () => {
+    const plan = buildRetrievalPlan(intent({ placeTypes: ['cafe', 'restaurant', 'culture', 'attraction'] }));
+    expect(plan.categoryCodes).toEqual(['CE7', 'FD6', 'CT1', 'AT4']);
+  });
+
+  it('drops placeTypes without a Kakao category code (bar/activity/sports)', () => {
+    const plan = buildRetrievalPlan(intent({ placeTypes: ['bar', 'activity', 'sports'] }));
+    expect(plan.categoryCodes).toEqual([]);
+  });
+
+  it('passes searchQueries through as keyword queries, deduped', () => {
+    const plan = buildRetrievalPlan(intent({ searchQueries: ['카페', '스터디카페', '카페'] }));
+    expect(plan.keywordQueries).toEqual(['카페', '스터디카페']);
   });
 });
 
