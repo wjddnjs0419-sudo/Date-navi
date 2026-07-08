@@ -1057,11 +1057,6 @@
         "near": "가까이",
         "any": "상관없음"
       },
-      "budget": {
-        "low": "아끼기",
-        "medium": "적당히",
-        "high": "특별하게"
-      },
       "duration": {
         "oneHour": "1시간",
         "twoThreeHours": "2~3시간",
@@ -1080,9 +1075,9 @@
       "heading": "오늘 끌리는 느낌만\n알려주세요",
       "sub": "대충 말해도 괜찮아요. 분위기를 데이트 카드로 정리해드릴게요.",
       "placeholder": "예: 오늘은 조용히 대화하면서 분위기 있는 데가 좋아.",
+      "freeTextHint": "일식, 삼겹살, 방탈출처럼 키워드 위주로 적으면 더 정확해요.",
       "mood": "분위기",
-      "budget": "예산",
-      "duration": "시간",
+      "duration": "시간 (선택)",
       "generate": "데이트 후보 만들기"
     },
     "generating": {

@@ -1057,11 +1057,6 @@
         "near": "Nearby",
         "any": "Flexible"
       },
-      "budget": {
-        "low": "Save money",
-        "medium": "Moderate",
-        "high": "Special"
-      },
       "duration": {
         "oneHour": "1 hour",
         "twoThreeHours": "2-3 hours",
@@ -1080,9 +1075,9 @@
       "heading": "Just tell us the vibe\nyou want today",
       "sub": "A rough feeling is enough. We'll turn the mood into date cards.",
       "placeholder": "Ex: I want somewhere quiet with good conversation today.",
+      "freeTextHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
       "mood": "Mood",
-      "budget": "Budget",
-      "duration": "Time",
+      "duration": "Time (optional)",
       "generate": "Create date ideas"
     },
     "generating": {
