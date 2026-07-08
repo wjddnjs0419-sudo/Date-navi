@@ -162,23 +162,28 @@ export default function NewCardScreen() {
           }}
         />
 
-        {/* 예산 */}
-        <Text style={s.label}>{t('card.new.budgetLabel')}</Text>
-        <View style={s.budgetRow}>
-          {BUDGET_OPTIONS.map((b, i) => {
-            const sel = i === selBudget;
-            return (
-              <TouchableOpacity
-                key={b}
-                onPress={() => setSelBudget(sel ? null : i)}
-                activeOpacity={0.7}
-                style={[s.chipBtn, s.chipBtnFlex, sel && s.chipBtnOn]}
-              >
-                <Text style={[s.chipText, sel && s.chipTextOn]}>{b}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* 예산 — AI 보정 시엔 estimated_budget이 항상 빈 값으로 저장되므로(예산은 AI 추천 근거에서 제외),
+            선택해도 아무 효과가 없는 걸 숨겨서 사용자를 오도하지 않는다. */}
+        {!useAI && (
+          <>
+            <Text style={s.label}>{t('card.new.budgetLabel')}</Text>
+            <View style={s.budgetRow}>
+              {BUDGET_OPTIONS.map((b, i) => {
+                const sel = i === selBudget;
+                return (
+                  <TouchableOpacity
+                    key={b}
+                    onPress={() => setSelBudget(sel ? null : i)}
+                    activeOpacity={0.7}
+                    style={[s.chipBtn, s.chipBtnFlex, sel && s.chipBtnOn]}
+                  >
+                    <Text style={[s.chipText, sel && s.chipTextOn]}>{b}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
 
         {/* AI 보정 토글 */}
         <SoftCard style={[s.aiCard, { backgroundColor: useAI ? C.lavender : C.white }]}>
