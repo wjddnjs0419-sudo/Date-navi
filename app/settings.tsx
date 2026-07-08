@@ -10,7 +10,7 @@ import * as Notifications from 'expo-notifications';
 import * as ExpoLocation from 'expo-location';
 import { supabase } from '../lib/supabase';
 import {
-  User, Users, Lock, Bell, Globe, Shield,
+  User, Users, Bell, Globe, Shield,
   HelpCircle, FileText, LogOut, Trash2, Camera, Heart, ChevronRight, MapPin,
 } from 'lucide-react-native';
 import { C } from '../constants/colors';
@@ -314,12 +314,6 @@ export default function SettingsScreen() {
               value={coupleStatusLabel}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
               onPress={() => router.push('/onboarding/couple-connect' as any)}
-            />
-            <ListRow
-              icon={<Lock size={16} strokeWidth={1.8} color={C.text} />}
-              label={t.rowPassword}
-              trailing={<ChevronRight size={14} color={C.textFaint} />}
-              onPress={() => router.push('/account/change-password' as any)}
               divider={false}
             />
           </ListGroup>
