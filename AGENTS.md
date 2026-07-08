@@ -165,3 +165,4 @@ handleGenerateAiOptions()
 - 공유 타입(`KakaoPlace` 등)에 필수 필드를 추가하면 그 타입을 리터럴로 생성하는 **테스트 fixture**(`__tests__/*.test.ts`)가 tsc에서 깨진다 — 타입 필드 추가 시 리터럴 생성처(테스트 포함)를 함께 갱신할 것.
 - MCP `deploy_edge_function`으로 Edge를 인라인 배포할 때 `files[].content`는 JSON 문자열이라 소스의 백슬래시(정규식 `\d`·`\.` 등)·이중따옴표가 이스케이프 오류/전사 실수를 유발한다. 배포 전 소스를 백슬래시·이중따옴표 0개로 만들 것(예: `\d`→`[0-9]`, `\.`→`[.]`, 문자열은 홑따옴표/백틱). 배포 후 `get_edge_function`으로 배포본과 디스크를 대조해 몰문자·누락 확인.
 - Claude 구조화 출력 스키마에서 필드를 required에서 빼도 앱이 그 필드를 채워야 하면(예: `estimated_time/budget`을 앱이 `DURATION_MAP`/`BUDGET_MAP`으로 채움) Edge 스키마 변경과 앱 채우기 지점을 **같은 배포에서** 함께 바꿀 것 — 한쪽만 바꾸면 빈 문자열 카드가 저장된다.
+- `lib/prompt.ts`/`lib/recommendation.ts`의 프롬프트 템플릿을 의미 있게 바꾸면 `PROMPT_VERSION`(`lib/prompt.ts`)을 올릴 것 — 안 올리면 `ai_recommendation_logs` 기반 전후 품질 비교에서 신구 버전이 섞여 무의미해짐.
