@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, LocationField, OptionCardPicker } from '../../components/ui';
+import { BackBar, BigButton, Chip, LocationField, OptionCardPicker, TriOptionRow } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 const MOODS = [
@@ -83,13 +83,11 @@ export default function FeelingScreen() {
           </View>
 
           <Text style={s.sectionLabel}>{t('modeFlow.feeling.budget')}</Text>
-          <View style={s.triRow}>
-            {BUDGETS.map(b => (
-              <TouchableOpacity key={b.value} onPress={() => setBudget(b.value)} activeOpacity={0.7} style={[s.triBtn, budget === b.value && s.triBtnOn]}>
-                <Text style={[s.triBtnText, budget === b.value && s.triBtnTextOn]}>{t(b.labelKey)}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TriOptionRow
+            options={BUDGETS.map(b => ({ value: b.value, label: t(b.labelKey) }))}
+            value={budget}
+            onChange={setBudget}
+          />
 
           <Text style={s.sectionLabel}>{t('modeFlow.feeling.duration')}</Text>
           <OptionCardPicker
@@ -120,11 +118,6 @@ const s = StyleSheet.create({
   freeInput: { fontSize: 13, color: C.text, lineHeight: 22 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  triRow: { flexDirection: 'row', gap: 8 },
-  triBtn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
-  triBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  triBtnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
-  triBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
   footerSpacer: { height: 120 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
 });
