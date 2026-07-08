@@ -15,7 +15,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
-import { pickLatestReaction, formatReactionText } from '../../lib/partnerReaction';
+import { pickLatestReaction, formatReactionText, filterActiveCards } from '../../lib/partnerReaction';
 import { relativeTime } from '../../lib/time';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
@@ -104,20 +104,22 @@ export default function HomeScreen() {
 
                 const { data: allCards } = await supabase
                   .from('date_cards')
-                  .select('id, title')
+                  .select('id, title, status')
                   .eq('couple_id', myProfile.couple_id);
 
-                if (allCards?.length) {
+                const activeCards = filterActiveCards(allCards ?? []);
+
+                if (activeCards.length) {
                   const { data: rxRows } = await supabase
                     .from('reactions')
                     .select('card_id, reaction_type, condition_tag, created_at')
                     .eq('user_id', partnerId)
-                    .in('card_id', allCards.map(c => c.id))
+                    .in('card_id', activeCards.map(c => c.id))
                     .order('created_at', { ascending: false })
                     .limit(1);
 
                   const latest = pickLatestReaction(rxRows ?? []);
-                  const cardTitle = latest ? allCards.find(c => c.id === latest.card_id)?.title : undefined;
+                  const cardTitle = latest ? activeCards.find(c => c.id === latest.card_id)?.title : undefined;
                   setPartnerReaction(latest && cardTitle ? {
                     cardId: latest.card_id,
                     cardTitle,
