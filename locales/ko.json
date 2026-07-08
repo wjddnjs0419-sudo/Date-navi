@@ -522,17 +522,14 @@
     "budgetOptions": [
       {
         "label": "아끼고 싶어",
-        "emoji": "💰",
         "value": "low"
       },
       {
         "label": "적당히",
-        "emoji": "💳",
         "value": "medium"
       },
       {
         "label": "특별하게",
-        "emoji": "✨",
         "value": "high"
       }
     ],
@@ -540,17 +537,14 @@
     "durationOptions": [
       {
         "label": "2~3시간",
-        "emoji": "⏱️",
         "value": "2-3h"
       },
       {
         "label": "반나절",
-        "emoji": "🌤️",
         "value": "half_day"
       },
       {
         "label": "하루종일",
-        "emoji": "☀️",
         "value": "full_day"
       }
     ],
