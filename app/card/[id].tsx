@@ -180,6 +180,7 @@ export default function CardDetailScreen() {
           place_name: nc.place_name ?? null,
           place_address: nc.place_address ?? null,
           map_url: nc.map_url ?? null,
+          steps: nc.steps ?? null,
         });
       }
       Alert.alert(
