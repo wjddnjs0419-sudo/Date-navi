@@ -1,4 +1,4 @@
-import { buildPrompt, MODE_EMPHASIS, MODE_EMPHASIS_EN } from '../lib/prompt';
+import { buildPrompt, MODE_EMPHASIS, MODE_EMPHASIS_EN, PROMPT_VERSION } from '../lib/prompt';
 import type { FeelingInput } from '../lib/ai';
 
 const base: FeelingInput = {
@@ -64,5 +64,11 @@ describe('make_course JSON 골격에 steps 필드', () => {
   it('다른 모드는 JSON 스키마에 "steps": 미포함', () => {
     expect(buildPrompt(base, 'feeling')).not.toContain('"steps":');
     expect(buildPrompt(base, 'next_meet', undefined, 'en')).not.toContain('"steps":');
+  });
+});
+
+describe('PROMPT_VERSION', () => {
+  it('vN 형식의 문자열이다', () => {
+    expect(PROMPT_VERSION).toMatch(/^v\d+$/);
   });
 });

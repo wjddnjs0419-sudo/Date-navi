@@ -1,6 +1,9 @@
 import type { AppLanguage } from './i18n';
 import type { FeelingInput, UserPreferences } from './ai';
 
+// 프롬프트 템플릿을 의미 있게 바꿀 때마다 올린다. ai_recommendation_logs에 태깅되어 버전별 품질 비교에 쓰인다.
+export const PROMPT_VERSION = 'v1';
+
 export const ENERGY_MAP: Record<string, string> = {
   low: '피곤함',
   medium: '보통',
