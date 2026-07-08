@@ -4,12 +4,13 @@ import {
   Modal, Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Heart, Sparkles, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
+import { buildPushNavigationTarget, type PushNotificationType } from '../../lib/push';
 import { useI18n } from '../../lib/i18n';
 import { relativeTime } from '../../lib/time';
 
@@ -24,6 +25,7 @@ type Notif = {
 
 export default function NotificationsScreen() {
   const { strings } = useI18n();
+  const router = useRouter();
   const t = strings.notifications;
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,9 @@ export default function NotificationsScreen() {
       setSelected(n);
       return;
     }
+    const target = buildPushNavigationTarget(n.type as PushNotificationType, { card_id: n.payload?.card_id });
     removeOne(n.id);
+    router.push(target as any);
   }
 
   function closeModal() {
