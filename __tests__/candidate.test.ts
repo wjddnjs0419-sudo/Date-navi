@@ -13,7 +13,7 @@ const place = (over: Partial<KakaoPlace>): KakaoPlace => ({
   ...over,
 });
 
-const studyIntent = resolveIntent({ mode: 'feeling', freeText: '공부하기 좋은 카페', mood: 'quiet', budget: 'low', duration: '2-3h' });
+const studyIntent = resolveIntent({ mode: 'feeling', freeText: '공부하기 좋은 카페', mood: 'quiet', duration: '2-3h' });
 
 describe('buildCandidates — dedup', () => {
   it('같은 placeId는 하나로 합친다', () => {
