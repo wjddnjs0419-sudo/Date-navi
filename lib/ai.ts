@@ -376,7 +376,6 @@ export async function generateDateCards(
         mode: intentMode,
         freeText: input.freeText,
         mood: input.mood,
-        budget: input.budget,
         duration: input.duration,
       });
       // Adaptive Retrieval — intent의 다중 쿼리/카테고리로 후보 recall을 넓힌다 (Phase 2).
