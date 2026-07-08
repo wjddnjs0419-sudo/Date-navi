@@ -826,10 +826,6 @@
       "indoor": {
         "label": "실내면",
         "freeText": "실내 공간으로 바꿔서 추천해줘"
-      },
-      "budget_adjust": {
-        "label": "예산 조정되면",
-        "freeText": "더 저렴한 예산으로 바꿔서 추천해줘"
       }
     },
     "regenerateFallbackText": "조건을 바꿔서 추천해줘",

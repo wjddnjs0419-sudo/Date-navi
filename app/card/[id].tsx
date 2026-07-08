@@ -35,7 +35,7 @@ type CardDetail = {
 };
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-type ConditionTag = 'change_place' | 'closer' | 'indoor' | 'budget_adjust';
+type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
   { type: 'love', color: '#FF4F6D', bg: '#FFF0F3' },
@@ -53,7 +53,6 @@ export default function CardDetailScreen() {
     { tag: 'change_place', label: t('card.conditionTags.change_place.label'), emoji: '📍', freeText: t('card.conditionTags.change_place.freeText') },
     { tag: 'closer', label: t('card.conditionTags.closer.label'), emoji: '🚶', freeText: t('card.conditionTags.closer.freeText') },
     { tag: 'indoor', label: t('card.conditionTags.indoor.label'), emoji: '🏠', freeText: t('card.conditionTags.indoor.freeText') },
-    { tag: 'budget_adjust', label: t('card.conditionTags.budget_adjust.label'), emoji: '💰', freeText: t('card.conditionTags.budget_adjust.freeText') },
   ];
 
   const [card, setCard] = useState<CardDetail | null>(null);
@@ -150,13 +149,12 @@ export default function CardDetailScreen() {
       // input_json이 없는 구 카드는 기존 하드코딩 base로 폴백(location 없음).
       const base: FeelingInput = card.input_json && typeof card.input_json === 'object'
         ? {
-            energy: 'medium', budget: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [],
+            energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [],
             ...card.input_json,
           }
-        : { energy: 'medium', budget: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
+        : { energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
       const input: FeelingInput = {
         ...base,
-        budget: condTag === 'budget_adjust' ? 'low' : base.budget,
         distance: condTag === 'closer' ? 'near' : base.distance,
         avoid: condTag === 'indoor' ? [...new Set([...(base.avoid ?? []), 'outdoor'])] : base.avoid,
         freeText: `${t('card.regeneratePromptPrefix', { title: card.title })}${condInfo?.freeText ?? t('card.regenerateFallbackText')}`,
@@ -231,17 +229,23 @@ export default function CardDetailScreen() {
             <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={styles.placeRowSpacing} />
           )}
 
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaIcon}>⏱</Text>
-              <Text style={styles.metaText}>{card.estimated_time}</Text>
+          {(!!card.estimated_time || !!card.estimated_budget) && (
+            <View style={styles.metaRow}>
+              {!!card.estimated_time && (
+                <View style={styles.metaItem}>
+                  <Text style={styles.metaIcon}>⏱</Text>
+                  <Text style={styles.metaText}>{card.estimated_time}</Text>
+                </View>
+              )}
+              {!!card.estimated_time && !!card.estimated_budget && <View style={styles.metaDivider} />}
+              {!!card.estimated_budget && (
+                <View style={styles.metaItem}>
+                  <Text style={styles.metaIcon}>💰</Text>
+                  <Text style={styles.metaText}>{card.estimated_budget}</Text>
+                </View>
+              )}
             </View>
-            <View style={styles.metaDivider} />
-            <View style={styles.metaItem}>
-              <Text style={styles.metaIcon}>💰</Text>
-              <Text style={styles.metaText}>{card.estimated_budget}</Text>
-            </View>
-          </View>
+          )}
 
           <View style={styles.tagRow}>
             {(card.tags ?? []).map((tag, i) => (

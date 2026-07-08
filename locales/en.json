@@ -826,10 +826,6 @@
       "indoor": {
         "label": "If it's indoors",
         "freeText": "Recommend an indoor space instead"
-      },
-      "budget_adjust": {
-        "label": "If the budget adjusts",
-        "freeText": "Recommend something with a cheaper budget"
       }
     },
     "regenerateFallbackText": "Adjust the conditions and recommend again",
