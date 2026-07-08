@@ -55,12 +55,19 @@ create or replace function public.trigger_send_push() returns trigger
   language plpgsql security definer set search_path to 'public' as $$
 declare
   v_secret text;
+  v_function_url text;
 begin
   select decrypted_secret into v_secret
   from vault.decrypted_secrets where name = 'internal_push_secret';
+  select decrypted_secret into v_function_url
+  from vault.decrypted_secrets where name = 'send_push_function_url';
+
+  if v_secret is null or v_function_url is null then
+    return NEW;
+  end if;
 
   perform net.http_post(
-    url := 'https://wqjguifsmtblgrhdfnji.supabase.co/functions/v1/send-push',
+    url := v_function_url,
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'X-Internal-Secret', v_secret
@@ -81,7 +88,7 @@ create trigger trg_send_push
   for each row execute function public.trigger_send_push();
 ```
 
-시크릿 값은 마이그레이션에 평문으로 넣지 않는다. [Supabase Vault](https://supabase.com/docs/guides/database/vault)에 `internal_push_secret`으로 저장하고, 트리거 함수 안에서 `select decrypted_secret from vault.decrypted_secrets where name = 'internal_push_secret'`로 읽어 헤더에 넣는다. edge function 쪽은 동일 값을 Supabase 프로젝트 환경변수(`INTERNAL_PUSH_SECRET`)로 등록해 헤더값과 대조한다.
+시크릿 값과 프로젝트 URL 둘 다 마이그레이션에 평문으로 넣지 않는다(No Hardcoding 원칙). [Supabase Vault](https://supabase.com/docs/guides/database/vault)에 두 개를 저장한다: `internal_push_secret`(임의 문자열), `send_push_function_url`(예: `https://<project-ref>.supabase.co/functions/v1/send-push`). 둘 다 SQL 에디터에서 `select vault.create_secret('값', '이름')`으로 1회 수동 등록 — 마이그레이션 파일에는 이 값을 읽는 코드만 들어간다. edge function 쪽은 `internal_push_secret`과 동일 값을 Supabase 프로젝트 환경변수(`INTERNAL_PUSH_SECRET`)로 등록해 헤더값과 대조한다.
 
 ## Edge function `send-push`
 
