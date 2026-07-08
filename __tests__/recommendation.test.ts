@@ -10,7 +10,9 @@ import {
   buildDeterministicFallback,
   usedCandidateIds,
   collectPlaceIds,
+  COURSE_STEP_COUNT_BY_DURATION,
 } from '../lib/recommendation';
+import { DURATION_MAP } from '../lib/prompt';
 import type { Candidate } from '../lib/candidate';
 import type { PlanIntent } from '../lib/intent';
 import type { FeelingInput } from '../lib/ai';
@@ -114,6 +116,10 @@ describe('duration이 프롬프트에 미치는 영향', () => {
   it('feeling_select: duration 없으면 생략', () => {
     const p = buildFeelingSelectPrompt(cands, intent, { ...input, duration: undefined }, undefined, 'ko');
     expect(p).not.toContain('가능 시간');
+  });
+
+  it('COURSE_STEP_COUNT_BY_DURATION의 키 집합은 DURATION_MAP과 항상 같다 (독립적으로 드리프트 방지)', () => {
+    expect(Object.keys(COURSE_STEP_COUNT_BY_DURATION).sort()).toEqual(Object.keys(DURATION_MAP).sort());
   });
 });
 

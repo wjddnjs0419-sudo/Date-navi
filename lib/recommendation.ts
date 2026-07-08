@@ -86,7 +86,8 @@ ${NO_FACT_RULE_KO}
 }
 
 // duration이 짧을수록 코스 단계 수를 줄이라는 구조적 지침 — 사실 단정이 아니라 페이싱 지침이라 hallucination 위험이 없다.
-const COURSE_STEP_COUNT_BY_DURATION: Record<string, number> = {
+// 키 집합은 DURATION_MAP(lib/prompt.ts)과 반드시 같아야 한다 — __tests__/recommendation.test.ts가 이를 강제한다.
+export const COURSE_STEP_COUNT_BY_DURATION: Record<string, number> = {
   '1h': 2,
   '2-3h': 3,
   half_day: 4,
