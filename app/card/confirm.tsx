@@ -28,6 +28,16 @@ type CardSummary = {
 
 const ROW_ICONS = ['📅', '🕐', '📍', '🛍️'];
 
+function CardMetaRow({ card }: { card: CardSummary }) {
+  return (
+    <View style={styles.metaRow}>
+      {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
+      {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
+      {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
+    </View>
+  );
+}
+
 export default function ConfirmScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -169,11 +179,7 @@ export default function ConfirmScreen() {
           {card && (
             <SoftCard style={styles.cardPreview}>
               <Text style={styles.cardTitle}>{card.title}</Text>
-              <View style={styles.metaRow}>
-                {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
-                {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
-                {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
-              </View>
+              <CardMetaRow card={card} />
               <View style={styles.chipRow}>
                 {(card.tags ?? []).slice(0, 3).map((t, i) => (
                   <Chip key={i} tone="gray">{t}</Chip>
@@ -228,11 +234,7 @@ export default function ConfirmScreen() {
           {card && (
             <SoftCard style={styles.cardPreview}>
               <Text style={styles.cardTitle}>{card.title}</Text>
-              <View style={styles.metaRow}>
-                {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
-                {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
-                {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
-              </View>
+              <CardMetaRow card={card} />
               <View style={styles.chipRow}>
                 {(card.tags ?? []).slice(0, 3).map((t, i) => (
                   <Chip key={i} tone="gray">{t}</Chip>
