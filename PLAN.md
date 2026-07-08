@@ -45,6 +45,7 @@
 
 - [x] 구글 로그인 추가 (2026-07-07) — 네이티브 SDK(`@react-native-google-signin`) + Supabase `signInWithIdToken`. EAS dev build(iOS 시뮬레이터)로 실제 로그인 검증 완료.
 - [x] 카카오 로그인 추가 (2026-07-07) — `@react-native-seoul/kakao-login` + Supabase `signInWithIdToken`. Supabase Kakao Provider Client ID는 REST API Key가 아니라 **Native App Key**로 설정해야 함(idToken의 aud가 Native App Key라 REST API Key로 두면 "Unacceptable audience" 에러). EAS dev build(iOS 시뮬레이터)로 실제 로그인 검증 완료. Android 플랫폼 등록은 보류.
+- [x] 이메일 로그인 방식 제거 (2026-07-08) — 코드 제거 + 기존 이메일 계정 2개 및 연관 데이터 DB 삭제. 애플 로그인은 Apple Developer Program 멤버십 필요로 보류.
 - [ ] 애플 로그인 추가
 - [x] 닉네임 입력 (최초 가입 시) — `app/onboarding/nickname.tsx`
 - [x] 커플 초대 코드 생성 — `app/onboarding/couple-connect.tsx`

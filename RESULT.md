@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-07-08 세션 AF — 이메일 인증 제거 + 관련 DB 데이터 삭제
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `app/(auth)/index.tsx` | 이메일 폼 전체 제거, 카카오/구글만 남김, 애플 버튼 렌더링 제거 |
+| `app/account/change-password.tsx` | 삭제 |
+| `app/settings.tsx` | 비밀번호 메뉴 제거 |
+| `locales/ko.json`, `en.json` | 이메일 전용 auth 키 24개 + `account.changePassword` + `rowPassword` 제거 |
+
+### DB 삭제 내역
+
+Supabase 프로젝트(`wqjguifsmtblgrhdfnji`, Date-Navi)에서 이메일 provider 계정 2개(`doro.claudia@gmail.com`, `wjddnjs0419@naver.com`) 삭제. CASCADE로 연관 데이터(`date_planner_profiles` 2, `date_planner_couples` 2, `date_cards` 11, `reactions` 5, `soft_messages` 10, `notifications` 8, `user_preferences` 2, `date_memories`/`comments` 2) 함께 삭제됨. 카카오 계정 1개만 정상 유지 확인.
+
+### 기술 결정
+
+- Apple Sign In capability는 무료 Apple ID(개인 팀)로는 Xcode에서 추가 자체가 불가능하며 유료 Apple Developer Program($99/년) 가입이 사실상 필수라는 사실을 확인함 — 이번 세션에서 애플 로그인 연결은 보류하고 이메일 인증 제거만 진행.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit, 에러 0건)
+npx jest           # 통과 (13 suites, 101 tests) — googleAuth.test.ts, kakaoAuth.test.ts 포함 영향 없음 확인
+```
+
+`grep -rn "signInWithPassword\|auth.signUp\|change-password" app/ --include="*.tsx"` — 결과 없음 (잔여 참조 없음 확인).
+
+iOS 시뮬레이터 육안 확인은 EAS dev build/시뮬레이터 환경이 없어 이번 세션에서 SKIPPED — 다음 사용자 세션에서 수동 확인 필요.
+
+### 다음 세션 할 일
+
+1. Apple Developer Program 가입 후 애플 로그인 연동 (`lib/appleAuth.ts`, `lib/appleAuthErrors.ts`, `expo-apple-authentication`, entitlements, Supabase Apple Provider 설정)
+
+---
+
 ## 2026-07-07 세션 AE — 카카오 로그인 통합 + 온보딩 버그 수정 + Date Navi 리브랜딩
 
 ### 변경 사항 요약
