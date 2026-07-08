@@ -58,7 +58,6 @@ export default function NewCardScreen() {
         const cards = await generateDateCards(
           {
             energy: '',
-            budget: selBudget !== null ? BUDGET_OPTIONS[selBudget] : '',
             distance: '',
             mood: '',
             duration: selTime !== null ? TIME_OPTIONS[selTime] : '',
