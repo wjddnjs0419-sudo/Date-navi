@@ -5,6 +5,23 @@ export type { SoftMessageInput };
 import type { CourseStep } from './course';
 export type { CourseStep };
 import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, type KakaoPlace, type PlaceFocus } from './place';
+import { resolveIntent, type PlanIntent } from './intent';
+import { buildCandidates, type Candidate } from './candidate';
+import { RECOMMENDATION_CONFIG } from './recommendationConfig';
+import {
+  resolveIntentMode,
+  deterministicFields,
+  buildFeelingSelectPrompt,
+  buildCourseSelectPrompt,
+  assembleFeelingCards,
+  assembleCourseCards,
+  buildDeterministicFallback,
+  usedCandidateIds,
+  collectPlaceIds,
+  type FeelingRec,
+  type CourseRec,
+  type IntentMode,
+} from './recommendation';
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
 // location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
@@ -27,12 +44,18 @@ async function searchPlaces(
 
 // AI 호출은 Supabase Edge Function(generate-ai)이 대행한다.
 // Anthropic 키는 함수 시크릿으로만 존재하며 클라이언트 번들에 노출되지 않는다.
-async function invokeAI(action: 'cards' | 'soft_message', prompt: string): Promise<unknown> {
+type AIAction = 'cards' | 'soft_message' | 'feeling_select' | 'course_select';
+
+// generate-ai 응답에 첨부되는 계측 usage (§18). 마지막 호출 값을 보관해 호출부가 로깅에 쓸 수 있게 한다.
+export type AIUsage = { input_tokens?: number; output_tokens?: number };
+
+async function invokeAI(action: AIAction, prompt: string): Promise<{ data: unknown; usage?: AIUsage }> {
   const { data, error } = await supabase.functions.invoke('generate-ai', {
     body: { action, prompt },
   });
   if (error) throw error;
-  return data;
+  const usage = (data as { _usage?: AIUsage })?._usage;
+  return { data, usage };
 }
 
 export type UserPreferences = {
@@ -198,9 +221,10 @@ const INVITE_FALLBACKS: Record<AppLanguage, string> = {
 export async function generateInviteMessage(card: InviteCard, language: AppLanguage = 'ko'): Promise<string> {
   try {
     const prompt = buildInviteMessagePrompt(card, language);
-    const data = (await invokeAI('soft_message', prompt)) as { message?: string };
-    if (!data?.message) throw new Error('No message in response');
-    return data.message;
+    const { data } = await invokeAI('soft_message', prompt);
+    const msg = (data as { message?: string })?.message;
+    if (!msg) throw new Error('No message in response');
+    return msg;
   } catch {
     return INVITE_FALLBACKS[language];
   }
@@ -209,10 +233,10 @@ export async function generateInviteMessage(card: InviteCard, language: AppLangu
 export async function generateSoftMessage(input: SoftMessageInput, language: AppLanguage = 'ko'): Promise<string> {
   try {
     const prompt = buildSoftMessagePrompt(input, language);
-    const data = (await invokeAI('soft_message', prompt)) as { message?: string };
-    if (!data?.message) throw new Error('No message in response');
-
-    return data.message;
+    const { data } = await invokeAI('soft_message', prompt);
+    const msg = (data as { message?: string })?.message;
+    if (!msg) throw new Error('No message in response');
+    return msg;
   } catch {
     return SOFT_MESSAGE_FALLBACKS[language];
   }
@@ -225,12 +249,77 @@ export async function adjustSoftMessage(
 ): Promise<string> {
   try {
     const prompt = buildAdjustSoftMessagePrompt(currentText, instruction, language);
-    const data = (await invokeAI('soft_message', prompt)) as { message?: string };
-    if (!data?.message) throw new Error('No message in response');
-    return data.message;
+    const { data } = await invokeAI('soft_message', prompt);
+    const msg = (data as { message?: string })?.message;
+    if (!msg) throw new Error('No message in response');
+    return msg;
   } catch {
     return currentText;
   }
+}
+
+// Session 재사용/재추천용 부가 정보 (Phase 6). Phase 4·5에서는 onSession 미소비여도 무해.
+export type GenerateOptions = {
+  previousPlaceIds?: string[];
+  onSession?: (s: { intent: PlanIntent; candidates: Candidate[]; usedPlaceIds: string[] }) => void;
+};
+
+// 위치가 있고 후보가 확보되면: Claude가 candidate_id만 선택 → 앱이 Validation·결정론 필드·장소를 결합한다 (V2 §10~§12).
+async function runCandidateFlow(
+  intentMode: IntentMode,
+  candidates: Candidate[],
+  intent: PlanIntent,
+  input: FeelingInput,
+  prefs: UserPreferences | undefined,
+  language: AppLanguage,
+  previousPlaceIds: string[],
+): Promise<DateCard[]> {
+  const action = intentMode === 'make_course' ? 'course_select' : 'feeling_select';
+  const prompt = intentMode === 'make_course'
+    ? buildCourseSelectPrompt(candidates, intent, input, prefs, language)
+    : buildFeelingSelectPrompt(candidates, intent, input, prefs, language);
+  const { data } = await invokeAI(action, prompt);
+  const recs = Array.isArray((data as { recommendations?: unknown[] })?.recommendations)
+    ? (data as { recommendations: unknown[] }).recommendations
+    : [];
+
+  if (intentMode === 'make_course') {
+    return assembleCourseCards(recs as CourseRec[], candidates, input, previousPlaceIds, language);
+  }
+
+  const n = RECOMMENDATION_CONFIG.finalRecommendationCount;
+  const feelingRecs = recs as FeelingRec[];
+  const valid = assembleFeelingCards(feelingRecs, candidates, input, previousPlaceIds, language);
+  if (valid.length >= n) return valid.slice(0, n);
+  // 부족분은 재호출 없는 결정론 폴백으로 채운다 (§12).
+  const usedIds = new Set(usedCandidateIds(feelingRecs));
+  const fill = buildDeterministicFallback(candidates, intent, input, previousPlaceIds, usedIds, n - valid.length, language);
+  return [...valid, ...fill];
+}
+
+// 위치가 없거나 후보 0개면 현행 자유생성 유지(무회귀). estimated 필드만 앱이 결정론적으로 덮어쓴다 (§11).
+async function runFreeGenFlow(
+  input: FeelingInput,
+  mode: string,
+  prefs: UserPreferences | undefined,
+  language: AppLanguage,
+): Promise<DateCard[]> {
+  let placesBlock = '';
+  if (input.location || input.coords) {
+    const focus = detectPlaceFocus(input.freeText);
+    const places = await searchPlaces(
+      { location: input.location, coords: input.coords },
+      distanceToRadius(input.distance),
+      focus,
+    );
+    placesBlock = formatPlacesBlock(places, language, focus?.label);
+  }
+  const prompt = buildPrompt(input, mode, prefs, language, placesBlock);
+  const { data } = await invokeAI('cards', prompt);
+  const cards = (data as { cards?: DateCard[] })?.cards;
+  if (!Array.isArray(cards) || cards.length === 0) throw new Error('No cards in response');
+  const det = deterministicFields(input, language);
+  return cards.slice(0, 3).map(c => ({ ...c, estimated_time: det.estimated_time, estimated_budget: det.estimated_budget }));
 }
 
 export async function generateDateCards(
@@ -238,27 +327,36 @@ export async function generateDateCards(
   mode: string,
   prefs?: UserPreferences,
   language: AppLanguage = 'ko',
+  opts?: GenerateOptions,
 ): Promise<DateCard[]> {
+  const previousPlaceIds = opts?.previousPlaceIds ?? [];
   try {
-    // 위치(텍스트 또는 GPS 좌표)가 있으면 실제 장소를 먼저 가져와 프롬프트에 주입한다.
-    // freeText에 "카페"/"맛집" 등 카테고리가 콕 집혀 있으면 그 카테고리만 검색해 후보를 좁힌다.
-    let placesBlock = '';
     if (input.location || input.coords) {
+      const intentMode = resolveIntentMode(mode);
+      const intent = resolveIntent({
+        mode: intentMode,
+        freeText: input.freeText,
+        mood: input.mood,
+        budget: input.budget,
+        duration: input.duration,
+      });
+      // Phase 2 전까지 현행 검색(focus 기반)을 재사용한다.
       const focus = detectPlaceFocus(input.freeText);
       const places = await searchPlaces(
         { location: input.location, coords: input.coords },
         distanceToRadius(input.distance),
         focus,
       );
-      placesBlock = formatPlacesBlock(places, language, focus?.label);
+      const candidates = buildCandidates(places, intent);
+      if (candidates.length > 0) {
+        const cards = await runCandidateFlow(intentMode, candidates, intent, input, prefs, language, previousPlaceIds);
+        if (cards.length > 0) {
+          opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(cards, candidates) });
+          return cards;
+        }
+      }
     }
-    const prompt = buildPrompt(input, mode, prefs, language, placesBlock);
-    const data = (await invokeAI('cards', prompt)) as { cards?: DateCard[] };
-    if (!Array.isArray(data?.cards) || data.cards.length === 0) {
-      throw new Error('No cards in response');
-    }
-
-    return data.cards.slice(0, 3);
+    return await runFreeGenFlow(input, mode, prefs, language);
   } catch {
     return FALLBACK_CARDS_BY_LANGUAGE[language];
   }
