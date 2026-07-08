@@ -15,3 +15,10 @@ export function parseStepsFromSummary(summary?: string): CourseStep[] {
   }
   return steps;
 }
+
+// 카드 상세 표시용: steps가 있으면 그대로, 없으면 summary 텍스트 파싱으로 최대한 복원한다.
+// place_name 등 장소 결합 정보는 텍스트 파싱으로 복원 불가 — 파싱 폴백은 label만 채운다.
+export function resolveDisplaySteps(card: { steps?: CourseStep[] | null; summary?: string }): CourseStep[] {
+  if (card.steps && card.steps.length > 0) return card.steps;
+  return parseStepsFromSummary(card.summary);
+}
