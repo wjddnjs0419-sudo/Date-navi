@@ -167,3 +167,4 @@ handleGenerateAiOptions()
 - Claude 구조화 출력 스키마에서 필드를 required에서 빼도 앱이 그 필드를 채워야 하면(예: `estimated_time/budget`을 앱이 `DURATION_MAP`/`BUDGET_MAP`으로 채움) Edge 스키마 변경과 앱 채우기 지점을 **같은 배포에서** 함께 바꿀 것 — 한쪽만 바꾸면 빈 문자열 카드가 저장된다.
 - `lib/prompt.ts`/`lib/recommendation.ts`의 프롬프트 템플릿을 의미 있게 바꾸면 `PROMPT_VERSION`(`lib/prompt.ts`)을 올릴 것 — 안 올리면 `ai_recommendation_logs` 기반 전후 품질 비교에서 신구 버전이 섞여 무의미해짐.
 - Anthropic 구조화 출력(`output_config.format.schema`)에서 `integer`/`number` 타입에 `minimum`/`maximum`을 쓰면 `400 invalid_request_error`가 난다 — 범위를 제한하려면 `enum: [1,2,3,4,5]`처럼 명시적 열거로 대체할 것.
+- `FeelingInput` 같은 공유 입력 타입에서 필드를 제거하면(예: `budget`), 계획 문서에 없는 호출부(예: `app/card/new.tsx`의 수동 카드 작성 화면)에서도 그 필드를 넘기고 있을 수 있다 — 변경 전에 `grep -rn "필드명:" app/ lib/`로 전체 호출부를 확인하고, `npm run validate` 전체 결과가 0 에러일 때까지 태스크 목록 밖의 파일도 점검할 것.
