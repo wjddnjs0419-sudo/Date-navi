@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, LocationField, OptionCardPicker } from '../../components/ui';
+import { BackBar, BigButton, LocationField, OptionCardPicker, TriOptionRow } from '../../components/ui';
 
 export default function CourseScreen() {
   const router = useRouter();
@@ -50,28 +50,19 @@ export default function CourseScreen() {
         <Text style={s2.hint}>{c.ideaHint}</Text>
 
         <Text style={s2.sectionLabel}>{c.budgetLabel}</Text>
-        <View style={s2.optionRow}>
-          {c.budgetOptions.map((opt: { label: string; emoji: string; value: string }) => {
-            const sel = budget === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[s2.optionCard, sel && s2.optionSelected]}
-                onPress={() => setBudget(opt.value)}
-                activeOpacity={0.7}
-              >
-                <Text style={s2.optionEmoji}>{opt.emoji}</Text>
-                <Text style={[s2.optionLabel, sel && s2.optionLabelSelected]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={s2.budgetBlock}>
+          <TriOptionRow
+            options={c.budgetOptions.map((opt: { label: string; value: string }) => ({ value: opt.value, label: opt.label }))}
+            value={budget}
+            onChange={setBudget}
+          />
         </View>
 
         <Text style={s2.sectionLabel}>{c.durationLabel}</Text>
         <View style={s2.durationBlock}>
           <OptionCardPicker
-            options={c.durationOptions.map((opt: { label: string; emoji: string; value: string }) => (
-              { value: opt.value, label: opt.label, emoji: opt.emoji }
+            options={c.durationOptions.map((opt: { label: string; value: string }) => (
+              { value: opt.value, label: opt.label }
             ))}
             value={duration || c.durationOptions[0]?.value}
             onChange={setDuration}
@@ -100,14 +91,6 @@ const s2 = StyleSheet.create({
     marginBottom: 8, backgroundColor: C.white,
   },
   hint: { fontSize: 13, color: C.textMuted, marginBottom: 28 },
-  optionRow: { flexDirection: 'row', gap: 10, marginBottom: 28 },
-  optionCard: {
-    flex: 1, alignItems: 'center', backgroundColor: C.white, borderRadius: 14,
-    paddingVertical: 16, paddingHorizontal: 4, borderWidth: 2, borderColor: 'transparent', gap: 6,
-  },
-  optionSelected: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  optionEmoji: { fontSize: 22 },
-  optionLabel: { fontSize: 13, fontWeight: '600', color: C.textSub, textAlign: 'center' },
-  optionLabelSelected: { color: C.pinkDeep },
+  budgetBlock: { marginBottom: 28 },
   durationBlock: { marginBottom: 28 },
 });
