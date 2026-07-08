@@ -8,8 +8,8 @@ import type { Candidate } from '../lib/candidate';
 import type { PlanIntent } from '../lib/intent';
 import type { FeelingInput } from '../lib/ai';
 
-const intent: PlanIntent = { purpose: 'meal', placeTypes: ['cafe'], atmosphere: [], budgetLevel: 'low', duration: '2-3h', searchQueries: ['카페'], positiveSignals: [], negativeSignals: [] };
-const input: FeelingInput = { energy: 'medium', budget: 'low', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
+const intent: PlanIntent = { purpose: 'meal', placeTypes: ['cafe'], atmosphere: [], duration: '2-3h', searchQueries: ['카페'], positiveSignals: [], negativeSignals: [] };
+const input: FeelingInput = { energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
 const cands: Candidate[] = [
   { candidateId: 'candidate_001', placeId: 'p1', name: 'A', category: '카페', address: 'x', x: '1', y: '2', mapUrl: 'u', matchedQueries: [], matchedIntentSignals: [], score: 1 },
 ];

@@ -208,8 +208,8 @@ export default function CourseResultScreen() {
             <ScrollView key={i} style={{ width }} contentContainerStyle={s.page}>
               <Text style={s.cardTitle}>{card.title}</Text>
               <View style={s.metaRow}>
-                <View style={s.metaItem}><Clock size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_time}</Text></View>
-                <View style={s.metaItem}><Wallet size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_budget}</Text></View>
+                {!!card.estimated_time && <View style={s.metaItem}><Clock size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_time}</Text></View>}
+                {!!card.estimated_budget && <View style={s.metaItem}><Wallet size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_budget}</Text></View>}
               </View>
 
               <CourseStepList steps={steps} summary={card.summary} />

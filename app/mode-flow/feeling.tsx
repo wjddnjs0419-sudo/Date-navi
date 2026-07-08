@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, LocationField, OptionCardPicker, TriOptionRow } from '../../components/ui';
+import { BackBar, BigButton, Chip, LocationField, OptionCardPicker } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 const MOODS = [
@@ -14,11 +14,6 @@ const MOODS = [
   { v: 'romantic', labelKey: 'modeFlow.option.mood.romantic' },
   { v: 'quiet', labelKey: 'modeFlow.option.mood.quiet' },
   { v: 'new', labelKey: 'modeFlow.option.mood.new' },
-];
-const BUDGETS = [
-  { value: 'low', labelKey: 'modeFlow.option.budget.low' },
-  { value: 'medium', labelKey: 'modeFlow.option.budget.medium' },
-  { value: 'high', labelKey: 'modeFlow.option.budget.high' },
 ];
 const DURATIONS = [
   { value: '1h', labelKey: 'modeFlow.option.duration.oneHour' },
@@ -32,8 +27,7 @@ export default function FeelingScreen() {
   const { t } = useI18n();
   const [freeText, setFreeText] = useState('');
   const [mood, setMood] = useState('comfortable');
-  const [budget, setBudget] = useState('low');
-  const [duration, setDuration] = useState('2-3h');
+  const [duration, setDuration] = useState<string | undefined>(undefined);
   const [location, setLocation] = useState('');
   const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
@@ -42,7 +36,6 @@ export default function FeelingScreen() {
       mood,
       freeText,
       location,
-      budget,
       duration,
       coords: coords ?? undefined,
     });
@@ -72,6 +65,7 @@ export default function FeelingScreen() {
               multiline
             />
           </View>
+          <Text style={s.hint}>{t('modeFlow.feeling.freeTextHint')}</Text>
 
           <Text style={s.sectionLabel}>{t('modeFlow.feeling.mood')}</Text>
           <View style={s.chips}>
@@ -81,13 +75,6 @@ export default function FeelingScreen() {
               </Chip>
             ))}
           </View>
-
-          <Text style={s.sectionLabel}>{t('modeFlow.feeling.budget')}</Text>
-          <TriOptionRow
-            options={BUDGETS.map(b => ({ value: b.value, label: t(b.labelKey) }))}
-            value={budget}
-            onChange={setBudget}
-          />
 
           <Text style={s.sectionLabel}>{t('modeFlow.feeling.duration')}</Text>
           <OptionCardPicker
@@ -116,6 +103,7 @@ const s = StyleSheet.create({
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   freeInputWrap: { backgroundColor: C.white, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.border, minHeight: 90, marginTop: 20 },
   freeInput: { fontSize: 13, color: C.text, lineHeight: 22 },
+  hint: { fontSize: 12, color: C.textMuted, marginTop: 8 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   footerSpacer: { height: 120 },

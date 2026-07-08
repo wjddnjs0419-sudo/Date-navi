@@ -1,5 +1,5 @@
 // Phase 1 — Intent Resolution + Query Expansion (순수 로직).
-// Mode + freeText + UI Selection(mood/budget/duration)을 종합해 "추천 검색 계획"(PlanIntent)을 만든다.
+// Mode + freeText + UI Selection(mood/duration)을 종합해 "추천 검색 계획"(PlanIntent)을 만든다.
 // Kakao 검색·Claude 호출과 무관한 결정론 영역. (PLAN_GENERATION_ARCHITECTURE_V2.md §4·§5·§7)
 
 export type PlaceType = 'cafe' | 'restaurant' | 'bar' | 'culture' | 'attraction' | 'activity' | 'sports';
@@ -15,8 +15,7 @@ export type PlanIntent = {
   purpose: Purpose;
   placeTypes: PlaceType[];
   atmosphere: Atmosphere[];
-  budgetLevel: 'low' | 'medium' | 'high';
-  duration: string;
+  duration?: string;
   searchQueries: string[];
   positiveSignals: string[];
   negativeSignals: string[];
@@ -26,7 +25,6 @@ export type ResolveIntentArgs = {
   mode: 'feeling' | 'make_course';
   freeText?: string;
   mood?: string;
-  budget?: string;
   duration?: string;
 };
 
@@ -51,8 +49,16 @@ export const INTENT_RULES: IntentRule[] = [
     negativeSignals: ['술집', '포차', '클럽', '라운지'],
   },
   {
+    purpose: 'culture',
+    pattern: /영화/,
+    placeTypes: ['culture'],
+    searchQueries: ['영화관'],
+    positiveSignals: ['영화관'],
+    negativeSignals: [],
+  },
+  {
     purpose: 'activity',
-    pattern: /액티비티|방탈출|보드게임|클라이밍|VR|노래방|볼링|피크닉|영화/,
+    pattern: /액티비티|방탈출|보드게임|클라이밍|VR|노래방|볼링|피크닉/,
     placeTypes: ['activity'],
     searchQueries: ['액티비티', '방탈출', '보드게임카페', '노래방'],
     positiveSignals: ['액티비티', '방탈출', '보드게임'],
@@ -76,7 +82,7 @@ export const INTENT_RULES: IntentRule[] = [
   },
   {
     purpose: 'meal',
-    pattern: /맛집|음식점|식당|밥집|브런치|저녁식사|점심|디너|밥/,
+    pattern: /맛집|음식점|식당|밥집|브런치|저녁식사|점심|디너|밥|일식|양식|한식|중식|초밥|파스타|고기|삼겹살/,
     placeTypes: ['restaurant'],
     searchQueries: ['맛집', '음식점', '레스토랑', '브런치'],
     positiveSignals: ['맛집', '레스토랑'],
@@ -131,22 +137,25 @@ function matchRules(freeText: string): IntentRule[] {
 }
 
 export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
-  const { mode, freeText, mood, budget, duration } = args;
+  const { mode, freeText, mood, duration } = args;
   const text = freeText?.trim() ?? '';
   const matches = text ? matchRules(text) : [];
+  // 하드코딩 규칙에 없는 키워드("일식", "이자카야", "브라질리언 바베큐" 등)도 카카오가
+  // 직접 풀텍스트로 찾을 수 있도록, freeText 원문을 항상 검색어에 추가한다.
+  const freeTextQuery = text ? [text] : [];
 
-  const budgetLevel: PlanIntent['budgetLevel'] =
-    budget === 'low' || budget === 'high' ? budget : 'medium';
   const atmosphere: Atmosphere[] = mood && MOOD_ATMOSPHERE[mood] ? [MOOD_ATMOSPHERE[mood]] : [];
 
   if (mode === 'make_course') {
     // 백본은 feeling과 공유하되, 코스는 다카테고리 후보를 확보해야 동선이 나온다.
     const placeTypes = uniq([...matches.flatMap(m => m.placeTypes), ...COURSE_BASE_PLACE_TYPES]);
-    const searchQueries = uniq([...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES]);
+    // freeText 원문을 맨 앞에 둔다 — 다운스트림(place-search)이 검색어를 8개로 자르므로,
+    // 여러 규칙이 매칭돼 검색어가 많아져도 폴백 검색어가 잘려나가지 않게 한다.
+    const searchQueries = uniq([...freeTextQuery, ...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES]);
     const positiveSignals = uniq(matches.flatMap(m => m.positiveSignals));
     const negativeSignals = uniq(matches.flatMap(m => m.negativeSignals));
     const purpose: Purpose = matches[0]?.purpose ?? 'general_date';
-    return { purpose, placeTypes, atmosphere, budgetLevel, duration: duration ?? '2-3h', searchQueries, positiveSignals, negativeSignals };
+    return { purpose, placeTypes, atmosphere, duration, searchQueries, positiveSignals, negativeSignals };
   }
 
   // feeling: 첫 매치를 주 purpose로 채택. 없으면 general_date + 폭넓은 후보.
@@ -155,9 +164,8 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
       purpose: 'general_date',
       placeTypes: [...GENERAL_PLACE_TYPES],
       atmosphere,
-      budgetLevel,
-      duration: duration ?? '2-3h',
-      searchQueries: [...GENERAL_QUERIES],
+      duration,
+      searchQueries: uniq([...freeTextQuery, ...GENERAL_QUERIES]),
       positiveSignals: [],
       negativeSignals: [],
     };
@@ -168,9 +176,8 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
     purpose: primary.purpose,
     placeTypes: uniq(primary.placeTypes),
     atmosphere,
-    budgetLevel,
-    duration: duration ?? '2-3h',
-    searchQueries: uniq(primary.searchQueries),
+    duration,
+    searchQueries: uniq([...freeTextQuery, ...primary.searchQueries]),
     positiveSignals: uniq(primary.positiveSignals),
     negativeSignals: uniq(primary.negativeSignals),
   };

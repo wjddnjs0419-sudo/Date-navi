@@ -9,17 +9,6 @@ export const ENERGY_MAP: Record<string, string> = {
   medium: '보통',
   high: '에너지 넘침',
 };
-export const BUDGET_MAP: Record<string, string> = {
-  low: '저예산 (1~3만 원)',
-  medium: '적당한 예산 (3~7만 원)',
-  high: '넉넉한 예산 (7만 원 이상)',
-};
-// 카드에 실제로 표시되는 짧은 라벨. BUDGET_MAP은 AI 프롬프트 컨텍스트용으로 금액 detail을 유지한다.
-export const BUDGET_LABEL: Record<string, string> = {
-  low: '저예산',
-  medium: '적당한 예산',
-  high: '넉넉한 예산',
-};
 export const DISTANCE_MAP: Record<string, string> = {
   near: '가까운 곳 (도보/차 10분)',
   any: '거리 상관없음',
@@ -50,16 +39,6 @@ export const ENERGY_MAP_EN: Record<string, string> = {
   low: 'Low energy / tired',
   medium: 'Okay',
   high: 'High energy',
-};
-export const BUDGET_MAP_EN: Record<string, string> = {
-  low: 'Low budget (about $10-25 per person)',
-  medium: 'Moderate budget (about $25-60 per person)',
-  high: 'Higher budget (about $60+ per person)',
-};
-export const BUDGET_LABEL_EN: Record<string, string> = {
-  low: 'Low budget',
-  medium: 'Moderate budget',
-  high: 'Higher budget',
 };
 export const DISTANCE_MAP_EN: Record<string, string> = {
   near: 'Nearby (walk or 10 minutes by car)',
@@ -188,6 +167,11 @@ export function buildPrompt(
       : `피하고 싶은 것: ${input.avoid.map(a => AVOID_MAP[a] ?? a).join(', ')}`)
     : '';
   const freeTextPart = input.freeText ? `\n${isEnglish ? 'Additional note' : '추가 메모'}: ${input.freeText}` : '';
+  const durationLine = input.duration
+    ? (isEnglish
+      ? `\n- Time available: ${DURATION_MAP_EN[input.duration] ?? input.duration}`
+      : `\n- 가능 시간: ${DURATION_MAP[input.duration] ?? input.duration}`)
+    : '';
   const modeContext = (isEnglish ? MODE_CONTEXT_EN[mode] : MODE_CONTEXT[mode]) ?? (isEnglish ? 'A couple that needs help planning a date' : '데이트 계획이 필요한 커플');
   const emphasisBlock = (isEnglish ? MODE_EMPHASIS_EN[mode] : MODE_EMPHASIS[mode]) ?? '';
   const prefsBlock = prefs ? buildPreferencesBlock(prefs, language) : '';
@@ -203,10 +187,8 @@ export function buildPrompt(
 
 【Situation】 ${modeContext}
 - Energy: ${ENERGY_MAP_EN[input.energy] ?? input.energy}
-- Budget: ${BUDGET_MAP_EN[input.budget] ?? input.budget}
 - Distance: ${DISTANCE_MAP_EN[input.distance] ?? input.distance}
-- Vibe: ${MOOD_MAP_EN[input.mood] ?? input.mood}
-- Time available: ${DURATION_MAP_EN[input.duration] ?? input.duration}
+- Vibe: ${MOOD_MAP_EN[input.mood] ?? input.mood}${durationLine}
 ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}${placesBlock}
 
 Reply with JSON only. Do not include any other text.
@@ -231,10 +213,8 @@ Tag examples: low travel, good when tired, cheap, low risk, indoor, outdoor, rom
 
 【상황】 ${modeContext}
 - 컨디션: ${ENERGY_MAP[input.energy] ?? input.energy}
-- 예산: ${BUDGET_MAP[input.budget] ?? input.budget}
 - 이동 거리: ${DISTANCE_MAP[input.distance] ?? input.distance}
-- 분위기: ${MOOD_MAP[input.mood] ?? input.mood}
-- 가능 시간: ${DURATION_MAP[input.duration] ?? input.duration}
+- 분위기: ${MOOD_MAP[input.mood] ?? input.mood}${durationLine}
 ${avoidText}${freeTextPart}${emphasisBlock}${prefsBlock}${placesBlock}
 
 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.

@@ -159,16 +159,20 @@ export default function ResultScreen() {
                 )}
 
                 <View style={s2.metaGrid}>
-                  <View style={s2.metaBox}>
-                    <Clock size={14} color={C.creamFg} />
-                    <Text style={s2.metaLabel}>{t('modeFlow.result.time')}</Text>
-                    <Text style={s2.metaValue}>{card.estimated_time}</Text>
-                  </View>
-                  <View style={s2.metaBox}>
-                    <Wallet size={14} color={C.creamFg} />
-                    <Text style={s2.metaLabel}>{t('modeFlow.result.budget')}</Text>
-                    <Text style={s2.metaValue}>{card.estimated_budget}</Text>
-                  </View>
+                  {!!card.estimated_time && (
+                    <View style={s2.metaBox}>
+                      <Clock size={14} color={C.creamFg} />
+                      <Text style={s2.metaLabel}>{t('modeFlow.result.time')}</Text>
+                      <Text style={s2.metaValue}>{card.estimated_time}</Text>
+                    </View>
+                  )}
+                  {!!card.estimated_budget && (
+                    <View style={s2.metaBox}>
+                      <Wallet size={14} color={C.creamFg} />
+                      <Text style={s2.metaLabel}>{t('modeFlow.result.budget')}</Text>
+                      <Text style={s2.metaValue}>{card.estimated_budget}</Text>
+                    </View>
+                  )}
                   <View style={s2.metaBox}>
                     <MapPin size={14} color={C.creamFg} />
                     <Text style={s2.metaLabel}>{t('modeFlow.result.movement')}</Text>
@@ -233,14 +237,18 @@ export default function ResultScreen() {
                   <Text style={s2.subTitle}>{card.title}</Text>
                   <Text style={s2.subDesc} numberOfLines={2}>{card.summary}</Text>
                   <View style={s2.subMetaRow}>
-                    <View style={s2.subMetaItem}>
-                      <Clock size={11} color={C.textMuted} />
-                      <Text style={s2.subMeta}>{card.estimated_time}</Text>
-                    </View>
-                    <View style={s2.subMetaItem}>
-                      <Wallet size={11} color={C.textMuted} />
-                      <Text style={s2.subMeta}>{card.estimated_budget}</Text>
-                    </View>
+                    {!!card.estimated_time && (
+                      <View style={s2.subMetaItem}>
+                        <Clock size={11} color={C.textMuted} />
+                        <Text style={s2.subMeta}>{card.estimated_time}</Text>
+                      </View>
+                    )}
+                    {!!card.estimated_budget && (
+                      <View style={s2.subMetaItem}>
+                        <Wallet size={11} color={C.textMuted} />
+                        <Text style={s2.subMeta}>{card.estimated_budget}</Text>
+                      </View>
+                    )}
                     {!!card.place_name && (
                       <View style={s2.subMetaPlace}>
                         <MapPin size={11} color={C.pinkDeep} />

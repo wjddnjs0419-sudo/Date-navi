@@ -16,7 +16,7 @@ import { useI18n } from '../../lib/i18n';
 import { getCardStyle } from '../../lib/tagStyle';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-type ConditionTag = 'change_place' | 'closer' | 'indoor' | 'budget_adjust';
+type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 type CardWithReactions = {
   id: string; title: string; summary: string;
@@ -40,7 +40,6 @@ export default function CandidatesScreen() {
     change_place: t('candidates.conditionLabels.change_place'),
     closer: t('candidates.conditionLabels.closer'),
     indoor: t('candidates.conditionLabels.indoor'),
-    budget_adjust: t('candidates.conditionLabels.budget_adjust'),
   };
   const RX_LABEL: Record<ReactionType, string> = {
     love: t('candidates.rxLabel.love'),
@@ -140,12 +139,15 @@ export default function CandidatesScreen() {
         const rx = rxRows?.filter(r => r.card_id === card.id) ?? [];
         const mine = rx.find(r => r.user_id === user.id);
         const ptnr = rx.find(r => r.user_id !== user.id);
+        // 레거시 데이터(예: 제거된 'budget_adjust')는 CONDITION_LABEL에 없으므로 무시한다.
+        const validTag = (tag?: string | null): ConditionTag | null =>
+          tag && tag in CONDITION_LABEL ? (tag as ConditionTag) : null;
         return {
           ...card,
           myReaction: (mine?.reaction_type as ReactionType) ?? null,
           partnerReaction: (ptnr?.reaction_type as ReactionType) ?? null,
-          myConditionTag: (mine?.condition_tag as ConditionTag) ?? null,
-          partnerConditionTag: (ptnr?.condition_tag as ConditionTag) ?? null,
+          myConditionTag: validTag(mine?.condition_tag),
+          partnerConditionTag: validTag(ptnr?.condition_tag),
         };
       }));
     } finally {
@@ -211,7 +213,6 @@ export default function CandidatesScreen() {
     try {
       const input: FeelingInput = {
         energy: 'high',
-        budget: 'medium',
         distance: 'far',
         mood: 'romantic',
         duration: 'full_day',

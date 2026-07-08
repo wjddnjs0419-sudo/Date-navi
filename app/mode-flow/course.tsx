@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { buildCourseInput } from '../../lib/modeForm';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, LocationField, OptionCardPicker, TriOptionRow } from '../../components/ui';
+import { BackBar, BigButton, LocationField, OptionCardPicker } from '../../components/ui';
 
 export default function CourseScreen() {
   const router = useRouter();
@@ -13,8 +13,7 @@ export default function CourseScreen() {
   const c = s.course;
 
   const [idea, setIdea] = useState('');
-  const [budget, setBudget] = useState('');
-  const [duration, setDuration] = useState('');
+  const [duration, setDuration] = useState<string | undefined>(undefined);
   const [location, setLocation] = useState('');
   const [coords, setCoords] = useState<{ x: string; y: string } | null>(null);
 
@@ -23,7 +22,7 @@ export default function CourseScreen() {
       Alert.alert(c.errorEmpty);
       return;
     }
-    const input = buildCourseInput({ idea, budget, duration, location, coords: coords ?? undefined });
+    const input = buildCourseInput({ idea, duration, location, coords: coords ?? undefined });
     router.replace({
       pathname: '/mode-flow/generating',
       params: { mode: 'make_course', input: JSON.stringify(input) },
@@ -49,22 +48,13 @@ export default function CourseScreen() {
         />
         <Text style={s2.hint}>{c.ideaHint}</Text>
 
-        <Text style={s2.sectionLabel}>{c.budgetLabel}</Text>
-        <View style={s2.budgetBlock}>
-          <TriOptionRow
-            options={c.budgetOptions.map((opt: { label: string; value: string }) => ({ value: opt.value, label: opt.label }))}
-            value={budget}
-            onChange={setBudget}
-          />
-        </View>
-
         <Text style={s2.sectionLabel}>{c.durationLabel}</Text>
         <View style={s2.durationBlock}>
           <OptionCardPicker
             options={c.durationOptions.map((opt: { label: string; value: string }) => (
               { value: opt.value, label: opt.label }
             ))}
-            value={duration || c.durationOptions[0]?.value}
+            value={duration}
             onChange={setDuration}
           />
         </View>
@@ -91,6 +81,5 @@ const s2 = StyleSheet.create({
     marginBottom: 8, backgroundColor: C.white,
   },
   hint: { fontSize: 13, color: C.textMuted, marginBottom: 28 },
-  budgetBlock: { marginBottom: 28 },
   durationBlock: { marginBottom: 28 },
 });

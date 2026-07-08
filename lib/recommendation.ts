@@ -7,7 +7,7 @@ import type { Candidate } from './candidate';
 import type { PlanIntent } from './intent';
 import type { CourseStep } from './course';
 import { RECOMMENDATION_CONFIG } from './recommendationConfig';
-import { BUDGET_LABEL, BUDGET_LABEL_EN, DURATION_MAP, DURATION_MAP_EN } from './prompt';
+import { DURATION_MAP, DURATION_MAP_EN } from './prompt';
 
 export type IntentMode = 'feeling' | 'make_course';
 
@@ -19,16 +19,16 @@ export function resolveIntentMode(mode: string): IntentMode {
   return mode === 'make_course' ? 'make_course' : 'feeling';
 }
 
-// estimated_time/budget은 실제 장소 가격이 아니라 "사용자가 고른 플랜 범위"다 (§11).
+// estimated_time은 실제 장소 소요시간이 아니라 "사용자가 고른 시간 범위"다 (§11).
+// estimated_budget은 항상 빈 문자열 — 예산은 실제 장소 데이터로 검증할 수 없어 AI 추천 근거에서 제외한다.
 export function deterministicFields(
   input: FeelingInput,
   language: AppLanguage,
 ): { estimated_time: string; estimated_budget: string } {
-  const budgetMap = language === 'en' ? BUDGET_LABEL_EN : BUDGET_LABEL;
   const durationMap = language === 'en' ? DURATION_MAP_EN : DURATION_MAP;
   return {
-    estimated_budget: budgetMap[input.budget] ?? input.budget,
-    estimated_time: durationMap[input.duration] ?? input.duration,
+    estimated_budget: '',
+    estimated_time: input.duration ? (durationMap[input.duration] ?? input.duration) : '',
   };
 }
 
@@ -64,22 +64,35 @@ export function buildFeelingSelectPrompt(
 ): string {
   const block = buildCandidatesBlock(candidates, language);
   const note = input.freeText ? `\n${language === 'en' ? 'Note' : '메모'}: ${input.freeText}` : '';
+  const durationMap = language === 'en' ? DURATION_MAP_EN : DURATION_MAP;
+  const durationNote = input.duration
+    ? `\n${language === 'en' ? 'Time available' : '가능 시간'}: ${durationMap[input.duration] ?? input.duration}`
+    : '';
   const n = RECOMMENDATION_CONFIG.finalRecommendationCount;
   if (language === 'en') {
     return `You recommend dates by SELECTING from real candidate places. Pick ${n} distinct candidates and write a warm card for each.
-${block}${prefsHint(prefs, 'en')}${note}
+${block}${prefsHint(prefs, 'en')}${note}${durationNote}
 
 ${NO_FACT_RULE_EN}
 Reply with JSON only:
 { "recommendations": [ { "candidate_id": "candidate_001", "title": "<=15 chars", "summary": "<=40 chars", "why_recommended": "<=50 chars", "tags": ["t1","t2","t3"] } ] }`;
   }
   return `당신은 실제 후보 장소 중에서 선택해 데이트를 추천합니다. 서로 다른 후보 ${n}개를 골라 각각 따뜻한 카드를 작성하세요.
-${block}${prefsHint(prefs, 'ko')}${note}
+${block}${prefsHint(prefs, 'ko')}${note}${durationNote}
 
 ${NO_FACT_RULE_KO}
 반드시 아래 JSON으로만 답하세요:
 { "recommendations": [ { "candidate_id": "candidate_001", "title": "15자 이내", "summary": "40자 이내", "why_recommended": "50자 이내, 따뜻한 말투", "tags": ["태그1","태그2","태그3"] } ] }`;
 }
+
+// duration이 짧을수록 코스 단계 수를 줄이라는 구조적 지침 — 사실 단정이 아니라 페이싱 지침이라 hallucination 위험이 없다.
+// 키 집합은 DURATION_MAP(lib/prompt.ts)과 반드시 같아야 한다 — __tests__/recommendation.test.ts가 이를 강제한다.
+export const COURSE_STEP_COUNT_BY_DURATION: Record<string, number> = {
+  '1h': 2,
+  '2-3h': 3,
+  half_day: 4,
+  full_day: 4,
+};
 
 export function buildCourseSelectPrompt(
   candidates: Candidate[], intent: PlanIntent, input: FeelingInput,
@@ -87,9 +100,13 @@ export function buildCourseSelectPrompt(
 ): string {
   const block = buildCandidatesBlock(candidates, language);
   const note = input.freeText ? `\n${language === 'en' ? 'Idea' : '아이디어'}: ${input.freeText}` : '';
+  const stepCount = input.duration ? COURSE_STEP_COUNT_BY_DURATION[input.duration] : undefined;
+  const stepCountRule = stepCount
+    ? (language === 'en' ? `\nAvailable time is limited — build the course with exactly ${stepCount} steps.` : `\n가능 시간이 제한적이니 코스를 정확히 ${stepCount}단계로 구성하세요.`)
+    : '';
   if (language === 'en') {
     return `Build ONE (max 2) ordered date course from the real candidates below.
-${block}${prefsHint(prefs, 'en')}${note}
+${block}${prefsHint(prefs, 'en')}${note}${stepCountRule}
 
 Each place step MUST reference a candidate_id from the list. Pure-action steps (walk, movie) omit candidate_id.
 ${NO_FACT_RULE_EN}
@@ -97,7 +114,7 @@ Reply with JSON only:
 { "recommendations": [ { "title": "<=15 chars", "summary": "<=40 chars", "why_recommended": "<=50 chars", "tags": ["t1","t2"], "steps": [ { "candidate_id": "candidate_003", "label": "brunch", "desc": "<=20 chars" }, { "label": "river walk", "desc": "<=20 chars" } ] } ] }`;
   }
   return `아래 실제 후보들로 순서 있는 데이트 코스 1개(최대 2개)를 구성하세요.
-${block}${prefsHint(prefs, 'ko')}${note}
+${block}${prefsHint(prefs, 'ko')}${note}${stepCountRule}
 
 장소 단계는 반드시 목록의 candidate_id를 참조하세요. 순수 행동 단계(산책·영화 등)는 candidate_id 없이 label/desc만 작성하세요.
 ${NO_FACT_RULE_KO}

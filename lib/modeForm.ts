@@ -2,15 +2,14 @@ import type { FeelingInput, GeoCoords } from './ai';
 
 const norm = (v?: string) => v?.trim() || undefined;
 
-type FeelingArgs = { mood: string; budget: string; duration: string; freeText?: string; location?: string; coords?: GeoCoords };
+type FeelingArgs = { mood: string; duration?: string; freeText?: string; location?: string; coords?: GeoCoords };
 
 export function buildFeelingInput(a: FeelingArgs): FeelingInput {
   return {
     energy: 'medium',
-    budget: a.budget,
     distance: 'any',
     mood: a.mood,
-    duration: a.duration,
+    duration: norm(a.duration),
     avoid: [],
     freeText: norm(a.freeText),
     location: a.coords ? undefined : norm(a.location),
@@ -18,15 +17,14 @@ export function buildFeelingInput(a: FeelingArgs): FeelingInput {
   };
 }
 
-type CourseArgs = { idea: string; budget: string; duration: string; location?: string; coords?: GeoCoords };
+type CourseArgs = { idea: string; duration?: string; location?: string; coords?: GeoCoords };
 
 export function buildCourseInput(a: CourseArgs): FeelingInput {
   return {
     energy: 'medium',
-    budget: a.budget || 'medium',
     distance: 'any',
     mood: 'comfortable',
-    duration: a.duration || '2-3h',
+    duration: norm(a.duration),
     avoid: [],
     freeText: a.idea.trim() || undefined,
     location: a.coords ? undefined : norm(a.location),

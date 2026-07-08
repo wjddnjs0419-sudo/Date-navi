@@ -499,23 +499,8 @@
     "title": "What kind of date\ndo you have in mind?",
     "ideaLabel": "Your date idea",
     "ideaPlaceholder": "e.g. I want to visit an exhibition, how about a picnic?",
-    "ideaHint": "A rough idea is totally fine.",
-    "budgetLabel": "What is your budget?",
-    "budgetOptions": [
-      {
-        "label": "Keep it cheap",
-        "value": "low"
-      },
-      {
-        "label": "Moderate",
-        "value": "medium"
-      },
-      {
-        "label": "Make it special",
-        "value": "high"
-      }
-    ],
-    "durationLabel": "How much time do you have?",
+    "ideaHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
+    "durationLabel": "How much time do you have? (optional)",
     "durationOptions": [
       {
         "label": "2-3 hours",
@@ -651,8 +636,7 @@
     "conditionLabels": {
       "change_place": "📍 If we change the place",
       "closer": "🚶 If it's closer",
-      "indoor": "🏠 If it's indoors",
-      "budget_adjust": "💰 If the budget adjusts"
+      "indoor": "🏠 If it's indoors"
     }
   },
   "softMessage": {
@@ -842,10 +826,6 @@
       "indoor": {
         "label": "If it's indoors",
         "freeText": "Recommend an indoor space instead"
-      },
-      "budget_adjust": {
-        "label": "If the budget adjusts",
-        "freeText": "Recommend something with a cheaper budget"
       }
     },
     "regenerateFallbackText": "Adjust the conditions and recommend again",
@@ -1057,11 +1037,6 @@
         "near": "Nearby",
         "any": "Flexible"
       },
-      "budget": {
-        "low": "Save money",
-        "medium": "Moderate",
-        "high": "Special"
-      },
       "duration": {
         "oneHour": "1 hour",
         "twoThreeHours": "2-3 hours",
@@ -1080,9 +1055,9 @@
       "heading": "Just tell us the vibe\nyou want today",
       "sub": "A rough feeling is enough. We'll turn the mood into date cards.",
       "placeholder": "Ex: I want somewhere quiet with good conversation today.",
+      "freeTextHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
       "mood": "Mood",
-      "budget": "Budget",
-      "duration": "Time",
+      "duration": "Time (optional)",
       "generate": "Create date ideas"
     },
     "generating": {

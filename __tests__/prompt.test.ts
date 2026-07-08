@@ -2,7 +2,7 @@ import { buildPrompt, MODE_EMPHASIS, MODE_EMPHASIS_EN, PROMPT_VERSION } from '..
 import type { FeelingInput } from '../lib/ai';
 
 const base: FeelingInput = {
-  energy: 'low', budget: 'low', distance: 'near',
+  energy: 'low', distance: 'near',
   mood: 'comfortable', duration: '1h', avoid: [],
 };
 
@@ -70,5 +70,24 @@ describe('make_course JSON 골격에 steps 필드', () => {
 describe('PROMPT_VERSION', () => {
   it('vN 형식의 문자열이다', () => {
     expect(PROMPT_VERSION).toMatch(/^v\d+$/);
+  });
+});
+
+describe('buildPrompt 예산/시간', () => {
+  it('예산 관련 텍스트를 포함하지 않는다', () => {
+    const p = buildPrompt(base, 'feeling');
+    expect(p).not.toMatch(/예산|Budget/);
+  });
+  it('duration이 있으면 가능 시간 텍스트를 포함한다', () => {
+    const p = buildPrompt(base, 'feeling');
+    expect(p).toContain('가능 시간');
+  });
+  it('duration이 없으면 가능 시간 텍스트를 생략한다', () => {
+    const p = buildPrompt({ ...base, duration: undefined }, 'feeling');
+    expect(p).not.toContain('가능 시간');
+  });
+  it('en: duration이 없으면 Time available 텍스트를 생략한다', () => {
+    const p = buildPrompt({ ...base, duration: undefined }, 'feeling', undefined, 'en');
+    expect(p).not.toContain('Time available');
   });
 });
