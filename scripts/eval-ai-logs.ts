@@ -18,9 +18,9 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 const EVAL_SCHEMA = {
   type: 'object',
   properties: {
-    relevance_score: { type: 'integer', minimum: 1, maximum: 5 },
+    relevance_score: { type: 'integer', enum: [1, 2, 3, 4, 5] },
     hallucination_flag: { type: 'boolean' },
-    reasoning_quality_score: { type: 'integer', minimum: 1, maximum: 5 },
+    reasoning_quality_score: { type: 'integer', enum: [1, 2, 3, 4, 5] },
     verdict: { type: 'string', enum: ['pass', 'borderline', 'fail'] },
     comment: { type: 'string' },
   },
