@@ -23,7 +23,7 @@ const CARD_STYLES = [
 ];
 
 export default function ResultScreen() {
-  const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
+  const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
   const router = useRouter();
   const { t } = useI18n();
 
@@ -33,10 +33,11 @@ export default function ResultScreen() {
   }, [cardsParam]);
 
   // 입력화면은 스택에서 빠져 있으므로, 다시 추천은 generating 으로 재진입해 재생성한다.
+  // sessionId가 있으면 generating이 Candidate Pool을 재사용하고 previousPlaceIds를 제외한다 (Phase 6).
   function regenerate() {
     router.replace({
       pathname: '/mode-flow/generating',
-      params: { mode: mode ?? 'pick_for_me', input: input ?? '{}' },
+      params: { mode: mode ?? 'pick_for_me', input: input ?? '{}', ...(sessionId ? { sessionId } : {}) },
     } as any);
   }
 

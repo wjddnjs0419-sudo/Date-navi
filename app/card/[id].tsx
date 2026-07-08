@@ -30,6 +30,8 @@ type CardDetail = {
   map_url?: string | null;
   mode: string;
   created_at: string;
+  // 원본 추천 입력. 조건 재생성 시 location/coords를 보존하려면 필요 (V2 §15).
+  input_json?: Partial<FeelingInput> | null;
 };
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
@@ -144,13 +146,19 @@ export default function CardDetailScreen() {
     setGeneratingAlt(true);
     try {
       const condInfo = CONDITION_TAGS.find(c => c.tag === condTag);
+      // 원본 input_json을 base로 쓰고 조건분만 override → location/coords 보존 (§15).
+      // input_json이 없는 구 카드는 기존 하드코딩 base로 폴백(location 없음).
+      const base: FeelingInput = card.input_json && typeof card.input_json === 'object'
+        ? {
+            energy: 'medium', budget: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [],
+            ...card.input_json,
+          }
+        : { energy: 'medium', budget: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
       const input: FeelingInput = {
-        energy: 'medium',
-        budget: condTag === 'budget_adjust' ? 'low' : 'medium',
-        distance: condTag === 'closer' ? 'near' : 'any',
-        mood: 'comfortable',
-        duration: '2-3h',
-        avoid: condTag === 'indoor' ? ['outdoor'] : [],
+        ...base,
+        budget: condTag === 'budget_adjust' ? 'low' : base.budget,
+        distance: condTag === 'closer' ? 'near' : base.distance,
+        avoid: condTag === 'indoor' ? [...new Set([...(base.avoid ?? []), 'outdoor'])] : base.avoid,
         freeText: `${t('card.regeneratePromptPrefix', { title: card.title })}${condInfo?.freeText ?? t('card.regenerateFallbackText')}`,
       };
       const prefs = await getUserPreferences();

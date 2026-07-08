@@ -73,7 +73,7 @@ function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: nu
 }
 
 export default function CourseResultScreen() {
-  const { mode, input, cards: cardsParam } = useLocalSearchParams<{ mode: string; input: string; cards: string }>();
+  const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { t } = useI18n();
@@ -87,7 +87,7 @@ export default function CourseResultScreen() {
   function regenerate() {
     router.replace({
       pathname: '/mode-flow/generating',
-      params: { mode: mode ?? 'make_course', input: input ?? '{}' },
+      params: { mode: mode ?? 'make_course', input: input ?? '{}', ...(sessionId ? { sessionId } : {}) },
     } as any);
   }
 

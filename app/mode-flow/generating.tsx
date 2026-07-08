@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Sparkles } from 'lucide-react-native';
-import { generateDateCards, getUserPreferences, type FeelingInput } from '../../lib/ai';
+import { generateDateCards, regenerateDateCards, getUserPreferences, type FeelingInput, type DateCard } from '../../lib/ai';
+import { createSession, getSession, addPreviousPlaceIds } from '../../lib/recommendationSession';
+import { collectPlaceIds } from '../../lib/recommendation';
 import { logEvent } from '../../lib/analytics';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { BigButton, GeneratingView } from '../../components/ui';
 
 export default function GeneratingScreen() {
-  const { mode, input } = useLocalSearchParams<{ mode: string; input: string }>();
+  const { mode, input, sessionId: sessionIdParam } = useLocalSearchParams<{ mode: string; input: string; sessionId?: string }>();
   const router = useRouter();
   const { language, t } = useI18n();
   const [step, setStep] = useState(0);
@@ -30,15 +32,36 @@ export default function GeneratingScreen() {
     (async () => {
       try {
         const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-        const prefs = await getUserPreferences();
         const m = mode ?? 'pick_for_me';
         await logEvent('mode_selected', { mode: m });
-        const result = await generateDateCards(parsedInput, m, prefs, language);
+
+        let result: DateCard[] = [];
+        let sessionId = sessionIdParam;
+
+        // 재추천: 저장된 Session이 있으면 Candidate Pool을 재사용하고 previousPlaceIds를 제외해 다시 고른다.
+        const existing = getSession(sessionIdParam);
+        if (existing) {
+          result = await regenerateDateCards(existing, language);
+          if (result.length > 0) {
+            addPreviousPlaceIds(existing.sessionId, collectPlaceIds(result, existing.candidates));
+          }
+        }
+
+        // 최초 추천 또는 재추천 후보 소진 시: fresh 생성 후 새 Session 저장(candidate 플로우일 때만).
+        if (result.length === 0) {
+          const prefs = await getUserPreferences();
+          let captured: { intent: import('../../lib/intent').PlanIntent; candidates: import('../../lib/candidate').Candidate[]; usedPlaceIds: string[] } | undefined;
+          result = await generateDateCards(parsedInput, m, prefs, language, { onSession: (s) => { captured = s; } });
+          sessionId = captured
+            ? createSession({ mode: m, input: parsedInput, intent: captured.intent, candidates: captured.candidates, previousPlaceIds: captured.usedPlaceIds, prefs }).sessionId
+            : undefined;
+        }
+
         await logEvent('ai_card_created', { mode: m, card_count: result.length });
         if (cancelled) return;
         router.replace({
           pathname: isCourse ? '/mode-flow/course-result' : '/mode-flow/result',
-          params: { mode: m, input: input ?? '{}', cards: JSON.stringify(result) },
+          params: { mode: m, input: input ?? '{}', cards: JSON.stringify(result), ...(sessionId ? { sessionId } : {}) },
         } as any);
       } catch {
         if (!cancelled) setErrorMsg(t(isCourse ? 'modeFlow.generating.courseError' : 'modeFlow.generating.defaultError'));
@@ -49,7 +72,7 @@ export default function GeneratingScreen() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [input, language, mode, retryKey, steps.length, t]);
+  }, [input, language, mode, sessionIdParam, retryKey, steps.length, t]);
 
   if (errorMsg !== '') {
     return (

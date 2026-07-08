@@ -22,6 +22,7 @@ import {
   type CourseRec,
   type IntentMode,
 } from './recommendation';
+import type { RecommendationSession } from './recommendationSession';
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
 // location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
@@ -324,6 +325,22 @@ async function runFreeGenFlow(
   if (!Array.isArray(cards) || cards.length === 0) throw new Error('No cards in response');
   const det = deterministicFields(input, language);
   return cards.slice(0, 3).map(c => ({ ...c, estimated_time: det.estimated_time, estimated_budget: det.estimated_budget }));
+}
+
+// Phase 6 — 재추천: 저장된 Session의 Candidate Pool을 재사용하고 previousPlaceIds를 제외해
+// Kakao 재검색 없이 다시 고른다. 결과가 비면([] 반환) 호출부가 fresh generate로 폴백한다.
+export async function regenerateDateCards(
+  session: RecommendationSession,
+  language: AppLanguage = 'ko',
+): Promise<DateCard[]> {
+  try {
+    const intentMode = resolveIntentMode(session.mode);
+    return await runCandidateFlow(
+      intentMode, session.candidates, session.intent, session.input, session.prefs, language, session.previousPlaceIds,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function generateDateCards(
