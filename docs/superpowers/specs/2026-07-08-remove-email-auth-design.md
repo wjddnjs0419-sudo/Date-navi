@@ -48,7 +48,7 @@ Supabase 프로젝트(`wqjguifsmtblgrhdfnji`, Date-Navi)의 `auth.users`에서 `
 
 `account.changePassword` 네임스페이스 전체를 제거한다.
 
-공용으로 계속 쓰이는 키(`appleStart`, `kakaoStart`, `googleStart`, `or`, `terms`, `privacy`, `legalPrefix`, `legalMiddle`, `legalSuffix`, `welcomeHeading`, `welcomeBody`, `errorGoogleFailed`, `errorKakaoFailed` 등)는 그대로 둔다. 리디자인 이전부터 남아있던 미사용 레거시 키(`emailPlaceholder`, `passwordPlaceholder`, `signUp`, `toSignUp`, `toSignIn`, `languageHint`, `legalAgree`, `requiredAgreement`)는 이번 작업 범위 밖이므로 건드리지 않는다.
+공용으로 계속 쓰이는 키(`appleStart`, `kakaoStart`, `googleStart`, `or`, `terms`, `privacy`, `legalPrefix`, `legalMiddle`, `legalSuffix`, `welcomeHeading`, `welcomeBody`, `errorGoogleFailed`, `errorKakaoFailed` 등)는 그대로 둔다. 리디자인 이전부터 남아있던 미사용 레거시 키(`emailPlaceholder`, `passwordPlaceholder`, `signUp`, `toSignUp`, `toSignIn`, `languageHint`, `legalAgree`)는 이번 작업 범위 밖이므로 건드리지 않는다. (`requiredAgreement`는 초안에서는 범위 밖으로 분류했으나, 실제로는 이메일 폼 전용 키였음이 확인되어 구현 계획서에서 제거 대상에 포함하고 실제로도 제거했다.)
 
 ## 테스트 / 검증
 
