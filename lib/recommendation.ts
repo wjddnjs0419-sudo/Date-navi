@@ -7,7 +7,7 @@ import type { Candidate } from './candidate';
 import type { PlanIntent } from './intent';
 import type { CourseStep } from './course';
 import { RECOMMENDATION_CONFIG } from './recommendationConfig';
-import { BUDGET_MAP, BUDGET_MAP_EN, DURATION_MAP, DURATION_MAP_EN } from './prompt';
+import { BUDGET_LABEL, BUDGET_LABEL_EN, DURATION_MAP, DURATION_MAP_EN } from './prompt';
 
 export type IntentMode = 'feeling' | 'make_course';
 
@@ -24,7 +24,7 @@ export function deterministicFields(
   input: FeelingInput,
   language: AppLanguage,
 ): { estimated_time: string; estimated_budget: string } {
-  const budgetMap = language === 'en' ? BUDGET_MAP_EN : BUDGET_MAP;
+  const budgetMap = language === 'en' ? BUDGET_LABEL_EN : BUDGET_LABEL;
   const durationMap = language === 'en' ? DURATION_MAP_EN : DURATION_MAP;
   return {
     estimated_budget: budgetMap[input.budget] ?? input.budget,

@@ -11,6 +11,12 @@ export const BUDGET_MAP: Record<string, string> = {
   medium: '적당한 예산 (3~7만 원)',
   high: '넉넉한 예산 (7만 원 이상)',
 };
+// 카드에 실제로 표시되는 짧은 라벨. BUDGET_MAP은 AI 프롬프트 컨텍스트용으로 금액 detail을 유지한다.
+export const BUDGET_LABEL: Record<string, string> = {
+  low: '저예산',
+  medium: '적당한 예산',
+  high: '넉넉한 예산',
+};
 export const DISTANCE_MAP: Record<string, string> = {
   near: '가까운 곳 (도보/차 10분)',
   any: '거리 상관없음',
@@ -46,6 +52,11 @@ export const BUDGET_MAP_EN: Record<string, string> = {
   low: 'Low budget (about $10-25 per person)',
   medium: 'Moderate budget (about $25-60 per person)',
   high: 'Higher budget (about $60+ per person)',
+};
+export const BUDGET_LABEL_EN: Record<string, string> = {
+  low: 'Low budget',
+  medium: 'Moderate budget',
+  high: 'Higher budget',
 };
 export const DISTANCE_MAP_EN: Record<string, string> = {
   near: 'Nearby (walk or 10 minutes by car)',

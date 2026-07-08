@@ -42,7 +42,7 @@ describe('resolveIntentMode', () => {
 describe('deterministicFields', () => {
   it('fills estimated from budget/duration maps (ko)', () => {
     const f = deterministicFields({ ...input, budget: 'low', duration: '2-3h' }, 'ko');
-    expect(f.estimated_budget).toBe('저예산 (1~3만 원)');
+    expect(f.estimated_budget).toBe('저예산');
     expect(f.estimated_time).toBe('2~3시간');
   });
   it('falls back to raw value for unknown keys', () => {
@@ -92,7 +92,7 @@ describe('assembleFeelingCards', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].place_name).toBe('A카페');
     expect(cards[0].map_url).toBe('http://a');
-    expect(cards[0].estimated_budget).toBe('저예산 (1~3만 원)');
+    expect(cards[0].estimated_budget).toBe('저예산');
   });
   it('drops duplicate candidate_id', () => {
     const recs = [
