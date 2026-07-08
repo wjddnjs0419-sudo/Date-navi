@@ -8,7 +8,11 @@ type EventName =
   | 'ai_card_created'
   | 'soft_message_generated'
   | 'date_completed'
-  | 'onboarding_completed';
+  | 'onboarding_completed'
+  // 추천 파이프라인 계측 (V2 §18) — analytics_events.params(jsonb)에 지표 적재.
+  | 'recommendation_generated'
+  | 'recommendation_regenerated'
+  | 'recommendation_fallback';
 
 export async function logEvent(name: EventName, params?: Record<string, unknown>) {
   try {

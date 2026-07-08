@@ -23,6 +23,7 @@ import {
   type IntentMode,
 } from './recommendation';
 import type { RecommendationSession } from './recommendationSession';
+import { logEvent } from './analytics';
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
 // location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
@@ -269,6 +270,8 @@ export type GenerateOptions = {
   onSession?: (s: { intent: PlanIntent; candidates: Candidate[]; usedPlaceIds: string[] }) => void;
 };
 
+type CandidateFlowResult = { cards: DateCard[]; usage?: AIUsage; claudeLatencyMs: number; fallbackCount: number };
+
 // 위치가 있고 후보가 확보되면: Claude가 candidate_id만 선택 → 앱이 Validation·결정론 필드·장소를 결합한다 (V2 §10~§12).
 async function runCandidateFlow(
   intentMode: IntentMode,
@@ -278,28 +281,31 @@ async function runCandidateFlow(
   prefs: UserPreferences | undefined,
   language: AppLanguage,
   previousPlaceIds: string[],
-): Promise<DateCard[]> {
+): Promise<CandidateFlowResult> {
   const action = intentMode === 'make_course' ? 'course_select' : 'feeling_select';
   const prompt = intentMode === 'make_course'
     ? buildCourseSelectPrompt(candidates, intent, input, prefs, language)
     : buildFeelingSelectPrompt(candidates, intent, input, prefs, language);
-  const { data } = await invokeAI(action, prompt);
+  const startedAt = Date.now();
+  const { data, usage } = await invokeAI(action, prompt);
+  const claudeLatencyMs = Date.now() - startedAt;
   const recs = Array.isArray((data as { recommendations?: unknown[] })?.recommendations)
     ? (data as { recommendations: unknown[] }).recommendations
     : [];
 
   if (intentMode === 'make_course') {
-    return assembleCourseCards(recs as CourseRec[], candidates, input, previousPlaceIds, language);
+    const cards = assembleCourseCards(recs as CourseRec[], candidates, input, previousPlaceIds, language);
+    return { cards, usage, claudeLatencyMs, fallbackCount: 0 };
   }
 
   const n = RECOMMENDATION_CONFIG.finalRecommendationCount;
   const feelingRecs = recs as FeelingRec[];
   const valid = assembleFeelingCards(feelingRecs, candidates, input, previousPlaceIds, language);
-  if (valid.length >= n) return valid.slice(0, n);
+  if (valid.length >= n) return { cards: valid.slice(0, n), usage, claudeLatencyMs, fallbackCount: 0 };
   // 부족분은 재호출 없는 결정론 폴백으로 채운다 (§12).
   const usedIds = new Set(usedCandidateIds(feelingRecs));
   const fill = buildDeterministicFallback(candidates, intent, input, previousPlaceIds, usedIds, n - valid.length, language);
-  return [...valid, ...fill];
+  return { cards: [...valid, ...fill], usage, claudeLatencyMs, fallbackCount: fill.length };
 }
 
 // 위치가 없거나 후보 0개면 현행 자유생성 유지(무회귀). estimated 필드만 앱이 결정론적으로 덮어쓴다 (§11).
@@ -335,9 +341,22 @@ export async function regenerateDateCards(
 ): Promise<DateCard[]> {
   try {
     const intentMode = resolveIntentMode(session.mode);
-    return await runCandidateFlow(
+    const res = await runCandidateFlow(
       intentMode, session.candidates, session.intent, session.input, session.prefs, language, session.previousPlaceIds,
     );
+    if (res.cards.length > 0) {
+      void logEvent('recommendation_regenerated', {
+        mode: session.mode,
+        intent_purpose: session.intent.purpose,
+        ranked_candidate_count: session.candidates.length,
+        final_recommendation_count: res.cards.length,
+        fallback_recommendation_count: res.fallbackCount,
+        claude_latency_ms: res.claudeLatencyMs,
+        claude_input_tokens: res.usage?.input_tokens,
+        claude_output_tokens: res.usage?.output_tokens,
+      });
+    }
+    return res.cards;
   } catch {
     return [];
   }
@@ -363,23 +382,39 @@ export async function generateDateCards(
       });
       // Adaptive Retrieval — intent의 다중 쿼리/카테고리로 후보 recall을 넓힌다 (Phase 2).
       const retrieval = buildRetrievalPlan(intent);
+      const retrievalStart = Date.now();
       const places = await searchPlaces(
         { location: input.location, coords: input.coords },
         distanceToRadius(input.distance),
         null,
         retrieval,
       );
+      const retrievalLatencyMs = Date.now() - retrievalStart;
       const candidates = buildCandidates(places, intent);
       if (candidates.length > 0) {
-        const cards = await runCandidateFlow(intentMode, candidates, intent, input, prefs, language, previousPlaceIds);
-        if (cards.length > 0) {
-          opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(cards, candidates) });
-          return cards;
+        const res = await runCandidateFlow(intentMode, candidates, intent, input, prefs, language, previousPlaceIds);
+        if (res.cards.length > 0) {
+          opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(res.cards, candidates) });
+          void logEvent('recommendation_generated', {
+            mode,
+            intent_purpose: intent.purpose,
+            raw_candidate_count: places.length,
+            ranked_candidate_count: candidates.length,
+            haiku_candidate_count: Math.min(candidates.length, RECOMMENDATION_CONFIG.haikuCandidateLimit),
+            final_recommendation_count: res.cards.length,
+            fallback_recommendation_count: res.fallbackCount,
+            retrieval_latency_ms: retrievalLatencyMs,
+            claude_latency_ms: res.claudeLatencyMs,
+            claude_input_tokens: res.usage?.input_tokens,
+            claude_output_tokens: res.usage?.output_tokens,
+          });
+          return res.cards;
         }
       }
     }
     return await runFreeGenFlow(input, mode, prefs, language);
   } catch {
+    void logEvent('recommendation_fallback', { mode, reason: 'error' });
     return FALLBACK_CARDS_BY_LANGUAGE[language];
   }
 }
