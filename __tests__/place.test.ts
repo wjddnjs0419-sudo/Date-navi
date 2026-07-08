@@ -70,7 +70,7 @@ describe('formatPlacesBlock', () => {
 
 describe('buildRetrievalPlan', () => {
   const intent = (over: Partial<PlanIntent>): PlanIntent => ({
-    purpose: 'meal', placeTypes: [], atmosphere: [], budgetLevel: 'medium', duration: '2-3h',
+    purpose: 'meal', placeTypes: [], atmosphere: [], duration: '2-3h',
     searchQueries: [], positiveSignals: [], negativeSignals: [], ...over,
   });
 
@@ -139,8 +139,8 @@ describe('detectPlaceFocus', () => {
     expect(detectPlaceFocus('노래방 가자')).toEqual({ query: '액티비티', label: '액티비티' });
   });
 
-  it('"영화" 언급 시 액티비티 키워드 검색으로 감지', () => {
-    expect(detectPlaceFocus('영화 보고 싶어')).toEqual({ query: '액티비티', label: '액티비티' });
+  it('"영화" 언급 시 영화관 카테고리로 감지된다 (액티비티 아님)', () => {
+    expect(detectPlaceFocus('영화 보고 싶어')).toEqual({ query: '영화관', label: '영화관' });
   });
 
   it('"피크닉" 언급 시 액티비티 키워드 검색으로 감지', () => {
