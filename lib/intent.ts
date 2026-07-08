@@ -149,7 +149,9 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
   if (mode === 'make_course') {
     // 백본은 feeling과 공유하되, 코스는 다카테고리 후보를 확보해야 동선이 나온다.
     const placeTypes = uniq([...matches.flatMap(m => m.placeTypes), ...COURSE_BASE_PLACE_TYPES]);
-    const searchQueries = uniq([...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES, ...freeTextQuery]);
+    // freeText 원문을 맨 앞에 둔다 — 다운스트림(place-search)이 검색어를 8개로 자르므로,
+    // 여러 규칙이 매칭돼 검색어가 많아져도 폴백 검색어가 잘려나가지 않게 한다.
+    const searchQueries = uniq([...freeTextQuery, ...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES]);
     const positiveSignals = uniq(matches.flatMap(m => m.positiveSignals));
     const negativeSignals = uniq(matches.flatMap(m => m.negativeSignals));
     const purpose: Purpose = matches[0]?.purpose ?? 'general_date';
@@ -163,7 +165,7 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
       placeTypes: [...GENERAL_PLACE_TYPES],
       atmosphere,
       duration,
-      searchQueries: uniq([...GENERAL_QUERIES, ...freeTextQuery]),
+      searchQueries: uniq([...freeTextQuery, ...GENERAL_QUERIES]),
       positiveSignals: [],
       negativeSignals: [],
     };
@@ -175,7 +177,7 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
     placeTypes: uniq(primary.placeTypes),
     atmosphere,
     duration,
-    searchQueries: uniq([...primary.searchQueries, ...freeTextQuery]),
+    searchQueries: uniq([...freeTextQuery, ...primary.searchQueries]),
     positiveSignals: uniq(primary.positiveSignals),
     negativeSignals: uniq(primary.negativeSignals),
   };

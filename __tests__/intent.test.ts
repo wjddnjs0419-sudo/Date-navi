@@ -81,4 +81,11 @@ describe('resolveIntent — make_course 모드', () => {
     const unique = new Set(intent.searchQueries);
     expect(unique.size).toBe(intent.searchQueries.length);
   });
+
+  it('여러 규칙이 매칭돼 검색어가 8개를 넘어도 freeText 원문은 상위 8개 안에 남는다 (다운스트림 8개 cap 대비)', () => {
+    const freeText = '카페에서 커피 마시고 브런치 먹고 산책하다가 술 한잔하고 싶어';
+    const intent = resolveIntent({ mode: 'make_course', freeText, mood: 'comfortable', duration: 'half_day' });
+    expect(intent.searchQueries.length).toBeGreaterThan(8);
+    expect(intent.searchQueries.slice(0, 8)).toContain(freeText);
+  });
 });
