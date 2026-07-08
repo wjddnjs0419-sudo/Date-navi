@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
+import * as Notifications from 'expo-notifications';
+import { registerPushToken, buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -92,12 +94,21 @@ export default function RootLayout() {
         setTimeout(() => {
           void routeForSession(session);
         }, 0);
+        if (event === 'SIGNED_IN') void registerPushToken();
       }
+    });
+
+    const notificationSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { type?: PushNotificationType; card_id?: string };
+      if (!data?.type) return;
+      const target = buildPushNavigationTarget(data.type, { card_id: data.card_id });
+      router.push(target as any);
     });
 
     return () => {
       subscription.unsubscribe();
       urlSubscription.remove();
+      notificationSubscription.remove();
     };
   }, []);
 
