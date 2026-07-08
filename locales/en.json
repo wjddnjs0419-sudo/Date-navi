@@ -346,10 +346,6 @@
     "tabSubtitle": "Things change every time — just pick the help you need right now.",
     "tabStartCta": "Start this mode",
     "tabModes": {
-      "pick_for_me": {
-        "title": "Let the app pick",
-        "desc": "Just pick your conditions and get 3 candidates."
-      },
       "feeling": {
         "title": "I'll just say the vibe",
         "desc": "It's fine to just share the mood you want."
@@ -357,10 +353,6 @@
       "make_course": {
         "title": "Organize it into a course",
         "desc": "Turn a rough idea into time, budget, and things to bring."
-      },
-      "light": {
-        "title": "Keep it light",
-        "desc": "Good for tired days or when you want to save money."
       },
       "next_meet": {
         "title": "Next time we meet",
@@ -1108,15 +1100,6 @@
         "new": "Something new"
       }
     },
-    "pick": {
-      "heading": "Tell us the conditions\nand we'll choose",
-      "sub": "Pick a few basics and we'll suggest three date ideas.",
-      "energy": "Energy",
-      "distance": "Distance",
-      "budget": "Budget",
-      "duration": "Time",
-      "generate": "Create date ideas"
-    },
     "feeling": {
       "heading": "Just tell us the vibe\nyou want today",
       "sub": "A rough feeling is enough. We'll turn the mood into date cards.",
@@ -1125,12 +1108,6 @@
       "budget": "Budget",
       "duration": "Time",
       "generate": "Create date ideas"
-    },
-    "light": {
-      "heading": "Keep it light\ntoday",
-      "sub": "Low effort, low pressure, and nearby ideas for an easy date.",
-      "duration": "How long will you be together?",
-      "generate": "Create light ideas"
     },
     "generating": {
       "courseSteps": [

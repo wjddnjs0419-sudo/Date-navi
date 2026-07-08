@@ -37,7 +37,7 @@ export default function ResultScreen() {
   function regenerate() {
     router.replace({
       pathname: '/mode-flow/generating',
-      params: { mode: mode ?? 'pick_for_me', input: input ?? '{}', ...(sessionId ? { sessionId } : {}) },
+      params: { mode: mode ?? 'feeling', input: input ?? '{}', ...(sessionId ? { sessionId } : {}) },
     } as any);
   }
 
@@ -65,7 +65,7 @@ export default function ResultScreen() {
       id: cardId,
       couple_id: profile.couple_id,
       created_by: user.id,
-      mode: mode ?? 'pick_for_me',
+      mode: mode ?? 'feeling',
       input_json: JSON.parse(input ?? '{}'),
       source: 'ai',
       status: 'active',

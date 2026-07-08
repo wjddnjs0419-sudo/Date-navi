@@ -2,23 +2,7 @@ import type { FeelingInput, GeoCoords } from './ai';
 
 const norm = (v?: string) => v?.trim() || undefined;
 
-type PickArgs = { energy: string; budget: string; distance: string; duration: string; location?: string; coords?: GeoCoords };
 type FeelingArgs = { mood: string; budget: string; duration: string; freeText?: string; location?: string; coords?: GeoCoords };
-type LightArgs = { duration: string; location?: string; coords?: GeoCoords };
-
-export function buildPickInput(a: PickArgs): FeelingInput {
-  return {
-    energy: a.energy,
-    budget: a.budget,
-    distance: a.distance,
-    mood: 'comfortable',
-    duration: a.duration,
-    avoid: [],
-    // GPS 사용 시 입력창의 placeholder 문구가 location으로 저장되지 않게 버린다.
-    location: a.coords ? undefined : norm(a.location),
-    coords: a.coords,
-  };
-}
 
 export function buildFeelingInput(a: FeelingArgs): FeelingInput {
   return {
@@ -29,19 +13,6 @@ export function buildFeelingInput(a: FeelingArgs): FeelingInput {
     duration: a.duration,
     avoid: [],
     freeText: norm(a.freeText),
-    location: a.coords ? undefined : norm(a.location),
-    coords: a.coords,
-  };
-}
-
-export function buildLightInput(a: LightArgs): FeelingInput {
-  return {
-    energy: 'low',
-    budget: 'low',
-    distance: 'near',
-    mood: 'comfortable',
-    duration: a.duration,
-    avoid: [],
     location: a.coords ? undefined : norm(a.location),
     coords: a.coords,
   };

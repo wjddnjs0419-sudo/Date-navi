@@ -162,12 +162,12 @@ export default function CardDetailScreen() {
         freeText: `${t('card.regeneratePromptPrefix', { title: card.title })}${condInfo?.freeText ?? t('card.regenerateFallbackText')}`,
       };
       const prefs = await getUserPreferences();
-      const newCards = await generateDateCards(input, card.mode || 'pick_for_me', prefs, language);
+      const newCards = await generateDateCards(input, card.mode || 'feeling', prefs, language);
       for (const nc of newCards) {
         await supabase.from('date_cards').insert({
           couple_id: coupleId,
           created_by: myUserId,
-          mode: card.mode || 'pick_for_me',
+          mode: card.mode || 'feeling',
           source: 'ai',
           status: 'active',
           title: nc.title,

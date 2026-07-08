@@ -436,7 +436,7 @@ export default function CandidatesScreen() {
             style={s.fab}
             onPress={() => router.push({
               pathname: '/mode-flow/feeling',
-              params: { mode: 'pick_for_me' },
+              params: { mode: 'feeling' },
             } as any)}
             activeOpacity={0.85}
           >
