@@ -3,12 +3,13 @@ import {
   AccessibilityInfo, Easing, Modal,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C } from '../constants/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GeoCoords } from '../lib/ai';
+import type { CourseStep } from '../lib/course';
 import { useI18n } from '../lib/i18n';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
@@ -780,4 +781,94 @@ const successS = StyleSheet.create({
     backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center',
   },
   message: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
+});
+
+// ─── CourseStepList ───────────────────────────────────────────────────────────
+function StepConnector() {
+  return (
+    <View style={stepS.connector}>
+      <View style={stepS.connectorLine} />
+      <View style={stepS.connectorDot}>
+        <ChevronDown size={12} color={C.pinkDeep} strokeWidth={2.5} />
+      </View>
+      <View style={stepS.connectorLine} />
+    </View>
+  );
+}
+
+function StepCard({ step, index }: { step: CourseStep; index: number }) {
+  return (
+    <View style={stepS.card}>
+      <View style={stepS.titleRow}>
+        <View style={stepS.badge}>
+          <Text style={stepS.badgeNum}>{index + 1}</Text>
+        </View>
+        <Text style={stepS.title}>{step.label}</Text>
+      </View>
+      {!!step.desc && <Text style={stepS.desc}>{step.desc}</Text>}
+      {!!step.place_name && (
+        <PlaceRow
+          name={step.place_name}
+          address={step.place_address}
+          url={step.map_url}
+          size="compact"
+          style={stepS.placeRow}
+        />
+      )}
+    </View>
+  );
+}
+
+// 코스 단계별 동선 표시 — course-result.tsx(추천 직후)와 card/[id].tsx(저장된 카드 재조회)가 공유한다.
+export function CourseStepList({ steps, summary }: { steps: CourseStep[]; summary?: string }) {
+  if (steps.length === 0) {
+    if (!summary) return null;
+    return (
+      <View style={stepS.card}>
+        <Text style={stepS.fallbackText}>{summary}</Text>
+      </View>
+    );
+  }
+  return (
+    <View>
+      {steps.map((step, i) => (
+        <View key={i}>
+          <StepCard step={step} index={i} />
+          {i < steps.length - 1 && <StepConnector />}
+        </View>
+      ))}
+    </View>
+  );
+}
+const stepS = StyleSheet.create({
+  card: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  badge: {
+    width: 24, height: 24, borderRadius: 12,
+    borderWidth: 2, borderColor: C.pink, backgroundColor: C.white,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  badgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
+  title: { fontSize: 15, fontWeight: '700', color: C.text },
+  desc: { fontSize: 12, color: C.textSub, marginTop: 3, marginLeft: 34 },
+  placeRow: { marginTop: 9, marginLeft: 34 },
+  connector: { alignItems: 'center', height: 30, justifyContent: 'center' },
+  connectorLine: { width: 1.5, height: 8, backgroundColor: C.borderLight },
+  connectorDot: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
+  },
+  fallbackText: { fontSize: 14, color: C.text, lineHeight: 20 },
 });

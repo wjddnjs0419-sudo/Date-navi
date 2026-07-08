@@ -7,68 +7,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type DateCard, type FeelingInput } from '../../lib/ai';
-import { parseStepsFromSummary, type CourseStep } from '../../lib/course';
+import { resolveDisplaySteps } from '../../lib/course';
 import { supabase } from '../../lib/supabase';
-import { Clock, Wallet, Send, Bookmark, ChevronDown } from 'lucide-react-native';
+import { Clock, Wallet, Send, Bookmark } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Badge, PlaceRow } from '../../components/ui';
+import { BackBar, BigButton, Badge, PlaceRow, CourseStepList } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
-
-function StepConnector() {
-  return (
-    <View style={stepS.connector}>
-      <View style={stepS.connectorLine} />
-      <View style={stepS.connectorDot}>
-        <ChevronDown size={12} color={C.pinkDeep} strokeWidth={2.5} />
-      </View>
-      <View style={stepS.connectorLine} />
-    </View>
-  );
-}
-
-function StepCard({ step, index }: { step: CourseStep; index: number }) {
-  return (
-    <View style={stepS.card}>
-      <View style={stepS.titleRow}>
-        <View style={stepS.badge}>
-          <Text style={stepS.badgeNum}>{index + 1}</Text>
-        </View>
-        <Text style={stepS.title}>{step.label}</Text>
-      </View>
-      {!!step.desc && <Text style={stepS.desc}>{step.desc}</Text>}
-      {!!step.place_name && (
-        <PlaceRow
-          name={step.place_name}
-          address={step.place_address}
-          url={step.map_url}
-          size="compact"
-          style={stepS.placeRow}
-        />
-      )}
-    </View>
-  );
-}
-
-function CourseStepList({ steps, summary }: { steps: CourseStep[]; summary?: string }) {
-  if (steps.length === 0) {
-    if (!summary) return null;
-    return (
-      <View style={stepS.card}>
-        <Text style={stepS.fallbackText}>{summary}</Text>
-      </View>
-    );
-  }
-  return (
-    <View>
-      {steps.map((step, i) => (
-        <View key={i}>
-          <StepCard step={step} index={i} />
-          {i < steps.length - 1 && <StepConnector />}
-        </View>
-      ))}
-    </View>
-  );
-}
 
 export default function CourseResultScreen() {
   const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
@@ -133,10 +77,6 @@ export default function CourseResultScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  function stepsOf(card: DateCard): CourseStep[] {
-    return card.steps && card.steps.length > 0 ? card.steps : parseStepsFromSummary(card.summary);
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -203,7 +143,7 @@ export default function CourseResultScreen() {
         onMomentumScrollEnd={onScrollEnd}
       >
         {cards.map((card, i) => {
-          const steps = stepsOf(card);
+          const steps = resolveDisplaySteps(card);
           return (
             <ScrollView key={i} style={{ width }} contentContainerStyle={s.page}>
               <Text style={s.cardTitle}>{card.title}</Text>
@@ -266,37 +206,4 @@ const s = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 16 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.border },
   dotOn: { backgroundColor: C.pink, width: 18 },
-});
-
-const stepS = StyleSheet.create({
-  card: {
-    backgroundColor: C.white,
-    borderRadius: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  badge: {
-    width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: C.pink, backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  badgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
-  title: { fontSize: 15, fontWeight: '700', color: C.text },
-  desc: { fontSize: 12, color: C.textSub, marginTop: 3, marginLeft: 34 },
-  placeRow: { marginTop: 9, marginLeft: 34 },
-  connector: { alignItems: 'center', height: 30, justifyContent: 'center' },
-  connectorLine: { width: 1.5, height: 8, backgroundColor: C.borderLight },
-  connectorDot: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
-  },
-  fallbackText: { fontSize: 14, color: C.text, lineHeight: 20 },
 });
