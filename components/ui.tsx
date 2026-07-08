@@ -777,3 +777,34 @@ const successS = StyleSheet.create({
   },
   message: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
 });
+
+// ─── TriOptionRow ───────────────────────────────────────────────────────────
+// 균등폭 3버튼(텍스트만) 선택 행. feeling.tsx의 예산 선택 UI에서 추출됨.
+export function TriOptionRow<T extends string>({
+  options, value, onChange,
+}: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <View style={triS.row}>
+      {options.map((opt) => {
+        const selected = value === opt.value;
+        return (
+          <TouchableOpacity
+            key={opt.value}
+            onPress={() => onChange(opt.value)}
+            activeOpacity={0.7}
+            style={[triS.btn, selected && triS.btnOn]}
+          >
+            <Text style={[triS.btnText, selected && triS.btnTextOn]}>{opt.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+const triS = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 8 },
+  btn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', backgroundColor: C.white, borderWidth: 1.5, borderColor: C.border },
+  btnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
+  btnText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
+  btnTextOn: { color: C.pinkDeep, fontWeight: '600' },
+});
