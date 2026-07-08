@@ -170,9 +170,9 @@ export default function ConfirmScreen() {
             <SoftCard style={styles.cardPreview}>
               <Text style={styles.cardTitle}>{card.title}</Text>
               <View style={styles.metaRow}>
-                <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>
-                <Text style={styles.metaSep}>·</Text>
-                <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>
+                {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
+                {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
+                {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
               </View>
               <View style={styles.chipRow}>
                 {(card.tags ?? []).slice(0, 3).map((t, i) => (
@@ -229,9 +229,9 @@ export default function ConfirmScreen() {
             <SoftCard style={styles.cardPreview}>
               <Text style={styles.cardTitle}>{card.title}</Text>
               <View style={styles.metaRow}>
-                <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>
-                <Text style={styles.metaSep}>·</Text>
-                <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>
+                {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
+                {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
+                {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
               </View>
               <View style={styles.chipRow}>
                 {(card.tags ?? []).slice(0, 3).map((t, i) => (
