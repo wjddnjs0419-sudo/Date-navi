@@ -203,7 +203,7 @@ export function OptionCardPicker({
   columns = 4,
 }: {
   options: OptionCard[];
-  value: string;
+  value: string | undefined;
   onChange: (value: string) => void;
   columns?: number;
 }) {
