@@ -127,6 +127,46 @@ const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; tempera
 
 const MODEL = 'claude-haiku-4-5';
 
+// 프롬프트/응답 로깅 대상 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
+const LOGGED_ACTIONS = new Set(['cards', 'feeling_select', 'course_select']);
+
+type LogParams = {
+  userId: string;
+  action: string;
+  promptVersion: string;
+  prompt: string;
+  model: string;
+  status: 'success' | 'error';
+  responseJson?: unknown;
+  errorMessage?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  latencyMs: number;
+};
+
+// 로깅 실패가 원래 응답 흐름을 절대 막지 않도록 호출부에서 await하되 에러는 여기서 삼킨다.
+async function logRecommendation(adminClient: ReturnType<typeof createClient>, params: LogParams) {
+  if (!LOGGED_ACTIONS.has(params.action)) return;
+  try {
+    const { error } = await adminClient.from('ai_recommendation_logs').insert({
+      user_id: params.userId,
+      action: params.action,
+      prompt_version: params.promptVersion,
+      model: params.model,
+      prompt: params.prompt,
+      status: params.status,
+      response_json: params.responseJson ?? null,
+      error_message: params.errorMessage ?? null,
+      input_tokens: params.inputTokens ?? null,
+      output_tokens: params.outputTokens ?? null,
+      latency_ms: params.latencyMs,
+    });
+    if (error) console.error('ai_recommendation_logs insert failed', error);
+  } catch (err) {
+    console.error('ai_recommendation_logs insert threw', err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -146,15 +186,23 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) return json({ error: 'Unauthorized' }, 401);
 
-    const { action, prompt } = await req.json();
+    // 로깅 전용 admin 클라이언트 — RLS를 우회해 ai_recommendation_logs에 쓰기 위함.
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { action, prompt, prompt_version } = await req.json();
     const config = typeof action === 'string' ? ACTION_CONFIG[action] : undefined;
     if (!config || typeof prompt !== 'string' || !prompt) {
       return json({ error: 'Invalid request' }, 400);
     }
+    const promptVersion = typeof prompt_version === 'string' && prompt_version ? prompt_version : 'unknown';
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!apiKey) return json({ error: 'AI key not configured' }, 500);
 
+    const startedAt = Date.now();
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -175,16 +223,46 @@ Deno.serve(async (req) => {
     if (!aiResponse.ok) {
       const detail = await aiResponse.text();
       console.error('Anthropic error', aiResponse.status, detail);
+      await logRecommendation(adminClient, {
+        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        status: 'error', errorMessage: `Anthropic ${aiResponse.status}: ${detail.slice(0, 500)}`,
+        latencyMs: Date.now() - startedAt,
+      });
       return json({ error: 'AI request failed' }, 502);
     }
 
     const data = await aiResponse.json();
     const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text');
     const text: string = textBlock?.text ?? '';
-    if (!text) return json({ error: 'Empty AI response' }, 502);
+    if (!text) {
+      await logRecommendation(adminClient, {
+        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        status: 'error', errorMessage: 'Empty AI response',
+        latencyMs: Date.now() - startedAt,
+      });
+      return json({ error: 'Empty AI response' }, 502);
+    }
 
     // 구조화 출력이라 스키마에 맞는 JSON 보장 → 그대로 파싱해 반환. usage는 계측용으로 첨부 (§7·§18).
-    const parsed = JSON.parse(text);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseErr) {
+      await logRecommendation(adminClient, {
+        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        status: 'error', errorMessage: `JSON parse failed: ${String(parseErr)}`,
+        latencyMs: Date.now() - startedAt,
+      });
+      return json({ error: 'Invalid AI response' }, 502);
+    }
+
+    await logRecommendation(adminClient, {
+      userId: user.id, action, promptVersion, prompt, model: MODEL,
+      status: 'success', responseJson: parsed,
+      inputTokens: data.usage?.input_tokens, outputTokens: data.usage?.output_tokens,
+      latencyMs: Date.now() - startedAt,
+    });
+
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);
