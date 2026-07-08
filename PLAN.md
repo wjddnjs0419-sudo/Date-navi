@@ -220,6 +220,28 @@
 
 ---
 
+## V2 — 추천 생성 로직 개선 (진행 중)
+
+> 설계 문서: `PLAN_GENERATION_ARCHITECTURE_V2.md`. Haiku 단일 호출 유지하며 hallucination 제거·placeId 안정화·결정론 필드/Validation 도입.
+> V2-core = 문서 Phase 0·1·3·4·5. (아래 Phase 번호는 **문서 기준**, 앱 빌드 Phase와 무관.)
+
+### 완료 ✅ (2026-07-08)
+- [x] **Phase 0 — placeId 보존**: `place-search`가 Kakao `doc.id`를 `placeId`로 반환. Edge v4 배포됨. `KakaoPlace.placeId` 추가.
+- [x] **Phase 1 — Intent Resolution**: 신규 `lib/intent.ts` `resolveIntent()` (mode+freeText+mood+budget+duration → `PlanIntent`), 기존 `detectPlaceFocus` 흡수, Query Expansion, make_course 다카테고리. 테스트 8개.
+- [x] **Phase 3 — Candidate Processing**: 신규 `lib/candidate.ts` `buildCandidates()` (placeId dedup → Evidence scoring → ranking → candidateId → limit). 테스트 7개.
+
+### 완료 ✅ (2026-07-08 세션 AH)
+- [x] **Phase 4 — Claude 통합**: `lib/recommendation.ts` 신규 — candidate_id 선택 프롬프트(feeling/course 2종), `estimated_time/budget` 앱 결정론 채우기(§11·§17 하위호환), `lib/intent.ts`·`lib/candidate.ts` `generateDateCards` 배선. Edge `generate-ai` **v10 배포됨**(feeling_select/course_select 스키마 + usage). 위치 없으면 현행 자유생성 유지(무회귀).
+- [x] **Phase 5 — Validation & Fallback**: candidate_id 실재/중복/previousPlaceIds 검증(feeling·course), 유효 장소 0인 코스 폐기, Deterministic Fallback(재호출 없음). 테스트 23개.
+
+### 남은 작업 ❌ (V2-plus, 체크포인트 후 진행 예정)
+- [ ] **Phase 2 — Adaptive Retrieval**: `place-search` multi-query + pagination + allSettled + early-stop. Edge 배포 필요.
+- [ ] **Phase 6 — Session/Regeneration**: RecommendationSession Context, 재추천 placeId soft 제외, `handleGenerateAlt` location/coords 보존.
+- [ ] **Phase 7 — Observability**: RecommendationAnalytics 이벤트 + 토큰/latency 계측.
+- [ ] ⚠️ **시뮬레이터 검증 대기**: feeling(위치)·make_course·자유생성 3경로 육안 확인(사용자 수동).
+
+---
+
 ## Phase UI — Date Navi 기반 UI/UX 전면 교체 (진행 중)
 
 > `Date Navi/` 폴더의 Figma Make 프로토타입을 React Native 코드로 포팅. 기존 Supabase/AI 로직은 그대로 유지.
