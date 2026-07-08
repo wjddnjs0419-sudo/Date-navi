@@ -6,13 +6,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Plus, Heart, Leaf, Palette, Plane, Check } from 'lucide-react-native';
+import { Plus, Heart, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
+import { getCardStyle } from '../../lib/tagStyle';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor' | 'budget_adjust';
@@ -285,9 +286,6 @@ export default function CandidatesScreen() {
     ? cards
     : cards.filter(c => classify(c) === activeFilter);
 
-  const ICONS = [Heart, Leaf, Palette];
-  const ICON_COLORS = [{ bg: C.pinkLight, fg: C.pinkDeep }, { bg: C.mint, fg: C.mintFg }, { bg: C.lavender, fg: C.lavenderFg }];
-
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
@@ -368,9 +366,8 @@ export default function CandidatesScreen() {
                 </View>
               ) : (
                 <View style={s.cardList}>
-                  {filtered.map((card, idx) => {
-                    const IconComponent = ICONS[idx % ICONS.length];
-                    const iconColors = ICON_COLORS[idx % ICON_COLORS.length];
+                  {filtered.map((card) => {
+                    const { Icon: IconComponent, bg, fg } = getCardStyle(card.tags);
                     return (
                       <SwipeableCard
                         key={card.id}
@@ -380,8 +377,8 @@ export default function CandidatesScreen() {
                       >
                       <SoftCard>
                         <View style={s.cardRow}>
-                          <View style={[s.cardIcon, { backgroundColor: iconColors.bg }]}>
-                            <IconComponent size={22} strokeWidth={1.8} color={iconColors.fg} />
+                          <View style={[s.cardIcon, { backgroundColor: bg }]}>
+                            <IconComponent size={22} strokeWidth={1.8} color={fg} />
                           </View>
                           <View style={s.flex1}>
                             <View style={s.cardTitleRow}>

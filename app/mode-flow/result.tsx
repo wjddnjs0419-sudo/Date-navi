@@ -8,19 +8,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type DateCard } from '../../lib/ai';
 import { supabase } from '../../lib/supabase';
 import {
-  Heart, Sparkles, Clock, Wallet, MapPin, Send, Bookmark, RefreshCw,
-  ChevronRight, Leaf, Palette,
+  Sparkles, Clock, Wallet, MapPin, Send, Bookmark, RefreshCw,
+  ChevronRight,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
-
-const CARD_STYLES = [
-  { bg2: C.pinkMid, Icon: Heart, iconColor: C.pinkDeep },
-  { bg2: C.mint, Icon: Leaf, iconColor: C.mintFg },
-  { bg2: C.lavender, Icon: Palette, iconColor: C.lavenderFg },
-];
+import { getCardStyle } from '../../lib/tagStyle';
 
 export default function ResultScreen() {
   const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
@@ -137,23 +132,25 @@ export default function ResultScreen() {
         <Text style={s2.subText}>{t('modeFlow.result.sub')}</Text>
 
         {cards.map((card, i) => {
-          const style = CARD_STYLES[i % CARD_STYLES.length];
+          const style = getCardStyle(card.tags);
           const isFeatured = i === selectedIndex;
           return isFeatured ? (
             /* 메인 카드 — 저장은 명시적으로 '저장/보내기' 버튼에서만. 탭으로 저장하지 않는다. */
             <View key={i} style={s2.featuredCard}>
-              <View style={[s2.featuredBanner, { backgroundColor: style.bg2 }]}>
+              <View style={[s2.featuredBanner, { backgroundColor: style.bg }]}>
                 {i === 0 && (
                   <View style={s2.bannerBadge}>
                     <Badge tone="pink">{t('modeFlow.result.bestBadge')}</Badge>
                   </View>
                 )}
                 <View style={[s2.featuredIcon, s2.featuredIconBg]}>
-                  <style.Icon size={36} strokeWidth={1.5} color={style.iconColor} />
+                  <style.Icon size={36} strokeWidth={1.5} color={style.fg} />
                 </View>
               </View>
               <View style={s2.featuredBody}>
-                <Text style={s2.featuredCategory}>COZY · INDOOR</Text>
+                {!!card.tags?.length && (
+                  <Text style={s2.featuredCategory}>{card.tags.slice(0, 2).join(' · ').toUpperCase()}</Text>
+                )}
                 <Text style={s2.featuredTitle}>{card.title}</Text>
                 <Text style={s2.featuredDesc}>{card.summary}</Text>
 
@@ -229,8 +226,8 @@ export default function ResultScreen() {
             /* 서브 카드 — 탭하면 저장 없이 그 카드를 크게(선택) 본다 */
             <SoftCard key={i} style={s2.subCardGap} onPress={() => setSelectedIndex(i)}>
               <View style={s2.subRow}>
-                <View style={[s2.subIcon, { backgroundColor: style.bg2 }]}>
-                  <style.Icon size={26} strokeWidth={1.5} color={style.iconColor} />
+                <View style={[s2.subIcon, { backgroundColor: style.bg }]}>
+                  <style.Icon size={26} strokeWidth={1.5} color={style.fg} />
                 </View>
                 <View style={s2.subBody}>
                   <Text style={s2.subTitle}>{card.title}</Text>
