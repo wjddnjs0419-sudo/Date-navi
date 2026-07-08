@@ -144,6 +144,24 @@
     "subtitle": "No need for a perfect plan — just go with what feels right.",
     "connectBanner": "Connect with your partner to decide together",
     "todayHelp": "Today's help",
+    "modes": {
+      "pickForMe": {
+        "title": "Let the app pick",
+        "desc": "Just pick today's mood and the app decides your date."
+      },
+      "tellFeeling": {
+        "title": "I'll just say the vibe",
+        "desc": "Share how you feel and get a matching date idea."
+      },
+      "course": {
+        "title": "Organize it into a course",
+        "desc": "Bundle scattered picks into a clean day-long course."
+      },
+      "softMessage": {
+        "title": "Say it gently",
+        "desc": "Polish what you want to say so it lands well."
+      }
+    },
     "startCta": "Start",
     "upcomingTitle": "Upcoming dates",
     "dateUnset": "Date not set",
