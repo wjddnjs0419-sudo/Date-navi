@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { AppLanguage } from './i18n';
-import { buildPrompt, buildAdjustSoftMessagePrompt, buildSoftMessagePrompt, type SoftMessageInput } from './prompt';
+import { buildPrompt, buildAdjustSoftMessagePrompt, buildSoftMessagePrompt, PROMPT_VERSION, type SoftMessageInput } from './prompt';
 export type { SoftMessageInput };
 import type { CourseStep } from './course';
 export type { CourseStep };
@@ -57,7 +57,7 @@ export type AIUsage = { input_tokens?: number; output_tokens?: number };
 
 async function invokeAI(action: AIAction, prompt: string): Promise<{ data: unknown; usage?: AIUsage }> {
   const { data, error } = await supabase.functions.invoke('generate-ai', {
-    body: { action, prompt },
+    body: { action, prompt, prompt_version: PROMPT_VERSION },
   });
   if (error) throw error;
   const usage = (data as { _usage?: AIUsage })?._usage;
