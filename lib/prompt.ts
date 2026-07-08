@@ -74,29 +74,21 @@ export const AVOID_MAP_EN: Record<string, string> = {
 };
 
 export const MODE_CONTEXT: Record<string, string> = {
-  pick_for_me: '계획이 귀찮아서 앱이 대신 골라주길 원하는 커플',
   feeling: '끌리는 분위기만 알고 있는 커플',
-  light: '피곤하고 부담 없이 가볍게 하고 싶은 커플',
   next_meet: '다음 만남을 위해 미리 계획을 세우고 싶은 커플',
   make_course: '아이디어는 있지만 코스로 구체화가 필요한 커플',
 };
 export const MODE_CONTEXT_EN: Record<string, string> = {
-  pick_for_me: 'A couple that wants the app to pick because planning feels tiring',
   feeling: 'A couple that only knows the vibe they want',
-  light: 'A couple that wants something easy and light',
   next_meet: 'A couple saving ideas for their next meeting',
   make_course: 'A couple with ideas that need to be turned into a plan',
 };
 export const MODE_EMPHASIS: Record<string, string> = {
-  pick_for_me: '\n\n【모드 특별 지침】\n입력한 조건에 충실하면서 무난하고 실패 확률이 낮은, 둘 다 만족할 가능성이 높은 후보를 우선 추천하세요. 특별한 준비 없이 쉽게 실행 가능한 데이트를 강조하세요.',
   feeling: '\n\n【모드 특별 지침】\n사용자가 남긴 러프한 분위기와 감정을 감성적이고 구체적인 데이트 카드로 변환하세요. 자유 메모의 뉘앙스를 적극 반영하고, 분위기가 살아나는 장면을 그리듯 추천하세요.',
-  light: '\n\n【모드 특별 지침】\n저예산, 근거리, 짧은 시간, 체력 소모가 적은 데이트를 우선 추천하세요. 이동 거리가 짧고 특별한 준비 없이도 즐길 수 있는 가볍고 편안한 후보를 강조하세요.',
   make_course: '\n\n【모드 특별 지침】\n아이디어를 구체적인 코스로 정리해주세요. 각 카드에 "steps" 배열을 추가하고, 시간 순서대로 3~4개 단계를 [{ "label": "장소/행동 (12자 이내)", "desc": "한 줄 보충 (20자 이내)" }] 형식으로 넣으세요. summary는 한 줄 요약을 유지하고, tags에 준비물, why_recommended에 대체안을 포함하세요.',
 };
 export const MODE_EMPHASIS_EN: Record<string, string> = {
-  pick_for_me: '\n\n【Mode guidance】\nPrioritize safe, reliable options that satisfy both partners and stay faithful to the given conditions. Emphasize dates that need no special preparation and are easy to execute.',
   feeling: '\n\n【Mode guidance】\nTurn the rough vibe and emotions the user left into a concrete, emotionally resonant date card. Actively reflect the nuance of the free-text note and paint a vivid scene.',
-  light: '\n\n【Mode guidance】\nPrioritize low-budget, nearby, short, low-effort dates. Suggest options that require no special preparation and are easy on the body.',
   make_course: '\n\n【Mode guidance】\nTurn the idea into a concrete course. Add a "steps" array to each card with 3-4 ordered steps in the form [{ "label": "place/action (<=12 chars)", "desc": "one-line note (<=20 chars)" }]. Keep summary as a one-line summary, put things to prepare in tags, and a backup plan in why_recommended.',
 };
 

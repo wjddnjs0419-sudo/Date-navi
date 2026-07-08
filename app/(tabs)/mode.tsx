@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Gift, MessageCircle, Map, Leaf, Plane, Check } from 'lucide-react-native';
+import { MessageCircle, Map, Plane, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
@@ -14,10 +14,8 @@ export default function ModeScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const MODES = [
-    { id: 'pick_for_me', title: t('mode.tabModes.pick_for_me.title'), desc: t('mode.tabModes.pick_for_me.desc'), Icon: Gift },
     { id: 'feeling', title: t('mode.tabModes.feeling.title'), desc: t('mode.tabModes.feeling.desc'), Icon: MessageCircle },
     { id: 'make_course', title: t('mode.tabModes.make_course.title'), desc: t('mode.tabModes.make_course.desc'), Icon: Map },
-    { id: 'light', title: t('mode.tabModes.light.title'), desc: t('mode.tabModes.light.desc'), Icon: Leaf },
     { id: 'next_meet', title: t('mode.tabModes.next_meet.title'), desc: t('mode.tabModes.next_meet.desc'), Icon: Plane },
   ];
   const [selIdx, setSelIdx] = useState(0);
@@ -25,9 +23,7 @@ export default function ModeScreen() {
   function handleStart() {
     const mode = MODES[selIdx];
     const routes: Record<string, string> = {
-      pick_for_me: '/mode-flow/pick',
       feeling: '/mode-flow/feeling',
-      light: '/mode-flow/light',
       make_course: '/mode-flow/course',
       next_meet: '/mode-flow/bucketlist',
     };

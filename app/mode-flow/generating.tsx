@@ -32,7 +32,7 @@ export default function GeneratingScreen() {
     (async () => {
       try {
         const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
-        const m = mode ?? 'pick_for_me';
+        const m = mode ?? 'feeling';
         await logEvent('mode_selected', { mode: m });
 
         let result: DateCard[] = [];

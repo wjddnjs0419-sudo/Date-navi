@@ -14,7 +14,7 @@ export type IntentMode = 'feeling' | 'make_course';
 export type FeelingRec = { candidate_id?: string; title?: string; summary?: string; why_recommended?: string; tags?: string[] };
 export type CourseRec = { title?: string; summary?: string; why_recommended?: string; tags?: string[]; steps?: { candidate_id?: string; label?: string; desc?: string }[] };
 
-// make_course만 course. 나머지 모드(pick_for_me/light/feeling/next_meet)는 단일 장소 카드 → feeling.
+// make_course만 course. 나머지(feeling/next_meet 및 구 카드의 레거시 pick_for_me/light)는 단일 장소 카드 → feeling.
 export function resolveIntentMode(mode: string): IntentMode {
   return mode === 'make_course' ? 'make_course' : 'feeling';
 }
