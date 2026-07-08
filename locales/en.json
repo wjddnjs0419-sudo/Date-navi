@@ -499,23 +499,8 @@
     "title": "What kind of date\ndo you have in mind?",
     "ideaLabel": "Your date idea",
     "ideaPlaceholder": "e.g. I want to visit an exhibition, how about a picnic?",
-    "ideaHint": "A rough idea is totally fine.",
-    "budgetLabel": "What is your budget?",
-    "budgetOptions": [
-      {
-        "label": "Keep it cheap",
-        "value": "low"
-      },
-      {
-        "label": "Moderate",
-        "value": "medium"
-      },
-      {
-        "label": "Make it special",
-        "value": "high"
-      }
-    ],
-    "durationLabel": "How much time do you have?",
+    "ideaHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
+    "durationLabel": "How much time do you have? (optional)",
     "durationOptions": [
       {
         "label": "2-3 hours",

@@ -499,23 +499,8 @@
     "title": "어떤 데이트를\n하고 싶어?",
     "ideaLabel": "하고 싶은 데이트 아이디어",
     "ideaPlaceholder": "예: 전시회 가고 싶어, 한강 피크닉 어때?",
-    "ideaHint": "대략적인 아이디어만 있어도 괜찮아요.",
-    "budgetLabel": "예산은 어느 정도?",
-    "budgetOptions": [
-      {
-        "label": "아끼고 싶어",
-        "value": "low"
-      },
-      {
-        "label": "적당히",
-        "value": "medium"
-      },
-      {
-        "label": "특별하게",
-        "value": "high"
-      }
-    ],
-    "durationLabel": "시간은 얼마나?",
+    "ideaHint": "일식, 삼겹살, 방탈출처럼 키워드 위주로 적으면 더 정확해요.",
+    "durationLabel": "시간은 얼마나? (선택)",
     "durationOptions": [
       {
         "label": "2~3시간",
