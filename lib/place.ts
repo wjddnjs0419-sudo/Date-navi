@@ -1,7 +1,9 @@
 import type { AppLanguage } from './i18n';
+import type { PlanIntent, PlaceType } from './intent';
 
 // 카카오 로컬 검색 결과 1건 (edge function place-search가 반환하는 정규화 형태)
 export type KakaoPlace = {
+  placeId: string; // Kakao doc.id — 요청 간 안정 식별용 (Phase 0)
   name: string;
   category: string;
   address: string;
@@ -63,4 +65,26 @@ export function detectPlaceFocus(freeText?: string): PlaceFocus | null {
     if (pattern.test(freeText)) return focus;
   }
   return null;
+}
+
+// Phase 2 — Intent를 place-search Adaptive Retrieval 요청(키워드 쿼리 + 카테고리 코드)으로 변환.
+// bar/activity/sports는 전용 카테고리 코드가 없어 키워드 검색(searchQueries)으로만 처리한다.
+export type RetrievalPlan = { keywordQueries: string[]; categoryCodes: string[] };
+
+const PLACE_TYPE_CODE: Record<PlaceType, string | null> = {
+  cafe: 'CE7',
+  restaurant: 'FD6',
+  culture: 'CT1',
+  attraction: 'AT4',
+  bar: null,
+  activity: null,
+  sports: null,
+};
+
+export function buildRetrievalPlan(intent: PlanIntent): RetrievalPlan {
+  const keywordQueries = [...new Set(intent.searchQueries)];
+  const categoryCodes = [
+    ...new Set(intent.placeTypes.map(t => PLACE_TYPE_CODE[t]).filter((c): c is string => !!c)),
+  ];
+  return { keywordQueries, categoryCodes };
 }

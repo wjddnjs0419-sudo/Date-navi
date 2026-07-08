@@ -4,6 +4,102 @@
 
 ---
 
+## 2026-07-08 세션 AH — 추천 로직 V2 전체 (Phase 4·5·2·6·7 완성 + Edge 2개 배포)
+
+> 아래는 시간순: 먼저 Phase 4·5(V2-core)로 체크포인트 → 사용자가 "전체 진행" 선택 → Phase 2·6·7 이어서 완료.
+
+### Phase 2·6·7 추가 변경 (체크포인트 이후)
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `supabase/functions/place-search/index.ts` | Adaptive Retrieval — `queries`/`categoryCodes` 오면 다중 키워드+카테고리 검색을 부분실패 허용(독립 catch)으로 돌리고 placeId dedup + min/max·요청예산·intent쿼리 early-stop + pagination + `_meta`. focus/기본 경로는 하위호환 유지. `COORD_RE`를 `[0-9]`/`[.]`로(백슬래시 제거 → 인라인 배포 JSON-safe). **place-search v5 배포됨** |
+| `lib/place.ts` | `buildRetrievalPlan(intent)` — placeTypes→Kakao 코드, searchQueries→키워드. `RetrievalPlan` 타입 |
+| `lib/ai.ts` | `searchPlaces`에 `retrieval?` 인자(있으면 adaptive body). candidate 플로우가 plan 전달. `regenerateDateCards(session)` 신규(Pool 재사용+previousPlaceIds 제외). `runCandidateFlow`가 usage/latency/fallbackCount 반환. 추천 3종 이벤트 로깅 |
+| `lib/recommendationSession.ts` (신규) | 경량 module store — `createSession`/`getSession`/`addPreviousPlaceIds`/`clearSessions`. 카운터 기반 sessionId(결정론) |
+| `lib/analytics.ts` | `EventName`에 `recommendation_generated/regenerated/fallback` 추가 |
+| `app/mode-flow/generating.tsx` | 최초 추천 시 세션 생성, 재추천(sessionId 있음) 시 `regenerateDateCards`로 Pool 재사용 후 새 placeId 누적. 소진 시 fresh 폴백 |
+| `app/mode-flow/result.tsx`·`course-result.tsx` | `sessionId` param 수신 + regenerate 시 전달 |
+| `app/card/[id].tsx` | `handleGenerateAlt`가 `card.input_json` 기반 base + 조건분만 override → location/coords 보존(§15). input_json 없는 구 카드는 기존 하드코딩 폴백 |
+| `__tests__/recommendationSession.test.ts` (신규) | 4개. `__tests__/place.test.ts` +3(buildRetrievalPlan) |
+
+### 배포 / 검증 (전체)
+
+- Edge `generate-ai` **v10**, `place-search` **v5** (둘 다 verify_jwt 유지). place-search 배포본 대조 결과 기능 동일(주석 1글자 몰문자만 존재, 무해).
+- `npm run validate` 통과, `npx jest` **18 suites, 153 tests** 통과.
+
+### ⚠️ 주의 (인라인 Edge 배포 이스케이프)
+
+- MCP `deploy_edge_function`의 `content`는 JSON 문자열이라 소스에 백슬래시(정규식 `\d` 등)·이중따옴표가 있으면 이스케이프 오류/전사 실수 위험. place-search는 `\d`→`[0-9]`, `\.`→`[.]`로 바꿔 **백슬래시·이중따옴표 0개**로 만들고 배포함. (AGENTS.md ratchet 반영)
+
+---
+
+### (체크포인트 시점) Phase 4·5 — V2-core 완성 + Edge 배포
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `lib/recommendationConfig.ts` (신규) | 중앙 Config (§19) — retrieval/ranking/claude 상수 |
+| `lib/recommendation.ts` (신규) | Phase 4·5 순수 로직 — `resolveIntentMode`, `deterministicFields`(§11), `buildFeelingSelectPrompt`/`buildCourseSelectPrompt`(candidate_id 선택형, 속성 사실 단정 금지), `assembleFeelingCards`/`assembleCourseCards`(Validation+실장소 결합), `buildDeterministicFallback`(재호출 없음), `usedCandidateIds`/`collectPlaceIds` |
+| `lib/course.ts` | `CourseStep`에 `place_name/place_address/map_url` optional 추가(하위호환) |
+| `lib/ai.ts` | `generateDateCards` 재작성 — 위치+후보 있으면 candidate 플로우(Claude 선택→Validation→결정론 필드→실장소), 없으면 자유생성 유지(무회귀). `invokeAI` action 유니온 확장 + `_usage` 반환. soft-message 호출부 3개 `.data` 반영 |
+| `supabase/functions/generate-ai/index.ts` | `feeling_select`/`course_select` 스키마 추가, `cards`에서 estimated 제거(앱이 채움), `_usage` 첨부. **Edge v10 배포됨(ACTIVE)** |
+| `__tests__/recommendation.test.ts` (신규) | 23개 |
+| `docs/superpowers/plans/2026-07-08-recommendation-v2-full.md` (신규) | V2 전체(4·5·2·6·7) 구현 계획 |
+
+### 기술 결정
+
+- **범위 결정(사용자 확정)**: V2 전체(4·5·2·6·7). 단, "4·5 먼저 끝내고 체크포인트" → 이번 세션은 Phase 4·5(V2-core)까지. Phase 2·6·7은 다음 진행.
+- **위치 없음/후보 0개 → 현행 자유생성 유지**(§12 [Needs Decision]를 무회귀로 확정). candidate 플로우는 위치+후보 있을 때만.
+- **estimated_time/budget은 모든 경로에서 앱이 결정론적으로 채운다**(§11). Claude 미생성. `DateCard` 타입·`date_cards` 컬럼·구 저장 카드 그대로 하위호환(§17). 자유생성 경로도 `deterministicFields`로 덮어씀.
+- `pick_for_me`/`light`/`next_meet` 모드 코드 삭제는 범위 밖(§22 Q11). `resolveIntentMode`가 make_course만 course, 나머지는 feeling으로 매핑.
+- `lib/intent.ts`·`lib/candidate.ts`(Phase 0·1·3 산물)를 이번에 파이프라인에 **배선 완료** — 더 이상 미사용 모듈 아님.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit)
+npx jest           # 통과 (17 suites, 146 tests)
+```
+
+Edge `generate-ai` v9→v10 배포(verify_jwt 유지). 롤백은 이전 버전 재배포.
+
+### 다음 세션 할 일 / 주의
+
+1. **시뮬레이터 육안 검증(사용자 수동)**: EAS dev build로 ① 위치 입력 feeling ② make_course 코스 ③ 위치 없음 자유생성 3경로. candidate 플로우가 실제 장소를 붙이는지, estimated 필드가 플랜 범위값으로 통일 표시되는지 확인.
+2. **Phase 2** Adaptive Retrieval (`place-search` 재설계+배포) → **Phase 6** Session/재추천 → **Phase 7** Observability. 계획서 Task 13~20.
+
+---
+
+## 2026-07-08 세션 AG — 추천 로직 V2 Phase 0·1·3
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `supabase/functions/place-search/index.ts` | `KakaoDoc.id`·`Place.placeId` 추가, `toPlace()`가 `doc.id` 매핑. **Edge v4 배포됨.** |
+| `lib/place.ts` | `KakaoPlace.placeId: string` 추가 |
+| `lib/intent.ts` (신규) | `resolveIntent()` — mode+freeText+mood+budget+duration → `PlanIntent`. `INTENT_RULES`(기존 `detectPlaceFocus` 흡수), Query Expansion, make_course 다카테고리 비축소 |
+| `lib/candidate.ts` (신규) | `buildCandidates()` — placeId dedup → Evidence scoring(§9 표) → ranking → `candidate_NNN` 부여 → `rankedCandidateLimit` 상한 |
+| `__tests__/intent.test.ts` (신규) | 8개 |
+| `__tests__/candidate.test.ts` (신규) | 7개 |
+| `__tests__/place.test.ts` | KakaoPlace 리터럴에 `placeId` 추가 |
+
+### 기술 결정 / 주의
+
+- **미배선**: `lib/intent.ts`·`lib/candidate.ts`는 독립 모듈로 존재만 하고 `lib/ai.ts` 파이프라인에 아직 연결 안 됨. 소비는 Phase 4 몫. 현재 앱 런타임 동작 변화 없음(응답에 `placeId` 필드만 추가).
+- Edge 미배포 상태에선 `placeId`가 `undefined`였을 것 → 이번에 v4 배포로 실제 반영.
+- 세션 범위는 순수 로직(Phase 0·1·3)까지로 합의. Phase 4/5는 Claude 프롬프트+DB 하위호환+기기 검증이 얽혀 별도 세션.
+
+### 검증
+
+```bash
+npm run validate  # 통과 (tsc --noEmit, 에러 0건)
+npx jest           # 통과 (16 suites, 123 tests)
+```
+
+---
+
 ## 2026-07-08 세션 AF — 이메일 인증 제거 + 관련 DB 데이터 삭제
 
 ### 변경 사항 요약

@@ -21,8 +21,7 @@ const CARDS_SCHEMA = {
         properties: {
           title: { type: 'string' },
           summary: { type: 'string' },
-          estimated_time: { type: 'string' },
-          estimated_budget: { type: 'string' },
+          // estimated_time/budget은 앱이 결정론적으로 채운다 (V2 §11) — Claude 미생성.
           tags: { type: 'array', items: { type: 'string' } },
           why_recommended: { type: 'string' },
           // 카카오 로컬 실제 장소 (location 입력 시에만 채워짐 — optional)
@@ -43,7 +42,7 @@ const CARDS_SCHEMA = {
             },
           },
         },
-        required: ['title', 'summary', 'estimated_time', 'estimated_budget', 'tags', 'why_recommended'],
+        required: ['title', 'summary', 'tags', 'why_recommended'],
         additionalProperties: false,
       },
     },
@@ -59,9 +58,71 @@ const SOFT_MESSAGE_SCHEMA = {
   additionalProperties: false,
 };
 
+// V2 §10 — Claude는 후보 candidate_id를 선택하고 설명만 생성한다. 장소·estimated 미생성.
+const FEELING_SELECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    recommendations: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          candidate_id: { type: 'string' },
+          title: { type: 'string' },
+          summary: { type: 'string' },
+          why_recommended: { type: 'string' },
+          tags: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['candidate_id', 'title', 'summary', 'why_recommended', 'tags'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['recommendations'],
+  additionalProperties: false,
+};
+
+// make_course — steps[] (순서 보존). 장소 단계는 candidate_id, 행동 단계는 label/desc만 (§16).
+const COURSE_SELECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    recommendations: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          summary: { type: 'string' },
+          why_recommended: { type: 'string' },
+          tags: { type: 'array', items: { type: 'string' } },
+          steps: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                candidate_id: { type: 'string' },
+                label: { type: 'string' },
+                desc: { type: 'string' },
+              },
+              required: ['label'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['title', 'summary', 'why_recommended', 'tags', 'steps'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['recommendations'],
+  additionalProperties: false,
+};
+
 const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number }> = {
   cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8 },
   soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9 },
+  feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7 },
+  course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7 },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -122,8 +183,9 @@ Deno.serve(async (req) => {
     const text: string = textBlock?.text ?? '';
     if (!text) return json({ error: 'Empty AI response' }, 502);
 
-    // 구조화 출력이라 스키마에 맞는 JSON 보장 → 그대로 파싱해 반환
-    return json(JSON.parse(text));
+    // 구조화 출력이라 스키마에 맞는 JSON 보장 → 그대로 파싱해 반환. usage는 계측용으로 첨부 (§7·§18).
+    const parsed = JSON.parse(text);
+    return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);
     return json({ error: 'Internal error' }, 500);
