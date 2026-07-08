@@ -89,10 +89,9 @@ export type GeoCoords = { x: string; y: string };
 
 export type FeelingInput = {
   energy: string;
-  budget: string;
   distance: string;
   mood: string;
-  duration: string;
+  duration?: string;
   avoid: string[];
   freeText?: string;
   // 사용자가 입력한 동네/지역 텍스트 (예: "성수동"). 있으면 카카오 로컬로 실제 장소를 붙인다.
