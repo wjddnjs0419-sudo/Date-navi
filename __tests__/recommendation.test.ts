@@ -19,8 +19,8 @@ const cands: Candidate[] = [
   { candidateId: 'candidate_001', placeId: 'p1', name: 'A카페', category: '카페', address: '서울 성수', x: '127', y: '37', mapUrl: 'http://a', matchedQueries: ['카페'], matchedIntentSignals: [], score: 6 },
   { candidateId: 'candidate_002', placeId: 'p2', name: 'B식당', category: '음식점', address: '서울 성수', x: '127', y: '37', mapUrl: 'http://b', matchedQueries: ['맛집'], matchedIntentSignals: [], score: 3 },
 ];
-const intent: PlanIntent = { purpose: 'meal', placeTypes: ['cafe'], atmosphere: ['quiet'], budgetLevel: 'low', duration: '2-3h', searchQueries: ['카페'], positiveSignals: [], negativeSignals: [] };
-const input: FeelingInput = { energy: 'medium', budget: 'low', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
+const intent: PlanIntent = { purpose: 'meal', placeTypes: ['cafe'], atmosphere: ['quiet'], duration: '2-3h', searchQueries: ['카페'], positiveSignals: [], negativeSignals: [] };
+const input: FeelingInput = { energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
 
 describe('RECOMMENDATION_CONFIG', () => {
   it('exposes claude/final limits', () => {
@@ -40,18 +40,24 @@ describe('resolveIntentMode', () => {
 });
 
 describe('deterministicFields', () => {
-  it('fills estimated from budget/duration maps (ko)', () => {
-    const f = deterministicFields({ ...input, budget: 'low', duration: '2-3h' }, 'ko');
-    expect(f.estimated_budget).toBe('저예산');
+  it('estimated_budget은 항상 빈 문자열 (예산은 AI 추천 근거에서 제외)', () => {
+    const f = deterministicFields(input, 'ko');
+    expect(f.estimated_budget).toBe('');
+  });
+  it('duration이 있으면 duration map으로 estimated_time을 채운다', () => {
+    const f = deterministicFields({ ...input, duration: '2-3h' }, 'ko');
     expect(f.estimated_time).toBe('2~3시간');
   });
-  it('falls back to raw value for unknown keys', () => {
-    const f = deterministicFields({ ...input, budget: 'weird', duration: 'x' }, 'ko');
-    expect(f.estimated_budget).toBe('weird');
+  it('duration이 없으면 estimated_time도 빈 문자열', () => {
+    const f = deterministicFields({ ...input, duration: undefined }, 'ko');
+    expect(f.estimated_time).toBe('');
+  });
+  it('알 수 없는 duration 값은 원본 그대로 폴백', () => {
+    const f = deterministicFields({ ...input, duration: 'x' }, 'ko');
     expect(f.estimated_time).toBe('x');
   });
   it('uses EN maps', () => {
-    const f = deterministicFields({ ...input, budget: 'high', duration: '1h' }, 'en');
+    const f = deterministicFields({ ...input, duration: '1h' }, 'en');
     expect(f.estimated_time).toBe('About 1 hour');
   });
 });
@@ -82,6 +88,35 @@ describe('candidate prompts', () => {
   });
 });
 
+describe('duration이 프롬프트에 미치는 영향', () => {
+  it('course_select: duration=1h면 2단계 지침', () => {
+    const p = buildCourseSelectPrompt(cands, intent, { ...input, duration: '1h' }, undefined, 'ko');
+    expect(p).toContain('2단계');
+  });
+  it('course_select: duration=2-3h면 3단계 지침', () => {
+    const p = buildCourseSelectPrompt(cands, intent, { ...input, duration: '2-3h' }, undefined, 'ko');
+    expect(p).toContain('3단계');
+  });
+  it('course_select: duration=half_day/full_day면 4단계 지침', () => {
+    const pHalf = buildCourseSelectPrompt(cands, intent, { ...input, duration: 'half_day' }, undefined, 'ko');
+    const pFull = buildCourseSelectPrompt(cands, intent, { ...input, duration: 'full_day' }, undefined, 'ko');
+    expect(pHalf).toContain('4단계');
+    expect(pFull).toContain('4단계');
+  });
+  it('course_select: duration 없으면 단계 수 지침 생략', () => {
+    const p = buildCourseSelectPrompt(cands, intent, { ...input, duration: undefined }, undefined, 'ko');
+    expect(p).not.toMatch(/\d단계로 구성/);
+  });
+  it('feeling_select: duration이 있으면 참고 문맥으로만 포함', () => {
+    const p = buildFeelingSelectPrompt(cands, intent, { ...input, duration: '2-3h' }, undefined, 'ko');
+    expect(p).toContain('가능 시간: 2~3시간');
+  });
+  it('feeling_select: duration 없으면 생략', () => {
+    const p = buildFeelingSelectPrompt(cands, intent, { ...input, duration: undefined }, undefined, 'ko');
+    expect(p).not.toContain('가능 시간');
+  });
+});
+
 describe('assembleFeelingCards', () => {
   it('keeps only recs whose candidate_id exists; merges place + deterministic fields', () => {
     const recs = [
@@ -92,7 +127,7 @@ describe('assembleFeelingCards', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].place_name).toBe('A카페');
     expect(cards[0].map_url).toBe('http://a');
-    expect(cards[0].estimated_budget).toBe('저예산');
+    expect(cards[0].estimated_budget).toBe('');
   });
   it('drops duplicate candidate_id', () => {
     const recs = [
