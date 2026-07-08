@@ -39,16 +39,18 @@
     "@types/react": "~19.1.10",
     "jest": "^29.7.0",
     "jest-expo": "~54.0.17",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "validate": "tsc --noEmit"
+    "validate": "tsc --noEmit",
+    "postinstall": "patch-package"
   },
   "private": true
 }
