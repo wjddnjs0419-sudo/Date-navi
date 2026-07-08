@@ -5,69 +5,67 @@ import {
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type DateCard, type FeelingInput } from '../../lib/ai';
-import { computeTrailNodes, buildTrailPath, parseStepsFromSummary, type CourseStep } from '../../lib/course';
+import { parseStepsFromSummary, type CourseStep } from '../../lib/course';
 import { supabase } from '../../lib/supabase';
-import { Clock, Wallet, Send, Bookmark } from 'lucide-react-native';
+import { Clock, Wallet, Send, Bookmark, ChevronDown } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { BackBar, BigButton, Badge, PlaceRow } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
-// 가로 S자 동선 트레일 배치 옵션
-const TRAIL_OPTS = { nodesPerRow: 2, rowHeight: 150, padX: 48, padY: 56 };
-const LABEL_W = 150;
+function StepConnector() {
+  return (
+    <View style={stepS.connector}>
+      <View style={stepS.connectorLine} />
+      <View style={stepS.connectorDot}>
+        <ChevronDown size={12} color={C.pinkDeep} strokeWidth={2.5} />
+      </View>
+      <View style={stepS.connectorLine} />
+    </View>
+  );
+}
 
-function CourseTrail({ steps, width, summary }: { steps: CourseStep[]; width: number; summary?: string }) {
-  // 단계가 2개 미만이면(모델이 steps를 안 준 경우 등) 트레일 대신 요약 텍스트로 폴백 — 화면이 비지 않게.
-  if (steps.length < 2) {
+function StepCard({ step, index }: { step: CourseStep; index: number }) {
+  return (
+    <View style={stepS.card}>
+      <View style={stepS.titleRow}>
+        <View style={stepS.badge}>
+          <Text style={stepS.badgeNum}>{index + 1}</Text>
+        </View>
+        <Text style={stepS.title}>{step.label}</Text>
+      </View>
+      {!!step.desc && <Text style={stepS.desc}>{step.desc}</Text>}
+      {!!step.place_name && (
+        <PlaceRow
+          name={step.place_name}
+          address={step.place_address}
+          url={step.map_url}
+          size="compact"
+          style={stepS.placeRow}
+        />
+      )}
+    </View>
+  );
+}
+
+function CourseStepList({ steps, summary }: { steps: CourseStep[]; summary?: string }) {
+  if (steps.length === 0) {
+    if (!summary) return null;
     return (
-      <View style={trail.fallbackWrap}>
-        {steps.map((st, i) => (
-          <Text key={i} style={trail.fallbackStep}>{i + 1}. {st.label}</Text>
-        ))}
-        {steps.length === 0 && !!summary && <Text style={trail.fallbackStep}>{summary}</Text>}
+      <View style={stepS.card}>
+        <Text style={stepS.fallbackText}>{summary}</Text>
       </View>
     );
   }
-  const nodes = computeTrailNodes(steps.length, width, TRAIL_OPTS);
-  const d = buildTrailPath(nodes);
-  const rows = Math.ceil(steps.length / TRAIL_OPTS.nodesPerRow);
-  const height = TRAIL_OPTS.padY * 2 + (rows - 1) * TRAIL_OPTS.rowHeight;
   return (
-    <View style={{ width, height }}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        <Path d={d} stroke={C.pink} strokeWidth={4} fill="none" strokeLinecap="round" />
-        {nodes.map((n, i) => (
-          <Circle key={i} cx={n.x} cy={n.y} r={14} fill={C.white} stroke={C.pink} strokeWidth={3} />
-        ))}
-      </Svg>
-      {nodes.map((n, i) => (
-        <View key={i} style={[trail.node, { left: n.x - 14, top: n.y - 14 }]}>
-          <Text style={trail.nodeNum}>{i + 1}</Text>
+    <View>
+      {steps.map((step, i) => (
+        <View key={i}>
+          <StepCard step={step} index={i} />
+          {i < steps.length - 1 && <StepConnector />}
         </View>
       ))}
-      {nodes.map((n, i) => {
-        // 라벨은 항상 노드 아래(높이 통일). 단, 세로 선이 지나가는 노드는
-        // 라벨을 안쪽으로 밀어 선과 겹치지 않게 한다.
-        const hasVertical =
-          (i + 1 < nodes.length && nodes[i + 1].x === n.x && nodes[i + 1].y !== n.y) ||
-          (i - 1 >= 0 && nodes[i - 1].x === n.x && nodes[i - 1].y !== n.y);
-        let left: number;
-        if (hasVertical) {
-          left = n.x > width / 2 ? n.x - LABEL_W - 12 : n.x + 12;
-        } else {
-          left = n.x - LABEL_W / 2;
-        }
-        left = Math.max(8, Math.min(left, width - LABEL_W - 8));
-        return (
-          <View key={`l${i}`} style={[trail.labelBox, trail.labelWidth, { left, top: n.y + 22 }]}>
-            <Text style={trail.labelText} numberOfLines={1}>{steps[i].label}</Text>
-            {!!steps[i].desc && <Text style={trail.descText} numberOfLines={1}>{steps[i].desc}</Text>}
-          </View>
-        );
-      })}
     </View>
   );
 }
@@ -214,7 +212,7 @@ export default function CourseResultScreen() {
                 <View style={s.metaItem}><Wallet size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_budget}</Text></View>
               </View>
 
-              <CourseTrail steps={steps} width={width - 40} summary={card.summary} />
+              <CourseStepList steps={steps} summary={card.summary} />
 
               {!!card.place_name && (
                 <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={s.placeRowGap} />
@@ -270,13 +268,35 @@ const s = StyleSheet.create({
   dotOn: { backgroundColor: C.pink, width: 18 },
 });
 
-const trail = StyleSheet.create({
-  fallbackWrap: { gap: 10, paddingVertical: 16 },
-  node: { position: 'absolute', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  nodeNum: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
-  labelBox: { position: 'absolute', alignItems: 'center', width: 120 },
-  labelWidth: { width: LABEL_W },
-  labelText: { fontSize: 12, fontWeight: '600', color: C.text, textAlign: 'center' },
-  descText: { fontSize: 10, color: C.textMuted, textAlign: 'center', marginTop: 1 },
-  fallbackStep: { fontSize: 14, color: C.text },
+const stepS = StyleSheet.create({
+  card: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  badge: {
+    width: 24, height: 24, borderRadius: 12,
+    borderWidth: 2, borderColor: C.pink, backgroundColor: C.white,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  badgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
+  title: { fontSize: 15, fontWeight: '700', color: C.text },
+  desc: { fontSize: 12, color: C.textSub, marginTop: 3, marginLeft: 34 },
+  placeRow: { marginTop: 9, marginLeft: 34 },
+  connector: { alignItems: 'center', height: 30, justifyContent: 'center' },
+  connectorLine: { width: 1.5, height: 8, backgroundColor: C.borderLight },
+  connectorDot: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
+  },
+  fallbackText: { fontSize: 14, color: C.text, lineHeight: 20 },
 });
