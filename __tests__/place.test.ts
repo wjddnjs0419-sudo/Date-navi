@@ -99,6 +99,10 @@ describe('detectPlaceFocus', () => {
     expect(detectPlaceFocus('오늘은 맛집 가고 싶어')).toEqual({ code: 'FD6', label: '음식점' });
   });
 
+  it('"일식" 언급 시 음식점 카테고리로 감지 (lib/intent.ts의 meal 키워드와 동기화)', () => {
+    expect(detectPlaceFocus('일식 먹고 싶어')).toEqual({ code: 'FD6', label: '음식점' });
+  });
+
   it('"술집" 언급 시 키워드 검색으로 감지', () => {
     expect(detectPlaceFocus('술집 한잔')).toEqual({ query: '술집', label: '술집' });
   });

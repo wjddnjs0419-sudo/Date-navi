@@ -54,7 +54,7 @@ const FOCUS_KEYWORD_MAP: { pattern: RegExp; focus: PlaceFocus }[] = [
   { pattern: /액티비티|방탈출|보드게임|클라이밍|VR|노래방|볼링|피크닉/, focus: { query: '액티비티', label: '액티비티' } },
   { pattern: /스포츠|당구|골프|테니스|헬스|축구|야구|농구|배드민턴|수영|탁구/, focus: { query: '스포츠', label: '스포츠' } },
   { pattern: /카페|커피|디저트|베이커리/, focus: { code: 'CE7', label: '카페' } },
-  { pattern: /맛집|음식점|식당|밥집/, focus: { code: 'FD6', label: '음식점' } },
+  { pattern: /맛집|음식점|식당|밥집|일식|양식|한식|중식|초밥|파스타|고기|삼겹살/, focus: { code: 'FD6', label: '음식점' } },
   { pattern: /술집|이자카야|호프|포장마차/, focus: { query: '술집', label: '술집' } },
   { pattern: /전시|박물관|미술관|문화시설|공연/, focus: { code: 'CT1', label: '문화시설' } },
   { pattern: /관광|산책|공원|나들이|명소/, focus: { code: 'AT4', label: '관광명소' } },
