@@ -234,11 +234,14 @@
 - [x] **Phase 4 — Claude 통합**: `lib/recommendation.ts` 신규 — candidate_id 선택 프롬프트(feeling/course 2종), `estimated_time/budget` 앱 결정론 채우기(§11·§17 하위호환), `lib/intent.ts`·`lib/candidate.ts` `generateDateCards` 배선. Edge `generate-ai` **v10 배포됨**(feeling_select/course_select 스키마 + usage). 위치 없으면 현행 자유생성 유지(무회귀).
 - [x] **Phase 5 — Validation & Fallback**: candidate_id 실재/중복/previousPlaceIds 검증(feeling·course), 유효 장소 0인 코스 폐기, Deterministic Fallback(재호출 없음). 테스트 23개.
 
-### 남은 작업 ❌ (V2-plus, 체크포인트 후 진행 예정)
-- [ ] **Phase 2 — Adaptive Retrieval**: `place-search` multi-query + pagination + allSettled + early-stop. Edge 배포 필요.
-- [ ] **Phase 6 — Session/Regeneration**: RecommendationSession Context, 재추천 placeId soft 제외, `handleGenerateAlt` location/coords 보존.
-- [ ] **Phase 7 — Observability**: RecommendationAnalytics 이벤트 + 토큰/latency 계측.
-- [ ] ⚠️ **시뮬레이터 검증 대기**: feeling(위치)·make_course·자유생성 3경로 육안 확인(사용자 수동).
+### 완료 ✅ (2026-07-08 세션 AH — V2 전체)
+- [x] **Phase 2 — Adaptive Retrieval**: `place-search` multi-query(키워드+카테고리) + pagination + 부분실패(독립 catch) + min/max·요청예산·intent쿼리 early-stop + placeId dedup + `_meta`. `buildRetrievalPlan(intent)` 신규. **Edge place-search v5 배포됨.** candidate 플로우만 adaptive, 자유생성은 focus 유지.
+- [x] **Phase 6 — Session/Regeneration**: `lib/recommendationSession.ts` 경량 module store. generating이 최초 추천 시 세션 생성, 재추천 시 Candidate Pool 재사용 + previousPlaceIds 제외(소진 시 fresh 폴백). result/course-result가 sessionId 전달. `handleGenerateAlt`가 `input_json` 기반으로 location/coords 보존(§15).
+- [x] **Phase 7 — Observability**: `recommendation_generated/regenerated/fallback` 이벤트 — raw/ranked/haiku/final/fallback count, retrieval·claude latency, Claude usage 토큰을 `analytics_events.params`에 적재.
+
+### ⚠️ 남은 확인
+- [ ] **시뮬레이터 육안 검증(사용자 수동)**: feeling(위치)·make_course·자유생성 3경로 + 재추천 placeId 제외 + 조건 재생성 location 보존 + analytics 로우 생성.
+- [ ] (코스 결과 UI 재설계 §16 — SVG 트레일→세로 화살표, Phase 4 이후 별도 세션. 여전히 Future.)
 
 ---
 
