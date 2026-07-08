@@ -114,13 +114,13 @@ export type DateCard = {
   map_url?: string;
 };
 
-const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
+export const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
   ko: [
     {
       title: '동네 맛집 포장 + 집 영화',
       summary: '멀리 가지 않고 맛있는 걸 먹으며 편하게 쉬는 데이트',
       estimated_time: '2~3시간',
-      estimated_budget: '1인 1~2만 원',
+      estimated_budget: '',
       tags: ['피곤한 날 가능', '이동 적음', '돈 적게 듦'],
       why_recommended: '오늘은 가까운 곳에서 편하게 보내는 게 잘 맞아 보여요.',
     },
@@ -128,7 +128,7 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
       title: '가까운 카페 + 짧은 산책',
       summary: '좋아하는 카페에서 이야기하고 산책하며 힐링하는 데이트',
       estimated_time: '2시간',
-      estimated_budget: '1인 1~2만 원',
+      estimated_budget: '',
       tags: ['가벼운 이동', '대화하기 좋음', '실패 확률 낮음'],
       why_recommended: '특별한 준비 없이도 둘이서 편안하게 보낼 수 있어요.',
     },
@@ -136,7 +136,7 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
       title: '편의점 + 야경 산책',
       summary: '편의점 음식으로 가볍게 먹고 야경 보며 걷는 데이트',
       estimated_time: '1~2시간',
-      estimated_budget: '1인 5천~1만 원',
+      estimated_budget: '',
       tags: ['저예산', '가까운 곳', '로맨틱'],
       why_recommended: '예산 부담 없이 둘만의 시간을 보낼 수 있어요.',
     },
@@ -146,7 +146,7 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
       title: 'Local takeout + movie night',
       summary: 'Stay close, eat something tasty, and relax together',
       estimated_time: '2-3 hours',
-      estimated_budget: '$10-25 per person',
+      estimated_budget: '',
       tags: ['Good when tired', 'Low travel', 'Cheap'],
       why_recommended: 'Staying close and keeping it easy fits today well.',
     },
@@ -154,7 +154,7 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
       title: 'Nearby cafe + short walk',
       summary: 'Chat over coffee and take a refreshing short walk',
       estimated_time: '2 hours',
-      estimated_budget: '$10-25 per person',
+      estimated_budget: '',
       tags: ['Easy travel', 'Good for talking', 'Low risk'],
       why_recommended: 'You can enjoy time together without much preparation.',
     },
@@ -162,7 +162,7 @@ const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
       title: 'Convenience store + night view walk',
       summary: 'Keep it simple with snacks and a night view stroll',
       estimated_time: '1-2 hours',
-      estimated_budget: '$5-10 per person',
+      estimated_budget: '',
       tags: ['Low budget', 'Nearby', 'Romantic'],
       why_recommended: 'You can enjoy time together without worrying about budget.',
     },
