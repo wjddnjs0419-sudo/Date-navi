@@ -118,17 +118,20 @@ const COURSE_SELECT_SCHEMA = {
   additionalProperties: false,
 };
 
-const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number }> = {
-  cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8 },
-  soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9 },
-  feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7 },
-  course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7 },
+// logged: 프롬프트/응답 로깅 대상 여부 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
+const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean }> = {
+  cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8, logged: true },
+  soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9, logged: false },
+  feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7, logged: true },
+  course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7, logged: true },
 };
 
 const MODEL = 'claude-haiku-4-5';
 
-// 프롬프트/응답 로깅 대상 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
-const LOGGED_ACTIONS = new Set(['cards', 'feeling_select', 'course_select']);
+// ACTION_CONFIG의 logged 플래그에서 도출 — 로깅 대상 액션을 손으로 다시 나열하지 않는다(단일 소스).
+const LOGGED_ACTIONS = new Set(
+  Object.entries(ACTION_CONFIG).filter(([, cfg]) => cfg.logged).map(([key]) => key),
+);
 
 type LogParams = {
   userId: string;
@@ -186,12 +189,6 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) return json({ error: 'Unauthorized' }, 401);
 
-    // 로깅 전용 admin 클라이언트 — RLS를 우회해 ai_recommendation_logs에 쓰기 위함.
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-
     const { action, prompt, prompt_version } = await req.json();
     const config = typeof action === 'string' ? ACTION_CONFIG[action] : undefined;
     if (!config || typeof prompt !== 'string' || !prompt) {
@@ -201,6 +198,15 @@ Deno.serve(async (req) => {
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!apiKey) return json({ error: 'AI key not configured' }, 500);
+
+    // 로깅 전용 admin 클라이언트 — RLS를 우회해 ai_recommendation_logs에 쓰기 위함.
+    // action/prompt 검증 이후에 만들어서, 검증 실패나 soft_message처럼 로깅이 필요 없는
+    // 요청까지 SUPABASE_SERVICE_ROLE_KEY 존재 여부에 발목 잡히지 않게 한다.
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const baseLog = { userId: user.id, action, promptVersion, prompt, model: MODEL };
 
     const startedAt = Date.now();
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -224,7 +230,7 @@ Deno.serve(async (req) => {
       const detail = await aiResponse.text();
       console.error('Anthropic error', aiResponse.status, detail);
       await logRecommendation(adminClient, {
-        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        ...baseLog,
         status: 'error', errorMessage: `Anthropic ${aiResponse.status}: ${detail.slice(0, 500)}`,
         latencyMs: Date.now() - startedAt,
       });
@@ -235,8 +241,9 @@ Deno.serve(async (req) => {
     const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text');
     const text: string = textBlock?.text ?? '';
     if (!text) {
+      console.error('generate-ai empty AI response');
       await logRecommendation(adminClient, {
-        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        ...baseLog,
         status: 'error', errorMessage: 'Empty AI response',
         latencyMs: Date.now() - startedAt,
       });
@@ -248,8 +255,9 @@ Deno.serve(async (req) => {
     try {
       parsed = JSON.parse(text);
     } catch (parseErr) {
+      console.error('generate-ai JSON parse failed', parseErr);
       await logRecommendation(adminClient, {
-        userId: user.id, action, promptVersion, prompt, model: MODEL,
+        ...baseLog,
         status: 'error', errorMessage: `JSON parse failed: ${String(parseErr)}`,
         latencyMs: Date.now() - startedAt,
       });
@@ -257,7 +265,7 @@ Deno.serve(async (req) => {
     }
 
     await logRecommendation(adminClient, {
-      userId: user.id, action, promptVersion, prompt, model: MODEL,
+      ...baseLog,
       status: 'success', responseJson: parsed,
       inputTokens: data.usage?.input_tokens, outputTokens: data.usage?.output_tokens,
       latencyMs: Date.now() - startedAt,
