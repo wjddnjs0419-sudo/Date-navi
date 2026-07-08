@@ -9,25 +9,28 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
+
+const MODE_ICONS: Record<DateModeId, typeof MessageCircle> = {
+  feeling: MessageCircle,
+  make_course: Map,
+  next_meet: Plane,
+};
 
 export default function ModeScreen() {
   const router = useRouter();
   const { t } = useI18n();
-  const MODES = [
-    { id: 'feeling', title: t('mode.tabModes.feeling.title'), desc: t('mode.tabModes.feeling.desc'), Icon: MessageCircle },
-    { id: 'make_course', title: t('mode.tabModes.make_course.title'), desc: t('mode.tabModes.make_course.desc'), Icon: Map },
-    { id: 'next_meet', title: t('mode.tabModes.next_meet.title'), desc: t('mode.tabModes.next_meet.desc'), Icon: Plane },
-  ];
+  const MODES = DATE_MODE_IDS.map((id) => ({
+    id,
+    title: t(`mode.tabModes.${id}.title`),
+    desc: t(`mode.tabModes.${id}.desc`),
+    Icon: MODE_ICONS[id],
+  }));
   const [selIdx, setSelIdx] = useState(0);
 
   function handleStart() {
     const mode = MODES[selIdx];
-    const routes: Record<string, string> = {
-      feeling: '/mode-flow/feeling',
-      make_course: '/mode-flow/course',
-      next_meet: '/mode-flow/bucketlist',
-    };
-    const path = routes[mode.id];
+    const path = DATE_MODE_ROUTES[mode.id];
     if (path) router.push(path as any);
   }
 

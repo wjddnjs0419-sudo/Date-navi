@@ -8,7 +8,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
 import {
-  Bell, ChevronRight, Heart, Gift, MessageCircle, Map, Mail, Sparkles,
+  Bell, ChevronRight, Heart, MessageCircle, Map, Plane, Sparkles,
   CalendarHeart, Clock, MapPin,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
@@ -17,6 +17,7 @@ import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { pickLatestReaction, formatReactionText, filterActiveCards } from '../../lib/partnerReaction';
 import { relativeTime } from '../../lib/time';
+import { DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type Partner = { display_name: string } | null;
@@ -29,14 +30,20 @@ type UpcomingPlan = {
 
 const POSITIVE = ['love', 'like'];
 
+const MODE_CARD_STYLE: Record<DateModeId, { Icon: typeof MessageCircle; bg: string; fg: string }> = {
+  feeling: { Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
+  make_course: { Icon: Map, bg: C.mint, fg: C.mintFg },
+  next_meet: { Icon: Plane, bg: C.pinkLight, fg: C.pinkDeep },
+};
+
 function useModes() {
   const { t } = useI18n();
-  return [
-    { title: t('home.modes.pickForMe.title'), desc: t('home.modes.pickForMe.desc'), Icon: Gift, bg: C.pinkLight, fg: C.pinkDeep },
-    { title: t('home.modes.tellFeeling.title'), desc: t('home.modes.tellFeeling.desc'), Icon: MessageCircle, bg: C.lavender, fg: C.lavenderFg },
-    { title: t('home.modes.course.title'), desc: t('home.modes.course.desc'), Icon: Map, bg: C.mint, fg: C.mintFg },
-    { title: t('home.modes.softMessage.title'), desc: t('home.modes.softMessage.desc'), Icon: Mail, bg: C.cream, fg: C.creamFg },
-  ];
+  return DATE_MODE_IDS.map((id) => ({
+    id,
+    title: t(`mode.tabModes.${id}.title`),
+    desc: t(`mode.tabModes.${id}.desc`),
+    ...MODE_CARD_STYLE[id],
+  }));
 }
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -285,9 +292,9 @@ export default function HomeScreen() {
         >
           {MODES.map((m, i) => (
             <TouchableOpacity
-              key={m.title}
+              key={m.id}
               activeOpacity={0.9}
-              onPress={() => router.push('/(tabs)/mode')}
+              onPress={() => router.push(DATE_MODE_ROUTES[m.id] as any)}
               style={[
                 s.modeCard,
                 s.modeCardSized,
@@ -309,7 +316,7 @@ export default function HomeScreen() {
         <View style={s.dots}>
           {MODES.map((m, i) => (
             <View
-              key={m.title}
+              key={m.id}
               style={[s.dot, i === activeMode && s.dotActive]}
             />
           ))}
