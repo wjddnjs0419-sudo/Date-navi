@@ -20,6 +20,7 @@ rg -n "^##|^###" PLAN.md RESULT.md
 
 ## ⚠️ 핵심 원칙
 
+- 구현, 기능 추가, 동작 변경, 버그 수정은 `superpowers:test-driven-development` skill을 먼저 사용한다.
 - **Korean Only**: 모든 소통은 한국어.
 - **Plan Before Code**: 코드 수정 전 반드시 계획을 제안하고 명시적 승인을 받는다.
 - **Validate**: 변경 후 항상 루트에서 `npm run validate`(= `tsc --noEmit`) 실행. 에러는 사용자 개입 없이 스스로 수정한다.

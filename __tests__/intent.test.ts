@@ -1,4 +1,22 @@
-import { resolveIntent, type PlanIntent } from '../lib/intent';
+import { extractCourseAnchors, normalizeFreeTextQuery, resolveIntent, type PlanIntent } from '../lib/intent';
+
+describe('normalizeFreeTextQuery', () => {
+  it('대화체 요청 표현을 걷어내고 핵심 검색어를 만든다', () => {
+    expect(normalizeFreeTextQuery('타코 먹고 싶어')).toBe('타코');
+    expect(normalizeFreeTextQuery('카페 추천')).toBe('카페');
+    expect(normalizeFreeTextQuery('오마카세 가고 싶어')).toBe('오마카세');
+  });
+
+  it('구체 anchor가 없는 막연한 입력은 cleaned query를 만들지 않는다', () => {
+    expect(normalizeFreeTextQuery('오늘 뭐할지 모르겠음')).toBeUndefined();
+  });
+});
+
+describe('extractCourseAnchors', () => {
+  it('사용자가 입력한 복합 steps 키워드 순서를 보존한다', () => {
+    expect(extractCourseAnchors('카페갔다가 삼겹살 먹고 이후에 술집을 가고 싶어')).toEqual(['카페', '삼겹살', '술집']);
+  });
+});
 
 describe('resolveIntent — feeling 모드', () => {
   it('"공부하기 좋은 조용한 카페" → study purpose + cafe + 확장 쿼리 + 부정 신호', () => {
@@ -56,6 +74,12 @@ describe('resolveIntent — feeling 모드', () => {
     expect(intent.searchQueries).toContain('브라질리언 바베큐 먹고 싶어');
   });
 
+  it('raw query 다음에 cleaned query를 둔다 (새 키워드 regex 의존 완화)', () => {
+    const intent = resolveIntent({ mode: 'feeling', freeText: '타코 먹고 싶어', mood: 'comfortable', duration: '2-3h' });
+    expect(intent.searchQueries.slice(0, 2)).toEqual(['타코 먹고 싶어', '타코']);
+    expect(intent.normalizedQuery).toBe('타코');
+  });
+
   it('freeText가 없으면 원문 추가도 없다', () => {
     const intent = resolveIntent({ mode: 'feeling', freeText: undefined, mood: 'comfortable', duration: '2-3h' });
     expect(intent.searchQueries).not.toContain(undefined);
@@ -87,5 +111,36 @@ describe('resolveIntent — make_course 모드', () => {
     const intent = resolveIntent({ mode: 'make_course', freeText, mood: 'comfortable', duration: 'half_day' });
     expect(intent.searchQueries.length).toBeGreaterThan(8);
     expect(intent.searchQueries.slice(0, 8)).toContain(freeText);
+  });
+
+  it('단일 anchor 코스는 singleAnchorQuery를 가진다 (카테고리 목록 밖 키워드 포함)', () => {
+    const intent = resolveIntent({ mode: 'make_course', freeText: '향수공방 가고 싶어', mood: 'comfortable', duration: '2-3h' });
+    expect(intent.singleAnchorQuery).toBe('향수공방');
+  });
+
+  it('복합 코스나 명시적 투어는 singleAnchor 반복 금지 대상이 아니다', () => {
+    const composite = resolveIntent({ mode: 'make_course', freeText: '카페 갔다가 산책', mood: 'comfortable', duration: '2-3h' });
+    const tour = resolveIntent({ mode: 'make_course', freeText: '카페 투어 하고 싶어', mood: 'comfortable', duration: '2-3h' });
+    expect(composite.singleAnchorQuery).toBeUndefined();
+    expect(tour.singleAnchorQuery).toBeUndefined();
+    expect(tour.allowRepeatedAnchor).toBe(true);
+  });
+
+  it('복합 steps 입력은 courseAnchors를 순서대로 가진다', () => {
+    const intent = resolveIntent({
+      mode: 'make_course',
+      freeText: '카페갔다가 삼겹살 먹고 이후에 술집을 가고 싶어',
+      mood: 'comfortable',
+      duration: '2-3h',
+    });
+    expect(intent.courseAnchors).toEqual(['카페', '삼겹살', '술집']);
+    expect(intent.singleAnchorQuery).toBeUndefined();
+    expect(intent.searchQueries.slice(0, 5)).toEqual([
+      '카페갔다가 삼겹살 먹고 이후에 술집을 가고 싶어',
+      '카페갔다가 삼겹살 먹고 이후에 술집',
+      '카페',
+      '삼겹살',
+      '술집',
+    ]);
   });
 });

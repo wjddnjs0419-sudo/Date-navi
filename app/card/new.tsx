@@ -12,6 +12,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, SoftCard, OptionCardPicker } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 export default function NewCardScreen() {
   const router = useRouter();
@@ -83,6 +84,7 @@ export default function NewCardScreen() {
           estimated_budget: card.estimated_budget,
           tags: card.tags,
           why_recommended: card.why_recommended,
+          ...writeRecommendationIdentity(card),
         });
       } else {
         await supabase.from('date_cards').insert({

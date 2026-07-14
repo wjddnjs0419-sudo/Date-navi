@@ -50,6 +50,19 @@ describe('buildCandidates — scoring & ranking', () => {
     const out = buildCandidates([place({ placeId: '1', name: '북카페 리브로', category: '카페' })], studyIntent);
     expect(out[0].matchedQueries).toContain('북카페');
   });
+
+  it('새 키워드의 cleaned query 매칭은 broad 카페 fallback보다 높게 랭크된다', () => {
+    const intent = resolveIntent({ mode: 'feeling', freeText: '타코 먹고 싶어', mood: 'comfortable', duration: '2-3h' });
+    const out = buildCandidates(
+      [
+        place({ placeId: '1', name: '동네 카페', category: '카페' }),
+        place({ placeId: '2', name: '엘타코 성수', category: '타코' }),
+      ],
+      intent,
+    );
+    expect(out[0].placeId).toBe('2');
+    expect(out[0].matchedQueries).toContain('타코');
+  });
 });
 
 describe('buildCandidates — candidateId & 매핑', () => {

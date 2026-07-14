@@ -495,29 +495,92 @@
     "back": "←"
   },
   "course": {
+    "aiConsent": "I agree that recommendation conditions (location, budget, request) are sent to an AI provider and retained for up to 30 days.",
     "modeLabel": "Make it a plan",
-    "title": "What kind of date\ndo you have in mind?",
-    "ideaLabel": "Your date idea",
-    "ideaPlaceholder": "e.g. I want to visit an exhibition, how about a picnic?",
-    "ideaHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
-    "durationLabel": "How much time do you have? (optional)",
-    "durationOptions": [
-      {
-        "label": "2-3 hours",
-        "value": "2-3h"
-      },
-      {
-        "label": "Half day",
-        "value": "half_day"
-      },
-      {
-        "label": "All day",
-        "value": "full_day"
+    "title": "Build your date\ncourse step by step",
+    "subtitle": "Choose an order and a few conditions, and we'll find places that fit both of you.",
+    "steps": {
+      "label": "Course steps",
+      "hint": "Arrange two to four steps in the order you want.",
+      "add": "Add step",
+      "stepLabel": "Step {{number}}",
+      "categories": {
+        "meal": "Meal",
+        "cafe": "Cafe",
+        "drinks": "Drinks",
+        "activity": "Activity",
+        "culture": "Culture",
+        "walk": "Walk",
+        "ai_decide": "Let AI decide"
       }
-    ],
+    },
+    "walking": {
+      "label": "Maximum walk between places (optional)",
+      "options": {
+        "five": "5 min",
+        "ten": "10 min",
+        "twenty": "20 min",
+        "any": "Any"
+      }
+    },
+    "budget": {
+      "label": "Total budget for two (KRW, optional)",
+      "placeholder": "e.g. 50000",
+      "hint": "Enter the total amount for both people, up to KRW 10,000,000."
+    },
+    "moods": {
+      "label": "Preferred moods (select any)",
+      "options": {
+        "comfortable": "Comfortable",
+        "lively": "Lively",
+        "romantic": "Romantic",
+        "quiet": "Quiet",
+        "novel": "Novel"
+      }
+    },
+    "duration": {
+      "label": "Total time (optional)",
+      "options": {
+        "twoThreeHours": "2-3 hours",
+        "halfDay": "Half day",
+        "fullDay": "All day"
+      }
+    },
+    "additional": {
+      "label": "Additional request (optional)",
+      "placeholder": "e.g. Avoid cafes and suggest indoor places that are good for photos",
+      "maxLength": "{{count}}/500 characters"
+    },
+    "preview": {
+      "title": "Conditions found in your text",
+      "excluded": "Exclude {{category}}",
+      "quiet": "Quiet places preferred",
+      "photo": "Photo-friendly preferred",
+      "indoor": "Indoor only"
+    },
+    "validation": {
+      "location_required": "Select where your date should start.",
+      "step_count_invalid": "Build a course with two to four steps.",
+      "duplicate_step_ids": "Two course steps have the same identifier. Please reopen this screen.",
+      "invalid_step_category": "One of the course steps is not supported.",
+      "budget_invalid": "The total budget for two must be a number from KRW 1 to 10,000,000.",
+      "additional_request_too_long": "Keep the additional request to 500 characters or fewer.",
+      "exclusion_conflict": "Your selected steps conflict with an exclusion: {{categories}}. Edit the text or the steps."
+    },
+    "accessibility": {
+      "addStep": "Add a course step",
+      "moveStepUp": "Move this step up",
+      "moveStepDown": "Move this step down",
+      "removeStep": "Remove this step",
+      "category": "Select {{category}} for step {{number}}",
+      "walking": "Select a maximum walk of {{option}}",
+      "mood": "Select the {{mood}} mood",
+      "budget": "Enter the total budget for two in Korean won",
+      "additionalRequest": "Enter an additional request",
+      "generate": "Build the date course"
+    },
     "generateButton": "Build a course",
-    "back": "←",
-    "errorEmpty": "Please enter a date idea first."
+    "back": "←"
   },
   "result": {
     "title": "Date ideas",
@@ -1001,8 +1064,15 @@
     "fetchError": "Could not get your location",
     "fetchErrorBody": "Try again in a moment or enter a neighborhood manually.",
     "label": "Where are you meeting? (Optional)",
+    "requiredLabel": "Where are you meeting? (Required)",
     "placeholder": "Ex: Seongsu-dong, Hongdae Station",
     "hint": "Add a neighborhood and we can suggest real nearby places.",
+    "autocompleteHint": "Enter at least two characters, then choose the search center.",
+    "searchAccessibility": "Search meeting location",
+    "currentAccessibility": "Use current location",
+    "suggestionAccessibility": "Select {{name}} as the location",
+    "recentTitle": "Recently selected",
+    "searchError": "We could not search locations. Please try again in a moment.",
     "map": "Map →"
   },
   "pickers": {
@@ -1074,6 +1144,7 @@
       "courseHeading": "Planning a course\nthat fits both of you",
       "defaultHeading": "Choosing ideas\nthat fit both of you",
       "courseError": "Something went wrong while creating the course.",
+      "courseEdit": "Edit course preferences",
       "defaultError": "Something went wrong while creating recommendations.",
       "errorTitle": "Something went wrong",
       "errorSuffix": "We'll try again."
@@ -1106,10 +1177,37 @@
       "sendError": "Something went wrong while sending.",
       "saveError": "Something went wrong while saving.",
       "errorTitle": "Something went wrong",
+      "loadError": "We couldn't load this saved course. Check the link or try again.",
+      "loading": "Loading your saved course…",
+      "back": "Go back",
       "retry": "Try again",
       "badge": "AI course",
       "heading": "How about this course?",
       "sub": "Swipe to compare three options.",
+      "conditions": "View applied conditions",
+      "editError": "We couldn't save this course change. Please try again.",
+      "confirm": "Confirm this course",
+      "regenerate": "Regenerate unlocked",
+      "confirmFirst": "Confirm this course before sharing it.",
+      "replace": "Replace this step",
+      "viewDetails": "Place details & external checks",
+      "detailNotice": "Check reviews and operating information directly with the external service. Date Navi does not store or verify third-party review content.",
+      "replacementTitle": "Replacement options",
+      "replacementNotice": "The top three appear first. Check reviews and maps directly with the external service.",
+      "topPick": "TOP PICK",
+      "naverReviews": "View on Naver",
+      "kakaoMap": "Open Kakao Map",
+      "pick": "Choose",
+      "feedbackTitle": "After-date feedback",
+      "feedbackNotice": "After you visit, leave a few short tags about the experience.",
+      "leaveFeedback": "Leave feedback",
+      "visited": "We visited",
+      "notVisited": "We didn't visit",
+      "feedbackTags": { "conversation": "Good for conversation", "quiet": "Quiet", "noisy": "Too noisy", "value": "Good value", "photos": "Good for photos", "revisit": "Would revisit" },
+      "delete": "Delete",
+      "deleteMin": "At least two steps",
+      "add": "Add place",
+      "additionalStep": "Additional place",
       "send": "Send to partner",
       "save": "Save"
     },

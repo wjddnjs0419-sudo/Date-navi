@@ -7,6 +7,7 @@ export type { CourseStep };
 import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, buildRetrievalPlan, type KakaoPlace, type PlaceFocus, type RetrievalPlan } from './place';
 import { resolveIntent, type PlanIntent } from './intent';
 import { buildCandidates, type Candidate } from './candidate';
+import { orderCandidatesForCourseRoute } from './courseRoute';
 import { RECOMMENDATION_CONFIG } from './recommendationConfig';
 import {
   resolveIntentMode,
@@ -24,6 +25,10 @@ import {
 } from './recommendation';
 import type { RecommendationSession } from './recommendationSession';
 import { logEvent } from './analytics';
+import { attachRecommendationIdentity, createRecommendationRequestId } from './recommendationIdentity';
+import type { RecommendationLocation } from '../shared/recommendation/contracts';
+import type { StructuredCourseInput } from './course-draft';
+import { buildRecommendationRequest, requestRecommendationCards } from './recommend-date';
 
 // 카카오 로컬 검색은 place-search Edge Function이 대행한다 (REST 키는 함수 시크릿).
 // location(텍스트) 또는 coords(GPS 좌표) 중 하나를 받는다. 실패하면 빈 배열 → 장소 없는 프롬프트로 폴백.
@@ -34,7 +39,7 @@ async function searchPlaces(
   radius: number,
   focus: PlaceFocus | null,
   retrieval?: RetrievalPlan,
-): Promise<KakaoPlace[]> {
+): Promise<{ places: KakaoPlace[]; origin?: GeoCoords }> {
   try {
     const body = retrieval
       ? { location: query.location, coords: query.coords, radius, queries: retrieval.keywordQueries, categoryCodes: retrieval.categoryCodes }
@@ -42,9 +47,10 @@ async function searchPlaces(
     const { data, error } = await supabase.functions.invoke('place-search', { body });
     if (error) throw error;
     const places = (data as { places?: KakaoPlace[] })?.places;
-    return Array.isArray(places) ? places : [];
+    const origin = (data as { _meta?: { origin?: GeoCoords } })?._meta?.origin;
+    return { places: Array.isArray(places) ? places : [], origin };
   } catch {
-    return [];
+    return { places: [] };
   }
 }
 
@@ -98,6 +104,12 @@ export type FeelingInput = {
   location?: string;
   // GPS 현재 위치 (LocationField의 내 위치 토글 사용 시에만 채워진다)
   coords?: GeoCoords;
+  // make_course autocomplete selection. Phase 3 preserves the structured search center
+  // while coords keeps the current recommendation retrieval path backward-compatible.
+  recommendationLocation?: RecommendationLocation;
+  // Phase 4 structured make_course draft. The legacy fields above remain populated until
+  // the server request boundary moves to RecommendationRequest in Phase 5.
+  courseDraft?: StructuredCourseInput;
 };
 
 export type DateCard = {
@@ -108,6 +120,11 @@ export type DateCard = {
   tags: string[];
   why_recommended: string;
   steps?: CourseStep[];
+  // 후보 요청 안의 임시 ID와 요청 간 안정적인 Kakao 장소 ID. 구 카드에는 없을 수 있다.
+  candidateId?: string;
+  kakaoPlaceId?: string;
+  requestId?: string;
+  sessionId?: string;
   // 카카오 로컬 실제 장소 (location 입력 시에만 채워진다)
   place_name?: string;
   place_address?: string;
@@ -293,7 +310,7 @@ async function runCandidateFlow(
     : [];
 
   if (intentMode === 'make_course') {
-    const cards = assembleCourseCards(recs as CourseRec[], candidates, input, previousPlaceIds, language);
+    const cards = assembleCourseCards(recs as CourseRec[], candidates, input, previousPlaceIds, language, intent);
     return { cards, usage, claudeLatencyMs, fallbackCount: 0 };
   }
 
@@ -322,7 +339,7 @@ async function runFreeGenFlow(
       distanceToRadius(input.distance),
       focus,
     );
-    placesBlock = formatPlacesBlock(places, language, focus?.label);
+    placesBlock = formatPlacesBlock(places.places, language, focus?.label);
   }
   const prompt = buildPrompt(input, mode, prefs, language, placesBlock);
   const { data } = await invokeAI('cards', prompt);
@@ -338,6 +355,7 @@ export async function regenerateDateCards(
   session: RecommendationSession,
   language: AppLanguage = 'ko',
 ): Promise<DateCard[]> {
+  const requestId = createRecommendationRequestId();
   try {
     const intentMode = resolveIntentMode(session.mode);
     const res = await runCandidateFlow(
@@ -355,7 +373,7 @@ export async function regenerateDateCards(
         claude_output_tokens: res.usage?.output_tokens,
       });
     }
-    return res.cards;
+    return attachRecommendationIdentity(res.cards, { requestId, sessionId: session.sessionId });
   } catch {
     return [];
   }
@@ -368,7 +386,18 @@ export async function generateDateCards(
   language: AppLanguage = 'ko',
   opts?: GenerateOptions,
 ): Promise<DateCard[]> {
+  const requestId = createRecommendationRequestId();
   const previousPlaceIds = opts?.previousPlaceIds ?? [];
+  if (mode === 'make_course' && input.courseDraft) {
+    const request = buildRecommendationRequest(input.courseDraft, requestId, language);
+    const cards = await requestRecommendationCards(request);
+    const deterministic = deterministicFields(input, language);
+    return attachRecommendationIdentity(cards.slice(0, 3).map((card) => ({
+      ...card,
+      estimated_time: deterministic.estimated_time,
+      estimated_budget: deterministic.estimated_budget,
+    })), { requestId });
+  }
   try {
     if (input.location || input.coords) {
       const intentMode = resolveIntentMode(mode);
@@ -381,22 +410,26 @@ export async function generateDateCards(
       // Adaptive Retrieval — intent의 다중 쿼리/카테고리로 후보 recall을 넓힌다 (Phase 2).
       const retrieval = buildRetrievalPlan(intent);
       const retrievalStart = Date.now();
-      const places = await searchPlaces(
+      const search = await searchPlaces(
         { location: input.location, coords: input.coords },
         distanceToRadius(input.distance),
         null,
         retrieval,
       );
       const retrievalLatencyMs = Date.now() - retrievalStart;
-      const candidates = buildCandidates(places, intent);
+      const candidates = orderCandidatesForCourseRoute(
+        buildCandidates(search.places, intent),
+        intent,
+        search.origin ?? input.coords,
+      );
       if (candidates.length > 0) {
         const res = await runCandidateFlow(intentMode, candidates, intent, input, prefs, language, previousPlaceIds);
         if (res.cards.length > 0) {
-          opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(res.cards, candidates) });
+          opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(res.cards) });
           void logEvent('recommendation_generated', {
             mode,
             intent_purpose: intent.purpose,
-            raw_candidate_count: places.length,
+            raw_candidate_count: search.places.length,
             ranked_candidate_count: candidates.length,
             haiku_candidate_count: Math.min(candidates.length, RECOMMENDATION_CONFIG.haikuCandidateLimit),
             final_recommendation_count: res.cards.length,
@@ -406,13 +439,13 @@ export async function generateDateCards(
             claude_input_tokens: res.usage?.input_tokens,
             claude_output_tokens: res.usage?.output_tokens,
           });
-          return res.cards;
+          return attachRecommendationIdentity(res.cards, { requestId });
         }
       }
     }
-    return await runFreeGenFlow(input, mode, prefs, language);
+    return attachRecommendationIdentity(await runFreeGenFlow(input, mode, prefs, language), { requestId });
   } catch {
     void logEvent('recommendation_fallback', { mode, reason: 'error' });
-    return FALLBACK_CARDS_BY_LANGUAGE[language];
+    return attachRecommendationIdentity(FALLBACK_CARDS_BY_LANGUAGE[language], { requestId });
   }
 }

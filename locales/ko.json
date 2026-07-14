@@ -495,29 +495,92 @@
     "back": "←"
   },
   "course": {
+    "aiConsent": "추천 조건(위치·예산·요청)이 AI 제공자에게 전송되는 것과 30일 보관 정책에 동의합니다.",
     "modeLabel": "코스로 정리해줘",
-    "title": "어떤 데이트를\n하고 싶어?",
-    "ideaLabel": "하고 싶은 데이트 아이디어",
-    "ideaPlaceholder": "예: 전시회 가고 싶어, 한강 피크닉 어때?",
-    "ideaHint": "일식, 삼겹살, 방탈출처럼 키워드 위주로 적으면 더 정확해요.",
-    "durationLabel": "시간은 얼마나? (선택)",
-    "durationOptions": [
-      {
-        "label": "2~3시간",
-        "value": "2-3h"
-      },
-      {
-        "label": "반나절",
-        "value": "half_day"
-      },
-      {
-        "label": "하루종일",
-        "value": "full_day"
+    "title": "데이트 코스를\n직접 구성해볼까요?",
+    "subtitle": "원하는 순서와 조건을 정하면 두 사람에게 맞는 장소를 찾아드려요.",
+    "steps": {
+      "label": "코스 단계",
+      "hint": "2~4단계까지 순서대로 구성할 수 있어요.",
+      "add": "단계 추가",
+      "stepLabel": "{{number}}단계",
+      "categories": {
+        "meal": "식사",
+        "cafe": "카페",
+        "drinks": "술집",
+        "activity": "액티비티",
+        "culture": "문화",
+        "walk": "산책",
+        "ai_decide": "AI가 결정"
       }
-    ],
+    },
+    "walking": {
+      "label": "장소 사이 최대 도보 시간 (선택)",
+      "options": {
+        "five": "5분",
+        "ten": "10분",
+        "twenty": "20분",
+        "any": "무관"
+      }
+    },
+    "budget": {
+      "label": "2인 총예산 (KRW, 선택)",
+      "placeholder": "예: 50000",
+      "hint": "두 사람이 함께 쓸 전체 금액을 입력해주세요. 최대 10,000,000원"
+    },
+    "moods": {
+      "label": "원하는 분위기 (복수 선택 가능)",
+      "options": {
+        "comfortable": "편안한",
+        "lively": "활기찬",
+        "romantic": "로맨틱한",
+        "quiet": "조용한",
+        "novel": "색다른"
+      }
+    },
+    "duration": {
+      "label": "전체 시간 (선택)",
+      "options": {
+        "twoThreeHours": "2~3시간",
+        "halfDay": "반나절",
+        "fullDay": "하루종일"
+      }
+    },
+    "additional": {
+      "label": "추가 요청 (선택)",
+      "placeholder": "예: 카페는 빼고 사진 찍기 좋은 실내 장소로 추천해줘",
+      "maxLength": "{{count}}/500자"
+    },
+    "preview": {
+      "title": "텍스트에서 읽은 조건",
+      "excluded": "{{category}} 제외",
+      "quiet": "조용한 곳 선호",
+      "photo": "사진 찍기 좋은 곳 선호",
+      "indoor": "실내만"
+    },
+    "validation": {
+      "location_required": "데이트를 시작할 위치를 선택해주세요.",
+      "step_count_invalid": "코스는 2~4단계로 구성해주세요.",
+      "duplicate_step_ids": "코스 단계 식별자가 겹쳤어요. 화면을 다시 열어주세요.",
+      "invalid_step_category": "지원하지 않는 코스 단계가 있어요.",
+      "budget_invalid": "2인 총예산은 1원 이상 10,000,000원 이하의 숫자로 입력해주세요.",
+      "additional_request_too_long": "추가 요청은 500자 이하로 입력해주세요.",
+      "exclusion_conflict": "선택한 단계와 제외 요청이 충돌해요: {{categories}}. 텍스트나 단계를 수정해주세요."
+    },
+    "accessibility": {
+      "addStep": "코스 단계 추가",
+      "moveStepUp": "이 단계를 위로 이동",
+      "moveStepDown": "이 단계를 아래로 이동",
+      "removeStep": "이 단계 삭제",
+      "category": "{{number}}단계 카테고리 {{category}} 선택",
+      "walking": "최대 도보 시간 {{option}} 선택",
+      "mood": "분위기 {{mood}} 선택",
+      "budget": "2인 총예산 원화 입력",
+      "additionalRequest": "추가 요청 입력",
+      "generate": "데이트 코스 만들기"
+    },
     "generateButton": "코스 만들기",
-    "back": "←",
-    "errorEmpty": "하고 싶은 아이디어를 입력해주세요."
+    "back": "←"
   },
   "result": {
     "title": "데이트 후보",
@@ -1001,8 +1064,15 @@
     "fetchError": "위치를 가져오지 못했어요",
     "fetchErrorBody": "잠시 후 다시 시도하거나 직접 입력해주세요.",
     "label": "어디서 만나요? (선택)",
+    "requiredLabel": "어디서 만나요? (필수)",
     "placeholder": "예: 성수동, 홍대입구역",
     "hint": "동네를 알려주면 실제 장소·맛집으로 추천해드려요.",
+    "autocompleteHint": "두 글자 이상 입력하고 검색 중심을 선택해주세요.",
+    "searchAccessibility": "만날 위치 검색",
+    "currentAccessibility": "현재 위치 사용",
+    "suggestionAccessibility": "{{name}} 위치 선택",
+    "recentTitle": "최근 선택한 위치",
+    "searchError": "위치를 검색하지 못했어요. 잠시 후 다시 시도해주세요.",
     "map": "지도 →"
   },
   "pickers": {
@@ -1074,6 +1144,7 @@
       "courseHeading": "둘에게 맞는 코스를\n짜는 중이에요",
       "defaultHeading": "둘에게 맞는 후보를\n고르는 중이에요",
       "courseError": "코스를 만드는 중 문제가 생겼어요.",
+      "courseEdit": "조건 다시 편집하기",
       "defaultError": "추천을 만드는 중 문제가 생겼어요.",
       "errorTitle": "잠깐 문제가 생겼어요",
       "errorSuffix": "다시 한 번 시도해볼게요."
@@ -1106,10 +1177,37 @@
       "sendError": "보내기 중 문제가 생겼어요.",
       "saveError": "저장 중 오류가 발생했어요.",
       "errorTitle": "잠깐 문제가 생겼어요",
+      "loadError": "저장된 코스를 불러오지 못했어요. 링크가 올바른지 확인하거나 다시 시도해주세요.",
+      "loading": "저장된 코스를 불러오는 중이에요.",
+      "back": "뒤로 가기",
       "retry": "다시 시도하기",
       "badge": "AI 코스",
       "heading": "이런 코스는 어때요?",
       "sub": "밀어서 후보 3개를 비교해보세요.",
+      "conditions": "적용한 조건 보기",
+      "editError": "코스 변경을 저장하지 못했어요. 다시 시도해주세요.",
+      "confirm": "이 코스로 확정하기",
+      "regenerate": "잠금 외 다시 추천",
+      "confirmFirst": "먼저 이 코스를 확정해주세요.",
+      "replace": "이 단계 교체",
+      "viewDetails": "장소 상세·외부 확인",
+      "detailNotice": "후기와 운영 정보는 외부 서비스에서 직접 확인해주세요. Date Navi는 외부 후기 내용을 저장하거나 검증하지 않아요.",
+      "replacementTitle": "교체 후보",
+      "replacementNotice": "상위 3개를 먼저 보여드려요. 외부 후기·지도는 해당 서비스에서 직접 확인해주세요.",
+      "topPick": "추천",
+      "naverReviews": "네이버에서 확인",
+      "kakaoMap": "카카오맵 열기",
+      "pick": "선택",
+      "feedbackTitle": "데이트 후 피드백",
+      "feedbackNotice": "실제로 방문한 뒤, 짧은 태그로 경험을 남겨주세요.",
+      "leaveFeedback": "피드백 남기기",
+      "visited": "방문했어요",
+      "notVisited": "방문 못 했어요",
+      "feedbackTags": { "conversation": "대화하기 좋음", "quiet": "조용함", "noisy": "시끄러움", "value": "가성비 좋음", "photos": "사진 좋음", "revisit": "재방문 의향" },
+      "delete": "삭제",
+      "deleteMin": "2단계 이상 필요",
+      "add": "장소 추가",
+      "additionalStep": "추가 장소",
       "send": "상대에게 보내기",
       "save": "저장"
     },

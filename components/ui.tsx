@@ -21,13 +21,23 @@ const BTN_VARIANTS: Record<BtnVariant, { bg: string; fg: string }> = {
   disabled: { bg: C.disabledBg, fg: C.textLight },
 };
 export function BigButton({
-  children, variant = 'primary', onPress, style,
-}: { children: ReactNode; variant?: BtnVariant; onPress?: () => void; style?: StyleProp<ViewStyle> }) {
+  children, variant = 'primary', onPress, style, disabled = false, accessibilityLabel,
+}: {
+  children: ReactNode;
+  variant?: BtnVariant;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+}) {
   const m = BTN_VARIANTS[variant];
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       activeOpacity={0.85}
+      disabled={disabled}
       style={[btn.base, { backgroundColor: m.bg }, style]}
     >
       <Text style={[btn.label, { color: m.fg }]}>{children}</Text>
@@ -202,11 +212,13 @@ export function OptionCardPicker({
   value,
   onChange,
   columns = 4,
+  largeTouchTarget = false,
 }: {
   options: OptionCard[];
   value: string | undefined;
   onChange: (value: string) => void;
   columns?: number;
+  largeTouchTarget?: boolean;
 }) {
   const rows: OptionCard[][] = [];
   for (let i = 0; i < options.length; i += columns) {
@@ -223,7 +235,11 @@ export function OptionCardPicker({
                 key={option.value}
                 onPress={() => onChange(option.value)}
                 activeOpacity={0.72}
-                style={[optionCardS.card, selected && optionCardS.cardSelected]}
+                style={[
+                  optionCardS.card,
+                  largeTouchTarget && optionCardS.largeTouchTarget,
+                  selected && optionCardS.cardSelected,
+                ]}
               >
                 {option.emoji && <Text style={optionCardS.emoji}>{option.emoji}</Text>}
                 <Text style={[optionCardS.label, selected && optionCardS.labelSelected]}>
@@ -252,6 +268,7 @@ const optionCardS = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.border,
   },
+  largeTouchTarget: { minHeight: 44 },
   cardSelected: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
   emoji: { fontSize: 18, marginBottom: 4 },
   label: { fontSize: 13, color: C.inkSoft, fontWeight: '600', textAlign: 'center' },
@@ -280,13 +297,19 @@ const badgeS = StyleSheet.create({
 });
 
 // ─── BackBar ─────────────────────────────────────────────────────────────────
-export function BackBar({ onPress }: { onPress?: () => void }) {
+export function BackBar({
+  onPress,
+  largeTouchTarget = false,
+}: {
+  onPress?: () => void;
+  largeTouchTarget?: boolean;
+}) {
   const router = useRouter();
   return (
     <TouchableOpacity
       onPress={onPress ?? (() => router.back())}
       activeOpacity={0.7}
-      style={backS.btn}
+      style={[backS.btn, largeTouchTarget && backS.largeTouchTarget]}
     >
       <ChevronLeft size={24} color={C.text} strokeWidth={2} />
     </TouchableOpacity>
@@ -294,6 +317,7 @@ export function BackBar({ onPress }: { onPress?: () => void }) {
 }
 const backS = StyleSheet.create({
   btn: { marginLeft: -8, padding: 4, alignSelf: 'flex-start' },
+  largeTouchTarget: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
 });
 
 // ─── ProgressDots ─────────────────────────────────────────────────────────────

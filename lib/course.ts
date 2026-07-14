@@ -1,5 +1,13 @@
 // place_* 필드는 make_course candidate 단계에서 실제 장소가 결합될 때만 채워진다 (V2 §16, 하위호환).
-export type CourseStep = { label: string; desc?: string; place_name?: string; place_address?: string; map_url?: string };
+export type CourseStep = {
+  label: string;
+  desc?: string;
+  candidateId?: string;
+  kakaoPlaceId?: string;
+  place_name?: string;
+  place_address?: string;
+  map_url?: string;
+};
 
 /**
  * "1단계: A → 2단계: B → 3단계: C" 형태의 요약을 단계 배열로 분해한다.

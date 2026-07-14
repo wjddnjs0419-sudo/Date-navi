@@ -1,36 +1,75 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Sparkles } from 'lucide-react-native';
 import { generateDateCards, regenerateDateCards, getUserPreferences, type FeelingInput, type DateCard } from '../../lib/ai';
 import { createSession, getSession, addPreviousPlaceIds } from '../../lib/recommendationSession';
 import { collectPlaceIds } from '../../lib/recommendation';
+import { attachRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { logEvent } from '../../lib/analytics';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { BigButton, GeneratingView } from '../../components/ui';
+import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
+import { requestRecommendationResponse } from '../../lib/recommend-date';
+import {
+  buildLegacyResultParams,
+  buildStructuredCourseResultParams,
+} from '../../lib/recommendation-route';
 
 export default function GeneratingScreen() {
-  const { mode, input, sessionId: sessionIdParam } = useLocalSearchParams<{ mode: string; input: string; sessionId?: string }>();
+  const {
+    mode,
+    input,
+    sessionId: sessionIdParam,
+    requestId,
+  } = useLocalSearchParams<{ mode?: string; input?: string; sessionId?: string; requestId?: string }>();
   const router = useRouter();
   const { language, t } = useI18n();
+  const {
+    getPreparedRecommendationRequest,
+    persistRecommendationSession,
+  } = useRecommendationSessionStore();
   const [step, setStep] = useState(0);
+  const [courseStage, setCourseStage] = useState<'preparing' | 'requesting' | 'validating' | 'ready'>('preparing');
   const [errorMsg, setErrorMsg] = useState('');
   const [retryKey, setRetryKey] = useState(0);
 
-  const isCourse = mode === 'make_course';
+  const isCourse = typeof requestId === 'string' || mode === 'make_course';
   const steps = t(isCourse ? 'modeFlow.generating.courseSteps' : 'modeFlow.generating.defaultSteps', { returnObjects: true }) as string[];
   const heading = t(isCourse ? 'modeFlow.generating.courseHeading' : 'modeFlow.generating.defaultHeading');
 
   useEffect(() => {
-    // 단계 표시는 실제 생성 시간 동안 진행하다 마지막 단계에서 대기한다.
-    const interval = setInterval(() => {
-      setStep(s => Math.min(s + 1, steps.length - 1));
-    }, 1200);
-
     let cancelled = false;
+    const requestToken = new AbortController();
     (async () => {
       try {
+        if (typeof requestId === 'string') {
+          setCourseStage('preparing');
+          setStep(0);
+          const request = getPreparedRecommendationRequest(requestId);
+          if (cancelled) return;
+          setCourseStage('requesting');
+          setStep(Math.min(1, steps.length - 1));
+          const response = await requestRecommendationResponse(request, { signal: requestToken.signal });
+          if (cancelled || requestToken.signal.aborted) return;
+          setCourseStage('validating');
+          setStep(Math.min(2, steps.length - 1));
+          const snapshot = await persistRecommendationSession(request.requestId);
+          await logEvent('ai_card_created', { mode: 'make_course', card_count: response.cards.length });
+          if (cancelled || requestToken.signal.aborted) return;
+          setCourseStage('ready');
+          setStep(steps.length - 1);
+          router.replace({
+            pathname: '/mode-flow/course-result',
+            params: buildStructuredCourseResultParams(request.requestId, snapshot.sessionId),
+          } as any);
+          return;
+        }
+        if (mode === 'make_course') {
+          throw new Error('Structured course generation requires a prepared requestId.');
+        }
+
         const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
         const m = mode ?? 'feeling';
         await logEvent('mode_selected', { mode: m });
@@ -43,7 +82,7 @@ export default function GeneratingScreen() {
         if (existing) {
           result = await regenerateDateCards(existing, language);
           if (result.length > 0) {
-            addPreviousPlaceIds(existing.sessionId, collectPlaceIds(result, existing.candidates));
+            addPreviousPlaceIds(existing.sessionId, collectPlaceIds(result));
           }
         }
 
@@ -52,27 +91,47 @@ export default function GeneratingScreen() {
           const prefs = await getUserPreferences();
           let captured: { intent: import('../../lib/intent').PlanIntent; candidates: import('../../lib/candidate').Candidate[]; usedPlaceIds: string[] } | undefined;
           result = await generateDateCards(parsedInput, m, prefs, language, { onSession: (s) => { captured = s; } });
-          sessionId = captured
-            ? createSession({ mode: m, input: parsedInput, intent: captured.intent, candidates: captured.candidates, previousPlaceIds: captured.usedPlaceIds, prefs }).sessionId
-            : undefined;
+          if (captured) {
+            sessionId = createSession({ mode: m, input: parsedInput, intent: captured.intent, candidates: captured.candidates, previousPlaceIds: captured.usedPlaceIds, prefs }).sessionId;
+            result = attachRecommendationIdentity(result, { sessionId });
+          } else {
+            sessionId = undefined;
+          }
         }
 
         await logEvent('ai_card_created', { mode: m, card_count: result.length });
         if (cancelled) return;
         router.replace({
-          pathname: isCourse ? '/mode-flow/course-result' : '/mode-flow/result',
-          params: { mode: m, input: input ?? '{}', cards: JSON.stringify(result), ...(sessionId ? { sessionId } : {}) },
+          pathname: '/mode-flow/result',
+          params: buildLegacyResultParams({
+            mode: m,
+            input: input ?? '{}',
+            cards: JSON.stringify(result),
+            ...(sessionId ? { sessionId } : {}),
+          }),
         } as any);
-      } catch {
-        if (!cancelled) setErrorMsg(t(isCourse ? 'modeFlow.generating.courseError' : 'modeFlow.generating.defaultError'));
+      } catch (error) {
+        if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
+        setErrorMsg(t(isCourse ? 'modeFlow.generating.courseError' : 'modeFlow.generating.defaultError'));
       }
     })();
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      requestToken.abort();
     };
-  }, [input, language, mode, sessionIdParam, retryKey, steps.length, t]);
+  }, [
+    getPreparedRecommendationRequest,
+    input,
+    language,
+    mode,
+    persistRecommendationSession,
+    requestId,
+    sessionIdParam,
+    retryKey,
+    steps.length,
+    t,
+  ]);
 
   if (errorMsg !== '') {
     return (
@@ -83,11 +142,20 @@ export default function GeneratingScreen() {
         <Text style={s.heading}>{t('modeFlow.generating.errorTitle')}</Text>
         <Text style={s.errSub}>{errorMsg}{'\n'}{t('modeFlow.generating.errorSuffix')}</Text>
         <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
+        {isCourse && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={() => router.replace('/mode-flow/course' as any)}
+            style={s.editButton}
+          >
+            <Text style={s.editButtonText}>{t('modeFlow.generating.courseEdit')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
 
-  return <GeneratingView heading={heading} steps={steps} step={step} />;
+  return <GeneratingView heading={heading} steps={steps} step={courseStage === 'preparing' ? 0 : step} />;
 }
 
 const s = StyleSheet.create({
@@ -110,6 +178,8 @@ const s = StyleSheet.create({
   },
   iconWrapGray: { backgroundColor: C.gray },
   retryBtn: { marginTop: 24 },
+  editButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, marginTop: 8 },
+  editButtonText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
   heading: {
     fontSize: 22, fontWeight: '700', color: C.text,
     textAlign: 'center', lineHeight: 29,

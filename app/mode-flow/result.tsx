@@ -16,6 +16,7 @@ import { G } from '../../constants/theme';
 import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { getCardStyle } from '../../lib/tagStyle';
+import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 export default function ResultScreen() {
   const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
@@ -73,6 +74,7 @@ export default function ResultScreen() {
       place_name: card.place_name ?? null,
       place_address: card.place_address ?? null,
       map_url: card.map_url ?? null,
+      ...writeRecommendationIdentity(card),
     });
     if (error) throw error;
     setSavedIds(prev => ({ ...prev, [i]: cardId }));

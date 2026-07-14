@@ -41,6 +41,7 @@ const PLACE_TYPE_LABELS: Record<PlaceType, string[]> = {
 const SCORE = {
   baseCategoryMatch: 3,
   intentKeywordMatch: 3,
+  primaryQueryMatch: 5,
   positiveSignal: 2,
   extraQuery: 1,
   negativeSignal: -5,
@@ -78,6 +79,8 @@ function scorePlace(p: KakaoPlace, intent: PlanIntent): { score: number; matched
   if (matchedQueries.length > 0) {
     score += SCORE.intentKeywordMatch;
     score += (matchedQueries.length - 1) * SCORE.extraQuery; // Multiple Query Match
+    if (intent.primaryQuery && matchedQueries.includes(intent.primaryQuery)) score += SCORE.primaryQueryMatch;
+    if (intent.normalizedQuery && matchedQueries.includes(intent.normalizedQuery)) score += SCORE.primaryQueryMatch;
   }
 
   // Positive Signal Match.

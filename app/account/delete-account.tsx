@@ -32,35 +32,7 @@ export default function DeleteAccountScreen() {
     if (!agreed) return;
     setDeleting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('no user');
-
-      const { data: profile } = await supabase
-        .from('date_planner_profiles')
-        .select('couple_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (profile?.couple_id) {
-        await supabase
-          .from('date_planner_profiles')
-          .update({ couple_id: null })
-          .eq('couple_id', profile.couple_id)
-          .neq('user_id', user.id);
-        await supabase
-          .from('date_planner_couples')
-          .delete()
-          .eq('id', profile.couple_id);
-      }
-
-      await supabase.from('user_preferences').delete().eq('user_id', user.id);
-      await supabase.from('soft_messages').delete().eq('user_id', user.id);
-      await supabase.from('date_memories').delete().eq('user_id', user.id);
-      await supabase.from('date_planner_profiles').delete().eq('user_id', user.id);
-
-      const { error: fnError } = await supabase.functions.invoke('delete-account', {
-        body: { user_id: user.id },
-      });
+      const { error: fnError } = await supabase.functions.invoke('delete-account', { body: {} });
       if (fnError) throw fnError;
 
       await supabase.auth.signOut();

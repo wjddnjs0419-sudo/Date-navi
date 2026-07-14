@@ -17,6 +17,7 @@ import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { PlaceRow, CourseStepList } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
+import { readRecommendationIdentity, writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 type CardDetail = {
   id: string;
@@ -34,6 +35,9 @@ type CardDetail = {
   steps?: CourseStep[] | null;
   // 원본 추천 입력. 조건 재생성 시 location/coords를 보존하려면 필요 (V2 §15).
   input_json?: Partial<FeelingInput> | null;
+  requestId?: string;
+  sessionId?: string;
+  kakaoPlaceId?: string;
 };
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
@@ -91,7 +95,7 @@ export default function CardDetailScreen() {
             .maybeSingle();
 
           if (!cardData) return;
-          setCard(cardData);
+          setCard({ ...cardData, ...readRecommendationIdentity(cardData) });
 
           const { data: memData } = await supabase
             .from('date_memories')
@@ -183,6 +187,7 @@ export default function CardDetailScreen() {
           place_address: nc.place_address ?? null,
           map_url: nc.map_url ?? null,
           steps: nc.steps ?? null,
+          ...writeRecommendationIdentity(nc),
         });
       }
       Alert.alert(

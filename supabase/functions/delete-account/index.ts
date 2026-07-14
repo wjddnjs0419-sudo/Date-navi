@@ -34,17 +34,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user_id } = await req.json();
-
-    // 요청한 user_id와 실제 세션 user.id가 일치하는지 검증
-    if (user_id !== user.id) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // service_role 클라이언트로 auth user 삭제
+    // The authenticated identity is the only deletion target. All application
+    // rows that reference auth.users use server-side cascade deletion; no
+    // caller-controlled user ID or client-side pre-delete is trusted.
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,

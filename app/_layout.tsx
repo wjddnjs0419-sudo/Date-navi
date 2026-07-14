@@ -10,6 +10,7 @@ import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
 import * as Notifications from 'expo-notifications';
 import { registerPushToken, buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
+import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -114,20 +115,22 @@ export default function RootLayout() {
 
   return (
     <I18nProvider>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="settings" />
-        <Stack.Screen name="mode-flow" />
-        <Stack.Screen name="share" />
-        <Stack.Screen name="account" />
-        <Stack.Screen name="candidates" />
-        <Stack.Screen name="memories-flow" />
-        <Stack.Screen name="legal" />
-      </Stack>
+      <RecommendationSessionProvider>
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="mode-flow" />
+          <Stack.Screen name="share" />
+          <Stack.Screen name="account" />
+          <Stack.Screen name="candidates" />
+          <Stack.Screen name="memories-flow" />
+          <Stack.Screen name="legal" />
+        </Stack>
+      </RecommendationSessionProvider>
     </I18nProvider>
   );
 }

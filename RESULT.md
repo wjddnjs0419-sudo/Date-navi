@@ -4,6 +4,165 @@
 
 ---
 
+## 2026-07-14 세션 AL — AI 추천 재설계 실행 Phase 2: 안정 ID/저장 기반
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `lib/course.ts`, `lib/ai.ts`, `lib/recommendation.ts` | candidate-backed 카드/코스 step에 `candidateId`·`kakaoPlaceId` 보존. `collectPlaceIds()`의 장소명 역매칭 제거 |
+| `lib/recommendationIdentity.ts` | `expo-crypto.randomUUID()` 기반 request ID, 카드 identity attach, nullable DB camelCase↔snake_case dual-read/write 경계 추가 |
+| `app/mode-flow/generating.tsx` | 최초 candidate session과 재추천 결과의 session ID를 카드에 연결 |
+| `app/mode-flow/result.tsx`, `course-result.tsx`, `card/[id].tsx`, `card/new.tsx`, `(tabs)/candidates.tsx` | 현재 6개 AI `date_cards` insert에 request/session/Kakao identity dual-write. manual insert는 기존 동작 유지 |
+| `supabase/migrations/20260714000000_add_recommendation_identity_to_date_cards.sql` | `recommendation_request_id`, `recommendation_session_id`, `kakao_place_id` nullable text 컬럼과 comment 추가 |
+| `docs/supabase-schema.sql` | 모바일 `date_cards`가 없는 설치에서도 안전한 `to_regclass` guarded identity extension 기록 |
+| `package.json`, `package-lock.json` | Expo SDK 54 공식 secure UUID API용 `expo-crypto@~15.0.9` 추가 |
+| identity 관련 신규 테스트 5개 | stable place identity, request/session boundary, 실제 generation 경로, 6 AI/1 manual insert wiring, migration contract 검증 |
+
+### 기술 결정
+
+- request ID는 React Native에서 보장되지 않는 Web Crypto/`Math.random` fallback 대신 Expo SDK 54 공식 `expo-crypto.randomUUID()`를 사용한다.
+- `DateCard`/`CourseStep`의 새 ID 필드와 DB 세 컬럼은 optional/nullable이다. 구 카드에는 ID를 이름으로 추론하거나 backfill하지 않는다.
+- 단일 장소의 stable ID는 `date_cards.kakao_place_id`, 코스 장소의 stable ID는 `steps[].kakaoPlaceId`에 보존한다.
+- 정규화된 `recommendation_sessions`/`recommendation_course_steps` 테이블과 ID-only route 전환은 실행 Phase 8까지 도입하지 않는다.
+
+### DB 적용
+
+- linked project `wqjguifsmtblgrhdfnji`에 Phase 2 migration 파일 하나만 Supabase CLI의 `db query --linked --file`로 직접 적용했다.
+- 원격 introspection 결과 세 컬럼 모두 `text`, `is_nullable = YES`이고 comment가 일치한다.
+- 직접 SQL 적용 후 migration history `20260714000000`을 `applied`로 기록해 local/remote가 일치함을 확인했다.
+- 기존 로컬/원격 migration history의 과거 불일치는 수정하지 않았다. `db push` dry-run은 이 불일치 때문에 안전하게 중단됐고, 과거 migration을 일괄 적용하지 않았다.
+
+### TDD / 리뷰
+
+- 모든 동작 변경은 focused RED→GREEN으로 진행했다.
+- 최종 리뷰에서 generation/insert wiring 테스트 공백을 발견해 실제 free/fallback/candidate/regeneration 경로와 6 AI/1 manual insert 계약을 추가했다.
+- attachment/write 라인을 가역적으로 제거하는 mutation RED에서 테스트 실패를 확인한 뒤 복원했다.
+- 서브태스크 3개와 Phase 전체 리뷰에서 최종 Critical/Important/Minor finding 0건, `Ready` 판정을 받았다.
+
+### 검증
+
+```bash
+npm test -- --runInBand
+npm run validate
+git diff --check
+npx supabase db query --linked "select ... from information_schema.columns ..."
+npx supabase migration list --linked
+```
+
+모두 통과. 전체 Jest: 28 suites, 222 tests. `npm run validate`와 `git diff --check`도 통과.
+
+### 다음 세션
+
+실행 Phase 3 승인 후 `make_course` 위치 autocomplete 수직 슬라이스만 진행한다.
+
+---
+
+## 2026-07-14 세션 AK — AI 추천 재설계 실행 Phase 1: 공용 계약
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `package.json`, `package-lock.json` | 런타임 Zod schema 검증용 `zod` 추가 |
+| `shared/recommendation/contracts.ts` | `RecommendationRequest`, hard/soft constraints, 위치, 코스 결과, typed error의 공용 TypeScript 계약 추가 |
+| `shared/recommendation/schemas.ts` | request 직렬화/역직렬화와 course 단계 수·중복 step/candidate/Kakao place ID 검증 Zod schema 추가 |
+| `shared/recommendation/errors.ts` | 11개 오류 코드의 ko/en 안내문, 재시도 가능 여부, 조건 수정 필요 여부 추가 |
+| `__tests__/recommendationContracts.test.ts` | ko/en 직렬화, 2~4 단계 제약, 중복 ID 거부, 오류 메타데이터 테스트 7개 추가 |
+
+### 기술 결정
+
+- 새 계약은 `shared/recommendation/`에만 두고 기존 `FeelingInput`, `lib/ai.ts`, Supabase schema/Edge Function과 연결하지 않았다. 따라서 이번 단계는 런타임 동작을 바꾸지 않는다.
+- `course` 요청은 2~4 단계, `single_place`는 1 단계로 제한한다. 최종 course 응답은 stable `candidateId`와 `kakaoPlaceId` 중복을 모두 거부한다.
+- 자유 텍스트는 `additionalRequest`/soft preference로 계약화했으며, 구조화된 location·course steps·예산·도보 한도·제외 조건은 hard constraints로 유지한다.
+
+### 검증
+
+```bash
+npx jest __tests__/recommendationContracts.test.ts --runInBand
+npx jest --runInBand
+npm run validate
+git diff --check
+```
+
+모두 통과. 전체 Jest: 23 suites, 203 tests. DB migration·Edge 배포는 없음.
+
+### 다음 세션
+
+실행 Phase 2만 진행: `kakaoPlaceId`, request/session ID의 end-to-end 타입과 nullable DB 확장, 기존 카드 dual-read 경계 확정.
+
+---
+
+## 2026-07-09 세션 AJ — 코스 steps ordered anchors + 동선 compactness
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `lib/intent.ts` | `extractCourseAnchors()` 추가. `카페갔다가 삼겹살 먹고 이후에 술집을 가고 싶어` → `courseAnchors: ["카페","삼겹살","술집"]`. 조사(`을/를` 등) 정리 보강. 복합 anchor는 `searchQueries` 앞쪽에 함께 포함 |
+| `lib/courseRoute.ts` (신규) | Haversine 직선거리 기반 route compactness 유틸. anchor별 후보 bucket을 만들고 `origin → anchor1 → anchor2 → ...` 총 이동거리가 짧은 조합을 후보 목록 맨 앞에 배치 |
+| `lib/ai.ts` | `place-search` `_meta.origin`을 받아 course 후보 정렬에 전달. 후보 생성 전에 `orderCandidatesForCourseRoute()` 적용 |
+| `supabase/functions/place-search/index.ts` | adaptive/legacy 응답 `_meta.origin` 추가. **place-search 재배포 완료** |
+| `lib/recommendation.ts` | `buildCourseSelectPrompt()`에 ordered anchors + 동선 compactness 지침 추가. `assembleCourseCards()`에서 ordered anchors 순서를 어긴 place step을 필터링 |
+| `__tests__/intent.test.ts` | 복합 steps anchor 추출/순서/검색 쿼리 테스트 추가 |
+| `__tests__/courseRoute.test.ts` (신규) | 거리 계산, route distance, 가까운 조합 우선 테스트 |
+| `__tests__/recommendation.test.ts` | ordered anchors prompt 및 후처리 순서 필터 테스트 |
+
+### 기술 결정
+
+- 동선 판단은 Haiku에 맡기지 않고 앱이 후보 좌표로 먼저 정렬한다.
+- 정확한 도보 길찾기는 아직 미도입. 이번 단계는 Kakao 좌표 기반 직선거리 근사로 왕복/되돌아가기 낭비를 줄인다.
+- 우선순위는 `사용자 anchor 순서 충족 > 동선 compactness > 후보 score`.
+- anchor별 후보가 모두 있을 때만 route 조합 정렬을 적용하고, 없으면 기존 후보 순서를 유지한다.
+
+### 검증 / 배포
+
+```bash
+npm run validate
+npx jest intent courseRoute recommendation --runInBand
+npx jest --runInBand
+supabase functions deploy place-search --project-ref wqjguifsmtblgrhdfnji
+```
+
+모두 통과. 전체 Jest: 22 suites, 196 tests. `place-search` 배포 성공.
+
+---
+
+## 2026-07-09 세션 AI — 추천 검색 원문 우선화 + 단일 anchor 코스 반복 방지
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `lib/intent.ts` | `normalizeFreeTextQuery()` 추가. `searchQueries`를 raw freeText → cleaned query → rule/fallback 순서로 구성. `primaryQuery`/`normalizedQuery`/`singleAnchorQuery`/`allowRepeatedAnchor`를 `PlanIntent`에 추가해 새 키워드 regex 의존을 줄임 |
+| `supabase/functions/place-search/index.ts` | Adaptive Retrieval task 순서 변경: keyword `queries` 먼저, `categoryCodes` 나중. 원문/cleaned 검색 결과가 broad 카테고리 fallback보다 먼저 merge되도록 수정. **place-search 재배포 완료** |
+| `lib/candidate.ts` | primary/normalized query 매칭에 추가 가중치 부여. 예: `타코 먹고 싶어`의 `타코` 결과가 broad `카페` fallback보다 앞서도록 조정 |
+| `lib/recommendation.ts` | `make_course` single-anchor 프롬프트 지침 추가. 사용자가 한 핵심 검색어만 준 경우 동일 유형 장소 여러 곳 투어 대신 핵심 장소 1곳 + 보조 단계로 구성. `assembleCourseCards()`에서 동일 anchor place step 반복 trim |
+| `lib/ai.ts` | course 카드 조립 시 `intent` 전달 |
+| `__tests__/intent.test.ts` | raw/cleaned query 순서, 막연한 입력 cleaned 생략, 임의 키워드 single-anchor, 투어/복합 코스 예외 테스트 추가 |
+| `__tests__/candidate.test.ts` | 새 키워드 cleaned query가 broad 카페 fallback보다 높게 랭크되는 테스트 추가 |
+| `__tests__/recommendation.test.ts` | single-anchor course prompt/trim 테스트 추가 |
+
+### 기술 결정
+
+- Haiku 선행 호출은 추가하지 않음. 추천 1회당 Claude 선택 호출 1회 원칙을 유지하고, 검색 전처리는 deterministic query expansion으로 해결.
+- `카페`, `타코`, `클라이밍` 같은 고정 목록이 아니라 raw/cleaned query에서 나온 모든 단일 anchor에 공통 규칙 적용.
+- `투어`, `탐방`, `여러 군데`, `2차` 등 반복 의도를 명시한 경우는 동일 유형 반복 금지 예외.
+- `오늘 뭐할지 모르겠음`처럼 구체 anchor가 없는 입력은 raw query는 보존하되 cleaned query 없이 broad fallback을 사용.
+
+### 검증 / 배포
+
+```bash
+npm run validate
+npx jest intent candidate recommendation --runInBand
+npx jest --runInBand
+supabase functions deploy place-search --project-ref wqjguifsmtblgrhdfnji
+```
+
+모두 통과. `place-search` 배포 성공.
+
+---
+
 ## 2026-07-08 세션 AH — 추천 로직 V2 전체 (Phase 4·5·2·6·7 완성 + Edge 2개 배포)
 
 > 아래는 시간순: 먼저 Phase 4·5(V2-core)로 체크포인트 → 사용자가 "전체 진행" 선택 → Phase 2·6·7 이어서 완료.

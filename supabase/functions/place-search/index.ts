@@ -94,8 +94,8 @@ async function adaptiveRetrieve(
 ): Promise<{ places: Place[]; successfulQueryCount: number; failedQueryCount: number; kakaoRequestCount: number }> {
   const size = RETRIEVAL.initialPageSize;
   const tasks: ((page: number) => Promise<Place[]>)[] = [
-    ...categoryCodes.map(code => (page: number) => searchCategory(key, code, CODE_LABELS[code] ?? code, x, y, radius, size, page)),
     ...queries.map(q => (page: number) => searchKeyword(key, q, q, x, y, radius, size, page)),
+    ...categoryCodes.map(code => (page: number) => searchCategory(key, code, CODE_LABELS[code] ?? code, x, y, radius, size, page)),
   ];
 
   const seen = new Set<string>();
@@ -187,6 +187,7 @@ Deno.serve(async (req) => {
       return json({
         places: result.places,
         _meta: {
+          origin: coord,
           successfulQueryCount: result.successfulQueryCount,
           failedQueryCount: result.failedQueryCount,
           kakaoRequestCount: result.kakaoRequestCount,
@@ -218,7 +219,7 @@ Deno.serve(async (req) => {
       if (places.length >= 20) break;
     }
 
-    return json({ places });
+    return json({ places, _meta: { origin: coord } });
   } catch (err) {
     console.error('place-search error', err);
     return json({ error: 'Internal error' }, 500);

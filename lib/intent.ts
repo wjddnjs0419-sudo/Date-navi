@@ -17,6 +17,11 @@ export type PlanIntent = {
   atmosphere: Atmosphere[];
   duration?: string;
   searchQueries: string[];
+  primaryQuery?: string;
+  normalizedQuery?: string;
+  singleAnchorQuery?: string;
+  courseAnchors?: string[];
+  allowRepeatedAnchor?: boolean;
   positiveSignals: string[];
   negativeSignals: string[];
 };
@@ -136,13 +141,85 @@ function matchRules(freeText: string): IntentRule[] {
   return INTENT_RULES.filter(r => r.pattern.test(freeText));
 }
 
+const FILLER_QUERY_PATTERNS: RegExp[] = [
+  /추천(?:해줘|해주세요|좀)?/g,
+  /데이트/g,
+  /오늘|내일|이번\s*주말|주말/g,
+  /근처|주변|가까운/g,
+  /가고\s*싶(?:어|다)?/g,
+  /먹고\s*싶(?:어|다)?/g,
+  /마시고\s*싶(?:어|다)?/g,
+  /하고\s*싶(?:어|다)?/g,
+  /보고\s*싶(?:어|다)?/g,
+  /(먹고|마시고|보고|하고)$/g,
+  /갈\s*만한\s*곳/g,
+  /할\s*만한\s*곳/g,
+  /뭐\s*할지\s*모르겠(?:음|어|다)?/g,
+  /머\s*할지\s*모르겠(?:음|어|다)?/g,
+  /뭐\s*하지/g,
+  /머\s*하지/g,
+  /어디\s*갈까/g,
+  /좀/g,
+];
+
+export function normalizeFreeTextQuery(freeText?: string): string | undefined {
+  let out = freeText
+    ?.replace(/[?!.,~]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!out) return undefined;
+  for (const pattern of FILLER_QUERY_PATTERNS) out = out.replace(pattern, ' ');
+  out = out
+    .replace(/\s+/g, ' ')
+    .replace(/^(에|에서)\s+/, '')
+    .replace(/\s+(에|에서)$/, '')
+    .trim()
+    .replace(/\s*(을|를|은|는|이|가)$/, '')
+    .trim();
+  return out.length >= 2 ? out : undefined;
+}
+
+const REPEAT_ANCHOR_PATTERN = /투어|탐방|여러\s*군데|여러곳|여러\s*곳|2차|이차|호핑|hopping/i;
+const COMPOSITE_COURSE_PATTERN = /갔다가|갔다\s*가|들렀다가|들렀다\s*가|먹고\s+산책|보고\s+산책|하고\s+산책|그리고|그다음|다음에|후에|이후|->|→|\+/;
+
+function hasCompositeCourseIntent(text: string, matches: IntentRule[]): boolean {
+  return matches.length >= 2 || COMPOSITE_COURSE_PATTERN.test(text);
+}
+
+export function extractCourseAnchors(freeText?: string): string[] {
+  const text = freeText?.trim();
+  if (!text) return [];
+  const withBoundaries = text
+    .replace(/(갔다가|갔다\s*가|들렀다가|들렀다\s*가|이후에|이후|그다음|다음에|그리고|->|→|\+)/g, '|')
+    .replace(/(먹고|마시고|보고|하고)\s+/g, '$1|');
+  return uniq(
+    withBoundaries
+      .split('|')
+      .map(part => normalizeFreeTextQuery(part))
+      .filter((q): q is string => !!q),
+  );
+}
+
+function queryPrelude(text: string): {
+  primaryQuery?: string;
+  normalizedQuery?: string;
+  singleAnchorQuery?: string;
+  allowRepeatedAnchor: boolean;
+} {
+  const primaryQuery = text || undefined;
+  const normalizedQuery = normalizeFreeTextQuery(text);
+  const allowRepeatedAnchor = REPEAT_ANCHOR_PATTERN.test(text);
+  return { primaryQuery, normalizedQuery, allowRepeatedAnchor };
+}
+
 export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
   const { mode, freeText, mood, duration } = args;
   const text = freeText?.trim() ?? '';
   const matches = text ? matchRules(text) : [];
   // 하드코딩 규칙에 없는 키워드("일식", "이자카야", "브라질리언 바베큐" 등)도 카카오가
-  // 직접 풀텍스트로 찾을 수 있도록, freeText 원문을 항상 검색어에 추가한다.
-  const freeTextQuery = text ? [text] : [];
+  // 직접 풀텍스트로 찾을 수 있도록, freeText 원문과 cleaned query를 항상 검색어 앞에 둔다.
+  const prelude = queryPrelude(text);
+  const freeTextQueries = [prelude.primaryQuery, prelude.normalizedQuery].filter((q): q is string => !!q);
 
   const atmosphere: Atmosphere[] = mood && MOOD_ATMOSPHERE[mood] ? [MOOD_ATMOSPHERE[mood]] : [];
 
@@ -151,11 +228,22 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
     const placeTypes = uniq([...matches.flatMap(m => m.placeTypes), ...COURSE_BASE_PLACE_TYPES]);
     // freeText 원문을 맨 앞에 둔다 — 다운스트림(place-search)이 검색어를 8개로 자르므로,
     // 여러 규칙이 매칭돼 검색어가 많아져도 폴백 검색어가 잘려나가지 않게 한다.
-    const searchQueries = uniq([...freeTextQuery, ...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES]);
     const positiveSignals = uniq(matches.flatMap(m => m.positiveSignals));
     const negativeSignals = uniq(matches.flatMap(m => m.negativeSignals));
     const purpose: Purpose = matches[0]?.purpose ?? 'general_date';
-    return { purpose, placeTypes, atmosphere, duration, searchQueries, positiveSignals, negativeSignals };
+    const courseAnchors = extractCourseAnchors(text);
+    const isSingleAnchor = !!prelude.normalizedQuery && courseAnchors.length <= 1 && !prelude.allowRepeatedAnchor && !hasCompositeCourseIntent(text, matches);
+    return {
+      purpose, placeTypes, atmosphere, duration,
+      searchQueries: uniq([...freeTextQueries, ...courseAnchors, ...matches.flatMap(m => m.searchQueries), ...COURSE_BASE_QUERIES]),
+      primaryQuery: prelude.primaryQuery,
+      normalizedQuery: prelude.normalizedQuery,
+      singleAnchorQuery: isSingleAnchor ? prelude.normalizedQuery : undefined,
+      courseAnchors: courseAnchors.length >= 2 ? courseAnchors : undefined,
+      allowRepeatedAnchor: prelude.allowRepeatedAnchor,
+      positiveSignals,
+      negativeSignals,
+    };
   }
 
   // feeling: 첫 매치를 주 purpose로 채택. 없으면 general_date + 폭넓은 후보.
@@ -165,7 +253,10 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
       placeTypes: [...GENERAL_PLACE_TYPES],
       atmosphere,
       duration,
-      searchQueries: uniq([...freeTextQuery, ...GENERAL_QUERIES]),
+      searchQueries: uniq([...freeTextQueries, ...GENERAL_QUERIES]),
+      primaryQuery: prelude.primaryQuery,
+      normalizedQuery: prelude.normalizedQuery,
+      allowRepeatedAnchor: prelude.allowRepeatedAnchor,
       positiveSignals: [],
       negativeSignals: [],
     };
@@ -177,7 +268,10 @@ export function resolveIntent(args: ResolveIntentArgs): PlanIntent {
     placeTypes: uniq(primary.placeTypes),
     atmosphere,
     duration,
-    searchQueries: uniq([...freeTextQuery, ...primary.searchQueries]),
+    searchQueries: uniq([...freeTextQueries, ...primary.searchQueries]),
+    primaryQuery: prelude.primaryQuery,
+    normalizedQuery: prelude.normalizedQuery,
+    allowRepeatedAnchor: prelude.allowRepeatedAnchor,
     positiveSignals: uniq(primary.positiveSignals),
     negativeSignals: uniq(primary.negativeSignals),
   };

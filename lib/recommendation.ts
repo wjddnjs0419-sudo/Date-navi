@@ -104,9 +104,19 @@ export function buildCourseSelectPrompt(
   const stepCountRule = stepCount
     ? (language === 'en' ? `\nAvailable time is limited — build the course with exactly ${stepCount} steps.` : `\n가능 시간이 제한적이니 코스를 정확히 ${stepCount}단계로 구성하세요.`)
     : '';
+  const singleAnchorRule = intent.singleAnchorQuery && !intent.allowRepeatedAnchor
+    ? (language === 'en'
+      ? `\nSingle-anchor request: "${intent.singleAnchorQuery}". Use that anchor as ONE main place step only. Do not make a tour of multiple similar places unless the user explicitly asked for a tour. Fill other steps with complementary movement, meal, walk, conversation, or nearby activity steps.`
+      : `\n단일 anchor 요청: "${intent.singleAnchorQuery}". 이 anchor는 핵심 장소 단계 1개로만 사용하세요. 사용자가 투어/탐방/여러 군데를 명시하지 않았다면 비슷한 장소 여러 곳을 도는 코스로 만들지 말고, 나머지는 이동/식사/산책/대화/근처 보조 활동 단계로 구성하세요.`)
+    : '';
+  const orderedAnchorRule = intent.courseAnchors?.length
+    ? (language === 'en'
+      ? `\nUser requested this course order: ${intent.courseAnchors.map((a, i) => `${i + 1}. ${a}`).join(' → ')}. Place steps MUST follow this order. Prefer candidates that keep the route compact and avoid backtracking.`
+      : `\n사용자가 요청한 코스 순서: ${intent.courseAnchors.map((a, i) => `${i + 1}. ${a}`).join(' → ')}. 장소 단계는 이 순서를 따라야 합니다. 후보 점수가 비슷하면 이동 동선이 짧고 되돌아가지 않는 조합을 우선하세요.`)
+    : '';
   if (language === 'en') {
     return `Build ONE (max 2) ordered date course from the real candidates below.
-${block}${prefsHint(prefs, 'en')}${note}${stepCountRule}
+${block}${prefsHint(prefs, 'en')}${note}${stepCountRule}${singleAnchorRule}${orderedAnchorRule}
 
 Each place step MUST reference a candidate_id from the list. Pure-action steps (walk, movie) omit candidate_id.
 ${NO_FACT_RULE_EN}
@@ -114,12 +124,26 @@ Reply with JSON only:
 { "recommendations": [ { "title": "<=15 chars", "summary": "<=40 chars", "why_recommended": "<=50 chars", "tags": ["t1","t2"], "steps": [ { "candidate_id": "candidate_003", "label": "brunch", "desc": "<=20 chars" }, { "label": "river walk", "desc": "<=20 chars" } ] } ] }`;
   }
   return `아래 실제 후보들로 순서 있는 데이트 코스 1개(최대 2개)를 구성하세요.
-${block}${prefsHint(prefs, 'ko')}${note}${stepCountRule}
+${block}${prefsHint(prefs, 'ko')}${note}${stepCountRule}${singleAnchorRule}${orderedAnchorRule}
 
 장소 단계는 반드시 목록의 candidate_id를 참조하세요. 순수 행동 단계(산책·영화 등)는 candidate_id 없이 label/desc만 작성하세요.
 ${NO_FACT_RULE_KO}
 반드시 아래 JSON으로만 답하세요:
 { "recommendations": [ { "title": "15자 이내", "summary": "40자 이내", "why_recommended": "50자 이내", "tags": ["태그1","태그2"], "steps": [ { "candidate_id": "candidate_003", "label": "브런치", "desc": "20자 이내" }, { "label": "한강 산책", "desc": "20자 이내" } ] } ] }`;
+}
+
+function isSingleAnchorCandidate(c: Candidate, intent: PlanIntent): boolean {
+  const anchor = intent.singleAnchorQuery;
+  if (!anchor || intent.allowRepeatedAnchor) return false;
+  const haystack = `${c.name} ${c.category}`;
+  return haystack.includes(anchor) || c.matchedQueries.includes(anchor);
+}
+
+function matchedCourseAnchorIndex(c: Candidate, anchors: string[], startAt: number): number {
+  const anchor = anchors[startAt];
+  if (!anchor) return -1;
+  const haystack = `${c.name} ${c.category}`;
+  return haystack.includes(anchor) || c.matchedQueries.includes(anchor) ? startAt : -1;
 }
 
 export function assembleFeelingCards(
@@ -144,6 +168,8 @@ export function assembleFeelingCards(
       tags: Array.isArray(r.tags) ? r.tags : [],
       estimated_time: det.estimated_time,
       estimated_budget: det.estimated_budget,
+      candidateId: c.candidateId,
+      kakaoPlaceId: c.placeId,
       place_name: c.name,
       place_address: c.address,
       map_url: c.mapUrl,
@@ -154,7 +180,7 @@ export function assembleFeelingCards(
 
 export function assembleCourseCards(
   recs: CourseRec[], candidates: Candidate[], input: FeelingInput,
-  previousPlaceIds: string[], language: AppLanguage,
+  previousPlaceIds: string[], language: AppLanguage, intent?: PlanIntent,
 ): DateCard[] {
   const byId = new Map(candidates.map(c => [c.candidateId, c]));
   const prev = new Set(previousPlaceIds);
@@ -163,12 +189,32 @@ export function assembleCourseCards(
   for (const r of recs.slice(0, 2)) {
     const steps: CourseStep[] = [];
     let placeCount = 0;
+    let anchorPlaceCount = 0;
+    let nextCourseAnchorIndex = 0;
+    const orderedAnchors = intent?.courseAnchors ?? [];
     for (const st of r.steps ?? []) {
       if (st.candidate_id) {
         const c = byId.get(st.candidate_id);
         if (!c || prev.has(c.placeId)) continue; // ghost/제외 place step 제거
+        if (orderedAnchors.length >= 2) {
+          const matchedIndex = matchedCourseAnchorIndex(c, orderedAnchors, nextCourseAnchorIndex);
+          if (matchedIndex === -1) continue;
+          nextCourseAnchorIndex = matchedIndex + 1;
+        }
+        if (intent && isSingleAnchorCandidate(c, intent)) {
+          if (anchorPlaceCount >= 1) continue;
+          anchorPlaceCount++;
+        }
         placeCount++;
-        steps.push({ label: st.label ?? c.name, desc: st.desc, place_name: c.name, place_address: c.address, map_url: c.mapUrl });
+        steps.push({
+          label: st.label ?? c.name,
+          desc: st.desc,
+          candidateId: c.candidateId,
+          kakaoPlaceId: c.placeId,
+          place_name: c.name,
+          place_address: c.address,
+          map_url: c.mapUrl,
+        });
       } else {
         steps.push({ label: st.label ?? '', desc: st.desc }); // 행동 단계 유지
       }
@@ -202,6 +248,7 @@ export function buildDeterministicFallback(
       why_recommended: en ? 'Selected by category, distance, and matched query.' : '검색 조건, 장소 유형, 거리 기준으로 선정되었어요.',
       tags: c.matchedQueries.slice(0, 3),
       estimated_time: det.estimated_time, estimated_budget: det.estimated_budget,
+      candidateId: c.candidateId, kakaoPlaceId: c.placeId,
       place_name: c.name, place_address: c.address, map_url: c.mapUrl,
     });
   }
@@ -212,14 +259,13 @@ export function usedCandidateIds(recs: FeelingRec[]): string[] {
   return recs.map(r => r.candidate_id).filter((id): id is string => !!id);
 }
 
-// 조립된 카드가 소비한 placeId 회수 (Session previousPlaceIds용, Phase 6).
-export function collectPlaceIds(cards: DateCard[], candidates: Candidate[]): string[] {
-  const byName = new Map(candidates.map(c => [c.name, c.placeId]));
+// 조립된 카드에 저장된 안정 Kakao ID 회수 (Session previousPlaceIds용, Phase 6).
+export function collectPlaceIds(cards: DateCard[]): string[] {
   const ids = new Set<string>();
   for (const card of cards) {
-    if (card.place_name && byName.has(card.place_name)) ids.add(byName.get(card.place_name)!);
+    if (card.kakaoPlaceId) ids.add(card.kakaoPlaceId);
     for (const st of card.steps ?? []) {
-      if (st.place_name && byName.has(st.place_name)) ids.add(byName.get(st.place_name)!);
+      if (st.kakaoPlaceId) ids.add(st.kakaoPlaceId);
     }
   }
   return [...ids];

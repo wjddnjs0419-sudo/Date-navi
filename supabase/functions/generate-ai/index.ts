@@ -118,12 +118,36 @@ const COURSE_SELECT_SCHEMA = {
   additionalProperties: false,
 };
 
+// recommend-date 전용: 장소 사실은 서버 후보에서만 조립하며 Claude는 ID만 선택한다.
+const RECOMMEND_DATE_SELECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    steps: {
+      type: 'array',
+      minItems: 2,
+      maxItems: 4,
+      items: {
+        type: 'object',
+        properties: {
+          stepId: { type: 'string' },
+          candidateId: { type: 'string' },
+        },
+        required: ['stepId', 'candidateId'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['steps'],
+  additionalProperties: false,
+};
+
 // logged: 프롬프트/응답 로깅 대상 여부 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
 const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean }> = {
   cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8, logged: true },
   soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9, logged: false },
   feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7, logged: true },
   course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7, logged: true },
+  recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -148,7 +172,7 @@ type LogParams = {
 };
 
 // 로깅 실패가 원래 응답 흐름을 절대 막지 않도록 호출부에서 await하되 에러는 여기서 삼킨다.
-async function logRecommendation(adminClient: ReturnType<typeof createClient>, params: LogParams) {
+async function logRecommendation(adminClient: ReturnType<typeof createClient<any>>, params: LogParams) {
   if (!LOGGED_ACTIONS.has(params.action)) return;
   try {
     const { error } = await adminClient.from('ai_recommendation_logs').insert({
@@ -263,6 +287,14 @@ Deno.serve(async (req) => {
       });
       return json({ error: 'Invalid AI response' }, 502);
     }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      await logRecommendation(adminClient, {
+        ...baseLog,
+        status: 'error', errorMessage: 'Structured response was not an object',
+        latencyMs: Date.now() - startedAt,
+      });
+      return json({ error: 'Invalid AI response' }, 502);
+    }
 
     await logRecommendation(adminClient, {
       ...baseLog,
@@ -271,6 +303,7 @@ Deno.serve(async (req) => {
       latencyMs: Date.now() - startedAt,
     });
 
+    if (action === 'recommend_date_select') return json(parsed);
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);

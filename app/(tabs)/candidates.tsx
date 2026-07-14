@@ -14,6 +14,7 @@ import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
 import { getCardStyle } from '../../lib/tagStyle';
+import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
@@ -235,6 +236,7 @@ export default function CandidatesScreen() {
           estimated_budget: card.estimated_budget,
           tags: card.tags,
           why_recommended: card.why_recommended,
+          ...writeRecommendationIdentity(card),
         });
       }
 
