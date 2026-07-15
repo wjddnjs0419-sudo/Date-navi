@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-07-16 세션 AM — AI 코스 생성 에러 3건 근본 원인 수정
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `lib/recommend-date.ts` | `isPreparedRequestExpiredError()` 추가 — `RecommendationSessionCacheError('missing_prepared_request')`를 식별 |
+| `app/mode-flow/generating.tsx` | 캐시 미스를 전용 문구로 분기, "다시 시도하기" 버튼 숨김(같은 requestId 재실패 방지), "조건 다시 편집하기"만 노출 |
+| `locales/ko.json`, `locales/en.json` | `modeFlow.generating.courseExpired` 문구 추가 |
+| `supabase/migrations/20260715152131_ai_recommendation_logs_add_recommend_date_action.sql` | `ai_recommendation_logs_action_check`에 `recommend_date_select` 추가 (linked 적용) |
+| `supabase/migrations/20260716000100_get_recommendation_session_float_precision.sql` | `get_recommendation_session(text)`에 `set extra_float_digits = 3` 적용 (linked 적용) — **실제 사용자 보고 에러의 근본 원인 수정** |
+| `__tests__/recommend-date-expired-request.test.ts`, `__tests__/aiRecommendationLogsActionMigration.test.ts`, `__tests__/getRecommendationSessionFloatPrecisionMigration.test.ts` | 신규 테스트 |
+
+### 기술 결정
+
+- 사용자가 실기기(Xcode 빌드)에서 "코스를 만드는 중 문제가 생겼어요"를 간헐적으로 겪는다고 보고. systematic-debugging으로 3단계에 걸쳐 원인을 좁혔다.
+- 1차 수정(캐시 미스 분류)은 실재하는 버그였지만, 사용자가 재현한 실제 사례는 아니었다 — Supabase 로그 확인 결과 서버는 매번 200/201로 완전히 성공했고, 클라이언트가 성공 응답을 받은 뒤에 던지고 있었다.
+- `execute_sql`로 실제 세션의 `current_course`(jsonb) vs `recommendation_course_steps`(double precision 컬럼) 좌표를 직접 대조해 진짜 원인을 확정했다: linked DB의 `extra_float_digits=0` 설정 때문에 double precision → JSON 직렬화 시 유효자리 15자리로 반올림되어, jsonb 원본과 미세하게 달라지는 케이스가 있었다. 이걸 클라이언트의 row-vs-course 무결성 검증(`mapRecommendationSessionPayload`, 보안 하드닝 목적)이 위조로 오인해 거부했다.
+- `get_recommendation_session`이 `persist`/`hydrate`/`mutate` 세 경로 모두의 최종 반환점이라 이 함수 하나에만 `SET extra_float_digits = 3`을 걸어 전역 DB 설정을 건드리지 않고 해결했다.
+- 이 malformed 케이스는 서버 INSERT 자체는 이미 성공한 상태라, "다시 시도하기"를 누르면 세션이 이미 존재해 `get_recommendation_session`을 재호출하는 경로를 타므로 DB 픽스만으로 재시도가 성공하게 된다 — 별도 client 분기는 추가하지 않았다.
+
+### 검증
+
+```bash
+npx jest --runInBand
+npm run validate
+git diff --check
+```
+
+전체 Jest 61 suites/544 tests, `npm run validate`, `git diff --check` 모두 통과. 사용자가 Xcode에서 재빌드해 실기기로 정상 동작을 직접 확인했다.
+
+### 다음 세션
+
+- 실행 Phase 14(출시 준비) 또는 코스 결과 화면 UX 재검토 중 사용자가 지정하는 쪽으로 진행.
+- UX 재검토 시: `course-result.tsx` 스크린샷 기반 구체적 개선점 확인 + 장소 사진 표시 기능(데이터 소스 결정 필요, §4.5) brainstorming부터 시작.
+- 이번 세션과 무관하게 세션 시작 시점부터 있던 codex발 미커밋 변경(recommend-date 진단 instrumentation, eval 스크립트 등)은 그대로 두었다 — 커밋 여부는 사용자 확인 필요.
+
+---
+
 ## 2026-07-14 세션 AL — AI 추천 재설계 실행 Phase 2: 안정 ID/저장 기반
 
 ### 변경 사항 요약

@@ -285,10 +285,10 @@
 
 ## Pending Approval
 
-### AI 추천 경험 재설계 + App Store 준비 — 실행 Phase 1~8 완료, Phase 9~13 실행 중
+### AI 추천 경험 재설계 + App Store 준비 — 실행 Phase 1~13 완료, 버그 수정 세션 AM 완료, Phase 14 대기
 
 > 기준 문서: `/Users/jeongwonkim/Downloads/DATE_NAVI_AI_RECOMMENDATION_REDESIGN.md`
-> 현재 단계: **실행 Phase 1~8 완료. 사용자가 실행 Phase 3~13 전체를 승인했으며 Phase 9부터 순차 진행한다.**
+> 현재 단계: **실행 Phase 1~13 완료. 남은 것은 실행 Phase 14(출시 준비)와 아래 "다음 세션 후보".**
 > 작업 위치: **이 재설계의 실행 Phase 1~14 변경은 현재 `main` 작업 트리에서 진행한다.** 별도 branch/worktree 생성과 stage/commit/push는 사용자가 명시적으로 요청할 때만 수행한다.
 
 #### 실행 Phase 1 완료 (2026-07-14)
@@ -389,6 +389,20 @@
 - 코스 생성 전 AI 제3자 전송/30일 보존 동의를 요구하고 server-side versioned consent를 기록한다. raw AI log와 generation attestation은 30일 purge RPC 대상으로 고정했다.
 - 계정 삭제는 caller user ID나 client-side pre-delete를 신뢰하지 않고 authenticated Edge subject만 server-side auth deletion으로 처리한다.
 - `20260715120000_ai_privacy_retention.sql`을 linked Supabase에 적용·history 기록하고 `delete-account` v6을 배포했다. 56 suites/534 tests, validate, Deno, diff gate를 통과했다.
+
+#### 버그 수정 세션 AM 완료 (2026-07-16)
+
+- 사용자가 실기기에서 보고한 "코스를 만드는 중 문제가 생겼어요" 간헐적 에러 3건의 근본 원인을 systematic-debugging으로 규명·수정했다.
+  1. `getPreparedRecommendationRequest`의 캐시 미스(`missing_prepared_request`)가 `RecommendationRequestError`로 분류되지 않아 항상 일반 에러 문구로 뭉개지고, "다시 시도하기"도 같은 requestId라 재실패했다 — 전용 문구/버튼 분기 추가.
+  2. `recommend-date-downstream.ts`가 로깅하는 `recommend_date_select` action이 `ai_recommendation_logs_action_check`에 없어 코스 생성마다 로그 insert가 400으로 실패했다(사용자 비노출, 로그/평가 데이터 유실).
+  3. **실제 에러의 진짜 원인**: linked Postgres의 `extra_float_digits=0` 때문에 `get_recommendation_session`이 `recommendation_course_steps`(double precision 컬럼)를 JSON으로 직렬화할 때 좌표가 유효자리 15자리로 반올림됐다. `current_course`(jsonb 원본, numeric 기반이라 정밀도 그대로)와 비교하는 클라이언트의 엄격한 무결성 검증(`mapRecommendationSessionPayload`)이 16자리 이상 필요한 좌표를 가진 코스마다 `malformed`로 거부했다. `get_recommendation_session(text)`에 함수 단위로 `set extra_float_digits = 3`을 적용해 해결했고, 실제 문제 있던 세션으로 재검증해 정밀도 일치를 확인했다.
+- `20260715152131_ai_recommendation_logs_add_recommend_date_action.sql`, `20260716000100_get_recommendation_session_float_precision.sql`을 linked Supabase에 적용했다.
+- 신규 테스트 4개(`recommend-date-expired-request`, `aiRecommendationLogsActionMigration`, `getRecommendationSessionFloatPrecisionMigration` 등) 추가. 전체 61 suites/544 tests, `npm run validate`, `git diff --check` 통과. 사용자가 Xcode 재빌드로 정상 동작 확인함.
+
+#### 다음 세션 후보 — 코스 결과 화면 UX 재검토 (미착수)
+
+- 사용자 피드백: 코스 결과 화면(`app/mode-flow/course-result.tsx`, `components/ui.tsx`의 `CourseStepList`/`StepCard`) UI가 이해하기 어렵다. 구체적으로 어느 부분이 헷갈리는지는 다음 세션에 스크린샷 받아서 같이 확인 필요.
+- **장소 사진 미표시**: 재설계 문서 §4.5(`DATE_NAVI_AI_RECOMMENDATION_REDESIGN.md`)는 코스 카드에 "place image when legally available"를 명시하지만 현재 `StepCard`엔 이미지 자리 자체가 없다. 후보 검색에 쓰는 Kakao 로컬 API가 사진 URL을 제공하지 않으므로, 구현 전에 데이터 소스(별도 Kakao API/타 제공자)부터 정해야 한다 — brainstorming 필요.
 
 #### 목표와 권장 범위
 
@@ -557,7 +571,6 @@ course.tsx / feeling.tsx
 
 ## 완료된 항목
 
-- [Done] 영어 지원 i18n 구조 정리 — i18next/react-i18next, JSON locale 파일, 주요 화면 t() 키 전환 (2026-07-05)
 - [Done] Date Navi 리디자인으로 되돌아간 화면 i18n 재작업 — 홈/후보/추억/모드/공유/카드/계정/온보딩/마음전하기 전체, 카드 등록 "예상 시간"을 OptionCardPicker 공통 컴포넌트로 통일 (2026-07-05)
 - [Done] 온보딩 뒤로가기 버그 수정(각 단계 이동을 replace→push) + 닉네임 화면 뒤로가기 시 auth로 이동 + 커플연결(필수 단계) 화면에 로그아웃 탈출구 추가 — 커플 연결 전엔 계정 갇힘 문제 해결 (2026-07-07)
 - [Done] 온보딩 라우팅 게이트 버그 수정 — `couple_id` 존재만으로 통과시키던 걸 실제 `status==='linked' && partner_user_id` 확인(`isCoupleRowLinked`)으로 변경. 초대 코드만 만들고 파트너 없이도 온보딩 통과되던 문제 해결 (2026-07-07)
@@ -567,3 +580,4 @@ course.tsx / feeling.tsx
 - [Done] 코스 steps ordered anchors + 동선 최적화 — 복합 입력 anchor 순서 추출, Haversine route compactness 후보 정렬, origin meta 반환, place-search 재배포 (2026-07-09)
 - [Done] AI 추천 재설계 실행 Phase 1 — shared Zod 계약·typed error·ko/en 직렬화/검증 테스트 추가, 기존 런타임 미연결 유지 (2026-07-14)
 - [Done] AI 추천 재설계 실행 Phase 2 — candidate/Kakao/request/session ID end-to-end 보존, 구 카드 dual-read, 6개 AI 저장 경로 dual-write, nullable DB migration 적용 (2026-07-14)
+- [Done] AI 코스 생성 에러 3건 근본 원인 수정 — 준비된 요청 캐시 미스 오분류, `ai_recommendation_logs` action 체크 제약 누락, `get_recommendation_session`의 `extra_float_digits=0`로 인한 좌표 반올림/malformed 오탐 (2026-07-16)
