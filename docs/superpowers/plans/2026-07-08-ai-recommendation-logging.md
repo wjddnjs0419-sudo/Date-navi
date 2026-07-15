@@ -530,7 +530,7 @@ Expected: 방금 생성한 호출이 `status = 'success'`, `prompt_version = 'v1
 
 **Files:**
 - Modify: `package.json`
-- Create: `.env.eval.local.example`
+- Create: `scripts/.env.eval.local.example`
 
 - [ ] **Step 1: 의존성 추가**
 
@@ -543,17 +543,17 @@ npm install --save-dev tsx @types/node
 `package.json`의 `"scripts"` 블록에 추가:
 
 ```json
-    "eval:ai-logs": "tsx --env-file=.env.eval.local scripts/eval-ai-logs.ts"
+    "eval:ai-logs": "tsx --env-file=scripts/.env.eval.local scripts/eval-ai-logs.ts"
 ```
 
 - [ ] **Step 3: 환경변수 템플릿 작성**
 
-`.env.eval.local.example`:
+`scripts/.env.eval.local.example`:
 
 ```
 # scripts/eval-ai-logs.ts 전용 로컬 환경변수. 앱 .env와 분리한다 —
 # service_role 키는 클라이언트 번들에 절대 들어가면 안 되므로 이 파일에서만 쓴다.
-#   cp .env.eval.local.example .env.eval.local
+#   cp scripts/.env.eval.local.example scripts/.env.eval.local
 # 실행: npm run eval:ai-logs -- --action=cards --limit=20
 
 # Supabase 프로젝트 URL (.env의 EXPO_PUBLIC_SUPABASE_URL과 동일 값)
@@ -569,15 +569,15 @@ SUPABASE_SERVICE_ROLE_KEY=
 ANTHROPIC_API_KEY=
 ```
 
-- [ ] **Step 4: `.env.eval.local`이 git에서 무시되는지 확인**
+- [ ] **Step 4: `scripts/.env.eval.local`이 git에서 무시되는지 확인**
 
-Run: `git check-ignore -v .env.eval.local`
-Expected: `.gitignore:36:.env.*.local	.env.eval.local` 형태로 매치되어 출력됨 (실제 파일이 없어도 `git check-ignore`는 패턴 매치만 확인하므로 동작함).
+Run: `git check-ignore -v scripts/.env.eval.local`
+Expected: `.gitignore:36:.env.*.local	scripts/.env.eval.local` 형태로 매치되어 출력됨 (실제 파일이 없어도 `git check-ignore`는 패턴 매치만 확인하므로 동작함).
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add package.json package-lock.json .env.eval.local.example
+git add package.json package-lock.json scripts/.env.eval.local.example
 git commit -m "chore: add tsx + eval:ai-logs script scaffolding"
 ```
 
@@ -606,7 +606,7 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ANTHROPIC_API_KEY) {
   console.error('Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY');
-  console.error('.env.eval.local.example을 참고해 .env.eval.local을 만든 뒤 npm run eval:ai-logs로 실행하세요.');
+  console.error('scripts/.env.eval.local.example을 참고해 scripts/.env.eval.local을 만든 뒤 npm run eval:ai-logs로 실행하세요.');
   process.exit(1);
 }
 
@@ -777,10 +777,10 @@ git commit -m "feat(scripts): add on-demand LLM-as-judge eval script for ai_reco
 
 **Files:** 없음(검증 전용 태스크)
 
-- [ ] **Step 1: `.env.eval.local` 준비**
+- [ ] **Step 1: `scripts/.env.eval.local` 준비**
 
 ```bash
-cp .env.eval.local.example .env.eval.local
+cp scripts/.env.eval.local.example scripts/.env.eval.local
 ```
 
 `SUPABASE_URL`(`.env`의 `EXPO_PUBLIC_SUPABASE_URL`과 동일 값), `SUPABASE_SERVICE_ROLE_KEY`(Supabase 대시보드 → Project Settings → API), `ANTHROPIC_API_KEY`(Edge Function 시크릿과 동일 값)를 채운다.

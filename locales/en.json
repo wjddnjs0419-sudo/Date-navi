@@ -1144,6 +1144,26 @@
       "courseHeading": "Planning a course\nthat fits both of you",
       "defaultHeading": "Choosing ideas\nthat fit both of you",
       "courseError": "Something went wrong while creating the course.",
+      "courseExpired": "This request has expired. Please review your conditions and try again.",
+      "courseErrors": {
+        "INSUFFICIENT_CANDIDATES": "We couldn't find enough matching places nearby. Try broadening the area, steps, or walking limit.",
+        "PLACE_SEARCH_TIMEOUT": "Place search took too long. Please try again shortly.",
+        "PLACE_SEARCH_RATE_LIMITED": "Place search is busy. Please try again shortly.",
+        "AUTH_EXPIRED": "Your sign-in expired. Sign in again and retry.",
+        "AI_TIMEOUT": "Recommendation generation took too long. Please try again.",
+        "AI_INVALID_RESPONSE": "We couldn't validate the recommendation. Please retry.",
+        "COURSE_VALIDATION_FAILED": "We couldn't make one course that satisfies those conditions together. Try adjusting them.",
+        "LOCATION_REQUIRED": "Select the starting location again.",
+        "INVALID_INPUT": "Check the conditions you entered.",
+        "NETWORK_ERROR": "Check your network connection and try again.",
+        "UNKNOWN": "Something went wrong while creating the course."
+      },
+      "courseFailureStages": {
+        "course_build": "We could not assemble distinct places for these conditions. Try adjusting the area or course steps.",
+        "response_schema": "We could not verify the generated course format. Please try again.",
+        "request_response_validation": "The generated course does not match the selected conditions. Try adjusting them.",
+        "stage_attestation": "We had trouble safely saving the generated course. Please try again shortly."
+      },
       "courseEdit": "Edit course preferences",
       "defaultError": "Something went wrong while creating recommendations.",
       "errorTitle": "Something went wrong",

@@ -9,7 +9,7 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ANTHROPIC_API_KEY) {
   console.error('Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY');
-  console.error('.env.eval.local.example을 참고해 .env.eval.local을 만든 뒤 npm run eval:ai-logs로 실행하세요.');
+  console.error('scripts/.env.eval.local.example을 참고해 scripts/.env.eval.local을 만든 뒤 npm run eval:ai-logs로 실행하세요.');
   process.exit(1);
 }
 

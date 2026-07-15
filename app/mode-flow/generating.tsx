@@ -11,7 +11,11 @@ import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { BigButton, GeneratingView } from '../../components/ui';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
-import { requestRecommendationResponse } from '../../lib/recommend-date';
+import {
+  RecommendationRequestError,
+  isPreparedRequestExpiredError,
+  requestRecommendationResponse,
+} from '../../lib/recommend-date';
 import {
   buildLegacyResultParams,
   buildStructuredCourseResultParams,
@@ -33,11 +37,21 @@ export default function GeneratingScreen() {
   const [step, setStep] = useState(0);
   const [courseStage, setCourseStage] = useState<'preparing' | 'requesting' | 'validating' | 'ready'>('preparing');
   const [errorMsg, setErrorMsg] = useState('');
+  const [requestExpired, setRequestExpired] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   const isCourse = typeof requestId === 'string' || mode === 'make_course';
   const steps = t(isCourse ? 'modeFlow.generating.courseSteps' : 'modeFlow.generating.defaultSteps', { returnObjects: true }) as string[];
   const heading = t(isCourse ? 'modeFlow.generating.courseHeading' : 'modeFlow.generating.defaultHeading');
+
+  const courseErrorMessage = (error: unknown) => {
+    if (isPreparedRequestExpiredError(error)) return t('modeFlow.generating.courseExpired');
+    if (!(error instanceof RecommendationRequestError)) return t('modeFlow.generating.courseError');
+    if (error.code === 'COURSE_VALIDATION_FAILED' && error.failureStage) {
+      return t(`modeFlow.generating.courseFailureStages.${error.failureStage}`);
+    }
+    return t(`modeFlow.generating.courseErrors.${error.code}`);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +126,8 @@ export default function GeneratingScreen() {
         } as any);
       } catch (error) {
         if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
-        setErrorMsg(t(isCourse ? 'modeFlow.generating.courseError' : 'modeFlow.generating.defaultError'));
+        setRequestExpired(isCourse && isPreparedRequestExpiredError(error));
+        setErrorMsg(isCourse ? courseErrorMessage(error) : t('modeFlow.generating.defaultError'));
       }
     })();
 
@@ -140,8 +155,10 @@ export default function GeneratingScreen() {
           <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
         </View>
         <Text style={s.heading}>{t('modeFlow.generating.errorTitle')}</Text>
-        <Text style={s.errSub}>{errorMsg}{'\n'}{t('modeFlow.generating.errorSuffix')}</Text>
-        <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
+        <Text style={s.errSub}>{errorMsg}{requestExpired ? '' : `\n${t('modeFlow.generating.errorSuffix')}`}</Text>
+        {!requestExpired && (
+          <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
+        )}
         {isCourse && (
           <TouchableOpacity
             accessibilityRole="button"

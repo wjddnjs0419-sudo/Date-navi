@@ -69,6 +69,9 @@ Deno.serve(async (request) => {
       });
       if (error) throw error;
     },
+    onCourseValidationFailure: (stage) => {
+      console.error(JSON.stringify({ event: 'recommend_date_course_validation_failed', stage }));
+    },
   });
 
   if (result.status === 204) return new Response(null, { status: 204, headers: corsHeaders });

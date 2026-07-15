@@ -45,8 +45,15 @@ export type RecommendDateDependencies = {
     request: RecommendationRequest;
     response: import('../../../shared/recommendation/schemas.ts').RecommendDateResponse;
   }) => Promise<void>;
+  onCourseValidationFailure?: (stage: CourseValidationFailureStage) => void;
   now?: () => string;
 };
+
+export type CourseValidationFailureStage =
+  | 'course_build'
+  | 'response_schema'
+  | 'request_response_validation'
+  | 'stage_attestation';
 
 export type RecommendDateHandlerResult = {
   status: number;
@@ -60,6 +67,26 @@ const errorResult = (
   status,
   body: { error: createRecommendationError(code) },
 });
+
+function courseValidationFailure(
+  dependencies: RecommendDateDependencies,
+  stage: CourseValidationFailureStage,
+): RecommendDateHandlerResult {
+  try {
+    dependencies.onCourseValidationFailure?.(stage);
+  } catch {
+    // Observability must never change the sanitized response contract.
+  }
+  return {
+    status: 422,
+    body: {
+      error: {
+        ...createRecommendationError('COURSE_VALIDATION_FAILED'),
+        failureStage: stage,
+      },
+    },
+  };
+}
 
 export async function handleRecommendDate(
   input: RecommendDateRequest,
@@ -200,9 +227,12 @@ export async function handleRecommendDate(
     }
   } catch (error) {
     if (error instanceof CourseSelectionError) {
+      if (error.code === 'COURSE_VALIDATION_FAILED') {
+        return courseValidationFailure(dependencies, 'course_build');
+      }
       return errorResult(422, error.code);
     }
-    return errorResult(422, 'COURSE_VALIDATION_FAILED');
+    return courseValidationFailure(dependencies, 'course_build');
   }
 
   const response = recommendDateResponseSchema.safeParse({
@@ -224,17 +254,17 @@ export async function handleRecommendDate(
       route: built.route,
     },
   });
-  if (!response.success) return errorResult(422, 'COURSE_VALIDATION_FAILED');
+  if (!response.success) return courseValidationFailure(dependencies, 'response_schema');
   try {
     validateRecommendDateResponseForRequest(serverRequest, response.data);
   } catch {
-    return errorResult(422, 'COURSE_VALIDATION_FAILED');
+    return courseValidationFailure(dependencies, 'request_response_validation');
   }
   if (dependencies.stageAttestation) {
     try {
       await dependencies.stageAttestation({ ownerUserId: authenticatedUser.id, request: serverRequest, response: response.data });
     } catch {
-      return errorResult(422, 'COURSE_VALIDATION_FAILED');
+      return courseValidationFailure(dependencies, 'stage_attestation');
     }
   }
   return { status: 200, body: response.data };

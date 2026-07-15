@@ -7,6 +7,7 @@ import {
 } from '../lib/ai';
 import {
   buildRecommendationRequest,
+  RecommendationRequestError,
   requestRecommendationCards,
   requestRecommendationResponse,
 } from '../lib/recommend-date';
@@ -135,6 +136,35 @@ beforeEach(() => {
 });
 
 describe('structured recommend-date client', () => {
+  it('preserves the typed Edge error code instead of collapsing a failed course request', async () => {
+    const requestBody = buildRecommendationRequest(courseDraft, 'req-client-error-001', 'ko');
+    invoke.mockResolvedValue({
+      data: null,
+      error: { context: { json: async () => ({ error: { code: 'INSUFFICIENT_CANDIDATES' } }) } },
+    });
+
+    await expect(requestRecommendationResponse(requestBody)).rejects.toEqual(
+      expect.objectContaining<Partial<RecommendationRequestError>>({ code: 'INSUFFICIENT_CANDIDATES' }),
+    );
+  });
+
+  it('preserves the sanitized course failure stage for actionable recovery', async () => {
+    const requestBody = buildRecommendationRequest(courseDraft, 'req-client-stage-001', 'ko');
+    invoke.mockResolvedValue({
+      data: null,
+      error: { context: { json: async () => ({
+        error: { code: 'COURSE_VALIDATION_FAILED', failureStage: 'stage_attestation' },
+      }) } },
+    });
+
+    await expect(requestRecommendationResponse(requestBody)).rejects.toEqual(
+      expect.objectContaining<Partial<RecommendationRequestError>>({
+        code: 'COURSE_VALIDATION_FAILED',
+        failureStage: 'stage_attestation',
+      }),
+    );
+  });
+
   it('returns the complete validated Phase 7 response for DB session persistence', async () => {
     const requestBody = buildRecommendationRequest(courseDraft, 'req-client-001', 'ko');
     const responseBody = response(requestBody.requestId);

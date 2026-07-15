@@ -1144,6 +1144,26 @@
       "courseHeading": "둘에게 맞는 코스를\n짜는 중이에요",
       "defaultHeading": "둘에게 맞는 후보를\n고르는 중이에요",
       "courseError": "코스를 만드는 중 문제가 생겼어요.",
+      "courseExpired": "요청 정보가 만료됐어요. 조건을 다시 확인하고 시도해주세요.",
+      "courseErrors": {
+        "INSUFFICIENT_CANDIDATES": "주변에서 조건에 맞는 장소를 충분히 찾지 못했어요. 위치·코스·도보 조건을 조금 넓혀주세요.",
+        "PLACE_SEARCH_TIMEOUT": "장소 검색이 지연됐어요. 잠시 후 다시 시도해주세요.",
+        "PLACE_SEARCH_RATE_LIMITED": "장소 검색 요청이 많아요. 잠시 후 다시 시도해주세요.",
+        "AUTH_EXPIRED": "로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.",
+        "AI_TIMEOUT": "추천 생성이 지연됐어요. 다시 시도해주세요.",
+        "AI_INVALID_RESPONSE": "추천 결과를 검증하지 못했어요. 다시 시도해주세요.",
+        "COURSE_VALIDATION_FAILED": "선택한 조건을 함께 만족하는 코스를 만들지 못했어요. 조건을 조금 조정해주세요.",
+        "LOCATION_REQUIRED": "출발 위치를 다시 선택해주세요.",
+        "INVALID_INPUT": "입력한 조건을 다시 확인해주세요.",
+        "NETWORK_ERROR": "네트워크 연결을 확인한 뒤 다시 시도해주세요.",
+        "UNKNOWN": "코스를 만드는 중 문제가 생겼어요."
+      },
+      "courseFailureStages": {
+        "course_build": "선택한 조건으로 서로 다른 장소를 조합하지 못했어요. 지역이나 코스 항목을 조금 조정해주세요.",
+        "response_schema": "만든 코스 형식을 확인하지 못했어요. 다시 시도해주세요.",
+        "request_response_validation": "선택한 조건과 코스 결과가 맞지 않아요. 조건을 조금 조정해주세요.",
+        "stage_attestation": "코스 결과를 안전하게 저장하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요."
+      },
       "courseEdit": "조건 다시 편집하기",
       "defaultError": "추천을 만드는 중 문제가 생겼어요.",
       "errorTitle": "잠깐 문제가 생겼어요",

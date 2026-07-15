@@ -396,8 +396,8 @@ export default function CandidatesScreen() {
                               </View>
                             </View>
                             <View style={s.chips}>
-                              {(card.tags ?? []).slice(0, 2).map((tag) => (
-                                <Chip key={tag} tone="gray">{tag}</Chip>
+                              {(card.tags ?? []).slice(0, 2).map((tag, tagIndex) => (
+                                <Chip key={`${card.id}-${tag}-${tagIndex}`} tone="gray">{tag}</Chip>
                               ))}
                             </View>
                           </View>

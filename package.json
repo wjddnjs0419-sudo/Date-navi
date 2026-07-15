@@ -55,7 +55,7 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "validate": "tsc --noEmit",
-    "eval:ai-logs": "tsx --env-file=.env.eval.local scripts/eval-ai-logs.ts",
+    "eval:ai-logs": "tsx --env-file=scripts/.env.eval.local scripts/eval-ai-logs.ts",
     "postinstall": "patch-package"
   },
   "private": true

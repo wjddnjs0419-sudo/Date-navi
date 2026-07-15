@@ -102,6 +102,24 @@ describe('recommend-date server prompt', () => {
       response: expect.objectContaining({ requestId: 'request-ko' }),
     }));
   });
+
+  it('reports the attestation boundary when staging a valid course response fails', async () => {
+    const onCourseValidationFailure = jest.fn();
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request() },
+      dependencies({
+        stageAttestation: jest.fn(async () => { throw new Error('private database detail'); }),
+        onCourseValidationFailure,
+      } as any),
+    );
+
+    expect(result).toEqual({
+      status: 422,
+      body: { error: { ...createRecommendationError('COURSE_VALIDATION_FAILED'), failureStage: 'stage_attestation' } },
+    });
+    expect(onCourseValidationFailure).toHaveBeenCalledWith('stage_attestation');
+  });
+
   it.each(['ko', 'en'] as const)('keeps authoritative structured %s constraints on the server', (language) => {
     const prompt = buildRecommendationPrompt(request(language));
 
