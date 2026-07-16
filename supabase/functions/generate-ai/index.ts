@@ -124,8 +124,6 @@ const RECOMMEND_DATE_SELECT_SCHEMA = {
   properties: {
     steps: {
       type: 'array',
-      minItems: 2,
-      maxItems: 4,
       items: {
         type: 'object',
         properties: {
@@ -141,6 +139,19 @@ const RECOMMEND_DATE_SELECT_SCHEMA = {
   additionalProperties: false,
 };
 
+// recommend-date의 "이 단계 교체" 전용: 대상 스텝 하나에 대한 검증된 candidateId만 최대 10개 순서대로 선택.
+const REPLACEMENT_SELECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    candidateIds: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+  required: ['candidateIds'],
+  additionalProperties: false,
+};
+
 // logged: 프롬프트/응답 로깅 대상 여부 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
 const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean }> = {
   cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8, logged: true },
@@ -148,6 +159,7 @@ const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; tempera
   feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7, logged: true },
   course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7, logged: true },
   recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
+  replacement_select: { schema: REPLACEMENT_SELECT_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -303,7 +315,7 @@ Deno.serve(async (req) => {
       latencyMs: Date.now() - startedAt,
     });
 
-    if (action === 'recommend_date_select') return json(parsed);
+    if (action === 'recommend_date_select' || action === 'replacement_select') return json(parsed);
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);

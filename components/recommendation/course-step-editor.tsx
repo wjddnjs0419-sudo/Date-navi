@@ -1,11 +1,9 @@
 import type { Dispatch } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import {
-  ArrowDown, ArrowUp, Coffee, Footprints, Palette, Sparkles, Trash2, Utensils, Wine, Zap,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import {
+  CATEGORY_ICONS,
   COURSE_CATEGORIES,
   type CourseCategory,
   type CourseDraftAction,
@@ -13,16 +11,6 @@ import {
 } from '../../lib/course-draft';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
-
-const CATEGORY_ICONS: Record<CourseCategory, LucideIcon> = {
-  meal: Utensils,
-  cafe: Coffee,
-  drinks: Wine,
-  activity: Zap,
-  culture: Palette,
-  walk: Footprints,
-  ai_decide: Sparkles,
-};
 
 function StepAction({
   accessibilityLabel,

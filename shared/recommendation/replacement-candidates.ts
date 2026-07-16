@@ -25,6 +25,8 @@ const distance = (a: { latitude: number; longitude: number }, b: { latitude: num
   return 2 * 6_371_000 * Math.asin(Math.sqrt(haversine));
 };
 
+const CURATION_POOL_SIZE = 30;
+
 export function rankReplacementCandidates(input: {
   target: RecommendationCourseStep;
   previous?: RecommendationCourseStep;
@@ -32,10 +34,10 @@ export function rankReplacementCandidates(input: {
   existingKakaoPlaceIds: readonly string[];
   candidates: readonly ReplacementCandidateSource[];
   maxWalkingMinutes?: number;
-}): { top: ReplacementCandidate[]; additional: ReplacementCandidate[] } {
+}): { top: ReplacementCandidate[]; additional: ReplacementCandidate[]; pool: ReplacementCandidate[] } {
   const existing = new Set(input.existingKakaoPlaceIds);
   const walkingBudget = input.maxWalkingMinutes === undefined ? undefined : input.maxWalkingMinutes * 80;
-  const ranked = input.candidates
+  const pool = input.candidates
     .filter((candidate) => !existing.has(candidate.kakaoPlaceId))
     .filter((candidate) => {
       if (walkingBudget === undefined) return true;
@@ -51,8 +53,35 @@ export function rankReplacementCandidates(input: {
       return { ...candidate, contextScore: candidate.score - neighbourDistance / 100 };
     })
     .sort((a, b) => b.contextScore - a.contextScore || a.kakaoPlaceId.localeCompare(b.kakaoPlaceId))
-    .slice(0, 15);
-  return { top: ranked.slice(0, 3), additional: ranked.slice(3) };
+    .slice(0, CURATION_POOL_SIZE);
+  return { top: pool.slice(0, 3), additional: pool.slice(3, 15), pool };
+}
+
+const CURATED_SELECTION_MAX = 10;
+
+export function selectCuratedReplacementCandidates(
+  pool: readonly ReplacementCandidate[],
+  rawSelection: unknown,
+): { top: ReplacementCandidate[]; additional: ReplacementCandidate[] } | null {
+  if (!rawSelection || typeof rawSelection !== 'object') return null;
+  const candidateIds = (rawSelection as { candidateIds?: unknown }).candidateIds;
+  if (!Array.isArray(candidateIds)) return null;
+
+  const byId = new Map(pool.map((candidate) => [candidate.candidateId, candidate]));
+  const seen = new Set<string>();
+  const curated: ReplacementCandidate[] = [];
+  for (const rawId of candidateIds) {
+    if (curated.length === CURATED_SELECTION_MAX) break;
+    if (typeof rawId !== 'string') continue;
+    const id = rawId.trim();
+    if (!id || seen.has(id)) continue;
+    const candidate = byId.get(id);
+    if (!candidate) continue;
+    seen.add(id);
+    curated.push(candidate);
+  }
+  if (curated.length === 0) return null;
+  return { top: curated.slice(0, 3), additional: curated.slice(3) };
 }
 
 export const buildNaverSearchUrl = (placeName: string) => (

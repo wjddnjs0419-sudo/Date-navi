@@ -55,6 +55,19 @@ export type LockedCourseStepInput = {
   stepId: string;
   candidateId: string;
   kakaoPlaceId: string;
+  /**
+   * Place facts for this step, carried by the client so the server can pin
+   * a locked step without needing it to reappear in a fresh Kakao search
+   * (candidateId is only stable within a single search call).
+   */
+  name: string;
+  address: string;
+  roadAddress: string;
+  mapUrl: string;
+  latitude: number;
+  longitude: number;
+  /** Optional; the server derives lock state from lockedSteps membership. Kept for forward compat. */
+  locked?: boolean;
 };
 
 export type RecommendationRequest = HardConstraints & SoftPreferences & {

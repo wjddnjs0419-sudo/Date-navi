@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { RecommendationErrorCode } from '../../../shared/recommendation/contracts.ts';
+import type { LockedCourseStepInput, RecommendationErrorCode } from '../../../shared/recommendation/contracts.ts';
 import {
   recommendationCourseSchema,
   recommendDateCardSchema,
@@ -44,6 +44,37 @@ export class CourseSelectionError extends Error {
 
 export function candidateMatchesCategory(candidate: PlaceCandidate, category: string): boolean {
   return verifiedPlaceMatchesCategory(candidate, category);
+}
+
+// A pin entry's `locked` field carries the user's actual persisted lock state; pins that omit it
+// predate the field and were always genuinely locked.
+function pinnedLockedFlag(lock: LockedCourseStepInput | undefined): boolean {
+  return lock ? lock.locked !== false : false;
+}
+
+// Builds a PlaceCandidate directly from a locked step's own carried facts, bypassing this call's
+// search results — the step's category was already verified when it was first created, and its
+// candidateId/kakaoPlaceId are trusted pass-through identity, not re-derived here.
+function candidateFromLock(lock: LockedCourseStepInput): PlaceCandidate {
+  return {
+    candidateId: lock.candidateId,
+    kakaoPlaceId: lock.kakaoPlaceId,
+    name: lock.name,
+    categoryGroupCode: '',
+    categoryGroupName: '',
+    categoryName: '',
+    address: lock.address,
+    roadAddress: lock.roadAddress,
+    latitude: lock.latitude,
+    longitude: lock.longitude,
+    mapUrl: lock.mapUrl,
+    matchedSearchEvidence: [],
+    distanceFromSearchCenterMeters: 0,
+    score: 0,
+    scoreBreakdown: {
+      intent: 0, distance: 0, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: 0,
+    },
+  };
 }
 
 type CourseBuildInput = {
@@ -132,17 +163,19 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
     const requestedStep = input.request.courseSteps[index];
     const selectedStep = parsed.data.steps[index];
     if (selectedStep.stepId !== requestedStep.id) throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
-    const candidate = byCandidateId.get(selectedStep.candidateId);
-    if (!candidate || !candidateMatchesCategory(candidate, requestedStep.category)) {
-      throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
-    }
     const lock = locks.get(requestedStep.id);
-    if (lock && (
-      selectedStep.candidateId !== lock.candidateId
-      || candidate.candidateId !== lock.candidateId
-      || candidate.kakaoPlaceId !== lock.kakaoPlaceId
-    )) {
-      throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+    let candidate: PlaceCandidate | undefined;
+    if (lock) {
+      // A locked step's candidateId is only stable within the search call that minted it, so a
+      // fresh search will almost never return it again. Pin the step from the lock's own carried
+      // facts instead of requiring it to reappear in this call's candidate pool.
+      if (selectedStep.candidateId !== lock.candidateId) throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+      candidate = candidateFromLock(lock);
+    } else {
+      candidate = byCandidateId.get(selectedStep.candidateId);
+      if (!candidate || !candidateMatchesCategory(candidate, requestedStep.category)) {
+        throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+      }
     }
     selected.push(candidate);
   }
@@ -174,7 +207,10 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
       latitude: candidate.latitude,
       longitude: candidate.longitude,
       reason: input.request.language === 'ko' ? '검증된 카카오 검색 후보예요.' : 'Verified Kakao search candidate.',
-      locked: locks.has(input.request.courseSteps[index].id),
+      // A pin keeps the place fixed for this call only; the echoed locked flag must reflect the
+      // user's persisted lock state (lock.locked, default true for legacy pins) or the mutation
+      // RPC rejects the response for flag drift on steps the user never locked.
+      locked: pinnedLockedFlag(locks.get(input.request.courseSteps[index].id)),
     })),
     relaxedConstraints: walkingRelaxation(input.request, route),
     generatedAt: input.generatedAt,
@@ -186,7 +222,6 @@ type DeterministicCourseInput = Omit<CourseBuildInput, 'selection'>;
 
 export function buildDeterministicCandidateCourse(input: DeterministicCourseInput): BuiltCandidateCourse {
   validateCandidatePool(input.request, input.candidates);
-  const candidateById = new Map(input.candidates.map((candidate) => [candidate.candidateId, candidate]));
   const locks = new Map((input.request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
   const compareStable = (a: PlaceCandidate, b: PlaceCandidate) => (
     b.score - a.score
@@ -196,13 +231,9 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
   const choices = input.request.courseSteps.map((step) => {
     const lock = locks.get(step.id);
     if (lock) {
-      const lockedCandidate = candidateById.get(lock.candidateId);
-      if (!lockedCandidate
-        || lockedCandidate.kakaoPlaceId !== lock.kakaoPlaceId
-        || !candidateMatchesCategory(lockedCandidate, step.category)) {
-        throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
-      }
-      return [lockedCandidate];
+      // Same rationale as buildCandidateOnlyCourse: don't require the locked place to reappear
+      // in this call's fresh candidate pool, pin it from its own carried facts instead.
+      return [candidateFromLock(lock)];
     }
     const eligible = input.candidates
       .filter((candidate) => candidateMatchesCategory(candidate, step.category))

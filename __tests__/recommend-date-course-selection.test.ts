@@ -1,4 +1,5 @@
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
+import type { LockedCourseStepInput } from '../shared/recommendation/contracts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -10,6 +11,25 @@ import {
   MAX_CANDIDATE_POOL_SIZE,
 } from '../supabase/functions/_shared/recommendation-course-selection';
 import type { PlaceCandidate } from '../supabase/functions/_shared/recommendation-ranking';
+
+const lockedStep = (
+  stepId: string,
+  candidateId: string,
+  kakaoPlaceId: string,
+  overrides: Partial<LockedCourseStepInput> = {},
+): LockedCourseStepInput => ({
+  stepId,
+  candidateId,
+  kakaoPlaceId,
+  name: `Locked ${kakaoPlaceId}`,
+  address: `Addr ${kakaoPlaceId}`,
+  roadAddress: `Road ${kakaoPlaceId}`,
+  mapUrl: `https://place.map.kakao.com/${kakaoPlaceId}`,
+  latitude: 37.001,
+  longitude: 127.001,
+  locked: true,
+  ...overrides,
+});
 
 const request = (overrides: Partial<RecommendationRequest> = {}): RecommendationRequest => ({
   requestId: 'phase7-request',
@@ -154,7 +174,7 @@ describe('candidate-only course validation and assembly', () => {
 
   it('preserves a locked step tuple and rejects replacing any part of it', () => {
     const lockedRequest = request({
-      lockedSteps: [{ stepId: 'meal-step', candidateId: 'meal-near', kakaoPlaceId: 'meal-near-id' }],
+      lockedSteps: [lockedStep('meal-step', 'meal-near', 'meal-near-id')],
     });
     const result = buildCandidateOnlyCourse({
       request: lockedRequest,
@@ -172,6 +192,57 @@ describe('candidate-only course validation and assembly', () => {
       selection: { steps: [{ stepId: 'meal-step', candidateId: 'meal-far' }, selection.steps[1]] },
       generatedAt: '2026-07-14T00:00:00.000Z',
     })).toThrow(CourseSelectionError);
+  });
+
+  it('resolves a locked step from its own carried facts even when a fresh search no longer returns that candidateId', () => {
+    const staleLock = lockedStep('meal-step', 'candidate_stale_007', 'meal-near-id');
+    const freshCandidatesWithRenumberedIds = [
+      { ...candidates[0], candidateId: 'candidate_001' },
+      { ...candidates[2], candidateId: 'candidate_002' },
+    ];
+    const lockedRequest = request({ lockedSteps: [staleLock] });
+
+    const result = buildCandidateOnlyCourse({
+      request: lockedRequest,
+      candidates: freshCandidatesWithRenumberedIds,
+      selection: { steps: [{ stepId: 'meal-step', candidateId: 'candidate_stale_007' }, { stepId: 'cafe-step', candidateId: 'candidate_002' }] },
+      generatedAt: '2026-07-14T00:00:00.000Z',
+    });
+
+    expect(result.course.steps[0]).toMatchObject({
+      stepId: 'meal-step',
+      candidateId: 'candidate_stale_007',
+      kakaoPlaceId: 'meal-near-id',
+      name: 'Locked meal-near-id',
+      locked: true,
+    });
+  });
+
+  it('echoes a pinned-but-unlocked step with locked=false so the mutation RPC lock-flag check passes', () => {
+    const pinnedUnlocked = lockedStep('meal-step', 'meal-near', 'meal-near-id', { locked: false });
+    const result = buildCandidateOnlyCourse({
+      request: request({ lockedSteps: [pinnedUnlocked] }),
+      candidates,
+      selection,
+      generatedAt: '2026-07-14T00:00:00.000Z',
+    });
+
+    expect(result.course.steps[0]).toMatchObject({
+      stepId: 'meal-step', candidateId: 'meal-near', kakaoPlaceId: 'meal-near-id', locked: false,
+    });
+  });
+
+  it('keeps locked=true for a pin without an explicit locked flag (legacy membership semantics)', () => {
+    const legacyPin = lockedStep('meal-step', 'meal-near', 'meal-near-id');
+    delete (legacyPin as Partial<LockedCourseStepInput>).locked;
+    const result = buildCandidateOnlyCourse({
+      request: request({ lockedSteps: [legacyPin] }),
+      candidates,
+      selection,
+      generatedAt: '2026-07-14T00:00:00.000Z',
+    });
+
+    expect(result.course.steps[0].locked).toBe(true);
   });
 
   it('rejects hard-excluded candidates and duplicate stable Kakao IDs', () => {
@@ -326,6 +397,36 @@ describe('deterministic candidate-only fallback', () => {
       constraint: 'maxWalkingMinutes',
       reason: expect.stringMatching(language === 'ko' ? /직선거리|분/ : /straight-line|minutes/i),
     }]);
+  });
+
+  it('pins a locked step using its carried facts during deterministic fallback, even without a matching fresh candidate', () => {
+    const staleLock = lockedStep('meal-step', 'candidate_stale_099', 'ghost-place-id');
+    const lockedRequest = request({ lockedSteps: [staleLock] });
+
+    const result = buildDeterministicCandidateCourse({
+      request: lockedRequest,
+      candidates: [candidates[2], candidates[3]],
+      generatedAt: '2026-07-14T00:00:00.000Z',
+    });
+
+    expect(result.course.steps[0]).toMatchObject({
+      stepId: 'meal-step', kakaoPlaceId: 'ghost-place-id', locked: true,
+    });
+    expect(result.course.steps[1].category).toBe('cafe');
+  });
+
+  it('echoes a pinned-but-unlocked step with locked=false during deterministic fallback', () => {
+    const pinnedUnlocked = lockedStep('meal-step', 'candidate_stale_099', 'ghost-place-id', { locked: false });
+
+    const result = buildDeterministicCandidateCourse({
+      request: request({ lockedSteps: [pinnedUnlocked] }),
+      candidates: [candidates[2], candidates[3]],
+      generatedAt: '2026-07-14T00:00:00.000Z',
+    });
+
+    expect(result.course.steps[0]).toMatchObject({
+      stepId: 'meal-step', kakaoPlaceId: 'ghost-place-id', locked: false,
+    });
   });
 
   it('returns a typed failure when no unique category-preserving route exists', () => {

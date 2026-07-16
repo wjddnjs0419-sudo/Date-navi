@@ -28,6 +28,33 @@ describe('recommendation session mapper/repository', () => {
     });
   });
 
+  it('hydrates a session whose persisted latest_request carries full-fact lockedSteps entries', () => {
+    // apply_recommendation_session_mutation persists latest_request.lockedSteps with the full
+    // 9-field place-fact shape that lockedCourseStepInputSchema requires; hydration must accept it.
+    const payload = JSON.parse(JSON.stringify(recommendationSessionRpcFixture())) as ReturnType<typeof recommendationSessionRpcFixture>;
+    // The named lock must correspond to a step that is actually locked in the course.
+    payload.steps[0].locked = true;
+    (payload.session.current_course as { steps: Array<{ locked: boolean }> }).steps[0].locked = true;
+    (payload.session as unknown as { latest_request: unknown }).latest_request = {
+      ...recommendationRequestFixture,
+      lockedSteps: [{
+        stepId: 'step-meal',
+        candidateId: 'candidate-meal',
+        kakaoPlaceId: 'place-meal',
+        name: '검증 식당',
+        address: '서울 성동구',
+        roadAddress: '서울 성동구 왕십리로 1',
+        mapUrl: 'https://place.map.kakao.com/place-meal',
+        latitude: 37.544,
+        longitude: 127.037,
+      }],
+    };
+
+    const snapshot = mapRecommendationSessionPayload(payload);
+    expect(snapshot.request.lockedSteps).toHaveLength(1);
+    expect(snapshot.steps.map((step) => step.stepId)).toEqual(['step-meal', 'step-cafe']);
+  });
+
   it('accepts PostgreSQL timestamptz JSON values with a numeric UTC offset', () => {
     const payload = recommendationSessionRpcFixture();
     payload.session.created_at = '2026-07-14T10:00:01+00:00';

@@ -399,10 +399,16 @@
 - `20260715152131_ai_recommendation_logs_add_recommend_date_action.sql`, `20260716000100_get_recommendation_session_float_precision.sql`을 linked Supabase에 적용했다.
 - 신규 테스트 4개(`recommend-date-expired-request`, `aiRecommendationLogsActionMigration`, `getRecommendationSessionFloatPrecisionMigration` 등) 추가. 전체 61 suites/544 tests, `npm run validate`, `git diff --check` 통과. 사용자가 Xcode 재빌드로 정상 동작 확인함.
 
-#### 다음 세션 후보 — 코스 결과 화면 UX 재검토 (미착수)
+#### 코스 결과 화면 UX 재설계 — 세션 AO+AP 완료, 배포 완료 (2026-07-16)
 
-- 사용자 피드백: 코스 결과 화면(`app/mode-flow/course-result.tsx`, `components/ui.tsx`의 `CourseStepList`/`StepCard`) UI가 이해하기 어렵다. 구체적으로 어느 부분이 헷갈리는지는 다음 세션에 스크린샷 받아서 같이 확인 필요.
-- **장소 사진 미표시**: 재설계 문서 §4.5(`DATE_NAVI_AI_RECOMMENDATION_REDESIGN.md`)는 코스 카드에 "place image when legally available"를 명시하지만 현재 `StepCard`엔 이미지 자리 자체가 없다. 후보 검색에 쓰는 Kakao 로컬 API가 사진 URL을 제공하지 않으므로, 구현 전에 데이터 소스(별도 Kakao API/타 제공자)부터 정해야 한다 — brainstorming 필요.
+> 계획 전문: `/Users/jeongwonkim/.claude/plans/zazzy-pondering-heron.md` (brainstorming + Plan mode로 승인 완료, 2026-07-16). 상세 변경 내역은 `RESULT.md` 세션 AO(초기 재설계)·AP(실기기 QA 보정 + 잠금 버그 수정) 참조.
+
+- 세션 AO: 상단/하단 중복 렌더링, "이 단계 교체" 후보 0개 백엔드 버그, 액션시트 통합, Haiku 큐레이션, 데이트 후 피드백 제거를 TDD로 구현·배포 완료.
+- 세션 AP: 사용자가 실기기에서 UI 4건(카드 높이/가로 UI/스크롤 불가/버튼 텍스트 줄바꿈)과 "잠금 외 재추천"·"이 단계 교체" 저장 실패를 재현·보고 → 세로 리스트+전체 스크롤 래핑+버튼 텍스트 축약으로 UI 수정, `candidateId`가 검색 호출 1회 한정 임시 ID라 잠금 스텝이 재검색마다 검증 실패하던 근본 버그를 `recommendation-course-selection.ts`에서 lock 자체 장소 사실 기반 해석으로 수정. `recommend-date` v6 재배포 완료(71 suites/611 tests, validate, diff-check 통과).
+- 세션 AQ: 잠금·재추천·교체가 모두 "저장 실패"로 뜨던 잔여 버그를 Postgres/attestation 로그로 정확히 규명. (1) 잠금·재추천은 `latest_request_drop_locked_steps` 마이그레이션이 살아있던 창에서 RPC가 `current_course.locked=true`인데 `lockedSteps`를 지운 페이로드를 반환 → 클라이언트 lock-flag 교차검증(`schemas.ts:354`)이 예외 → 이미 `restore_full_locked_steps`로 해소됨(라이브 RPC 재현으로 확인). (2) 교체는 클라이언트가 `requestRecommendationResponse` 반환값을 버리고 replacement-candidates 검색의 임시 `candidateId`를 mutate에 넘겨 RPC 조회 실패 → `course-result.tsx`에서 `add` 패턴처럼 응답의 `candidateId`를 꺼내 쓰도록 수정(클라이언트 전용, Edge/RPC 무변경). 620 tests/validate 통과.
+- 세션 AR (2026-07-16): 교체 잔여 실패의 독립 버그 2개를 순차 확정·수정, **실기기 성공 확인 완료**. (1) Edge가 핀(lockedSteps) 멤버십을 응답 `locked`로 마킹 → 비잠금 스텝에서 RPC 검증 거부 — 핀의 `locked` 필드 에코로 변경(`recommend-date` v9 + 공용 검증기, 재빌드 완료). (2) RPC replace 분기가 임시 `candidateId`로 "변경 여부"를 비교해 검색 재번호 충돌(`candidate_001` vs `candidate_001`) 시 거부 — `20260716050000_replace_compare_stable_place_id`로 `kakaoPlaceId` 비교로 교체·적용. 실패했던 실제 mutation을 트랜잭션 롤백 재현으로 수정 전/후 인과 확정. 74 suites/626 tests, validate 통과.
+- **다음 세션 우선 작업**: 스텝 추가 간헐 실패 수정(`addVerifiedStep`이 잠긴 스텝만 핀 → 비잠금 스텝 재검색 드리프트 시 add 거부. locked 에코 수정으로 전체 스텝 핀 전송 가능해짐 — 클라이언트 소규모 수정). `generate-ai` 매 호출 502 원인 조사(Anthropic API 키/모델 추정, 결정론 폴백으로 사용자 비노출).
+- **다음다음 세션 백로그**: 방문 확인 트리거(피드백 재도입) 설계 — `record_recommendation_place_feedback` RPC/DB는 유지됨. 장소 실사진 연동(현재는 카테고리 아이콘까지만, Kakao 로컬 API가 사진 URL 미제공 확인됨).
 
 #### 목표와 권장 범위
 

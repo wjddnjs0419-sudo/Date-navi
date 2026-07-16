@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, useWindowDimensions, Alert,
-  type NativeSyntheticEvent, type NativeScrollEvent,
+  ActivityIndicator, Alert,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { type DateCard } from '../../lib/ai';
-import { resolveDisplaySteps } from '../../lib/course';
-import { Clock, Wallet, Send, Bookmark, Lock, Unlock, ChevronUp, ChevronDown, Check } from 'lucide-react-native';
+import { Send, Bookmark, ChevronUp, ChevronDown, Check, X, Lock } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { BackBar, BigButton, Badge, PlaceRow, CourseStepList } from '../../components/ui';
+import { getCourseCategoryIcon } from '../../lib/course-draft';
+import { BackBar, BigButton, Badge } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { requestRecommendationResponse } from '../../lib/recommend-date';
@@ -19,12 +17,12 @@ import { supabase } from '../../lib/supabase';
 import { buildKakaoMapUrl, buildNaverSearchUrl, type ReplacementCandidate } from '../../lib/replacement-candidates';
 import { buildStructuredCourseResultParams, parseStructuredCourseResultParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
+import { StepActionSheet } from '../../components/recommendation/step-action-sheet';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
 
 export default function CourseResultScreen() {
   const rawParams = useLocalSearchParams();
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const { t } = useI18n();
   const {
     getRecommendationSession,
@@ -49,14 +47,6 @@ export default function CourseResultScreen() {
   });
   const [loadError, setLoadError] = useState(routeParams ? '' : t('modeFlow.courseResult.loadError'));
   const [loading, setLoading] = useState(!snapshot && Boolean(routeParams));
-
-  const cards = useMemo<DateCard[]>(() => {
-    return (snapshot?.response.cards ?? []).map((card) => ({
-      ...card,
-      estimated_time: card.estimated_time ?? '',
-      estimated_budget: card.estimated_budget ?? '',
-    }));
-  }, [snapshot]);
 
   const hydrate = useCallback(async () => {
     if (!routeParams) {
@@ -85,8 +75,7 @@ export default function CourseResultScreen() {
   const [editError, setEditError] = useState('');
   const [replacementTargetId, setReplacementTargetId] = useState<string | null>(null);
   const [replacementCandidates, setReplacementCandidates] = useState<ReplacementCandidate[]>([]);
-  const [feedbackStepId, setFeedbackStepId] = useState<string | null>(null);
-  const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
+  const [actionSheetStepId, setActionSheetStepId] = useState<string | null>(null);
 
   async function applyMutation(
     action: 'lock' | 'unlock' | 'reorder' | 'delete' | 'confirm',
@@ -118,6 +107,21 @@ export default function CourseResultScreen() {
     void applyMutation('reorder', { stepIds: ids });
   }
 
+  function toLockedStep(step: RecommendationSessionSnapshot['steps'][number]) {
+    return {
+      stepId: step.stepId,
+      candidateId: step.currentCandidateId,
+      kakaoPlaceId: step.currentKakaoPlaceId,
+      name: step.placeName,
+      address: step.address,
+      roadAddress: step.roadAddress,
+      mapUrl: step.mapUrl,
+      latitude: step.latitude,
+      longitude: step.longitude,
+      locked: step.locked,
+    };
+  }
+
   async function regenerateUnlocked(targetStepId?: string) {
     if (!snapshot || snapshot.status === 'confirmed') return;
     setEditing(true);
@@ -125,11 +129,7 @@ export default function CourseResultScreen() {
     try {
       const lockedSteps = snapshot.steps.filter((step) => (
         targetStepId ? step.stepId !== targetStepId : step.locked
-      )).map((step) => ({
-        stepId: step.stepId,
-        candidateId: step.currentCandidateId,
-        kakaoPlaceId: step.currentKakaoPlaceId,
-      }));
+      )).map(toLockedStep);
       const request = {
         ...snapshot.request,
         requestId: createRecommendationRequestId(),
@@ -172,7 +172,7 @@ export default function CourseResultScreen() {
     }
   }
 
-  async function replaceWithCandidate(targetStepId: string, candidateId: string, kakaoPlaceId: string) {
+  async function replaceWithCandidate(targetStepId: string, kakaoPlaceId: string) {
     if (!snapshot) return;
     setEditing(true);
     setEditError('');
@@ -183,15 +183,13 @@ export default function CourseResultScreen() {
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
         replacement: { stepId: targetStepId, kakaoPlaceId },
-        lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map((step) => ({
-          stepId: step.stepId,
-          candidateId: step.currentCandidateId,
-          kakaoPlaceId: step.currentKakaoPlaceId,
-        })),
+        lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map(toLockedStep),
         excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.map((step) => step.currentKakaoPlaceId)])],
       };
-      await requestRecommendationResponse(request);
-      const next = await mutateRecommendationSession(snapshot.sessionId, 'replace', { attestationRequestId: request.requestId, stepId: targetStepId, candidateId, kakaoPlaceId });
+      const response = await requestRecommendationResponse(request);
+      const replaced = response.course.steps.find((step) => step.stepId === targetStepId && step.kakaoPlaceId === kakaoPlaceId);
+      if (!replaced) throw new Error('The replacement step was not present in the verified response.');
+      const next = await mutateRecommendationSession(snapshot.sessionId, 'replace', { attestationRequestId: request.requestId, stepId: targetStepId, candidateId: replaced.candidateId, kakaoPlaceId });
       setSnapshot(next);
       setReplacementTargetId(null);
       setReplacementCandidates([]);
@@ -219,11 +217,7 @@ export default function CourseResultScreen() {
           category: 'ai_decide',
           label: t('modeFlow.courseResult.additionalStep'),
         }],
-        lockedSteps: snapshot.steps.filter((step) => step.locked).map((step) => ({
-          stepId: step.stepId,
-          candidateId: step.currentCandidateId,
-          kakaoPlaceId: step.currentKakaoPlaceId,
-        })),
+        lockedSteps: snapshot.steps.filter((step) => step.locked).map(toLockedStep),
       };
       const response = await requestRecommendationResponse(request);
       const added = response.course.steps.find((step) => !snapshot.steps.some((existing) => (
@@ -261,22 +255,11 @@ export default function CourseResultScreen() {
     }
   }
 
-  async function submitFeedback(stepId: string, visited: boolean) {
-    if (!snapshot) return;
-    setEditing(true);
-    try {
-      const { error } = await supabase.rpc('record_recommendation_place_feedback', {
-        p_session_id: snapshot.sessionId, p_step_id: stepId, p_visited: visited, p_tags: feedbackTags,
-      });
-      if (error) throw error;
-      setFeedbackStepId(null);
-      setFeedbackTags([]);
-    } catch {
-      setEditError(t('modeFlow.courseResult.editError'));
-    } finally { setEditing(false); }
+  function closeReplacementPanel() {
+    setReplacementTargetId(null);
+    setReplacementCandidates([]);
   }
 
-  const [page, setPage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -293,10 +276,6 @@ export default function CourseResultScreen() {
     }
   }
 
-  function onScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    setPage(Math.round(e.nativeEvent.contentOffset.x / width));
-  }
-
   if (loading) {
     return (
       <SafeAreaView style={s.center}>
@@ -306,7 +285,7 @@ export default function CourseResultScreen() {
     );
   }
 
-  if (loadError !== '' || !snapshot || cards.length === 0) {
+  if (loadError !== '' || !snapshot || snapshot.steps.length === 0) {
     return (
       <SafeAreaView style={s.center}>
         <Text style={s.errTitle}>{t('modeFlow.courseResult.errorTitle')}</Text>
@@ -326,141 +305,122 @@ export default function CourseResultScreen() {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <BackBar />
-      <View style={s.headerArea}>
-        <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
-        <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
-        <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ expanded: conditionsExpanded }}
-          onPress={() => setConditionsExpanded((value) => !value)}
-          style={s.conditionsToggle}
-        >
-          <Text style={s.conditionsToggleText}>{t('modeFlow.courseResult.conditions')}</Text>
-        </TouchableOpacity>
-        {conditionsExpanded && (
-          <View style={s.conditionsPanel}>
-            <Text style={s.conditionText}>{snapshot.request.location.label}</Text>
-            <Text style={s.conditionText}>{snapshot.request.courseSteps.map((step) => step.label).join(' → ')}</Text>
-            {snapshot.request.maxWalkingMinutes && <Text style={s.conditionText}>{snapshot.request.maxWalkingMinutes} min</Text>}
-            {snapshot.request.totalBudgetKRW && <Text style={s.conditionText}>{snapshot.request.totalBudgetKRW.toLocaleString()} KRW</Text>}
-            {snapshot.response.course.relaxedConstraints.map((item) => <Text key={item.constraint} style={s.relaxedText}>{item.reason}</Text>)}
-          </View>
-        )}
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.timeline}>
-        {snapshot.steps.map((step, index) => (
-          <View key={step.stepId} style={s.timelineCard}>
-            <Text style={s.timelineOrder}>{step.order}</Text>
-            <Text numberOfLines={1} style={s.timelineName}>{step.placeName}</Text>
-            <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
-            <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/mode-flow/place-detail', params: { name: step.placeName, address: step.roadAddress || step.address, mapUrl: step.mapUrl, kakaoPlaceId: step.currentKakaoPlaceId } } as any)} style={s.detailButton}>
-              <Text style={s.detailButtonText}>{t('modeFlow.courseResult.viewDetails')}</Text>
-            </TouchableOpacity>
-            <View style={s.stepActions}>
-              <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed'} onPress={() => void applyMutation(step.locked ? 'unlock' : 'lock', { stepId: step.stepId })} style={s.stepAction}>
-                {step.locked ? <Unlock size={16} color={C.textSub} /> : <Lock size={16} color={C.textSub} />}
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === 0} onPress={() => moveStep(step.stepId, 'up')} style={s.stepAction}>
-                <ChevronUp size={16} color={C.textSub} />
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === snapshot.steps.length - 1} onPress={() => moveStep(step.stepId, 'down')} style={s.stepAction}>
-                <ChevronDown size={16} color={C.textSub} />
-              </TouchableOpacity>
+      <ScrollView contentContainerStyle={s.scrollContent}>
+        <View style={s.headerArea}>
+          <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
+          <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
+          <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: conditionsExpanded }}
+            onPress={() => setConditionsExpanded((value) => !value)}
+            style={s.conditionsToggle}
+          >
+            <Text style={s.conditionsToggleText}>{t('modeFlow.courseResult.conditions')}</Text>
+          </TouchableOpacity>
+          {conditionsExpanded && (
+            <View style={s.conditionsPanel}>
+              <Text style={s.conditionText}>{snapshot.request.location.label}</Text>
+              <Text style={s.conditionText}>{snapshot.request.courseSteps.map((step) => step.label).join(' → ')}</Text>
+              {snapshot.request.maxWalkingMinutes && <Text style={s.conditionText}>{snapshot.request.maxWalkingMinutes} min</Text>}
+              {snapshot.request.totalBudgetKRW && <Text style={s.conditionText}>{snapshot.request.totalBudgetKRW.toLocaleString()} KRW</Text>}
+              {snapshot.response.course.relaxedConstraints.map((item) => <Text key={item.constraint} style={s.relaxedText}>{item.reason}</Text>)}
             </View>
-            <View style={s.inlineEditActions}>
-              <TouchableOpacity accessibilityRole="button" testID="course-replace-step" disabled={editing || snapshot.status === 'confirmed' || step.locked} onPress={() => void loadReplacementCandidates(step.stepId)} style={s.inlineEditAction}>
-                <Text style={s.inlineEditText}>{t('modeFlow.courseResult.replace')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button" testID="course-delete-step" disabled={editing || snapshot.status === 'confirmed' || step.locked || snapshot.steps.length <= 2} onPress={() => void applyMutation('delete', { stepId: step.stepId })} style={s.inlineEditAction}>
-                <Text style={s.inlineEditText}>{snapshot.steps.length <= 2 ? t('modeFlow.courseResult.deleteMin') : t('modeFlow.courseResult.delete')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-      {editError !== '' && <Text style={s.editError}>{editError}</Text>}
-      {replacementTargetId && (
-        <View style={s.replacementPanel}>
-          <Text style={s.replacementTitle}>{t('modeFlow.courseResult.replacementTitle')}</Text>
-          <Text style={s.replacementNotice}>{t('modeFlow.courseResult.replacementNotice')}</Text>
-          {replacementCandidates.map((candidate, index) => (
-            <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
-              <View style={s.replacementCopy}>
-                {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
-                <Text style={s.replacementName}>{candidate.name}</Text>
-                <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                <View style={s.externalActions}>
-                  <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverSearchUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
-                  <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
-                </View>
-              </View>
-              <TouchableOpacity accessibilityRole="button" disabled={editing} onPress={() => void replaceWithCandidate(replacementTargetId, candidate.candidateId, candidate.kakaoPlaceId)} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
-            </View>
-          ))}
+          )}
         </View>
-      )}
-      {snapshot.status === 'confirmed' && (
-        <View style={s.feedbackPanel}>
-          <Text style={s.replacementTitle}>{t('modeFlow.courseResult.feedbackTitle')}</Text>
-          <Text style={s.replacementNotice}>{t('modeFlow.courseResult.feedbackNotice')}</Text>
-          {snapshot.steps.map((step) => (
-            <View key={step.stepId} style={s.feedbackRow}>
-              <Text style={s.replacementName}>{step.placeName}</Text>
-              {feedbackStepId === step.stepId ? <>
-                <View style={s.tagRow}>{['conversation', 'quiet', 'noisy', 'value', 'photos', 'revisit'].map((tag) => <TouchableOpacity key={tag} onPress={() => setFeedbackTags((tags) => tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag])} style={s.tagButton}><Text style={s.externalLink}>{t(`modeFlow.courseResult.feedbackTags.${tag}`)}</Text></TouchableOpacity>)}</View>
-                <View style={s.externalActions}><TouchableOpacity onPress={() => void submitFeedback(step.stepId, true)}><Text style={s.externalLink}>{t('modeFlow.courseResult.visited')}</Text></TouchableOpacity><TouchableOpacity onPress={() => void submitFeedback(step.stepId, false)}><Text style={s.externalLink}>{t('modeFlow.courseResult.notVisited')}</Text></TouchableOpacity></View>
-              </> : <TouchableOpacity onPress={() => setFeedbackStepId(step.stepId)}><Text style={s.externalLink}>{t('modeFlow.courseResult.leaveFeedback')}</Text></TouchableOpacity>}
-            </View>
-          ))}
-        </View>
-      )}
 
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
-      >
-        {cards.map((card, i) => {
-          const steps = resolveDisplaySteps(card);
-          return (
-            <ScrollView key={i} style={{ width }} contentContainerStyle={s.page}>
-              <Text style={s.cardTitle}>{card.title}</Text>
-              <View style={s.metaRow}>
-                {!!card.estimated_time && <View style={s.metaItem}><Clock size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_time}</Text></View>}
-                {!!card.estimated_budget && <View style={s.metaItem}><Wallet size={13} color={C.textMuted} /><Text style={s.metaText}>{card.estimated_budget}</Text></View>}
-              </View>
-
-              <CourseStepList steps={steps} summary={card.summary} />
-
-              {!!card.place_name && (
-                <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={s.placeRowGap} />
-              )}
-
-              <View style={s.btnRow}>
-                <TouchableOpacity style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>
-                  {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>{t('modeFlow.courseResult.send')}</Text>
-                </TouchableOpacity>
-                {!saved && (
-                  <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
-                    {saving ? <ActivityIndicator size="small" color={C.pinkDeep} />
-                      : <><Bookmark size={14} color={C.pinkDeep} /><Text style={s.saveText}>{t('modeFlow.courseResult.save')}</Text></>}
+        <View style={s.timeline}>
+          {snapshot.steps.map((step, index) => {
+            const CategoryIcon = getCourseCategoryIcon(step.category);
+            return (
+              <View key={step.stepId}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  disabled={editing || snapshot.status === 'confirmed'}
+                  onPress={() => setActionSheetStepId(step.stepId)}
+                  testID={`course-step-card-${step.stepId}`}
+                  style={s.timelineCard}
+                >
+                  <View style={s.timelineTopRow}>
+                    <View style={s.timelineBadge}>
+                      <Text style={s.timelineBadgeNum}>{step.order}</Text>
+                    </View>
+                    <CategoryIcon size={16} color={C.pinkDeep} />
+                    {step.locked && <Lock size={13} color={C.textMuted} style={s.timelineLockIcon} />}
+                    <View style={s.stepActions}>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === 0} onPress={() => moveStep(step.stepId, 'up')} style={s.stepAction}>
+                        <ChevronUp size={16} color={C.textSub} />
+                      </TouchableOpacity>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === snapshot.steps.length - 1} onPress={() => moveStep(step.stepId, 'down')} style={s.stepAction}>
+                        <ChevronDown size={16} color={C.textSub} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <Text numberOfLines={1} style={s.timelineName}>{step.placeName}</Text>
+                  <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/mode-flow/place-detail', params: { name: step.placeName, address: step.roadAddress || step.address, mapUrl: step.mapUrl, kakaoPlaceId: step.currentKakaoPlaceId } } as any)} style={s.detailButton}>
+                    <Text style={s.detailButtonText}>{t('modeFlow.courseResult.viewDetails')}</Text>
                   </TouchableOpacity>
+                </TouchableOpacity>
+                {index < snapshot.steps.length - 1 && (
+                  <View style={s.timelineConnector}>
+                    <View style={s.timelineConnectorLine} />
+                    <View style={s.timelineConnectorDot}>
+                      <ChevronDown size={12} color={C.pinkDeep} strokeWidth={2.5} />
+                    </View>
+                    <View style={s.timelineConnectorLine} />
+                  </View>
                 )}
               </View>
-              {errorMsg !== '' && <Text style={s.inlineError}>{errorMsg}</Text>}
-            </ScrollView>
-          );
-        })}
+            );
+          })}
+        </View>
+        {editError !== '' && !replacementTargetId && <Text style={s.editError}>{editError}</Text>}
+        {replacementTargetId && (
+          <View style={s.replacementPanel}>
+            <View style={s.replacementHeader}>
+              <Text style={s.replacementTitle}>{t('modeFlow.courseResult.replacementTitle')}</Text>
+              <TouchableOpacity accessibilityRole="button" onPress={closeReplacementPanel} style={s.replacementCloseButton}>
+                <X size={16} color={C.textSub} />
+              </TouchableOpacity>
+            </View>
+            {editError !== '' && <Text style={s.editError}>{editError}</Text>}
+            <Text style={s.replacementNotice}>{t('modeFlow.courseResult.replacementNotice')}</Text>
+            {replacementCandidates.length === 0 ? (
+              <Text style={s.replacementEmpty}>{t('modeFlow.courseResult.replacementEmpty')}</Text>
+            ) : replacementCandidates.map((candidate, index) => (
+              <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
+                <View style={s.replacementCopy}>
+                  {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
+                  <Text style={s.replacementName}>{candidate.name}</Text>
+                  <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
+                  <View style={s.externalActions}>
+                    <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverSearchUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
+                    <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+                  </View>
+                </View>
+                <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId)} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
-      <View style={s.dots}>
-        {cards.map((_, i) => (
-          <View key={i} style={[s.dot, i === page && s.dotOn]} />
-        ))}
-      </View>
+      {snapshot.status === 'confirmed' && (
+        <View style={s.confirmedActions}>
+          <TouchableOpacity testID="confirmed-send" style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>
+            {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>{t('modeFlow.courseResult.send')}</Text>
+          </TouchableOpacity>
+          {!saved && (
+            <TouchableOpacity testID="confirmed-save" style={s.saveBtn} onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color={C.pinkDeep} />
+                : <><Bookmark size={14} color={C.pinkDeep} /><Text style={s.saveText}>{t('modeFlow.courseResult.save')}</Text></>}
+            </TouchableOpacity>
+          )}
+          {errorMsg !== '' && <Text style={s.inlineError}>{errorMsg}</Text>}
+        </View>
+      )}
+
       {snapshot.status !== 'confirmed' && (
         <View style={s.footerActions}>
           <TouchableOpacity accessibilityRole="button" disabled={editing} onPress={() => void regenerateUnlocked()} style={s.regenerateButton}>
@@ -469,11 +429,36 @@ export default function CourseResultScreen() {
           <TouchableOpacity accessibilityRole="button" testID="course-add-step" disabled={editing || snapshot.steps.length >= 4} onPress={() => void addVerifiedStep()} style={s.regenerateButton}>
             <Text style={s.regenerateText}>{t('modeFlow.courseResult.add')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" disabled={editing} onPress={() => void applyMutation('confirm', {})} style={s.confirmButton}>
+          <TouchableOpacity accessibilityRole="button" testID="course-confirm" disabled={editing} onPress={() => void applyMutation('confirm', {})} style={s.confirmButton}>
             {editing ? <ActivityIndicator size="small" color={C.white} /> : <><Check size={17} color={C.white} /><Text style={s.confirmText}>{t('modeFlow.courseResult.confirm')}</Text></>}
           </TouchableOpacity>
         </View>
       )}
+
+      {(() => {
+        const activeStep = snapshot.steps.find((step) => step.stepId === actionSheetStepId);
+        return (
+          <StepActionSheet
+            visible={!!activeStep}
+            placeName={activeStep?.placeName ?? ''}
+            locked={!!activeStep?.locked}
+            canDelete={snapshot.steps.length > 2}
+            onClose={() => setActionSheetStepId(null)}
+            onLockToggle={() => {
+              if (activeStep) void applyMutation(activeStep.locked ? 'unlock' : 'lock', { stepId: activeStep.stepId });
+              setActionSheetStepId(null);
+            }}
+            onReplace={() => {
+              if (activeStep) void loadReplacementCandidates(activeStep.stepId);
+              setActionSheetStepId(null);
+            }}
+            onDelete={() => {
+              if (activeStep) void applyMutation('delete', { stepId: activeStep.stepId });
+              setActionSheetStepId(null);
+            }}
+          />
+        );
+      })()}
     </SafeAreaView>
   );
 }
@@ -496,22 +481,29 @@ const s = StyleSheet.create({
   conditionsPanel: { backgroundColor: C.white, borderRadius: 12, padding: 12, gap: 3 },
   conditionText: { fontSize: 12, color: C.textSub },
   relaxedText: { fontSize: 12, color: C.pinkDeep },
-  timeline: { paddingHorizontal: 20, gap: 8, paddingBottom: 8 },
-  timelineCard: { width: 164, minHeight: 132, backgroundColor: C.white, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: C.border },
-  timelineOrder: { color: C.pinkDeep, fontSize: 12, fontWeight: '800' },
-  timelineName: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 5 },
-  timelineAddress: { color: C.textMuted, fontSize: 11, marginTop: 3 },
-  detailButton: { minHeight: 32, justifyContent: 'center', alignSelf: 'flex-start' },
+  scrollContent: { paddingBottom: 12 },
+  timeline: { paddingHorizontal: 20 },
+  timelineCard: { backgroundColor: C.white, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: C.border },
+  timelineTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timelineBadge: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: C.pink, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' },
+  timelineBadgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
+  timelineLockIcon: { marginLeft: -2 },
+  timelineName: { color: C.text, fontSize: 15, fontWeight: '700', marginTop: 8 },
+  timelineAddress: { color: C.textMuted, fontSize: 12, marginTop: 3 },
+  timelineConnector: { alignItems: 'center', height: 26, justifyContent: 'center' },
+  timelineConnectorLine: { width: 1.5, height: 7, backgroundColor: C.border },
+  timelineConnectorDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
+  detailButton: { minHeight: 32, justifyContent: 'center', alignSelf: 'flex-start', marginTop: 4 },
   detailButtonText: { color: C.pinkDeep, fontSize: 11, fontWeight: '700' },
-  stepActions: { flexDirection: 'row', marginTop: 'auto', gap: 4 },
-  stepAction: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  inlineEditActions: { flexDirection: 'row', gap: 6 },
-  inlineEditAction: { minHeight: 44, justifyContent: 'center' },
-  inlineEditText: { color: C.pinkDeep, fontSize: 11, fontWeight: '700' },
+  stepActions: { flexDirection: 'row', marginLeft: 'auto', gap: 4 },
+  stepAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   editError: { color: C.pinkDeep, fontSize: 12, textAlign: 'center', marginBottom: 4 },
   replacementPanel: { marginHorizontal: 20, marginBottom: 8, borderRadius: 14, backgroundColor: C.white, padding: 12, gap: 8, borderWidth: 1, borderColor: C.border },
+  replacementHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  replacementCloseButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   replacementTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
   replacementNotice: { color: C.textMuted, fontSize: 11 },
+  replacementEmpty: { color: C.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 12 },
   replacementRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 },
   replacementCopy: { flex: 1, gap: 2 },
   topLabel: { color: C.pinkDeep, fontSize: 10, fontWeight: '800' },
@@ -521,23 +513,14 @@ const s = StyleSheet.create({
   externalLink: { color: C.pinkDeep, fontSize: 11, fontWeight: '700', minHeight: 28, textAlignVertical: 'center' },
   pickButton: { minHeight: 44, borderRadius: 12, backgroundColor: C.pink, paddingHorizontal: 12, justifyContent: 'center' },
   pickButtonText: { color: C.white, fontSize: 12, fontWeight: '800' },
-  feedbackPanel: { marginHorizontal: 20, marginBottom: 8, borderRadius: 14, backgroundColor: C.white, padding: 12, gap: 8 }, feedbackRow: { gap: 5, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 }, tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 }, tagButton: { minHeight: 28, paddingHorizontal: 6, justifyContent: 'center', borderRadius: 9, backgroundColor: C.bg },
-  page: { paddingHorizontal: 20, paddingBottom: 40 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginTop: 8 },
-  metaRow: { flexDirection: 'row', gap: 14, marginTop: 8, marginBottom: 8 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: C.textMuted },
-  btnRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20, marginBottom: 14 },
   sendBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingVertical: 12, backgroundColor: C.pink },
   sendText: { fontSize: 13, fontWeight: '600', color: C.white },
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
   saveText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 16 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.border },
-  dotOn: { backgroundColor: C.pink, width: 18 },
   footerActions: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 14 },
-  regenerateButton: { minHeight: 52, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, justifyContent: 'center' },
+  regenerateButton: { minHeight: 52, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, justifyContent: 'center' },
   regenerateText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
-  confirmButton: { minHeight: 52, flex: 1, borderRadius: 14, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  confirmButton: { minHeight: 52, flex: 1, paddingHorizontal: 16, borderRadius: 14, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   confirmText: { color: C.white, fontSize: 15, fontWeight: '800' },
 });

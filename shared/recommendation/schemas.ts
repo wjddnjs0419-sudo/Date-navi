@@ -60,6 +60,16 @@ export const lockedCourseStepInputSchema = z.object({
   stepId: boundedText(80),
   candidateId: boundedText(120),
   kakaoPlaceId: boundedText(120),
+  name: boundedText(160),
+  address: z.string().max(300),
+  roadAddress: z.string().max(300),
+  mapUrl: z.string().max(1000),
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  // The user's persisted lock state for this pinned step, echoed into the response's locked flag.
+  // Optional for backward compatibility with shipped clients that omit it (treated as true —
+  // legacy pins were always genuinely locked).
+  locked: z.boolean().optional(),
 }).strict();
 
 export const recommendationRequestSchema = hardConstraintsSchema
@@ -342,7 +352,9 @@ export function validateRecommendDateResponseForRequest(
       fail(`course step ${index} identity mismatch`);
     }
     const lock = locks.get(requestedStep.id);
-    if (responseStep.locked !== Boolean(lock)) {
+    // A pin's `locked` field carries the user's persisted lock state (default true when omitted);
+    // the response must echo that state, not mere pin membership.
+    if (responseStep.locked !== (lock ? lock.locked !== false : false)) {
       fail(`course step ${index} lock flag mismatch`);
     }
     if (lock && (responseStep.candidateId !== lock.candidateId || responseStep.kakaoPlaceId !== lock.kakaoPlaceId)) {

@@ -379,7 +379,11 @@ describe('structured recommend-date client', () => {
 
     const lockedRequest: RecommendationRequest = {
       ...baseRequest,
-      lockedSteps: [{ stepId: 'step-meal', candidateId: 'candidate-meal', kakaoPlaceId: 'place-meal' }],
+      lockedSteps: [{
+        stepId: 'step-meal', candidateId: 'candidate-meal', kakaoPlaceId: 'place-meal',
+        name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+        locked: true,
+      }],
     };
     invoke.mockResolvedValueOnce({ data: response(baseRequest.requestId), error: null });
     await expect(requestRecommendationCards(lockedRequest)).rejects.toThrow();

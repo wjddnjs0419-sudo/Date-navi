@@ -11,7 +11,7 @@ module.exports = {
     'react-native-url-polyfill/auto': '<rootDir>/__mocks__/react-native-url-polyfill-auto.js',
     'expo-notifications': '<rootDir>/__mocks__/expo-notifications.js',
     'expo-constants': '<rootDir>/__mocks__/expo-constants.js',
-    '^\\.*/lib/supabase$': '<rootDir>/__mocks__/supabase.js',
+    '^(\\.\\.?/)*lib/supabase$': '<rootDir>/__mocks__/supabase.js',
     '^\\./supabase$': '<rootDir>/__mocks__/supabase.js',
   },
 };

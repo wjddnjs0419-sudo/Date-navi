@@ -120,4 +120,32 @@ describe('recommend-date downstream timeout boundary', () => {
     await expect(invokeGenerateAiSelection(input, { fetchImpl }))
       .rejects.not.toBeInstanceOf(RecommendDateDownstreamMalformedError);
   });
+
+  it('defaults the request body action to recommend_date_select when none is provided', async () => {
+    const fetchImpl: DownstreamFetch = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ steps: [] }),
+    }));
+
+    await invokeGenerateAiSelection(input, { fetchImpl });
+
+    expect(JSON.parse((fetchImpl as jest.Mock).mock.calls[0][1].body)).toMatchObject({
+      action: 'recommend_date_select',
+    });
+  });
+
+  it('sends a caller-provided action in the request body instead of the recommend_date_select default', async () => {
+    const fetchImpl: DownstreamFetch = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ candidateIds: ['candidate-1'] }),
+    }));
+
+    await invokeGenerateAiSelection({ ...input, action: 'replacement_select' }, { fetchImpl });
+
+    expect(JSON.parse((fetchImpl as jest.Mock).mock.calls[0][1].body)).toMatchObject({
+      action: 'replacement_select',
+    });
+  });
 });

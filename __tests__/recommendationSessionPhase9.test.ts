@@ -24,6 +24,8 @@ describe('Phase 9 editable recommendation session contracts', () => {
         stepId: 'step-meal',
         candidateId: 'candidate-meal',
         kakaoPlaceId: 'place-meal',
+        name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+        locked: true,
       }],
       excludedPlaceIds: ['place-cafe'],
     });
@@ -46,6 +48,45 @@ describe('Phase 9 editable recommendation session contracts', () => {
     });
 
     expect(validateRecommendDateResponseForRequest(request, response)).toBe(response);
+  });
+
+  it('accepts a pinned-but-unlocked step echoed with locked=false and still requires locked=true for a genuinely locked pin', () => {
+    const pin = {
+      stepId: 'step-meal',
+      candidateId: 'candidate-meal',
+      kakaoPlaceId: 'place-meal',
+      name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+    };
+    const request = recommendationRequestSchema.parse({
+      ...recommendationRequestFixture,
+      requestId: 'req-replace-pin-001',
+      sessionId: 'req-phase8-001',
+      lockedSteps: [{ ...pin, locked: false }],
+    });
+    const response = recommendDateResponseSchema.parse({
+      ...recommendDateResponseFixture,
+      requestId: request.requestId,
+      course: {
+        ...recommendDateResponseFixture.course,
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+      },
+      cards: recommendDateResponseFixture.cards.map((card) => ({
+        ...card,
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+      })),
+    });
+
+    expect(validateRecommendDateResponseForRequest(request, response)).toBe(response);
+
+    const lockedPinRequest = recommendationRequestSchema.parse({
+      ...recommendationRequestFixture,
+      requestId: 'req-replace-pin-001',
+      sessionId: 'req-phase8-001',
+      lockedSteps: [{ ...pin, locked: true }],
+    });
+    expect(() => validateRecommendDateResponseForRequest(lockedPinRequest, response)).toThrow(/lock flag mismatch/);
   });
 
   it('enforces locks, contiguous reordering, min/max, duplicates, and confirmation immutability in the pure reducer', () => {
@@ -160,9 +201,11 @@ describe('Phase 9 editable recommendation session contracts', () => {
 
   it('wires ID-only result controls to server-validated replacement/addition and confirmation', () => {
     const source = readFileSync(join(__dirname, '../app/mode-flow/course-result.tsx'), 'utf8');
-    expect(source).toContain("testID=\"course-replace-step\"");
+    // Replace/delete moved from per-card buttons into the step action sheet (course-result UX redesign).
+    expect(source).toContain('testID={`course-step-card-${step.stepId}`}');
     expect(source).toContain("testID=\"course-add-step\"");
-    expect(source).toContain("testID=\"course-delete-step\"");
+    expect(source).toContain('if (activeStep) void loadReplacementCandidates(activeStep.stepId);');
+    expect(source).toContain("if (activeStep) void applyMutation('delete', { stepId: activeStep.stepId });");
     expect(source).toContain('sessionId: snapshot.sessionId');
     expect(source).toContain("mutateRecommendationSession(snapshot.sessionId, 'regenerate'");
     expect(source).toContain("mutateRecommendationSession(snapshot.sessionId, 'add'");

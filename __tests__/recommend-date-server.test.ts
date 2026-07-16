@@ -149,7 +149,11 @@ describe('recommend-date server prompt', () => {
   it('requires the exact candidate-only JSON shape, step count/order, locks, exclusions, and walking heuristic', () => {
     const prompt = buildRecommendationPrompt({
       ...request(),
-      lockedSteps: [{ stepId: 'step-meal', candidateId: 'meal-candidate', kakaoPlaceId: 'meal-place' }],
+      lockedSteps: [{
+        stepId: 'step-meal', candidateId: 'meal-candidate', kakaoPlaceId: 'meal-place',
+        name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+        locked: true,
+      }],
       excludedCategories: ['drinks'],
       excludedPlaceIds: ['blocked-place'],
     }, searchResult.candidates);

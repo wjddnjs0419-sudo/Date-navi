@@ -39,7 +39,11 @@ describe('RecommendationRequest contracts', () => {
       excludedPlaceIds: ['place-old'],
       selectedMoodTags: ['cozy'],
       additionalRequest: '조용히 이야기하고 싶어요.',
-      lockedSteps: [{ stepId: 'meal', candidateId: 'candidate_001', kakaoPlaceId: 'place-meal' }],
+      lockedSteps: [{
+        stepId: 'meal', candidateId: 'candidate_001', kakaoPlaceId: 'place-meal',
+        name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+        locked: true,
+      }],
     };
 
     const restored = deserializeRecommendationRequest(serializeRecommendationRequest(request));
@@ -105,6 +109,8 @@ describe('RecommendationRequest contracts', () => {
         stepId: 'meal',
         candidateId: 'candidate_001',
         kakaoPlaceId: 'place-meal',
+        name: 'Meal Place', address: 'Seoul', roadAddress: 'Seoul road', mapUrl: '', latitude: 37.55, longitude: 127.01,
+        locked: true,
         prompt: 'unlock this step',
       }],
     }],

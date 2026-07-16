@@ -36,6 +36,7 @@ type GenerateAiSelectionInput = {
   authorization: string;
   prompt: string;
   promptVersion: string;
+  action?: string;
 };
 
 type GenerateAiSelectionOptions = {
@@ -64,7 +65,7 @@ export async function invokeGenerateAiSelection(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        action: 'recommend_date_select',
+        action: input.action ?? 'recommend_date_select',
         prompt: input.prompt,
         prompt_version: input.promptVersion,
       }),

@@ -29,4 +29,20 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(detail).toContain('WebBrowser.openBrowserAsync');
     expect(detail).toContain('detailNotice');
   });
+
+  it('searches only the target step category instead of every category in the multi-step course', () => {
+    expect(edge).toContain('courseSteps: [{ id: target.step_id, category: target.category, label: target.label }]');
+    expect(edge).not.toContain('courseSteps: rows.map((row) => ({ id: row.step_id, category: row.category, label: row.label }))');
+  });
+
+  it('curates the deterministic candidate pool with Haiku and falls back to deterministic order on failure', () => {
+    expect(edge).toContain('invokeGenerateAiSelection');
+    expect(edge).toContain('buildReplacementSelectionPrompt');
+    expect(edge).toContain('REPLACEMENT_SELECT_PROMPT_VERSION');
+    expect(edge).toContain("action: 'replacement_select'");
+    expect(edge).toContain('selectCuratedReplacementCandidates');
+    expect(edge).toContain('ranked.pool');
+    expect(edge).toMatch(/let top = ranked\.top;\s*\n\s*let additional = ranked\.additional;/);
+    expect(edge).toMatch(/}\s*catch\s*{\s*\n\s*\/\/ AI curation failed/);
+  });
 });

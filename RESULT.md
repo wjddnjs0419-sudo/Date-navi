@@ -4,6 +4,160 @@
 
 ---
 
+## 2026-07-16 세션 AR — "이 스텝 교체" 저장 실패 최종 해결 (독립 버그 2개: locked 에코 + candidateId 충돌)
+
+> 세션 AQ 수정 후에도 실기기에서 교체만 계속 "코스 변경을 저장하지 못했어요"로 실패. 추정 금지 — Postgres 로그 + attestation + DB 스텝 상태 교차 대조로 두 개의 독립 버그를 순차 확정. 사용자 실기기 검증으로 성공 확인 완료.
+
+### 근본 원인 (증거 기반)
+
+1. **locked 플래그 불일치**: `replaceWithCandidate`는 대상 외 모든 스텝을 lockedSteps(핀)로 보내는데, Edge(`recommendation-course-selection.ts`)가 응답 스텝 `locked`를 **핀 멤버십**으로 마킹(`locks.has`) → 사용자가 잠그지 않은 스텝이 응답에 `locked=true`로 나가고, RPC replace 분기의 비대상 스텝 검증(`locked is not distinct from DB locked`)이 거부. 실패 6건 전부 응답 true vs DB false. 유일한 성공 1건(12:50:09 UTC)은 그 순간 해당 스텝이 실제 잠금 상태였음(12:50:17 단독 unlock update가 물증).
+2. **candidateId 임시번호 충돌**: ① 수정 후 드러난 두 번째 버그. RPC의 "교체면 실제로 바뀌어야 함" 검사(`v_original_candidate is not distinct from 새 candidateId`)가 검색 1회 한정 임시번호로 비교 → 검색마다 `candidate_001`부터 재부여라 DB `candidate_001` vs 새 응답 `candidate_001` 충돌(장소는 10120120→1164970460으로 실제 다름에도 거부). 2스텝 코스 첫 스텝 교체는 거의 항상 재현.
+
+### 수정
+
+| 대상 | 내용 |
+|---|---|
+| `supabase/functions/_shared/recommendation-course-selection.ts` | 응답 `locked`를 핀 멤버십 대신 핀의 `locked` 필드(사용자 실제 잠금 상태) 에코로 변경(`pinnedLockedFlag`, 필드 없으면 true 하위호환). `recommend-date` v9 배포 |
+| `shared/recommendation/schemas.ts` | 클라이언트/Edge 공용 `validateRecommendDateResponseForRequest`도 같은 기준으로 변경(멤버십 → `lock.locked !== false`). **클라이언트 포함이라 Xcode 재빌드 필요했음(완료)** |
+| `supabase/migrations/20260716050000_replace_compare_stable_place_id.sql` | RPC replace 분기의 변경 여부 검사를 `kakaoPlaceId`(안정 ID) 비교로 교체. linked Supabase 적용·history 기록 완료 |
+| 테스트 | 핀-비잠금 에코 3건(`recommend-date-course-selection`, `recommendationSessionPhase9`) + 레거시 기본값 1건 + 마이그레이션 검증 2건(`replaceStablePlaceIdMigration`) 추가 |
+
+### 검증
+
+- 전체 74 suites / 626 tests, `npm run validate`(tsc), `git diff --check` 통과.
+- **라이브 재현**: 실기기에서 실패한 바로 그 mutation(attestation `req_27fc256b`)을 소유자 JWT 클레임 트랜잭션으로 재실행 → 성공 확인 후 롤백. 수정 전 `constraint_violation` → 수정 후 통과로 인과 확정.
+- 사용자 실기기에서 "이 스텝 교체 → 후보 선택 → 변경" 성공 확인.
+
+### 다음 세션
+
+- **스텝 추가 간헐 실패**(같은 뿌리): `addVerifiedStep`이 잠긴 스텝만 핀 → 잠기지 않은 기존 스텝이 재검색에서 드리프트하면 RPC add 분기 거부(12:49:14 UTC 실패 기록). 이번 locked 에코 수정으로 이제 전체 스텝 핀 전송이 가능해짐 — 클라이언트 1줄 수정으로 해결 가능.
+- `generate-ai` 매 호출 502 원인 조사(Anthropic API 키/모델 추정, 결정론 폴백이 가려서 사용자 비노출).
+- 방문 확인 트리거(피드백 재도입), 장소 실사진 백로그 유지.
+
+---
+
+## 2026-07-16 세션 AQ — 잠금/재추천/교체 "저장 실패" 정밀 규명 + 교체 candidateId 버그 수정
+
+> 사용자가 스텝 잠금·이 스텝 교체·잠금 외 재추천이 모두 "코스 변경을 저장하지 못했어요"로 실패한다고 보고. 추정 금지 요구 → Postgres 로그 + attestation `request_json`/`response_json` + 라이브 RPC 트랜잭션 재현으로 원인을 바이트 단위로 확정.
+
+### 근본 원인 (증거 기반)
+
+- **잠금·잠금 외 재추천** = 마이그레이션 창 문제(이미 해소). `20260716102041_latest_request_drop_locked_steps`가 살아있던 동안 `apply_recommendation_session_mutation`이 `current_course.steps[].locked=true`를 반환하면서 `latest_request.lockedSteps`는 지운 페이로드를 돌려줬다. 클라이언트 `validateRecommendDateResponseForRequest`(`schemas.ts:354`, `responseStep.locked !== Boolean(lock)`)가 예외 → `mapRecommendationSessionPayload` throw → 화면 catch → "저장 실패". 잠금은 DB에 남지만 스냅샷 미갱신 → 직후 재추천이 `lockedSteps` 없이 나가 RPC가 `locked`로 거부(같은 뿌리의 2차 증상). `20260716104504_restore_full_locked_steps`(10:45 UTC 적용)로 이미 복구됨 — 라이브 RPC를 트랜잭션 롤백으로 재현해 `latest_request`에 `lockedSteps`가 포함되고 course/lock 플래그가 일치함을 확인.
+- **이 스텝 교체** = 실제 잔존 클라이언트 버그. `candidateId`는 카카오 검색 1회 한정 임시번호. `loadReplacementCandidates`는 replacement-candidates 엣지의 **자체 검색** 번호를 화면에 주는데, `replaceWithCandidate`가 `requestRecommendationResponse(request)`의 **반환값을 버리고**(recommend-date의 별개 검색이 새로 부여한 번호가 attestation에 저장됨) 화면에 있던 옛 번호를 `mutate`에 넘겼다. RPC replace 분기는 `candidateId+kakaoPlaceId`로 응답 스텝을 조회 → 불일치 → `invalid_candidate`(Postgres 로그 21:19:51, REST 400 확인). `add` 경로는 이미 응답에서 `added.candidateId`를 꺼내 써서 정상이었음.
+
+### 수정 (클라이언트 전용 — Edge/RPC/마이그레이션 무변경)
+
+| 파일 | 내용 |
+|---|---|
+| `app/mode-flow/course-result.tsx` | `replaceWithCandidate`가 `requestRecommendationResponse` 응답에서 `stepId+kakaoPlaceId`로 교체된 스텝을 찾아 그 `candidateId`를 `mutate`에 사용(없으면 throw). 이제 안 쓰이는 `candidateId` 파라미터를 시그니처·호출부에서 제거 — `add` 패턴과 일치 |
+| `__tests__/course-result-screen.test.tsx` | 회귀 테스트: 교체 mutate가 후보 목록의 임시 id가 아니라 recommend-date 응답의 `candidateId`를 보내는지 검증 |
+
+### 검증
+
+`npx jest` 73 suites/620 tests, `npm run validate`(tsc), `git diff --check` 모두 통과. 배포 대상 없음(클라이언트 전용) — 실기기 재빌드 후 육안 재확인 필요.
+
+---
+
+## 2026-07-16 세션 AP — 코스 결과 화면 실기기 QA 보정 + 잠금/재추천 핵심 버그 수정
+
+> 세션 AO 배포 직후 사용자가 실기기 스크린샷 3장으로 UI 문제 4건 + "잠금 외 재추천"/"이 단계 교체" 저장 실패를 재현·보고. Edge Function/Postgres 로그로 원인을 규명하고 TDD로 수정·재배포까지 완료.
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `app/mode-flow/course-result.tsx` | 가로 스크롤 고정폭(164) 카드 스트립 → **세로 스택 리스트**로 전환(번호 뱃지 + 카테고리 아이콘 + 잠금 표시 + 카드 사이 커넥터 라인, `components/ui.tsx`의 `CourseStepList` 시각 언어 재사용). 화면 전체(헤더+타임라인+교체 패널)를 세로 `ScrollView`로 감싸 콘텐츠가 길어져도 스크롤 가능하게 수정 — 기존엔 감싸는 스크롤이 없어 후보가 많으면 화면 아래로 잘렸음. 확정/재추천 버튼 행은 스크롤 밖(항상 고정 노출)에 유지. `lockedSteps` 생성부(`regenerateUnlocked`/`replaceWithCandidate`/`addVerifiedStep`)를 `toLockedStep()` 헬퍼로 통합하고 장소 사실 필드를 추가 |
+| `locales/ko.json`, `locales/en.json` | `courseResult.confirm`("이 코스로 확정하기"→"코스 확정"), `regenerate`("잠금 외 다시 추천"→"잠금 외 재추천"/"Regenerate unlocked"→"Regenerate") 축약 — 3버튼 푸터에서 확정 버튼 텍스트가 줄바꿈되며 화면 밖으로 밀리던 문제 해결 |
+| `shared/recommendation/contracts.ts`, `shared/recommendation/schemas.ts` | `LockedCourseStepInput`/`lockedCourseStepInputSchema`에 `name/address/roadAddress/mapUrl/latitude/longitude` 필드 추가(필수) |
+| `supabase/functions/_shared/recommendation-course-selection.ts` | **핵심 버그 수정**: `buildCandidateOnlyCourse`/`buildDeterministicCandidateCourse`가 잠긴(유지) 스텝을 그 호출의 신규 검색 후보 풀에서 `candidateId`로 재조회하던 로직 제거. 신규 `candidateFromLock()`이 lock 자체가 들고 온 장소 사실로 후보를 직접 구성 — 검색 재현 여부와 무관하게 항상 성공 |
+| 테스트 갱신 | `recommend-date-course-selection.test.ts`에 회귀 테스트 2건(오래된 candidateId가 새 검색 풀에 없어도 lock 사실로 해석 성공 — `buildCandidateOnlyCourse`/`buildDeterministicCandidateCourse` 각각), 기존 lock 픽스처 갱신(`recommendationContracts`, `recommendationSessionPhase9`, `recommend-date-client`, `recommend-date-server`), `course-result-screen.test.tsx`에 세로 레이아웃/스크롤 분리/버튼 텍스트 길이 테스트 3건 추가 |
+
+### 근본 원인 분석
+
+- **"잠금 외 재추천"/"이 단계 교체" 저장 실패(422, 사용자가 실기기에서 재현)**: `candidateId`는 카카오 검색 **호출 1회 한정**으로만 유효한 임시 번호(`recommendation-ranking.ts`가 매 검색마다 `candidate_001`부터 재부여)인데, 잠근(유지하는) 스텝은 클라이언트가 예전 `candidateId`를 그대로 서버에 보내고, 서버는 **이번** 검색 결과에서 그 ID를 찾으려다 실패 → `COURSE_VALIDATION_FAILED`. 코스가 2단계 이상이고 아무 스텝이나 부분 교체/재추천할 때마다 사실상 거의 항상 재현되는 구조적 버그였다(이번 세션 변경과 무관, 사전 존재).
+- **DB RPC는 무관함을 확인**: `apply_recommendation_session_mutation`(`20260715090000_editable_recommendation_sessions.sql`)의 잠금 검증은 클라이언트 lock을 DB에 이미 저장된 안정적인 `current_candidate_id`/`current_kakao_place_id`와만 비교하며, Edge가 스테이징한 attestation을 그대로 신뢰한다 — 버그는 순수하게 Edge Function(`recommendation-course-selection.ts`)의 후보 재조회 로직에만 있었다. RPC/마이그레이션 변경 불필요.
+- **`generate-ai`가 매 호출 502를 반환하는 별도 현상 발견(이번 세션 변경과 무관, 이전부터 존재)**: Edge Function 로그 확인 결과 이번 배포 이전부터 계속 502였다. `recommend-date`가 이 실패를 잡아 결정론 폴백으로 넘어가므로 사용자에게 노출되진 않지만, Haiku 큐레이션/AI 선택 기능은 사실상 계속 죽어있는 상태다. 원인 미확인(Anthropic API 키/모델 추정) — 별도 세션에서 조사 필요.
+
+### 검증
+
+```bash
+npx jest --silent   # 71 suites / 611 tests
+npm run validate
+git diff --check
+```
+
+모두 통과.
+
+### 배포 (완료, 2026-07-16)
+
+- `recommend-date` v6을 `supabase functions deploy recommend-date --project-ref wqjguifsmtblgrhdfnji` CLI로 배포(잠금 해석 로직이 `_shared/recommendation-course-selection.ts`에 있어 이 함수만 재배포하면 충분 — `recommend-date-handler.ts`의 `replacement` 분기는 무변경으로 자동 수혜).
+- `mcp__..__list_edge_functions`로 `recommend-date`(v6) `ACTIVE` 확인.
+
+### 다음 세션
+
+- 실기기에서 잠금 외 재추천 / 이 단계 교체 / 세로 리스트·스크롤 정상 동작 육안 재확인.
+- `generate-ai` 502 원인 조사(Anthropic API 키/모델 확인) — Haiku 이용 기능(추천 선택, 교체 후보 큐레이션) 전체가 현재 결정론 폴백으로만 동작 중.
+- 세션 AO에서 남긴 백로그(방문 확인 트리거, 장소 실사진) 유지.
+
+---
+
+## 2026-07-16 세션 AO — 코스 결과 화면(course-result.tsx) UX 재설계 (구현+배포 완료, 후속 QA는 세션 AP 참조)
+
+> 계획 전문: `/Users/jeongwonkim/.claude/plans/zazzy-pondering-heron.md` (2026-07-16 승인). TDD로 백엔드→프론트엔드 순서로 전체 실행.
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `supabase/functions/replacement-candidates/index.ts` | `courseSteps`를 대상 스텝 하나만으로 구성해 카카오 검색을 단일 카테고리로 전환. 결정론 랭킹 이후 `invokeGenerateAiSelection`(action `replacement_select`)으로 Haiku 큐레이션을 시도하고, 실패/malformed/무효 ID면 기존 top3+additional12 결정론 순서로 폴백 |
+| `shared/recommendation/replacement-candidates.ts` | `rankReplacementCandidates`가 최대 30개 `pool`도 함께 반환(top/additional은 기존과 동일). `selectCuratedReplacementCandidates(pool, rawSelection)` 신규 — 검증된 candidateId만 최대 10개로 재구성, 실패 시 `null` |
+| `supabase/functions/_shared/recommendation-prompt.ts` | `buildReplacementSelectionPrompt` + `REPLACEMENT_SELECT_PROMPT_VERSION`("replacement-select-v1") 신규 — 대상 스텝 1개 기준 최대 10개 candidateId 정렬 요청 |
+| `supabase/functions/_shared/recommend-date-downstream.ts` | `invokeGenerateAiSelection`이 `action` 옵션을 받도록 일반화(기본값 `recommend_date_select`, 하위호환 유지) |
+| `supabase/functions/generate-ai/index.ts` | `replacement_select` 액션 추가(`REPLACEMENT_SELECT_SCHEMA`: candidateIds 1~10개, maxTokens 256, temperature 0, logged true). usage envelope 생략 분기에 포함 |
+| `supabase/migrations/20260716010000_ai_recommendation_logs_add_replacement_select_action.sql` | `ai_recommendation_logs_action_check`에 `replacement_select` 추가(신규, 미적용) |
+| `lib/course-draft.ts` | `CATEGORY_ICONS`/`getCourseCategoryIcon()`를 `course-step-editor.tsx`에서 이곳으로 이동 — 카테고리 문자열에 아이콘 매핑이 없으면 `Sparkles` 폴백 |
+| `components/recommendation/course-step-editor.tsx` | 이동된 `CATEGORY_ICONS` import로 교체, 중복 정의 제거 |
+| `components/recommendation/step-action-sheet.tsx` (신규) | `PickerSheet` Modal 구조를 참고한 즉시-실행 액션시트. 잠금/잠금해제, 이 단계 교체(잠금 시 비활성), 삭제(2단계 이하 또는 잠금 시 비활성 + 레이블 전환) |
+| `app/mode-flow/course-result.tsx` | AI 재설계 이전 잔재였던 `cards[]` 기반 하단 전체화면 페이저·dots·카드별 Send/Save를 통째로 제거. 상단 타임라인 카드는 탭하면 `StepActionSheet`가 뜨도록 변경(잠금/이동 아이콘 3개 + 텍스트 버튼 2개로 인한 텍스트 오버플로우 해소), 카테고리 아이콘 추가. 교체 후보 패널에 닫기 버튼·빈 상태 문구·패널 근접 에러 표시 추가. "데이트 후 피드백" 패널(상태·태그 UI) 완전 제거, 같은 confirmed 조건 자리에 Send/Save를 재배치. 부제 문구를 "밀어서 후보 3개를 비교해보세요"에서 실제 동작에 맞게 교체 |
+| `locales/ko.json`, `locales/en.json` | `courseResult.sub` 문구 교체, `lock`/`unlock`/`replacementClose`/`replacementEmpty` 추가, `feedbackTitle`/`feedbackNotice`/`leaveFeedback`/`visited`/`notVisited`/`feedbackTags.*` 제거 |
+| `jest.config.js` | `lib/supabase` 모듈 매퍼 정규식을 `../lib/supabase`(1단계)만 매칭하던 것에서 `(../)*lib/supabase`(임의 깊이)로 확장 — `app/mode-flow/*.tsx`처럼 2단계 이상 깊이에서 직접 `../../lib/supabase`를 import하는 화면의 렌더 테스트가 이번 세션 이전에는 전혀 불가능했음(실제 Supabase 클라이언트가 로드되며 누락된 env 변수 에러로 즉시 crash) |
+| 신규 테스트 다수 | `replacementCandidates.test.ts`(pool/큐레이션 재구성), `replacementSelectionPrompt.test.ts`, `generate-ai-replacement-selection.test.ts`, `replacementSelectActionMigration.test.ts`, `course-draft-category-icons.test.ts`, `step-action-sheet.test.tsx`, `course-result-screen.test.tsx`(신규 — 이 화면의 첫 렌더 테스트) |
+
+### 기술 결정
+
+- **후보 0개 버그의 근본 원인**: 카카오 40개 캡이 코스 전체 카테고리가 공유하는 풀이라(`rankPlaceCandidates`), 다카테고리 코스에서 대상 카테고리에 대표 1개(=현재 장소)만 남는 경우가 흔했다. `replacement-candidates/index.ts`의 `courseSteps` 구성을 대상 스텝 하나로 좁혀 카카오 검색 자체를 그 카테고리 전용으로 만들어 근본 해결했다.
+- **Haiku 큐레이션은 결정론 랭킹을 대체하지 않고 재배열만 한다**: `rankReplacementCandidates`가 만드는 pool(최대 30개)을 그대로 프롬프트에 노출하고, AI는 검증된 `candidateId`만 골라 순서를 정할 뿐 새 사실을 생성하지 않는다. AI 호출은 자체 try/catch로 감싸 실패해도 바깥쪽 `PLACE_SEARCH_TIMEOUT` 처리로 새지 않고 항상 결정론 폴백으로 이어지게 했다 — 이 경계를 놓치면 AI 큐레이션 실패가 카카오 검색 실패로 오분류될 뻔했다.
+- **로그 액션 체크 제약 전례 반복 방지**: 과거 세션(2026-07-16 AM)에서 `recommend_date_select` 누락으로 로그 insert가 전부 실패했던 사고를 `replacement_select`에서도 반복하지 않도록, 같은 커밋에서 마이그레이션과 액션 추가를 함께 처리했다.
+- **화면 재설계는 상태 축소보다 통합**: `cards`/`resolveDisplaySteps`/`page`/`saving 관련 pager 상태를 제거하면서도 `handleSave`/`handleSendToPartner`/`saving`/`saved`/`errorMsg`는 그대로 재사용해 confirmed 전용 액션 행으로 옮겼다 — 로직 중복 없이 위치만 이동.
+- **`recommendationSessionPhase9.test.ts`의 기존 wiring 테스트 갱신**: `course-replace-step`/`course-delete-step` testID는 액션시트로 흡수되며 더 이상 실제 UI 요소가 아니게 됐다. 옛 assertion을 지우는 대신 새 실제 동작(`course-step-card-${stepId}` 탭, 액션시트의 `onReplace`/`onDelete` 핸들러 소스)을 검증하도록 의도적으로 갱신했다.
+- **jest 모듈 매퍼 확장은 인프라 버그 픽스**: 기존 정규식이 1단계 상대경로(`../lib/supabase`)만 매칭해 `app/mode-flow/*.tsx`처럼 2단계 깊이 화면은 렌더 테스트 시 실제 Supabase 클라이언트가 로드되어 즉시 crash했다. 이번 세션에서 처음으로 `course-result.tsx` 렌더 테스트를 작성하며 발견해 정규식을 임의 깊이로 일반화했다 — 프로덕션 동작에는 영향 없음(테스트 전용 매퍼).
+
+### 검증
+
+```bash
+npx jest --silent
+npm run validate
+git diff --check
+```
+
+전체 71 suites / 606 tests, `npm run validate`(`tsc --noEmit`), `git diff --check` 모두 통과.
+
+### 배포 (완료, 2026-07-16)
+
+- `20260716010000_ai_recommendation_logs_add_replacement_select_action.sql`을 linked Supabase(`wqjguifsmtblgrhdfnji`)에 `apply_migration`으로 적용.
+- `generate-ai` v16을 MCP `deploy_edge_function`으로 배포 성공(단일 파일이라 정상 동작).
+- `replacement-candidates`는 MCP `deploy_edge_function`으로 2회 시도했으나 둘 다 `InternalServerErrorException`으로 실패 — 이 함수는 `shared/recommendation/*`·`_shared/*` 12개 파일에 걸친 다단계 상대경로 의존성을 가지는데, 과거 세션 노트(2026-07-08 "인라인 Edge 배포 이스케이프" ratchet)에서도 `\d` 등 백슬래시가 포함된 정규식 소스가 MCP 배포 경로에서 문제를 일으킨 전례가 있었다. `supabase/functions/_shared/recommendation-intent.ts`에 백슬래시 정규식이 많아 같은 계열 문제로 추정된다. **`supabase functions deploy replacement-candidates --project-ref wqjguifsmtblgrhdfnji` CLI로 전환해 배포 성공**(v2, ACTIVE) — CLI는 디스크에서 직접 12개 파일을 업로드하므로 이스케이프 문제 자체가 없다.
+- `mcp__..__list_edge_functions`로 `generate-ai`(v16)·`replacement-candidates`(v2) 모두 `ACTIVE` 확인.
+- **ratchet 추가**: MCP `deploy_edge_function`은 백슬래시 정규식이 포함된 다중 파일(3개 이상 또는 `_shared`처럼 정규식이 많은 파일 포함) 배포에서 내부 오류로 실패할 수 있다 — 이런 함수는 처음부터 `supabase functions deploy <name> --project-ref <ref>` CLI를 우선 사용한다.
+
+### 다음 세션
+
+- 실기기/시뮬레이터 육안 확인(중복 표시 없음, 액션시트 동작, 교체 후보 실제 노출, 텍스트 오버플로우 없음, 카테고리 아이콘, confirmed 상태에서 Send/Save만 노출) 아직 수행하지 않음 — 다음 세션 시작 시 우선 진행.
+- 방문 확인 트리거(피드백 재도입) 설계는 다음다음 세션 백로그로 유지(`record_recommendation_place_feedback` RPC/DB는 이번 세션에서 손대지 않음).
+- 장소 실사진 연동은 별도 세션(이번 범위는 카테고리 아이콘까지만).
+
+---
+
 ## 2026-07-16 세션 AN — 코스 입력 화면(course.tsx) UI 개선 + 슬라이더 재설계
 
 ### 배경

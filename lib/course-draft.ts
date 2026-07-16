@@ -1,3 +1,7 @@
+import {
+  Coffee, Footprints, Palette, Sparkles, Utensils, Wine, Zap,
+  type LucideIcon,
+} from 'lucide-react-native';
 import type {
   CourseStepInput,
   ParsedPreferenceInput,
@@ -19,6 +23,20 @@ export const COURSE_MOODS = ['comfortable', 'lively', 'romantic', 'quiet', 'nove
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
 export type CourseMood = (typeof COURSE_MOODS)[number];
 export type WalkingLimit = 5 | 10 | 20 | undefined;
+
+export const CATEGORY_ICONS: Record<CourseCategory, LucideIcon> = {
+  meal: Utensils,
+  cafe: Coffee,
+  drinks: Wine,
+  activity: Zap,
+  culture: Palette,
+  walk: Footprints,
+  ai_decide: Sparkles,
+};
+
+export function getCourseCategoryIcon(category: string): LucideIcon {
+  return CATEGORY_ICONS[category as CourseCategory] ?? Sparkles;
+}
 
 export type CourseDraftStep = {
   id: string;
