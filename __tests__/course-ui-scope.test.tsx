@@ -66,7 +66,8 @@ describe('Phase 4 shared UI scope', () => {
     const source = readFileSync(join(__dirname, '../app/mode-flow/course.tsx'), 'utf8');
 
     expect(source).toContain('<BackBar largeTouchTarget />');
-    expect(source).toMatch(/<OptionCardPicker[\s\S]*?largeTouchTarget[\s\S]*?\/>/);
+    expect(source).toContain('testID="course-duration-slider"');
+    expect(source).toContain('testID="course-budget-slider"');
     expect(source).toMatch(/<BigButton[\s\S]*?style=\{styles\.generateButton\}/);
   });
 });

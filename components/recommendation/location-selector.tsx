@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { Check, Clock3, LocateFixed, MapPin } from 'lucide-react-native';
+import { Check, Clock3, MapPin, Navigation } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import {
@@ -154,7 +154,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
           disabled={locating}
           onPress={selectCurrentLocation}
         >
-          <LocateFixed size={18} color={value?.source === 'current' ? C.white : C.pinkDeep} strokeWidth={2} />
+          <Navigation size={18} color={value?.source === 'current' ? C.white : C.pinkDeep} strokeWidth={2} />
         </TouchableOpacity>
       </View>
       <Text style={styles.hint}>{t('location.autocompleteHint')}</Text>
@@ -182,7 +182,9 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
                 style={styles.suggestion}
                 onPress={() => selectLocation(location)}
               >
-                <MapPin size={17} color={C.textSub} strokeWidth={2} />
+                {location.source === 'current'
+                  ? <Navigation size={17} color={C.pinkDeep} strokeWidth={2} />
+                  : <MapPin size={17} color={C.textSub} strokeWidth={2} />}
                 <View style={styles.suggestionText}>
                   <Text style={styles.suggestionName} numberOfLines={1}>{location.label}</Text>
                   {!!location.address && (

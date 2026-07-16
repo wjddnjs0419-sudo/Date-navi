@@ -495,10 +495,8 @@
     "back": "←"
   },
   "course": {
-    "aiConsent": "I agree that recommendation conditions (location, budget, request) are sent to an AI provider and retained for up to 30 days.",
+    "unselected": "Not selected",
     "modeLabel": "Make it a plan",
-    "title": "Build your date\ncourse step by step",
-    "subtitle": "Choose an order and a few conditions, and we'll find places that fit both of you.",
     "steps": {
       "label": "Course steps",
       "hint": "Arrange two to four steps in the order you want.",
@@ -525,8 +523,8 @@
     },
     "budget": {
       "label": "Total budget for two (KRW, optional)",
-      "placeholder": "e.g. 50000",
-      "hint": "Enter the total amount for both people, up to KRW 10,000,000."
+      "amount": "KRW {{amount}}",
+      "hint": "Enter the total amount for both people, up to KRW 100,000."
     },
     "moods": {
       "label": "Preferred moods (select any)",
@@ -540,15 +538,11 @@
     },
     "duration": {
       "label": "Total time (optional)",
-      "options": {
-        "twoThreeHours": "2-3 hours",
-        "halfDay": "Half day",
-        "fullDay": "All day"
-      }
+      "hoursLabel": "{{count}} hours"
     },
     "additional": {
       "label": "Additional request (optional)",
-      "placeholder": "e.g. Avoid cafes and suggest indoor places that are good for photos",
+      "placeholder": "e.g. Suggest a cafe with a great atmosphere for a date",
       "maxLength": "{{count}}/500 characters"
     },
     "preview": {
@@ -576,6 +570,7 @@
       "walking": "Select a maximum walk of {{option}}",
       "mood": "Select the {{mood}} mood",
       "budget": "Enter the total budget for two in Korean won",
+      "duration": "Select total time",
       "additionalRequest": "Enter an additional request",
       "generate": "Build the date course"
     },

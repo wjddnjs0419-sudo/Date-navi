@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useRef, useState } from 'react';
+import { useMemo, useReducer, useRef } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,9 +10,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
-import { BackBar, Badge, BigButton, OptionCardPicker } from '../../components/ui';
+import { BackBar, Badge, BigButton } from '../../components/ui';
 import { CourseStepEditor } from '../../components/recommendation/course-step-editor';
 import { LocationSelector } from '../../components/recommendation/location-selector';
+import { StepSlider } from '../../components/recommendation/step-slider';
 import { C, R, SP } from '../../constants/theme';
 import {
   COURSE_CATEGORIES,
@@ -20,6 +21,7 @@ import {
   courseDraftReducer,
   createInitialCourseDraft,
   parseCoursePreferences,
+  parseTotalBudgetKRW,
   validateCourseDraft,
   type CourseCategory,
   type CourseDraftIssue,
@@ -32,11 +34,16 @@ import { createRecommendationRequestId } from '../../lib/recommendationIdentity'
 import { buildStructuredGeneratingParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 
-const DURATIONS = [
-  { value: '2-3h', labelKey: 'course.duration.options.twoThreeHours' },
-  { value: 'half_day', labelKey: 'course.duration.options.halfDay' },
-  { value: 'full_day', labelKey: 'course.duration.options.fullDay' },
-] as const;
+const DURATION_MAX_HOURS = 24;
+
+const BUDGET_MAX_KRW = 100_000;
+const BUDGET_STEP_KRW = 1_000;
+
+function parseDurationHours(duration?: string): number | undefined {
+  if (!duration) return undefined;
+  const match = /^(\d+)/.exec(duration);
+  return match ? Number(match[1]) : undefined;
+}
 
 const WALKING_OPTIONS: { value: WalkingLimit; labelKey: string }[] = [
   { value: 5, labelKey: 'course.walking.options.five' },
@@ -70,7 +77,6 @@ export default function CourseScreen() {
     undefined,
     () => createInitialCourseDraft(() => `course-step-${++idSequence.current}`),
   );
-  const [aiConsent, setAiConsent] = useState(false);
   const categoryLabels = useMemo(() => Object.fromEntries(
     COURSE_CATEGORIES.map((category) => [category, t(`course.steps.categories.${category}`)]),
   ) as Record<CourseCategory, string>, [t]);
@@ -89,7 +95,6 @@ export default function CourseScreen() {
 
   function handleGenerate() {
     if (!validation.valid) return;
-    if (!aiConsent) return;
     const input = buildCourseInput({ draft, categoryLabels });
     if (!input.courseDraft) return;
     const request = buildRecommendationRequest(
@@ -117,8 +122,6 @@ export default function CourseScreen() {
         <BackBar largeTouchTarget />
         <View style={styles.header}>
           <Text style={styles.modeLabel}>{t('course.modeLabel')}</Text>
-          <Text style={styles.title}>{t('course.title')}</Text>
-          <Text style={styles.subtitle}>{t('course.subtitle')}</Text>
         </View>
 
         <View style={styles.section}>
@@ -127,18 +130,6 @@ export default function CourseScreen() {
               <Text style={styles.sectionLabel}>{t('course.steps.label')}</Text>
               <Text style={styles.hint}>{t('course.steps.hint')}</Text>
             </View>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('course.accessibility.addStep')}
-              activeOpacity={0.72}
-              disabled={draft.steps.length >= 4}
-              onPress={addStep}
-              style={[styles.addButton, draft.steps.length >= 4 && styles.controlDisabled]}
-              testID="course-add-step"
-            >
-              <Plus size={18} color={C.pinkDeep} strokeWidth={2.5} />
-              <Text style={styles.addButtonText}>{t('course.steps.add')}</Text>
-            </TouchableOpacity>
           </View>
           <View style={styles.stepList}>
             {draft.steps.map((step, index) => (
@@ -152,6 +143,18 @@ export default function CourseScreen() {
                 t={t}
               />
             ))}
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('course.accessibility.addStep')}
+              activeOpacity={0.72}
+              disabled={draft.steps.length >= 4}
+              onPress={addStep}
+              style={[styles.addButton, draft.steps.length >= 4 && styles.controlDisabled]}
+              testID="course-add-step"
+            >
+              <Plus size={18} color={C.pinkDeep} strokeWidth={2.5} />
+              <Text style={styles.addButtonText}>{t('course.steps.add')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -185,15 +188,15 @@ export default function CourseScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('course.budget.label')}</Text>
-          <TextInput
+          <StepSlider
+            min={0}
+            max={BUDGET_MAX_KRW}
+            step={BUDGET_STEP_KRW}
+            value={parseTotalBudgetKRW(draft.totalBudgetKRWInput) ?? 0}
+            onChange={(v) => dispatch({ type: 'setBudgetInput', value: v === 0 ? '' : String(v) })}
+            formatValue={(v) => (v === 0 ? t('course.unselected') : t('course.budget.amount', { amount: v.toLocaleString() }))}
             accessibilityLabel={t('course.accessibility.budget')}
-            style={styles.textInput}
-            placeholder={t('course.budget.placeholder')}
-            placeholderTextColor={C.textFaint}
-            value={draft.totalBudgetKRWInput}
-            onChangeText={(value) => dispatch({ type: 'setBudgetInput', value })}
-            keyboardType="numeric"
-            returnKeyType="done"
+            testID="course-budget-slider"
           />
           <Text style={styles.hint}>{t('course.budget.hint')}</Text>
         </View>
@@ -224,12 +227,18 @@ export default function CourseScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('course.duration.label')}</Text>
-          <OptionCardPicker
-            largeTouchTarget
-            options={DURATIONS.map((duration) => ({ value: duration.value, label: t(duration.labelKey) }))}
-            value={draft.duration}
-            onChange={(duration) => dispatch({ type: 'setDuration', duration })}
-            columns={3}
+          <StepSlider
+            min={0}
+            max={DURATION_MAX_HOURS}
+            step={1}
+            value={parseDurationHours(draft.duration) ?? 0}
+            onChange={(hours) => dispatch({
+              type: 'setDuration',
+              duration: hours === 0 ? undefined : t('course.duration.hoursLabel', { count: hours }),
+            })}
+            formatValue={(hours) => (hours === 0 ? t('course.unselected') : t('course.duration.hoursLabel', { count: hours }))}
+            accessibilityLabel={t('course.accessibility.duration')}
+            testID="course-duration-slider"
           />
         </View>
 
@@ -279,17 +288,12 @@ export default function CourseScreen() {
             ))}
           </View>
         )}
-        <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: aiConsent }} onPress={() => setAiConsent((value) => !value)} style={styles.consentRow}>
-          <Text style={styles.consentCheck}>{aiConsent ? '✓' : '○'}</Text>
-          <Text style={styles.consentText}>{t('course.aiConsent')}</Text>
-        </TouchableOpacity>
-
         <BigButton
           accessibilityLabel={t('course.accessibility.generate')}
-          disabled={!validation.valid || !aiConsent}
-          onPress={validation.valid && aiConsent ? handleGenerate : undefined}
+          disabled={!validation.valid}
+          onPress={validation.valid ? handleGenerate : undefined}
           style={styles.generateButton}
-          variant={validation.valid && aiConsent ? 'primary' : 'disabled'}
+          variant={validation.valid ? 'primary' : 'disabled'}
         >
           {t('course.generateButton')}
         </BigButton>
@@ -304,8 +308,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: SP.xl, paddingTop: SP.sm, paddingBottom: 60 },
   header: { paddingTop: SP.lg, gap: SP.sm },
   modeLabel: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
-  title: { fontSize: 24, fontWeight: '700', lineHeight: 32, color: C.text },
-  subtitle: { fontSize: 13, lineHeight: 20, color: C.textSub },
   section: { paddingTop: SP.xxl, gap: SP.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: SP.sm },
   sectionHeadingWrap: { flex: 1, gap: SP.xs },
@@ -313,6 +315,7 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
   addButton: {
     minHeight: 44,
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: SP.xs,
@@ -336,16 +339,6 @@ const styles = StyleSheet.create({
   choiceSelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
   choiceText: { fontSize: 12, color: C.inkSoft, fontWeight: '600' },
   choiceTextSelected: { color: C.pinkDeep },
-  textInput: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: R.md,
-    paddingHorizontal: SP.lg,
-    fontSize: 15,
-    color: C.text,
-    backgroundColor: C.white,
-  },
   additionalInput: {
     minHeight: 108,
     borderWidth: 1,
@@ -365,8 +358,5 @@ const styles = StyleSheet.create({
   validationText: { fontSize: 12, lineHeight: 18, color: C.danger },
   conflictText: { fontWeight: '700' },
   generateButton: { minHeight: 52 },
-  consentRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  consentCheck: { color: C.pinkDeep, fontSize: 18 },
-  consentText: { flex: 1, color: C.textSub, fontSize: 12, lineHeight: 18 },
   bottomSpacer: { height: SP.xxl },
 });

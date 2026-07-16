@@ -1,6 +1,9 @@
 import type { Dispatch } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react-native';
+import {
+  ArrowDown, ArrowUp, Coffee, Footprints, Palette, Sparkles, Trash2, Utensils, Wine, Zap,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import {
   COURSE_CATEGORIES,
@@ -10,6 +13,16 @@ import {
 } from '../../lib/course-draft';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
+
+const CATEGORY_ICONS: Record<CourseCategory, LucideIcon> = {
+  meal: Utensils,
+  cafe: Coffee,
+  drinks: Wine,
+  activity: Zap,
+  culture: Palette,
+  walk: Footprints,
+  ai_decide: Sparkles,
+};
 
 function StepAction({
   accessibilityLabel,
@@ -87,6 +100,7 @@ export function CourseStepEditor({
       <View style={styles.categories}>
         {COURSE_CATEGORIES.map((category) => {
           const selected = step.category === category;
+          const Icon = CATEGORY_ICONS[category];
           return (
             <TouchableOpacity
               key={category}
@@ -100,6 +114,7 @@ export function CourseStepEditor({
               onPress={() => dispatch({ type: 'setStepCategory', stepId: step.id, category })}
               style={[styles.category, selected && styles.categorySelected]}
             >
+              <Icon size={18} color={selected ? C.pinkDeep : C.inkSoft} strokeWidth={2} />
               <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
                 {categoryLabels[category]}
               </Text>
@@ -135,14 +150,18 @@ const styles = StyleSheet.create({
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
   category: {
     minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SP.md,
+    gap: SP.xs,
+    paddingHorizontal: SP.sm,
+    paddingVertical: SP.xs,
     borderRadius: R.md,
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.white,
   },
   categorySelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
-  categoryText: { fontSize: 12, color: C.inkSoft, fontWeight: '600' },
+  categoryText: { fontSize: 10, color: C.inkSoft, fontWeight: '600' },
   categoryTextSelected: { color: C.pinkDeep },
 });

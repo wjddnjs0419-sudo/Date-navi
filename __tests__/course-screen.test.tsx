@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
@@ -54,12 +54,13 @@ jest.mock('../components/recommendation/location-selector', () => {
   };
 });
 
-type TestNode = { props: Record<string, any> };
+type TestNode = { props: Record<string, any>; type: unknown };
 type TestRendererInstance = {
   root: {
     findByProps: (props: Record<string, unknown>) => TestNode;
     findAllByProps: (props: Record<string, unknown>) => TestNode[];
     findAllByType: (type: unknown) => TestNode[];
+    findAll: (predicate: (node: TestNode) => boolean) => TestNode[];
   };
 };
 const TestRenderer = require('react-test-renderer') as {
@@ -110,6 +111,16 @@ describe('structured course screen', () => {
     ]));
   });
 
+  it('shows only the mode label in the header, not the title or subtitle copy', () => {
+    let renderer!: TestRendererInstance;
+    act(() => { renderer = create(<CourseScreen />); });
+
+    const texts = renderer.root.findAllByType(Text).map((node) => node.props.children);
+    expect(texts).toContain('course.modeLabel');
+    expect(texts).not.toContain('course.title');
+    expect(texts).not.toContain('course.subtitle');
+  });
+
   it('renders two default steps and enforces the two-to-four step controls', () => {
     let renderer!: TestRendererInstance;
     act(() => { renderer = create(<CourseScreen />); });
@@ -130,6 +141,51 @@ describe('structured course screen', () => {
     expect(removeButtons().every((node) => !node.props.disabled)).toBe(true);
   });
 
+  it('renders the add-step button after the last step card, not above the list', () => {
+    let renderer!: TestRendererInstance;
+    act(() => { renderer = create(<CourseScreen />); });
+
+    const order = renderer.root
+      .findAll((node) => typeof node.type === 'string' && !!node.props
+        && (node.props.testID === 'course-step' || node.props.testID === 'course-add-step'))
+      .map((node) => node.props.testID);
+
+    expect(order.filter((id) => id === 'course-step')).toHaveLength(2);
+    expect(order[order.length - 1]).toBe('course-add-step');
+
+    const add = renderer.root.findByProps({ testID: 'course-add-step' });
+    const flattened = StyleSheet.flatten(add.props.style);
+    expect(flattened.alignSelf).toBe('flex-start');
+  });
+
+  it('exposes duration and budget as sliders that dispatch into the generated request', () => {
+    let renderer!: TestRendererInstance;
+    act(() => { renderer = create(<CourseScreen />); });
+
+    const findSlider = (testID: string) => renderer.root
+      .findAllByProps({ testID })
+      .find((node) => node.props.accessibilityValue)!;
+
+    expect(findSlider('course-duration-slider').props.accessibilityValue.now).toBe(0);
+    expect(findSlider('course-duration-slider').props.accessibilityValue.max).toBe(24);
+    expect(findSlider('course-budget-slider').props.accessibilityValue.now).toBe(0);
+    expect(findSlider('course-budget-slider').props.accessibilityValue.max).toBe(100_000);
+
+    const locationSelector = renderer.root.findByProps({ testID: 'location-selector' });
+    act(() => locationSelector.props.onChange(location));
+    act(() => findSlider('course-duration-slider')
+      .props.onAccessibilityAction({ nativeEvent: { actionName: 'increment' } }));
+    act(() => findSlider('course-budget-slider')
+      .props.onAccessibilityAction({ nativeEvent: { actionName: 'increment' } }));
+
+    const generate = () => renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.generate' });
+    act(() => generate().props.onPress());
+
+    const request = mockPrepareRecommendationRequest.mock.calls[0][0];
+    expect(request.duration).toBe('course.duration.hoursLabel');
+    expect(request.totalBudgetKRW).toBe(1_000);
+  });
+
   it('requires location, blocks a parsed conflict, and hands a valid draft to generating by requestId only', () => {
     let renderer!: TestRendererInstance;
     act(() => { renderer = create(<CourseScreen />); });
@@ -139,7 +195,6 @@ describe('structured course screen', () => {
     const locationSelector = renderer.root.findByProps({ testID: 'location-selector' });
     expect(locationSelector.props.required).toBe(true);
     act(() => locationSelector.props.onChange(location));
-    act(() => renderer.root.findByProps({ accessibilityRole: 'checkbox' }).props.onPress());
     expect(generate().props.disabled).toBe(false);
 
     const additional = renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.additionalRequest' });

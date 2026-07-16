@@ -571,7 +571,6 @@ course.tsx / feeling.tsx
 
 ## 완료된 항목
 
-- [Done] Date Navi 리디자인으로 되돌아간 화면 i18n 재작업 — 홈/후보/추억/모드/공유/카드/계정/온보딩/마음전하기 전체, 카드 등록 "예상 시간"을 OptionCardPicker 공통 컴포넌트로 통일 (2026-07-05)
 - [Done] 온보딩 뒤로가기 버그 수정(각 단계 이동을 replace→push) + 닉네임 화면 뒤로가기 시 auth로 이동 + 커플연결(필수 단계) 화면에 로그아웃 탈출구 추가 — 커플 연결 전엔 계정 갇힘 문제 해결 (2026-07-07)
 - [Done] 온보딩 라우팅 게이트 버그 수정 — `couple_id` 존재만으로 통과시키던 걸 실제 `status==='linked' && partner_user_id` 확인(`isCoupleRowLinked`)으로 변경. 초대 코드만 만들고 파트너 없이도 온보딩 통과되던 문제 해결 (2026-07-07)
 - [Done] "DateMate" → "Date Navi" 리브랜딩 — app.json name/scheme(`datenavi`), locales 전체(앱 이름/약관/개인정보처리방침 포함), 저장 키(`datenavi.language` 등), package.json name, 이메일 placeholder 정리, EAS Display name도 "Date Navi"로 변경. `slug`(`datemate-app`)는 대시보드에서 변경 불가(프로젝트 재생성 필요)라 그대로 유지하기로 결정 — 내부 식별자일 뿐 사용자 노출 없음. 새 네이티브 빌드 필요 (2026-07-07)
@@ -581,3 +580,4 @@ course.tsx / feeling.tsx
 - [Done] AI 추천 재설계 실행 Phase 1 — shared Zod 계약·typed error·ko/en 직렬화/검증 테스트 추가, 기존 런타임 미연결 유지 (2026-07-14)
 - [Done] AI 추천 재설계 실행 Phase 2 — candidate/Kakao/request/session ID end-to-end 보존, 구 카드 dual-read, 6개 AI 저장 경로 dual-write, nullable DB migration 적용 (2026-07-14)
 - [Done] AI 코스 생성 에러 3건 근본 원인 수정 — 준비된 요청 캐시 미스 오분류, `ai_recommendation_logs` action 체크 제약 누락, `get_recommendation_session`의 `extra_float_digits=0`로 인한 좌표 반올림/malformed 오탐 (2026-07-16)
+- [Done] 코스 입력 화면(`course.tsx`) UI 개선 — 단계추가 버튼 위치, 카테고리 아이콘화, 위치 아이콘 통일, AI 동의 체크박스 제거, 헤더 텍스트 축소, 예산/전체시간 드래그 슬라이더 전환(신규 `StepSlider` + `lib/slider-math.ts`, 예산 0~100,000원 1,000원 단위, 시간 0~24시간 1시간 단위). 실기기 테스트로 스크롤 충돌과 `useRef(PanResponder.create())` 렌더링별 재생성으로 인한 제스처 상태 리셋 버그를 순차 발견·수정 (2026-07-16)

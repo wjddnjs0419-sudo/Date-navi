@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-07-16 세션 AN — 코스 입력 화면(course.tsx) UI 개선 + 슬라이더 재설계
+
+### 배경
+
+사용자가 시뮬레이터 스크린샷 6장(코스 입력 화면 3장 + 코스 결과 화면 3장)을 제시. 이번 세션은 **입력 화면(`course.tsx`)만** 범위로 확정하고, 결과 화면(`course-result.tsx`)은 다음 세션으로 미뤘다.
+
+### 변경 사항 요약
+
+| 파일 | 수정 내용 |
+|---|---|
+| `app/mode-flow/course.tsx` | "단계 추가" 버튼을 마지막 스텝 카드 아래로 이동. 헤더 타이틀/서브타이틀 제거(핑크 라벨만 유지). AI 동의 체크박스 완전 제거(서버측 무조건 동의 기록 RPC는 그대로 유지). "전체 시간"(3버킷)·"2인 총예산"(TextInput)을 드래그 슬라이더로 교체 — 예산 0~100,000원/1,000원 단위, 시간 0~24시간/1시간 단위. 추가요청 placeholder 문구 변경 |
+| `components/recommendation/course-step-editor.tsx` | 카테고리 7개 버튼을 텍스트 pill → lucide 아이콘 + 작은 캡션으로 변경 |
+| `components/recommendation/location-selector.tsx` | "내 위치 사용 중" 행과 검색창 GPS 버튼 아이콘을 `MapPin`/`LocateFixed` → `Navigation`으로 통일 |
+| `components/recommendation/step-slider.tsx` (신규) | 재사용 가능한 드래그 슬라이더. 새 npm 의존성 없이 RN 내장 `PanResponder`+`Animated`로 구현 |
+| `lib/slider-math.ts` (신규) | 슬라이더 순수 수학 유틸 — snap/fraction 변환, 가로 드래그 판별(`isHorizontalDrag`) |
+| `locales/ko.json`, `locales/en.json` | `course.aiConsent`/`title`/`subtitle`/`duration.options.*`/`budget.placeholder` 제거. `course.unselected`/`budget.amount`/`duration.hoursLabel`/`accessibility.duration` 추가. 추가요청 placeholder 문구 변경 |
+| 신규/수정 테스트 다수 | `slider-math`, `step-slider`, `course-step-editor`, `location-selector`, `course-screen`, `course-ui-scope` |
+
+### 기술 결정
+
+- **AI 동의 체크박스 제거**: 원래 실행 Phase 13의 법적 요구사항으로 추가된 UI였다. 사용자에게 컴플라이언스 리스크를 명시적으로 설명했고, 사용자는 "완전히 제거"를 선택했다. `lib/recommend-date.ts`의 `record_ai_data_processing_consent` RPC는 이 UI 상태와 무관하게 매 요청마다 무조건 실행되므로, 실제 서버측 동의 기록 자체는 계속 남는다 — 화면의 체크박스 UI와 클라이언트 게이팅 로직만 제거했다.
+- **슬라이더 실기기 버그 2건을 순차 발견·수정**:
+  1. 트랙 전체가 터치를 즉시 점유해 슬라이더 위에서 시작한 세로 스크롤을 가로챔 → 손잡이 근처에서 시작한 터치만 즉시 드래그를 시작하고, 그 외 지점은 명확히 가로 방향인 드래그일 때만 반응하도록(`SwipeableCard`와 동일한 idiom) 재설계.
+  2. **진짜 핵심 버그**: `useRef(PanResponder.create({...})).current`로 감싸면 `useRef`의 초기값이 최초 렌더링(레이아웃 측정 전, `usableWidth=0`) 시점에만 평가되고 이후 버려져, 모든 콜백이 그 시점 값에 영원히 고정됐다. 반대로 `useRef` 없이 매 렌더링마다 새로 만들면(리렌더는 `onChange`가 호출될 때마다 발생) PanResponder **내부**의 제스처 누적 거리 추적 상태(`gestureState`)까지 매번 초기화되어, 드래그 중간에 계속 리셋되며 "쭉 끌어야 다음 구간으로 넘어가고 자꾸 기본값으로 돌아오는" 증상으로 나타났다. 해결: PanResponder는 `useRef`로 **한 번만** 생성(내부 `gestureState`가 드래그 끝까지 유지됨)하고, 콜백들은 매 렌더링마다 갱신되는 `latest.current` ref를 통해 최신 `value`/`min`/`max`/`step`/`usableWidth`/`onChange`를 읽는 "latest ref" 패턴으로 전환했다.
+- **예산/시간 슬라이더 재설계**: 사용자가 "구간이 있어서 다음 구간으로 넘기기 힘들다"고 재현 확인 후, 예산은 1,000원 단위(100단계, 사실상 연속형)로, 시간은 기존 3개 고정 버킷 대신 0~24시간·1시간 단위 연속형으로 바꿨다. `duration` 필드는 서버(`recommend-date`)에서 `boundedText(80)` 자유 텍스트로만 쓰이고 엄격한 enum 파싱이 없음을 `supabase/functions/_shared/recommendation-prompt.ts`에서 확인해, 스키마/서버 변경 없이 클라이언트만 안전하게 바꿨다.
+
+### 검증
+
+```bash
+npm run validate
+npx jest
+```
+
+전체 65 suites / 571 tests, `npm run validate` 통과. 사용자가 시뮬레이터에서 스크롤과 슬라이더 드래그가 함께 정상 동작함을 직접 확인했다.
+
+### 다음 세션
+
+- 코스 결과 화면(`app/mode-flow/course-result.tsx`, `components/ui.tsx`의 `CourseStepList`/`StepCard`) UX 재검토 — 이번 세션과 동일하게 스크린샷 기반으로 구체적 지적사항을 받아 진행한다.
+
+---
+
 ## 2026-07-16 세션 AM — AI 코스 생성 에러 3건 근본 원인 수정
 
 ### 변경 사항 요약

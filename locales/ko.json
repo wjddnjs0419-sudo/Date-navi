@@ -495,10 +495,8 @@
     "back": "←"
   },
   "course": {
-    "aiConsent": "추천 조건(위치·예산·요청)이 AI 제공자에게 전송되는 것과 30일 보관 정책에 동의합니다.",
+    "unselected": "미선택",
     "modeLabel": "코스로 정리해줘",
-    "title": "데이트 코스를\n직접 구성해볼까요?",
-    "subtitle": "원하는 순서와 조건을 정하면 두 사람에게 맞는 장소를 찾아드려요.",
     "steps": {
       "label": "코스 단계",
       "hint": "2~4단계까지 순서대로 구성할 수 있어요.",
@@ -525,8 +523,8 @@
     },
     "budget": {
       "label": "2인 총예산 (KRW, 선택)",
-      "placeholder": "예: 50000",
-      "hint": "두 사람이 함께 쓸 전체 금액을 입력해주세요. 최대 10,000,000원"
+      "amount": "{{amount}}원",
+      "hint": "두 사람이 함께 쓸 전체 금액을 입력해주세요. 최대 100,000원"
     },
     "moods": {
       "label": "원하는 분위기 (복수 선택 가능)",
@@ -540,15 +538,11 @@
     },
     "duration": {
       "label": "전체 시간 (선택)",
-      "options": {
-        "twoThreeHours": "2~3시간",
-        "halfDay": "반나절",
-        "fullDay": "하루종일"
-      }
+      "hoursLabel": "{{count}}시간"
     },
     "additional": {
       "label": "추가 요청 (선택)",
-      "placeholder": "예: 카페는 빼고 사진 찍기 좋은 실내 장소로 추천해줘",
+      "placeholder": "예: 데이트하기 좋은 분위기 좋은 카페로 추천해줘",
       "maxLength": "{{count}}/500자"
     },
     "preview": {
@@ -576,6 +570,7 @@
       "walking": "최대 도보 시간 {{option}} 선택",
       "mood": "분위기 {{mood}} 선택",
       "budget": "2인 총예산 원화 입력",
+      "duration": "전체 시간 선택",
       "additionalRequest": "추가 요청 입력",
       "generate": "데이트 코스 만들기"
     },
