@@ -11,6 +11,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { localizeCardContent } from '../../lib/card-i18n';
 
 type MutualCard = {
   id: string;
@@ -34,7 +35,7 @@ const REACTION_SECTION_MAP: Record<string, MutualCard['section']> = {
 
 export default function MutualScreen() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const SECTION_STYLES = {
     mutual:      { fg: C.pinkDeep,    bg: C.pinkLight,   label: t('share.mutual.sectionLabels.mutual') },
     conditional: { fg: C.lavenderFg,  bg: C.lavender,    label: t('share.mutual.sectionLabels.conditional') },
@@ -84,11 +85,14 @@ export default function MutualScreen() {
           const cardIds = [...new Set(reactions.map(r => r.card_id))];
           const { data: cards } = await supabase
             .from('date_cards')
-            .select('id, title, summary, estimated_time, estimated_budget, tags')
+            .select('id, title, summary, estimated_time, estimated_budget, tags, content_i18n')
             .in('id', cardIds);
 
           const cardMap: Record<string, { title: string; summary: string; estimated_time: string; estimated_budget: string; tags: string[] }> = {};
-          (cards ?? []).forEach(c => { cardMap[c.id] = { title: c.title, summary: c.summary, estimated_time: c.estimated_time, estimated_budget: c.estimated_budget, tags: c.tags ?? [] }; });
+          (cards ?? []).forEach(raw => {
+            const c = localizeCardContent(raw, language);
+            cardMap[c.id] = { title: c.title, summary: c.summary, estimated_time: c.estimated_time, estimated_budget: c.estimated_budget, tags: c.tags ?? [] };
+          });
 
           const grouped: Record<string, typeof reactions> = {};
           reactions.forEach(r => {

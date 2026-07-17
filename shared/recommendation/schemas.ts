@@ -125,6 +125,12 @@ const recommendDateCardStepSchema = z.object({
   map_url: boundedText(1000).optional(),
 }).strict();
 
+const recommendDateCardTextsSchema = z.object({
+  title: boundedText(200),
+  summary: boundedText(1000),
+  why_recommended: boundedText(1000),
+}).strict();
+
 export const recommendDateCardSchema = z.object({
   requestId: boundedText(120),
   sessionId: boundedText(120),
@@ -134,6 +140,10 @@ export const recommendDateCardSchema = z.object({
   estimated_budget: z.string().max(120).optional(),
   tags: z.array(boundedText(120)),
   why_recommended: boundedText(1000),
+  i18n: z.object({
+    ko: recommendDateCardTextsSchema,
+    en: recommendDateCardTextsSchema,
+  }).strict().optional(),
   steps: z.array(recommendDateCardStepSchema).optional(),
   candidateId: boundedText(120).optional(),
   kakaoPlaceId: boundedText(120).optional(),

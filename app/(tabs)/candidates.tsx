@@ -13,6 +13,7 @@ import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
+import { localizeCardContent } from '../../lib/card-i18n';
 import { getCardStyle } from '../../lib/tagStyle';
 import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
@@ -36,7 +37,7 @@ type FilterTab = 'all' | 'both' | 'conditional' | 'nextTime' | 'bucket';
 
 export default function CandidatesScreen() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const CONDITION_LABEL: Record<ConditionTag, string> = {
     change_place: t('candidates.conditionLabels.change_place'),
     closer: t('candidates.conditionLabels.closer'),
@@ -73,7 +74,8 @@ export default function CandidatesScreen() {
       loadCards();
       loadProposals();
       if (activeFilter === 'bucket') loadBucketItems();
-    }, []),
+      // 탭 화면은 계속 마운트되어 있으므로 언어가 바뀌면 카드 텍스트를 다시 골라야 한다.
+    }, [language]),
   );
 
   // 상대가 보낸(card_id 가 연결된) 제안 중, 내가 아직 반응하지 않은 것만 추린다.
@@ -102,8 +104,8 @@ export default function CandidatesScreen() {
     if (!pendingIds.length) { setPendingProposals([]); return; }
 
     const { data: cardRows } = await supabase
-      .from('date_cards').select('id, title').in('id', pendingIds);
-    setPendingProposals((cardRows ?? []).map(c => ({ cardId: c.id, title: c.title })));
+      .from('date_cards').select('id, title, content_i18n').in('id', pendingIds);
+    setPendingProposals((cardRows ?? []).map(c => ({ cardId: c.id, title: localizeCardContent(c, language).title })));
   }
 
   async function loadCards() {
@@ -122,13 +124,14 @@ export default function CandidatesScreen() {
       if (!profile?.couple_id) { setCards([]); return; }
       setCoupleId(profile.couple_id);
 
-      const { data: cardRows } = await supabase
+      const { data: rawCardRows } = await supabase
         .from('date_cards')
-        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_at')
+        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_at, content_i18n')
         .eq('couple_id', profile.couple_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
+      const cardRows = rawCardRows?.map((card) => localizeCardContent(card, language));
       if (!cardRows?.length) { setCards([]); return; }
 
       const { data: rxRows } = await supabase
@@ -221,7 +224,7 @@ export default function CandidatesScreen() {
         freeText: bucketItem.item,
       };
       const prefs = await getUserPreferences();
-      const cards = await generateDateCards(input, 'next_meet', prefs, 'ko');
+      const cards = await generateDateCards(input, 'next_meet', prefs, language);
 
       for (const card of cards) {
         await supabase.from('date_cards').insert({

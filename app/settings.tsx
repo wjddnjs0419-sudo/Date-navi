@@ -15,7 +15,7 @@ import {
 } from 'lucide-react-native';
 import { C } from '../constants/colors';
 import { G } from '../constants/theme';
-import { ListGroup, ListRow, SectionLabel } from '../components/ui';
+import { BackBar, ListGroup, ListRow, SectionLabel } from '../components/ui';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 
@@ -254,6 +254,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <BackBar largeTouchTarget />
 
         {/* 프로필 헤더 */}
         <TouchableOpacity

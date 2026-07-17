@@ -13,6 +13,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { C } from '../../constants/colors';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { localizeCardContent } from '../../lib/card-i18n';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { PlaceRow, CourseStepList } from '../../components/ui';
@@ -95,7 +96,7 @@ export default function CardDetailScreen() {
             .maybeSingle();
 
           if (!cardData) return;
-          setCard({ ...cardData, ...readRecommendationIdentity(cardData) });
+          setCard({ ...localizeCardContent(cardData, language), ...readRecommendationIdentity(cardData) });
 
           const { data: memData } = await supabase
             .from('date_memories')

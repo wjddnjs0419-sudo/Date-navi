@@ -119,21 +119,38 @@ function walkingRelaxation(request: RecommendationRequest, route: StraightLineRo
   }];
 }
 
+// Card texts are always built in BOTH languages so a couple with mismatched app
+// languages each read the confirmed card in their own language. Top-level fields stay
+// in the requester's language for legacy readers that predate the i18n block.
+function buildCardTexts(request: RecommendationRequest) {
+  return {
+    ko: {
+      title: `${request.location.label} 데이트 코스`,
+      summary: '요청한 단계 순서에 맞춘 검증된 장소 코스예요.',
+      why_recommended: '모든 장소를 검색 후보에서 확인했어요.',
+    },
+    en: {
+      title: `${request.location.label} date course`,
+      summary: 'A verified-place course in the requested step order.',
+      why_recommended: 'Every place was verified against the search candidates.',
+    },
+  };
+}
+
 function buildCompatibilityCard(
   request: RecommendationRequest,
   selected: readonly PlaceCandidate[],
 ): RecommendDateCard {
+  const i18n = buildCardTexts(request);
+  const texts = i18n[request.language];
   return recommendDateCardSchema.parse({
     requestId: request.requestId,
     sessionId: request.sessionId ?? request.requestId,
-    title: request.language === 'ko' ? `${request.location.label} 데이트 코스` : `${request.location.label} date course`,
-    summary: request.language === 'ko'
-      ? '요청한 단계 순서에 맞춘 검증된 장소 코스예요.'
-      : 'A verified-place course in the requested step order.',
+    title: texts.title,
+    summary: texts.summary,
     tags: request.courseSteps.map((step) => step.label),
-    why_recommended: request.language === 'ko'
-      ? '모든 장소를 검색 후보에서 확인했어요.'
-      : 'Every place was verified against the search candidates.',
+    why_recommended: texts.why_recommended,
+    i18n,
     steps: selected.map((candidate, index) => ({
       label: request.courseSteps[index].label,
       candidateId: candidate.candidateId,

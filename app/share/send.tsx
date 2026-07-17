@@ -12,6 +12,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, Chip, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { localizeCardContent } from '../../lib/card-i18n';
 
 type CardInfo = { id: string; title: string; summary: string; tags: string[] };
 
@@ -33,10 +34,10 @@ export default function SendScreen() {
       try {
         const { data } = await supabase
           .from('date_cards')
-          .select('id, title, summary, tags')
+          .select('id, title, summary, tags, content_i18n')
           .eq('id', cardId)
           .maybeSingle();
-        if (data) setCard(data);
+        if (data) setCard(localizeCardContent(data, language));
       } finally {
         setLoading(false);
       }
