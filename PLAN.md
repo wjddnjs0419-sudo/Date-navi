@@ -587,3 +587,4 @@ course.tsx / feeling.tsx
 - [Done] AI 추천 재설계 실행 Phase 2 — candidate/Kakao/request/session ID end-to-end 보존, 구 카드 dual-read, 6개 AI 저장 경로 dual-write, nullable DB migration 적용 (2026-07-14)
 - [Done] AI 코스 생성 에러 3건 근본 원인 수정 — 준비된 요청 캐시 미스 오분류, `ai_recommendation_logs` action 체크 제약 누락, `get_recommendation_session`의 `extra_float_digits=0`로 인한 좌표 반올림/malformed 오탐 (2026-07-16)
 - [Done] 코스 입력 화면(`course.tsx`) UI 개선 — 단계추가 버튼 위치, 카테고리 아이콘화, 위치 아이콘 통일, AI 동의 체크박스 제거, 헤더 텍스트 축소, 예산/전체시간 드래그 슬라이더 전환(신규 `StepSlider` + `lib/slider-math.ts`, 예산 0~100,000원 1,000원 단위, 시간 0~24시간 1시간 단위). 실기기 테스트로 스크롤 충돌과 `useRef(PanResponder.create())` 렌더링별 재생성으로 인한 제스처 상태 리셋 버그를 순차 발견·수정 (2026-07-16)
+- [Done] 영어 로컬라이제이션 버그 수정 + 커플 이중언어 카드 + 마이페이지 뒤로가기 + 코스 결과 화면 UI 폴리시 — 상세 내역은 `RESULT.md` 세션 AS 참조 (2026-07-17)

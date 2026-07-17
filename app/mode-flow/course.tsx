@@ -357,6 +357,6 @@ const styles = StyleSheet.create({
   validation: { paddingVertical: SP.lg, gap: SP.xs },
   validationText: { fontSize: 12, lineHeight: 18, color: C.danger },
   conflictText: { fontWeight: '700' },
-  generateButton: { minHeight: 52 },
+  generateButton: { minHeight: 52, marginTop: SP.xxl },
   bottomSpacer: { height: SP.xxl },
 });

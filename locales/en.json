@@ -533,7 +533,7 @@
         "lively": "Lively",
         "romantic": "Romantic",
         "quiet": "Quiet",
-        "novel": "Novel"
+        "novel": "Different"
       }
     },
     "duration": {
@@ -1201,7 +1201,7 @@
       "sub": "Tap the conditions to review them, and tap a place to adjust it.",
       "conditions": "View applied conditions",
       "editError": "We couldn't save this course change. Please try again.",
-      "confirm": "Confirm course",
+      "confirm": "Confirm",
       "regenerate": "Regenerate",
       "confirmFirst": "Confirm this course before sharing it.",
       "replace": "Replace this step",

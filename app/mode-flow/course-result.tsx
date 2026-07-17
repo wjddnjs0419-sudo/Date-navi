@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Modal, Pressable,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Send, Bookmark, ChevronUp, ChevronDown, Check, X, Lock } from 'lucide-react-native';
+import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { getCourseCategoryIcon } from '../../lib/course-draft';
 import { BackBar, BigButton, Badge } from '../../components/ui';
@@ -376,8 +376,13 @@ export default function CourseResultScreen() {
           })}
         </View>
         {editError !== '' && !replacementTargetId && <Text style={s.editError}>{editError}</Text>}
-        {replacementTargetId && (
-          <View style={s.replacementPanel}>
+      </ScrollView>
+
+      <Modal visible={!!replacementTargetId} transparent animationType="slide" onRequestClose={closeReplacementPanel}>
+        <View style={s.replacementModalWrap}>
+          <Pressable style={s.replacementBackdrop} onPress={closeReplacementPanel} testID="course-replacement-backdrop" />
+          <View style={s.replacementSheet}>
+            <View style={s.replacementHandle} />
             <View style={s.replacementHeader}>
               <Text style={s.replacementTitle}>{t('modeFlow.courseResult.replacementTitle')}</Text>
               <TouchableOpacity accessibilityRole="button" onPress={closeReplacementPanel} style={s.replacementCloseButton}>
@@ -388,23 +393,27 @@ export default function CourseResultScreen() {
             <Text style={s.replacementNotice}>{t('modeFlow.courseResult.replacementNotice')}</Text>
             {replacementCandidates.length === 0 ? (
               <Text style={s.replacementEmpty}>{t('modeFlow.courseResult.replacementEmpty')}</Text>
-            ) : replacementCandidates.map((candidate, index) => (
-              <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
-                <View style={s.replacementCopy}>
-                  {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
-                  <Text style={s.replacementName}>{candidate.name}</Text>
-                  <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                  <View style={s.externalActions}>
-                    <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverSearchUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
-                    <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+            ) : (
+              <ScrollView style={s.replacementList} showsVerticalScrollIndicator={false}>
+                {replacementCandidates.map((candidate, index) => (
+                  <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
+                    <View style={s.replacementCopy}>
+                      {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
+                      <Text style={s.replacementName}>{candidate.name}</Text>
+                      <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
+                      <View style={s.externalActions}>
+                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverSearchUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
+                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+                      </View>
+                    </View>
+                    <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                   </View>
-                </View>
-                <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId)} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
-              </View>
-            ))}
+                ))}
+              </ScrollView>
+            )}
           </View>
-        )}
-      </ScrollView>
+        </View>
+      </Modal>
 
       {snapshot.status === 'confirmed' && (
         <View style={s.confirmedActions}>
@@ -430,7 +439,7 @@ export default function CourseResultScreen() {
             <Text style={s.regenerateText}>{t('modeFlow.courseResult.add')}</Text>
           </TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" testID="course-confirm" disabled={editing} onPress={() => void applyMutation('confirm', {})} style={s.confirmButton}>
-            {editing ? <ActivityIndicator size="small" color={C.white} /> : <><Check size={17} color={C.white} /><Text style={s.confirmText}>{t('modeFlow.courseResult.confirm')}</Text></>}
+            {editing ? <ActivityIndicator size="small" color={C.white} /> : <Text style={s.confirmText}>{t('modeFlow.courseResult.confirm')}</Text>}
           </TouchableOpacity>
         </View>
       )}
@@ -498,7 +507,20 @@ const s = StyleSheet.create({
   stepActions: { flexDirection: 'row', marginLeft: 'auto', gap: 4 },
   stepAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   editError: { color: C.pinkDeep, fontSize: 12, textAlign: 'center', marginBottom: 4 },
-  replacementPanel: { marginHorizontal: 20, marginBottom: 8, borderRadius: 14, backgroundColor: C.white, padding: 12, gap: 8, borderWidth: 1, borderColor: C.border },
+  replacementModalWrap: { flex: 1, justifyContent: 'flex-end' },
+  replacementBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 31, 36, 0.28)' },
+  replacementSheet: {
+    maxHeight: '75%',
+    backgroundColor: C.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+    gap: 8,
+  },
+  replacementHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, alignSelf: 'center', marginBottom: 6 },
+  replacementList: { flexGrow: 0 },
   replacementHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   replacementCloseButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   replacementTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
@@ -519,8 +541,8 @@ const s = StyleSheet.create({
   saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
   saveText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
   footerActions: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 14 },
-  regenerateButton: { minHeight: 52, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, justifyContent: 'center' },
-  regenerateText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
-  confirmButton: { minHeight: 52, flex: 1, paddingHorizontal: 16, borderRadius: 14, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  confirmText: { color: C.white, fontSize: 15, fontWeight: '800' },
+  regenerateButton: { minHeight: 52, flex: 1, paddingHorizontal: 8, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center' },
+  regenerateText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  confirmButton: { minHeight: 52, flex: 1, paddingHorizontal: 8, borderRadius: 14, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  confirmText: { color: C.white, fontSize: 15, fontWeight: '800', textAlign: 'center', flexShrink: 1 },
 });

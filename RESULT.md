@@ -4,6 +4,55 @@
 
 ---
 
+## 2026-07-17 세션 AS — 영어 로컬라이제이션 버그 + 커플 이중언어 카드 + UI 폴리시
+
+> 사용자가 보고한 3가지 UX 이슈(영어 모드 로컬라이제이션 안 됨, 일부 화면 뒤로가기 버튼 없음, 커플 언어 불일치 시 카드가 상대 언어로 안 보임)를 TDD로 수정하고 Supabase에 적용. 이어서 코스 결과 화면 UI 폴리시(하단 버튼 대칭, 교체 후보 모달화, 로케일 카피 정정) 진행.
+
+### 조사 결과 (Explore 3건 병렬)
+
+- 뒤로가기 버튼: 전 화면 중 `app/settings.tsx`(마이페이지)만 `BackBar` 없이 push되는 화면이었음. 나머지 미표시 화면(`generating.tsx`, `onboarding/connected.tsx`)은 의도적.
+- 장소 자동완성/검색은 전부 Kakao Local API이며 language 파라미터 자체가 없음 — 장소명·주소는 구조적으로 항상 한국어. AI가 생성하는 카드 텍스트(제목/요약/추천이유)만 언어 분기 가능.
+- 확정된 `date_cards`는 커플 둘 다 RLS로 읽을 수 있는 유일한 테이블인데, 텍스트가 생성 시점 요청자 언어 하나로만 저장되어 파트너가 다른 언어 모드면 그대로 안 맞는 언어로 보임.
+
+### 수정 (TDD, 6단계)
+
+| 대상 | 내용 |
+|---|---|
+| `app/settings.tsx` | `BackBar largeTouchTarget` 추가 |
+| `app/(tabs)/candidates.tsx` | 버킷 확정 카드 생성 시 `'ko'` 하드코딩 제거 → `useI18n().language` 사용 |
+| `shared/recommendation/schemas.ts` | `recommendDateCardSchema`에 optional `i18n: { ko, en }` 블록 추가(하위호환) |
+| `supabase/functions/_shared/recommendation-course-selection.ts` | `buildCardTexts()`로 카드 제목/요약/추천이유를 ko·en 동시 생성, top-level은 요청 언어 유지(레거시 리더 호환) |
+| `supabase/migrations/20260717010000_date_cards_content_i18n.sql` | `date_cards.content_i18n` jsonb 컬럼 추가 + `apply_recommendation_session_mutation`의 confirm 분기가 `v_card -> 'i18n'`을 함께 저장하도록 재정의 |
+| `lib/card-i18n.ts` (신규) | `localizeCardContent()` — `content_i18n`에서 뷰어 언어 텍스트를 오버레이, 컬럼 없거나 malformed면 원본 폴백 |
+| `app/(tabs)/candidates.tsx`, `app/card/[id].tsx`, `app/share/send.tsx`, `app/share/mutual.tsx` | `content_i18n` 조회 + `localizeCardContent` 적용 |
+
+### 배포
+
+- 마이그레이션(컬럼 추가 + RPC 재정의)을 linked Supabase(`wqjguifsmtblgrhdfnji`)에 순서대로 적용(컬럼 먼저 → RPC), 원격 SQL로 반영 확인.
+- `recommend-date`, `replacement-candidates` Edge Function 재배포 완료.
+- 배포 순서 주의점(리뷰에서 확인): 마이그레이션이 앱 빌드보다 먼저 적용되어야 함(새 빌드가 `content_i18n`을 select하므로) — 이번엔 순서 지켜 적용함.
+
+### UI 폴리시 (후속 요청, TDD)
+
+- 코스 결과 화면(`course-result.tsx`) 하단 3버튼(Regenerate/Add place/Confirm)이 영어 라벨 길이에 따라 비대칭·오버플로 나던 문제 — 전부 `flex: 1` 균등 분할 + 좌우 패딩 동일 + 라벨 중앙정렬로 수정.
+- "Replacement options"가 타임라인 아래 인라인 패널이던 것을 `StepActionSheet`와 동일한 패턴의 바텀시트 모달로 교체(어두운 백드롭 탭-투-클로즈, 기존 X 버튼 컴포넌트를 시트 우상단에 재사용, 최대 높이 75%).
+- Confirm 버튼 체크 아이콘 제거, 영어 라벨 "Confirm course" → "Confirm"(한국어 "코스 확정"은 유지).
+- 코스 만들기 화면(`course.tsx`)의 글자수 카운터와 "Build a course" 버튼이 붙어있던 간격 문제 — `generateButton`에 `marginTop: SP.xxl` 추가.
+- 로케일 카피 정정: `course.moods.options.novel`의 영어 라벨이 "Novel"(명사로 오독 소지) → "Unique"(의미 오역, 사용자 지적으로 되돌림) → 최종 **"Different"**(원 의미 "색다른" 유지 + 명사 오독 없음).
+
+### 검증
+
+- 전체 81→82 suites, 655 tests, `npm run validate`(tsc) 매 단계 통과.
+- 신규 테스트: `settings-back-button`, `candidates-language-propagation`, `recommendation-card-i18n`, `dateCardsContentI18nMigration`, `card-content-i18n`, `card-screens-localization`, `course-result-ui-polish`, `course-screen-generate-button-spacing`.
+- code-reviewer 서브에이전트 리뷰(마이그레이션 diff, i18n 전달 경로, strict 스키마 호환, RLS, 배포 순서) — 버그 없음, 배포 순서 주의만 확인 후 반영.
+
+### 남은 제약 / 다음 세션 참고
+
+- 장소명·주소는 Kakao Local API 한계로 계속 한국어 고정(승인된 범위). 영어 모드에서도 "서울숲 date course"처럼 장소명만 한글.
+- 기존에 이미 확정된 `date_cards`는 `content_i18n`이 없어 생성 당시 언어로만 남음 — 새로 확정하는 카드부터 양쪽 언어 저장.
+- Xcode 재빌드로 실기기 확인 필요(JS 변경만이라 Run만 다시 하면 됨. 아직 사용자 실기기 확인 전).
+
+
 ## 2026-07-16 세션 AR — "이 스텝 교체" 저장 실패 최종 해결 (독립 버그 2개: locked 에코 + candidateId 충돌)
 
 > 세션 AQ 수정 후에도 실기기에서 교체만 계속 "코스 변경을 저장하지 못했어요"로 실패. 추정 금지 — Postgres 로그 + attestation + DB 스텝 상태 교차 대조로 두 개의 독립 버그를 순차 확정. 사용자 실기기 검증으로 성공 확인 완료.
