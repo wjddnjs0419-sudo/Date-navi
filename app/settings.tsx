@@ -18,6 +18,7 @@ import { G } from '../constants/theme';
 import { BackBar, ListGroup, ListRow, SectionLabel } from '../components/ui';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
+import { useRevalidatingLoad } from '../lib/useRevalidatingLoad';
 
 type CoupleConnectionStatus = 'none' | 'waiting' | 'linked';
 
@@ -55,11 +56,12 @@ export default function SettingsScreen() {
   const [savingRelationshipDate, setSavingRelationshipDate] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [stats, setStats] = useState({ dates: 0, wantAgain: 0 });
-  const [loading, setLoading] = useState(true);
+  // 최초 진입에만 스피너, 이후 재진입(프로필 수정 후 복귀 등)은 기존 화면 유지한 채 조용히 갱신.
+  const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      beginLoad();
       (async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
@@ -127,10 +129,10 @@ export default function SettingsScreen() {
             });
           }
         } finally {
-          setLoading(false);
+          endLoad();
         }
       })();
-    }, []),
+    }, [beginLoad, endLoad]),
   );
 
   async function handleLogout() {

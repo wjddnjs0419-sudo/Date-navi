@@ -10,6 +10,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { Badge, Chip, SwipeableCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { resolveMemoryScope } from '../../lib/memories';
 
 type MemoryItem = {
@@ -48,10 +49,11 @@ export default function MemoriesScreen() {
   const { t } = useI18n();
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [relationshipDays, setRelationshipDays] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
+  const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
 
   const loadMemories = useCallback(async () => {
-    setLoading(true);
+    beginLoad();
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -116,9 +118,9 @@ export default function MemoriesScreen() {
         card_tags: (m.card_id && cardMap[m.card_id]?.tags) ?? [],
       })));
     } finally {
-      setLoading(false);
+      endLoad();
     }
-  }, [t]);
+  }, [t, beginLoad, endLoad]);
 
   useFocusEffect(useCallback(() => { loadMemories(); }, [loadMemories]));
 

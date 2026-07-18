@@ -13,6 +13,7 @@ import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
+import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { DATE_MODE_ROUTES, isDateModeEnabled } from '../../lib/dateModes';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { getCardStyle } from '../../lib/tagStyle';
@@ -58,7 +59,8 @@ export default function CandidatesScreen() {
     bucket: t('candidates.filterBucket'),
   };
   const [cards, setCards] = useState<CardWithReactions[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
+  const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
   const [bucketItems, setBucketItems] = useState<BucketItem[]>([]);
@@ -113,7 +115,7 @@ export default function CandidatesScreen() {
   }
 
   async function loadCards() {
-    setLoading(true);
+    beginLoad();
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -159,7 +161,7 @@ export default function CandidatesScreen() {
         };
       }));
     } finally {
-      setLoading(false);
+      endLoad();
     }
   }
 

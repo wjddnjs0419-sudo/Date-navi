@@ -15,6 +15,7 @@ import { C } from '../../constants/colors';
 import { G, R } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { pickLatestReaction, formatReactionText, filterActiveCards } from '../../lib/partnerReaction';
 import { relativeTime } from '../../lib/time';
 import { ENABLED_DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
@@ -62,7 +63,8 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partner, setPartner] = useState<Partner>(null);
   const [partnerReaction, setPartnerReaction] = useState<PartnerReaction>(null);
-  const [loading, setLoading] = useState(true);
+  // 최초 로드에만 전체 스피너를 띄우고, 이후 재포커스는 기존 화면을 유지한 채 조용히 갱신한다.
+  const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
   const [hasNotif, setHasNotif] = useState(false);
   const [activeMode, setActiveMode] = useState(0);
   const [topCandidate, setTopCandidate] = useState<TopCandidate>(null);
@@ -76,7 +78,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        setLoading(true);
+        beginLoad();
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
@@ -195,7 +197,7 @@ export default function HomeScreen() {
         } catch {
           Alert.alert(t('common.error'), t('home.loadError'));
         } finally {
-          setLoading(false);
+          endLoad();
         }
       })();
     }, []),
