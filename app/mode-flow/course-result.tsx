@@ -16,6 +16,7 @@ import { requestRecommendationResponse } from '../../lib/recommend-date';
 import { supabase } from '../../lib/supabase';
 import { buildKakaoMapUrl, buildNaverSearchUrl, type ReplacementCandidate } from '../../lib/replacement-candidates';
 import { buildStructuredCourseResultParams, parseStructuredCourseResultParams } from '../../lib/recommendation-route';
+import { omitOneShotRequestFields } from '../../lib/recommendation-request';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { StepActionSheet } from '../../components/recommendation/step-action-sheet';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
@@ -131,7 +132,7 @@ export default function CourseResultScreen() {
         targetStepId ? step.stepId !== targetStepId : step.locked
       )).map(toLockedStep);
       const request = {
-        ...snapshot.request,
+        ...omitOneShotRequestFields(snapshot.request),
         requestId: createRecommendationRequestId(),
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
@@ -178,7 +179,7 @@ export default function CourseResultScreen() {
     setEditError('');
     try {
       const request = {
-        ...snapshot.request,
+        ...omitOneShotRequestFields(snapshot.request),
         requestId: createRecommendationRequestId(),
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
@@ -208,7 +209,7 @@ export default function CourseResultScreen() {
     try {
       const requestId = createRecommendationRequestId();
       const request = {
-        ...snapshot.request,
+        ...omitOneShotRequestFields(snapshot.request),
         requestId,
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
@@ -217,7 +218,11 @@ export default function CourseResultScreen() {
           category: 'ai_decide',
           label: t('modeFlow.courseResult.additionalStep'),
         }],
-        lockedSteps: snapshot.steps.filter((step) => step.locked).map(toLockedStep),
+        // Pin EVERY current step (with its real locked flag) so the server keeps the
+        // existing course exactly as-is and only selects the new ai_decide step.
+        // Pinning only locked steps let the re-search drift unlocked steps, which the
+        // mutation RPC rejects as constraint_violation.
+        lockedSteps: snapshot.steps.map(toLockedStep),
       };
       const response = await requestRecommendationResponse(request);
       const added = response.course.steps.find((step) => !snapshot.steps.some((existing) => (

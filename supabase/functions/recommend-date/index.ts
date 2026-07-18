@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.106.1';
 
 import { handleRecommendDate } from '../_shared/recommend-date-handler.ts';
 import { invokeGenerateAiSelection } from '../_shared/recommend-date-downstream.ts';
+import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
 
 const corsHeaders = {
@@ -34,10 +35,27 @@ Deno.serve(async (request) => {
       const { data: { user }, error } = await userClient.auth.getUser();
       return error || !user ? null : { id: user.id };
     },
-    searchCandidates: (input) => searchAndRankRecommendation(input, {
-      kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
-      fetcher: fetch,
-    }),
+    searchCandidates: async (input) => {
+      const startedAt = Date.now();
+      const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
+      const serviceClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const result = await searchAndRankRecommendation(input, {
+        kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
+        fetcher: fetch,
+        cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
+        cacheMetrics,
+      });
+      console.error(JSON.stringify({
+        event: 'kakao_cache_lookup',
+        fn: 'recommend-date',
+        ...cacheMetrics,
+        searchTotalMs: Date.now() - startedAt,
+      }));
+      return result;
+    },
     generateSelection: (input) => invokeGenerateAiSelection({
       ...input,
       supabaseUrl: Deno.env.get('SUPABASE_URL')!,

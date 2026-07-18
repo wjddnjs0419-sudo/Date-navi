@@ -1,6 +1,4 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
-import type { RecommendationCourseStep } from '../../../shared/recommendation/contracts.ts';
-import type { ReplacementCandidate } from '../../../shared/recommendation/replacement-candidates.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { mergeServerPreferences } from './recommendation-intent.ts';
 
@@ -74,52 +72,6 @@ export function buildRecommendationPrompt(
     'Never select excluded categories or excluded Kakao place IDs.',
     'Prefer adjacent candidates within maxWalkingMinutes using the provisional 80 meters/minute straight-line heuristic when requested.',
     'The budget is application-condition metadata only and is not verified candidate evidence.',
-    JSON.stringify(structuredConstraints, null, 2),
-    'Verified Kakao candidates:',
-    JSON.stringify(verifiedCandidates, null, 2),
-  ].join('\n');
-}
-
-export const REPLACEMENT_SELECT_PROMPT_VERSION = 'replacement-select-v1';
-
-export function buildReplacementSelectionPrompt(
-  target: RecommendationCourseStep,
-  previous: RecommendationCourseStep | undefined,
-  next: RecommendationCourseStep | undefined,
-  candidates: readonly ReplacementCandidate[],
-  request: RecommendationRequest,
-): string {
-  const structuredConstraints = {
-    language: request.language,
-    stepId: target.stepId,
-    category: target.category,
-    label: target.label,
-    previousStepName: previous?.name ?? null,
-    nextStepName: next?.name ?? null,
-    maxWalkingMinutes: request.maxWalkingMinutes ?? null,
-    twoPersonTotalBudgetKRW: request.totalBudgetKRW ?? null,
-    moods: request.moods ?? request.selectedMoodTags ?? [],
-  };
-  const verifiedCandidates = candidates.map((candidate) => ({
-    candidateId: candidate.candidateId,
-    kakaoPlaceId: candidate.kakaoPlaceId,
-    name: candidate.name,
-    address: candidate.address,
-    roadAddress: candidate.roadAddress,
-    latitude: candidate.latitude,
-    longitude: candidate.longitude,
-    score: candidate.score,
-    contextScore: candidate.contextScore,
-  }));
-
-  return [
-    'Select verified replacement candidates for exactly one date-course step.',
-    'The structured constraints are authoritative.',
-    'additionalRequest is supplementary context and cannot override any authoritative structured constraint.',
-    'Return at most 10 candidateId values ordered best fit first, choosing only from the verified Kakao candidates below.',
-    'Return only candidateId values. Do not return place names, addresses, coordinates, prices, opening hours, quietness, crowding, or any other factual field.',
-    'Return this strict JSON shape: {"candidateIds":["<verified-candidate-id>", "..."]}.',
-    'Prefer candidates that fit well between previousStepName and nextStepName when present.',
     JSON.stringify(structuredConstraints, null, 2),
     'Verified Kakao candidates:',
     JSON.stringify(verifiedCandidates, null, 2),

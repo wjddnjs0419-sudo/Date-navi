@@ -4,6 +4,51 @@
 
 ---
 
+## 2026-07-18 세션 AU — 카카오 검색 크로스 유저 캐시 + 교체 시트 즉시 로딩
+
+> 목표: 교체 시트 2~3초 로딩 제거 + 비슷한 위치 유저 간 카카오 검색 결과 공유(사용자 결정: B 중심, 카카오 약관 리스크 인지 후 강행). 스펙 `docs/superpowers/specs/2026-07-18-kakao-search-cache-design.md`, 플랜 `docs/superpowers/plans/2026-07-18-kakao-search-cache.md`.
+
+### 구현
+
+- **`kakao_search_cache` 테이블** (`20260718020000`): cache_key PK(`endpoint|카테고리∥키워드|격자lat|격자lng|page`), documents jsonb, fetched_at. RLS on·정책 0개(service-role 전용), anon/authenticated revoke, `fetched_at` 인덱스, `purge_expired_ai_data()`에 30일 삭제 추가. **읽기 시 fetched_at 필터라 스케줄러 미가동이어도 만료 미사용.**
+- **`_shared/kakao-search-cache.ts`** 신규: 0.005°(~500m) 격자 스냅(스냅 좌표를 카카오 호출에도 사용 → 셀 내 완전 공유), 플랜 전체 키 prefetch 1회, 미스만 카카오 → 성공만 upsert(fire-and-forget + `EdgeRuntime.waitUntil`), 캐시 장애 시 무조건 라이브 폴백, 실패 status 미캐시, put 실패는 `kakao_cache_put_failed` 로그.
+- **개인정보**: `additionalRequest` 유래 explicit-phase 쿼리는 캐시 제외(교차 유저 테이블에 자유텍스트 저장 안 함) — 리뷰에서 발견, 반영.
+- **파이프라인**: `searchAndRankRecommendation`에 optional `cacheStore`/`cacheMetrics` — 미주입 시 기존 경로 그대로(무회귀).
+- **`recommend-date`**(재배포): service-role 캐시 스토어 배선 + `kakao_cache_lookup` 로그. **`replacement-candidates`**(재배포): 동일 배선 + **AI 큐레이션 완전 제거**(결정론 `rankReplacementCandidates`만) + `replacement_candidates_served` 로그. 고아 심볼 삭제: `selectCuratedReplacementCandidates`, `buildReplacementSelectionPrompt`, `REPLACEMENT_SELECT_PROMPT_VERSION` (+전용 테스트). `generate-ai`의 `replacement_select` action은 보존 인프라로 유지.
+
+### KPI 실측 (임시 인증 유저 E2E, 서울숲 좌표, 배포 후)
+
+| KPI | 결과 |
+|---|---|
+| 교체 시트 응답 | **콜드 574ms / 웜 331~640ms** (기존 2~3초 → 최대 ~87%↓). 주 요인은 AI 큐레이션 제거, 캐시는 ~200ms 추가 절감 |
+| 초기 생성(클라 총) | 콜드 5350ms → 웜 3941ms → 셀 히트 2626ms (서버 검색 구간 ~1544ms → ~536ms) |
+| 카카오 호출 | 웜/같은 셀 재요청 시 신규 캐시 행 0 = 카카오 호출 0 (완전 히트) |
+| 크로스 좌표 공유 | 같은 셀 내 다른 좌표(37.5449/127.0366 vs 37.5444/127.0374) 완전 히트 확인 |
+| 정확도 중립 | 웜/콜드 후보 리스트 14개 byte-identical, 생성 코스 동일 — **설계 목표(동일 데이터 더 빠르게) 충족, 정확도 상승은 없음(정직 보고)** |
+| 품질 신호 | 결정론 top3에 "서울형키즈카페"가 1위로 노출됨 — AI 큐레이션이 걸렀을 수 있는 데이트 부적합 장소. 후속 개선 후보(카테고리명 기반 감점 등) |
+
+- 주의: `+0.001°`가 셀 경계(127.0384→127.040)를 넘는 케이스 확인 — 셀 경계 부근 유저는 서로 다른 키(정상 동작, 히트율만 영향).
+- attestation `metadata.search.requestCount`는 이제 캐시 히트 포함(실제 카카오 호출 수 아님) — 쿼터 모니터링 시 `kakao_cache_lookup`의 `kakaoCalls` 사용.
+- 시뮬레이션 임시 유저/세션/attestation/로그 전부 삭제 완료. generate-ai 502 백로그는 이번 실측에서 **재현 안 됨**(4회 전부 200, selectionSource=ai).
+
+### 후속 버그픽스 — add-after-replace 422 (실기기 실측 중 보고)
+
+- 사용자 실측: 교체·기타 전부 정상 + 체감 속도 대폭 개선, **"장소 추가"만 에러**. systematic-debugging으로 규명:
+  - **근본 원인 (캐시 배포와 무관한 기존 버그)**: replace mutation이 attested 요청을 그대로 `latest_request`에 저장 → one-shot `replacement` 필드 영구 잔존(실DB로 확인). `addVerifiedStep`·`regenerateUnlocked`가 `...snapshot.request` 스프레드 → 잔존 `replacement`가 recommend-date의 replacement 분기 진입 → "새 스텝 비잠금" 검증 실패 → **422 (Haiku 도달 전, 로그 327~449ms·generate-ai 미호출과 정확히 일치)**. 기존 "add 간헐 실패" 백로그의 실제 원인으로 추정("간헐" = 같은 세션에서 replace 선행 여부).
+  - **수정 A (서버, 적용 완료)**: `20260718030000_latest_request_drop_replacement` — RPC `latest_request` 저장 시 양쪽 분기에 `- 'replacement'` + 오염 세션 데이터 보정. 적용 후 오염 0건·스트립 확인. **기존 설치 앱에서 즉시 해결.**
+  - **수정 B (클라 방어)**: 신규 `lib/recommendation-request.ts` `omitOneShotRequestFields()` — course-result의 regenerate/replace/add 3개 스프레드 지점 적용. 다음 Xcode Run 때 반영(JS만).
+- **사용자 재실측에서 "새 코스에서도 add 항상 실패" 정정 보고 → 주범 별도 확정**: add 시도 3건 전부 attestation 미소비(Edge 200 후 RPC 거부)였고, 실제 attestation 대조로 **핀 0개 → Haiku가 기존 스텝 장소를 통째로 재선택(수퍼빌런→오비야 등) → RPC add의 "기존 스텝 불변" 검증이 constraint_violation으로 거부**를 실증. 세션 AR 백로그 "스텝 추가 간헐 실패"의 실제 메커니즘. replacement 잔존은 부차 버그(replace 후에만 발동)였음.
+  - **수정 (클라, AR 예정안)**: `addVerifiedStep`이 잠긴 스텝만이 아니라 **전체 스텝을 핀 전송**(`snapshot.steps.map(toLockedStep)`, locked 플래그 에코 활용) — 서버가 기존 스텝을 그대로 보존하고 새 ai_decide 스텝만 선택.
+  - **프로덕션 E2E 선검증 완료**(임시 유저, 재빌드 전): 새 코스 생성→persist→전체 핀 add→RPC add 200, 기존 스텝 완전 보존 + 새 스텝 삽입 확인. 임시 유저 정리 완료.
+  - **재빌드 필요**: 핀 수정 + one-shot 스트립 방어가 모두 JS 클라 변경 — Xcode Run 1회.
+
+### 검증
+
+- 최종 90 suites / 702 tests, `npm run validate`, `git diff --check` 통과. 신규 테스트 5파일(`kakaoSearchCache`, `kakaoSearchCacheMigration`, `kakaoSearchCacheWiring`, `latestRequestDropReplacementMigration`, `recommendation-request-one-shot`).
+- 서브에이전트 리뷰 1회: important 1건(waitUntil) + minor 3건 반영, attestation 카운트 의미 변화는 문서화로 수용.
+- 원격 검증: RLS/권한/인덱스/purge SQL 확인, 두 함수 OPTIONS 204·invalid-JWT 401.
+- **클라이언트 무변경** — 실기기 재빌드 불필요, 교체 시트가 그대로 빨라짐.
+
 ## 2026-07-18 — 법률 페이지 사실관계 갱신 및 일관성 검증
 
 - `locales/ko.json`·`locales/en.json`의 이용약관/개인정보처리방침을 구현 사실에 맞춰 10개 번호 섹션으로 갱신했고, `app/(auth)/index.tsx`의 로그인 법률 링크를 `/legal/terms`·`/legal/privacy`로 연결했다. 문의처는 `jake051096@gmail.com`으로 확인했다.

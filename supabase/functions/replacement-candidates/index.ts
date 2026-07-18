@@ -1,11 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.106.1';
 import { z } from 'zod';
 import { recommendationRequestSchema } from '../../../shared/recommendation/schemas.ts';
-import { rankReplacementCandidates, selectCuratedReplacementCandidates } from '../../../shared/recommendation/replacement-candidates.ts';
+import { rankReplacementCandidates } from '../../../shared/recommendation/replacement-candidates.ts';
+import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
 import { candidateMatchesCategory } from '../_shared/recommendation-course-selection.ts';
-import { buildReplacementSelectionPrompt, REPLACEMENT_SELECT_PROMPT_VERSION } from '../_shared/recommendation-prompt.ts';
-import { invokeGenerateAiSelection } from '../_shared/recommend-date-downstream.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,37 +35,29 @@ Deno.serve(async (request) => {
   const target = rows?.find((row) => row.step_id === parsed.data.targetStepId);
   if (!baseRequest.success || !target || !rows || rows.length < 2) return new Response(JSON.stringify({ error: 'NOT_FOUND' }), { status: 404, headers: corsHeaders });
   const currentRequest = { ...baseRequest.data, courseSteps: [{ id: target.step_id, category: target.category, label: target.label }], excludedPlaceIds: [...new Set([...(baseRequest.data.excludedPlaceIds ?? []), ...rows.map((row) => row.current_kakao_place_id)])] };
+  const startedAt = Date.now();
+  const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
   try {
-    const search = await searchAndRankRecommendation(currentRequest, { kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '', fetcher: fetch });
+    const serviceClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const search = await searchAndRankRecommendation(currentRequest, {
+      kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
+      fetcher: fetch,
+      cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
+      cacheMetrics,
+    });
     const toStep = (row: typeof rows[number]) => ({ stepId: row.step_id, order: row.step_order, category: row.category, label: row.label, candidateId: row.current_candidate_id, kakaoPlaceId: row.current_kakao_place_id, name: row.place_name, address: row.address, roadAddress: row.road_address, mapUrl: row.map_url, latitude: row.latitude, longitude: row.longitude, reason: row.reason, locked: row.locked });
     const targetIndex = rows.indexOf(target);
     const previousStep = targetIndex > 0 ? toStep(rows[targetIndex - 1]) : undefined;
     const nextStep = targetIndex < rows.length - 1 ? toStep(rows[targetIndex + 1]) : undefined;
     const ranked = rankReplacementCandidates({ target: toStep(target), previous: previousStep, next: nextStep, existingKakaoPlaceIds: rows.map((row) => row.current_kakao_place_id), candidates: search.candidates.filter((candidate) => candidateMatchesCategory(candidate, target.category)), maxWalkingMinutes: currentRequest.maxWalkingMinutes });
 
-    let top = ranked.top;
-    let additional = ranked.additional;
-    if (ranked.pool.length > 0) {
-      try {
-        const selection = await invokeGenerateAiSelection({
-          supabaseUrl: Deno.env.get('SUPABASE_URL')!,
-          anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
-          authorization,
-          prompt: buildReplacementSelectionPrompt(toStep(target), previousStep, nextStep, ranked.pool, currentRequest),
-          promptVersion: REPLACEMENT_SELECT_PROMPT_VERSION,
-          action: 'replacement_select',
-        });
-        const curated = selectCuratedReplacementCandidates(ranked.pool, selection);
-        if (curated) {
-          top = curated.top;
-          additional = curated.additional;
-        }
-      } catch {
-        // AI curation failed/timed out/malformed — keep the deterministic ranking.
-      }
-    }
-
-    return new Response(JSON.stringify({ targetStepId: target.step_id, top, additional, limit: 15 }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error(JSON.stringify({
+      event: 'replacement_candidates_served',
+      totalMs: Date.now() - startedAt,
+      ...cacheMetrics,
+      poolSize: ranked.pool.length,
+    }));
+    return new Response(JSON.stringify({ targetStepId: target.step_id, top: ranked.top, additional: ranked.additional, limit: 15 }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch {
     return new Response(JSON.stringify({ error: 'PLACE_SEARCH_TIMEOUT' }), { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }

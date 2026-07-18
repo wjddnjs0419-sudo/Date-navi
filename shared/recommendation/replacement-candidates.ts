@@ -57,33 +57,6 @@ export function rankReplacementCandidates(input: {
   return { top: pool.slice(0, 3), additional: pool.slice(3, 15), pool };
 }
 
-const CURATED_SELECTION_MAX = 10;
-
-export function selectCuratedReplacementCandidates(
-  pool: readonly ReplacementCandidate[],
-  rawSelection: unknown,
-): { top: ReplacementCandidate[]; additional: ReplacementCandidate[] } | null {
-  if (!rawSelection || typeof rawSelection !== 'object') return null;
-  const candidateIds = (rawSelection as { candidateIds?: unknown }).candidateIds;
-  if (!Array.isArray(candidateIds)) return null;
-
-  const byId = new Map(pool.map((candidate) => [candidate.candidateId, candidate]));
-  const seen = new Set<string>();
-  const curated: ReplacementCandidate[] = [];
-  for (const rawId of candidateIds) {
-    if (curated.length === CURATED_SELECTION_MAX) break;
-    if (typeof rawId !== 'string') continue;
-    const id = rawId.trim();
-    if (!id || seen.has(id)) continue;
-    const candidate = byId.get(id);
-    if (!candidate) continue;
-    seen.add(id);
-    curated.push(candidate);
-  }
-  if (curated.length === 0) return null;
-  return { top: curated.slice(0, 3), additional: curated.slice(3) };
-}
-
 export const buildNaverSearchUrl = (placeName: string) => (
   `https://m.search.naver.com/search.naver?query=${encodeURIComponent(placeName)}`
 );

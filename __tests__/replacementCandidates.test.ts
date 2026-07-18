@@ -2,7 +2,6 @@ import {
   buildKakaoMapUrl,
   buildNaverSearchUrl,
   rankReplacementCandidates,
-  selectCuratedReplacementCandidates,
 } from '../lib/replacement-candidates';
 import type { RecommendationCourseStep } from '../shared/recommendation/contracts';
 import type { PlaceCandidate } from '../supabase/functions/_shared/recommendation-ranking';
@@ -74,54 +73,5 @@ describe('replacement candidate ranking and external verification links', () => 
     expect(result.pool).toHaveLength(30);
     expect(result.pool.slice(0, 3)).toEqual(result.top);
     expect(result.pool.slice(3, 15)).toEqual(result.additional);
-  });
-});
-
-describe('Haiku curation reconciliation over the deterministic pool', () => {
-  const pool = Array.from({ length: 5 }, (_, index) => ({
-    ...candidate(`c${index}`, 127.011 + index * 0.0001),
-    contextScore: 50 - index,
-  }));
-
-  it('reorders the pool to match a valid, verified candidateId selection and splits it into top 3 / additional', () => {
-    const result = selectCuratedReplacementCandidates(pool, {
-      candidateIds: ['c3', 'c1', 'c4', 'c0'],
-    });
-
-    expect(result).not.toBeNull();
-    expect(result!.top.map((c) => c.kakaoPlaceId)).toEqual(['place-c3', 'place-c1', 'place-c4']);
-    expect(result!.additional.map((c) => c.kakaoPlaceId)).toEqual(['place-c0']);
-  });
-
-  it('drops unverified candidateIds, duplicates, and non-string entries while keeping verified ones', () => {
-    const result = selectCuratedReplacementCandidates(pool, {
-      candidateIds: ['c1', 'c1', 'not-in-pool', 42, 'c2'],
-    });
-
-    expect(result!.top.map((c) => c.kakaoPlaceId)).toEqual(['place-c1', 'place-c2']);
-    expect(result!.additional).toEqual([]);
-  });
-
-  it('caps the curated selection at 10 candidates', () => {
-    const bigPool = Array.from({ length: 12 }, (_, index) => ({
-      ...candidate(`c${index}`, 127.011 + index * 0.0001),
-      contextScore: 50 - index,
-    }));
-    const result = selectCuratedReplacementCandidates(bigPool, {
-      candidateIds: bigPool.map((c) => c.candidateId),
-    });
-
-    expect(result!.top).toHaveLength(3);
-    expect(result!.additional).toHaveLength(7);
-  });
-
-  it('returns null for malformed AI output so the caller can fall back to deterministic ordering', () => {
-    expect(selectCuratedReplacementCandidates(pool, undefined)).toBeNull();
-    expect(selectCuratedReplacementCandidates(pool, {})).toBeNull();
-    expect(selectCuratedReplacementCandidates(pool, { candidateIds: 'not-an-array' })).toBeNull();
-  });
-
-  it('returns null when every candidateId is unverified, so no empty curated course is offered', () => {
-    expect(selectCuratedReplacementCandidates(pool, { candidateIds: ['ghost-1', 'ghost-2'] })).toBeNull();
   });
 });

@@ -22,7 +22,7 @@ describe('generate-ai replacement candidate curation action', () => {
     expect(schemaBlock).not.toMatch(/place_name|price|opening|quiet|latitude|longitude/);
   });
 
-  it('does not constrain the candidateIds array with minItems/maxItems (Anthropic structured-outputs beta rejects maxItems and minItems > 1) — the actual max-10 bound is enforced downstream by selectCuratedReplacementCandidates', () => {
+  it('does not constrain the candidateIds array with minItems/maxItems (Anthropic structured-outputs beta rejects maxItems and minItems > 1) — the action is preserved infrastructure; the replacement sheet now serves deterministic ranking only', () => {
     const schemaBlock = source.slice(
       source.indexOf('const REPLACEMENT_SELECT_SCHEMA'),
       source.indexOf('const ACTION_CONFIG'),

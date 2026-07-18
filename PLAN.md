@@ -285,6 +285,8 @@
 
 ## Pending Approval
 
+### [Done] 2026-07-18 — 카카오 검색 크로스 유저 캐시 + 교체 시트 AI 큐레이션 제거: `kakao_search_cache`(500m 격자, TTL 30일, service-role 전용) 신설, `recommend-date`·`replacement-candidates` read-through 배선, 교체 시트는 결정론 랭킹만. 교체 시트 2~3초 → 0.3~0.6초 실측. 마이그레이션·함수 2개 배포, KPI 시뮬레이션 완료(RESULT.md 참조). 유저 자유텍스트(explicit 쿼리)는 캐시 제외.
+
 ### [Done] 2026-07-18 — 이용약관·개인정보처리방침 사실관계 정정 및 페이지 업데이트: ko/en 10개 섹션 문서와 로그인 법률 링크를 반영했고, 구조 계약 테스트·전체 검증을 통과했다. 배포 전 법률 검토 및 미확정 대괄호 값 확정이 필요하다.
 
 ### AI 추천 경험 재설계 + App Store 준비 — 실행 Phase 1~13 완료, 버그 수정 세션 AM 완료, Phase 14 대기
