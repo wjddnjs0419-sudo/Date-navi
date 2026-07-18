@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
@@ -25,6 +26,7 @@ const SOCIAL_BUTTON_HEIGHT = Math.round(CONTENT_WIDTH / KAKAO_BUTTON_RATIO);
 const SOCIAL_BUTTON_RADIUS = Math.round(SOCIAL_BUTTON_HEIGHT * KAKAO_CORNER_RATIO);
 
 export default function AuthScreen() {
+  const router = useRouter();
   const { t, language } = useI18n();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -99,8 +101,8 @@ export default function AuthScreen() {
             </View>
           )}
           <Text style={s.legal}>
-            {t('auth.legalPrefix')}<Text style={s.legalLink}>{t('auth.terms')}</Text>
-            {t('auth.legalMiddle')}<Text style={s.legalLink}>{t('auth.privacy')}</Text>{t('auth.legalSuffix')}
+            {t('auth.legalPrefix')}<Text accessibilityRole="link" style={s.legalLink} onPress={() => router.push('/legal/terms' as any)}>{t('auth.terms')}</Text>
+            {t('auth.legalMiddle')}<Text accessibilityRole="link" style={s.legalLink} onPress={() => router.push('/legal/privacy' as any)}>{t('auth.privacy')}</Text>{t('auth.legalSuffix')}
           </Text>
         </View>
       </View>

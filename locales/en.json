@@ -1147,65 +1147,93 @@
   "legal": {
     "terms": {
       "title": "Terms of Service",
-      "updated": "Last updated: May 23, 2026",
+      "updated": "Last updated: [Effective date]",
       "sections": [
         {
-          "title": "1. Service overview",
-          "body": "Date Navi is an app that helps couples reduce the burden of planning dates and express their preferences more comfortably."
+          "title": "1. Service and agreement",
+          "body": "Date Navi (the “Service”) helps couples plan dates and manage preferences and memories together. By using the Service, you agree to these Terms."
         },
         {
-          "title": "2. Using the service",
-          "body": "- Anyone aged 14 or older can sign up.\n- One account per person.\n- The information you provide when signing up must be accurate."
+          "title": "2. Account and couple sharing",
+          "body": "You must create an account through social sign-in and keep your information accurate. The minimum age and any parental-consent requirement are [Minimum age/consent requirement] and must be finalized before release. Once you connect as a couple, the profile, preferences, date cards, reactions, and memories designated for sharing in the Service may be visible to your partner."
         },
         {
-          "title": "3. Prohibited behavior",
-          "body": "The following behavior is not allowed:\n\n- Using someone else’s information or signing up with false information\n- Using the service to harm others\n- Interfering with the normal operation of the service\n- Using the service for commercial purposes"
+          "title": "3. Permitted and prohibited use",
+          "body": "Use the Service only for personal, lawful purposes. You may not impersonate others, infringe rights, harass people, post unlawful or harmful content, bypass or disrupt security, or make unauthorized commercial use."
         },
         {
-          "title": "4. AI recommendation disclaimer",
-          "body": "The date suggestions and message recommendations provided by the service are AI-generated references.\nWe do not guarantee the accuracy or safety of the recommendations, and the final decision is up to the user."
+          "title": "4. User content",
+          "body": "You are responsible for the text, photos, preferences, and records you submit. You allow us to store, display, and transmit that content as needed to operate the Service and share it with your connected partner."
         },
         {
-          "title": "5. Service changes and suspension",
-          "body": "We may change or discontinue features after prior notice according to our operating policies."
+          "title": "5. AI and place-information limits",
+          "body": "AI-generated or AI-assisted recommendations are for reference and may be inaccurate, incomplete, or out of date. Place and business information may change; verify it yourself before visiting and make your own decisions."
         },
         {
-          "title": "6. Account deletion",
-          "body": "You may delete your account at any time.\nWhen the account is deleted, all data is removed immediately."
+          "title": "6. Third-party services",
+          "body": "The Service may use third-party services including Google, Kakao, Supabase, and Anthropic for sign-in, data storage, AI processing, and place search. Their own terms and policies may apply to those services. Selecting map or review actions opens Kakao Map and Naver external links, and those services’ terms and privacy policies apply."
         },
         {
-          "title": "7. Contact",
-          "body": "For questions about using the service, please contact us at:\n\nEmail: jake051096@gmail.com"
+          "title": "7. Availability and changes",
+          "body": "We may change, add, suspend, or discontinue features, including for maintenance. We will make reasonable efforts to notify you of material changes."
+        },
+        {
+          "title": "8. Account termination",
+          "body": "You may request account deletion through the in-app account-deletion feature. We may limit or end access as necessary for a Terms violation, security risk, or legal requirement."
+        },
+        {
+          "title": "9. Disclaimer, liability, and governing rules",
+          "body": "To the extent permitted by law, we do not guarantee uninterrupted availability, the accuracy of AI or place information, or fitness for a particular purpose. The scope of liability and [Governing law/venue] must be reviewed and set under applicable law and the finalized operator information."
+        },
+        {
+          "title": "10. Contact and reviewer note",
+          "body": "Service contact: jake051096@gmail.com\n\nReviewer note: Before release, confirm and replace [Effective date], [Legal entity/operator], [Business address], and [Governing law/venue]."
         }
       ]
     },
     "privacy": {
       "title": "Privacy Policy",
-      "updated": "Last updated: May 23, 2026",
+      "updated": "Last updated: [Effective date]",
       "sections": [
         {
-          "title": "1. Information we collect",
-          "body": "Date Navi collects the following data to provide the service:\n- Email address (sign up and login)\n- Nickname (display name inside the app)\n- Couple preference data (favorite vibes, avoid conditions, and more)\n- Date cards and reaction history\n- Service usage event logs"
+          "title": "1. Controller and contact",
+          "body": "Privacy controller: [Legal entity/operator], [Business address]\nPrivacy contact: jake051096@gmail.com"
         },
         {
-          "title": "2. How we use your information",
-          "body": "We only use the collected information for the following purposes:\n- Couple matching and date recommendation features\n- AI-powered personalized date suggestions\n- Service quality improvements and usage analytics"
+          "title": "2. Data we collect",
+          "body": "We may process your social sign-in account identifier and email; profile nickname and avatar URL; couple connection data; preferences and date-planning inputs; cards, reactions, comments, memories, and photos; selected place and location data; and service-use, error, and analytics logs."
         },
         {
-          "title": "3. Retention period",
-          "body": "When you delete your account, we remove your personal information immediately.\nIf local laws require us to retain some data, we keep it for the required period."
+          "title": "3. How we use data",
+          "body": "We use data to provide sign-in and account management, couple connection and sharing, personalized date recommendations and place search, memory storage, and security, error response, and service improvement."
         },
         {
-          "title": "4. Third-party sharing",
-          "body": "We do not share your personal information with third parties.\nHowever, we use the Anthropic Claude AI API to generate date suggestions.\nOnly the input conditions (such as energy and budget) are sent. Identifiers such as name or email are not sent."
+          "title": "4. Sharing and processing providers",
+          "body": "As needed to operate the Service, we may process data with Supabase (authentication, database, and storage), Anthropic (prompts used for AI recommendations), Kakao (place search), and Google and Kakao (social sign-in). We may deliver Expo push notifications only when notifications are enabled. We do not sell personal information. Selecting map or review actions opens Kakao Map and Naver external links, and those services’ terms and privacy policies apply."
         },
         {
-          "title": "5. Your rights",
-          "body": "You may request access, correction, or deletion of your personal information at any time.\nWe also provide an option to delete shared data when you disconnect the couple link."
+          "title": "5. Public uploads",
+          "body": "Profile photos are stored in the avatars bucket and memory photos in the memories bucket. Both use public read access and public URLs, so anyone with a URL can access a file without signing in. Do not upload sensitive photos or personal information."
         },
         {
-          "title": "6. Contact",
-          "body": "For privacy-related questions, please contact us at:\nEmail: jake051096@gmail.com"
+          "title": "6. Permissions",
+          "body": "Photo and media permission may be requested when you select or upload a photo, location permission may be requested when you use location-based recommendations, and optional notification permission may be requested when you choose to receive push notifications. You can deny or withdraw permissions in device settings, although related features may be limited."
+        },
+        {
+          "title": "7. Retention and deletion",
+          "body": "Account and content data are retained while needed to provide the Service. You may delete an individual memory or request account deletion. The current code does not demonstrate a time-based automatic purge schedule, so we do not promise automatic, immediate, or complete deletion; handling periods for public storage files and backups must be finalized before release."
+        },
+        {
+          "title": "8. Security",
+          "body": "We use reasonable safeguards including authentication, database access controls, and owner-based upload, update, and deletion policies. Files in public-read buckets are an exception because they can be accessed through public URLs."
+        },
+        {
+          "title": "9. Your rights and contact",
+          "body": "To the extent allowed by applicable law, you may request access, correction, deletion, restriction of processing, or object to processing of your data. Send requests to jake051096@gmail.com."
+        },
+        {
+          "title": "10. Reviewer note",
+          "body": "Before release, review and finalize [Effective date], [Legal entity/operator], [Business address], retention, backup, international-transfer details, and any disclosures required by applicable law."
         }
       ]
     }
