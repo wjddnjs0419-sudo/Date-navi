@@ -19,7 +19,9 @@
     "saving": "Saving...",
     "saved": "Saved!",
     "seeAll": "See all",
-    "delete": "Delete"
+    "delete": "Delete",
+    "edit": "Edit",
+    "moreActions": "More actions"
   },
   "tabs": {
     "home": "Home",
@@ -859,9 +861,7 @@
       "saveError": "Something went wrong updating it.",
       "editForbidden": "You can only edit memories you left.",
       "detailNotFound": "Couldn't find this memory.",
-      "reviewSectionLabel": "Review",
       "commentsSectionLabel": "Comments",
-      "noReviewText": "No content",
       "noCommentsText": "No comments yet.",
       "commentPlaceholder": "Leave a comment",
       "commentPosting": "Posting",
@@ -1125,7 +1125,8 @@
       "add": "Add place",
       "additionalStep": "Additional place",
       "send": "Send to partner",
-      "save": "Save"
+      "save": "Save",
+      "savedMessage": "Course saved!"
     },
     "bucketlist": {
       "empty": "Enter an idea first",

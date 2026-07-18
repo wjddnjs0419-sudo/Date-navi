@@ -9,7 +9,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { getCourseCategoryIcon } from '../../lib/course-draft';
-import { BackBar, BigButton, Badge } from '../../components/ui';
+import { BackBar, BigButton, Badge, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { requestRecommendationResponse } from '../../lib/recommend-date';
@@ -267,13 +267,19 @@ export default function CourseResultScreen() {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedModalVisible, setSavedModalVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   async function handleSave() {
+    if (!snapshot) return;
     setSaving(true);
+    setErrorMsg('');
     try {
-      await applyMutation('confirm', {});
+      // applyMutation은 에러를 삼키므로 저장 성공 여부를 직접 확인한다.
+      const next = await mutateRecommendationSession(snapshot.sessionId, 'confirm', {});
+      setSnapshot(next);
       setSaved(true);
+      setSavedModalVisible(true);
     } catch {
       setErrorMsg(t('modeFlow.courseResult.saveError'));
     } finally {
@@ -309,6 +315,11 @@ export default function CourseResultScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      <SuccessModal
+        visible={savedModalVisible}
+        message={t('modeFlow.courseResult.savedMessage')}
+        onHide={() => { setSavedModalVisible(false); router.replace('/(tabs)/' as any); }}
+      />
       <BackBar />
       <ScrollView contentContainerStyle={s.scrollContent}>
         <View style={s.headerArea}>
@@ -540,11 +551,11 @@ const s = StyleSheet.create({
   externalLink: { color: C.pinkDeep, fontSize: 11, fontWeight: '700', minHeight: 28, textAlignVertical: 'center' },
   pickButton: { minHeight: 44, borderRadius: 12, backgroundColor: C.pink, paddingHorizontal: 12, justifyContent: 'center' },
   pickButtonText: { color: C.white, fontSize: 12, fontWeight: '800' },
-  confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20, marginBottom: 14 },
-  sendBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingVertical: 12, backgroundColor: C.pink },
-  sendText: { fontSize: 13, fontWeight: '600', color: C.white },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
-  saveText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
+  confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 14 },
+  sendBtn: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 8, backgroundColor: C.pink },
+  sendText: { fontSize: 15, fontWeight: '800', color: C.white },
+  saveBtn: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 16, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
+  saveText: { fontSize: 15, fontWeight: '700', color: C.pinkDeep },
   footerActions: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 14 },
   regenerateButton: { minHeight: 52, flex: 1, paddingHorizontal: 8, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center' },
   regenerateText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700', textAlign: 'center' },

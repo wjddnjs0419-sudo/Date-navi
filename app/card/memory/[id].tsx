@@ -4,12 +4,12 @@ import {
   TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { Heart, RotateCcw } from 'lucide-react-native';
 import { C } from '../../../constants/colors';
 import { G } from '../../../constants/theme';
-import { BackBar, Badge } from '../../../components/ui';
+import { BackBar, Badge, MoreMenu } from '../../../components/ui';
 import { useI18n } from '../../../lib/i18n';
 
 type CardInfo = { title: string; summary: string };
@@ -60,6 +60,7 @@ function CommentRow({ userId, content, createdAt, wantAgain, profiles }: {
 
 export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [card, setCard] = useState<CardInfo | null>(null);
@@ -128,6 +129,21 @@ export default function MemoryDetailScreen() {
     }, [id]),
   );
 
+  function confirmDeleteMemory() {
+    Alert.alert(t('memories.deleteAlertTitle'), t('memories.deleteAlertMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'), style: 'destructive',
+        onPress: async () => {
+          const { data, error } = await supabase.from('date_memories').delete().eq('id', id).select('id');
+          if (error) { Alert.alert(t('common.error'), t('memories.deleteAlertError')); return; }
+          if (!data?.length) { Alert.alert(t('common.notice'), t('memories.deleteAlertForbidden')); return; }
+          router.back();
+        },
+      },
+    ]);
+  }
+
   async function handleAddComment() {
     const content = newComment.trim();
     if (!content || !myUserId || !coupleId || posting) return;
@@ -171,7 +187,14 @@ export default function MemoryDetailScreen() {
     <SafeAreaView style={G.screen}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <BackBar />
+          <View style={s.topRow}>
+            <BackBar />
+            <MoreMenu
+              testID="memory-more-menu"
+              onEdit={() => router.push({ pathname: '/card/memory/edit/[id]', params: { id } } as any)}
+              onDelete={confirmDeleteMemory}
+            />
+          </View>
 
           {memory.photo_url ? (
             <View style={[s.bannerWrap, { aspectRatio: photoAspect }]}>
@@ -197,17 +220,18 @@ export default function MemoryDetailScreen() {
           <Text style={s.title}>{card?.title ?? memory.title ?? t('memories.untitled')}</Text>
           {!!card?.summary && <Text style={s.summary}>{card.summary}</Text>}
 
-          <Text style={s.sectionLabel}>{t('card.memory.reviewSectionLabel')}</Text>
-          <CommentRow
-            userId={memory.user_id}
-            content={memory.review?.trim() || t('card.memory.noReviewText')}
-            createdAt={memory.created_at}
-            wantAgain={memory.want_again}
-            profiles={profiles}
-          />
-
+          {/* 한줄평은 별도 섹션 없이 댓글 목록 맨 위에 일반 댓글처럼 노출한다. */}
           <Text style={s.sectionLabel}>{t('card.memory.commentsSectionLabel')}</Text>
-          {comments.length === 0 ? (
+          {!!memory.review?.trim() && (
+            <CommentRow
+              userId={memory.user_id}
+              content={memory.review.trim()}
+              createdAt={memory.created_at}
+              wantAgain={memory.want_again}
+              profiles={profiles}
+            />
+          )}
+          {comments.length === 0 && !memory.review?.trim() ? (
             <Text style={s.empty}>{t('card.memory.noCommentsText')}</Text>
           ) : (
             comments.map(c => (
@@ -251,6 +275,7 @@ const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
   bottomSpacer: { height: 24 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
   banner: {
     width: '100%', aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 16, overflow: 'hidden',

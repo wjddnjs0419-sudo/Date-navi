@@ -17,7 +17,7 @@ import { localizeCardContent } from '../../lib/card-i18n';
 import { isDateModeEnabled } from '../../lib/dateModes';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
-import { PlaceRow, CourseStepList } from '../../components/ui';
+import { PlaceRow, CourseStepList, MoreMenu } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity, writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
@@ -204,6 +204,20 @@ export default function CardDetailScreen() {
     }
   }
 
+  function confirmDelete() {
+    Alert.alert(t('candidates.deleteAlertTitle'), t('candidates.deleteAlertMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'), style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.from('date_cards').delete().eq('id', id);
+          if (error) { Alert.alert(alertTitle, t('candidates.deleteAlertError')); return; }
+          router.back();
+        },
+      },
+    ]);
+  }
+
   const partnerInfo = partnerReaction
     ? REACTIONS.find(r => r.type === partnerReaction)
     : null;
@@ -218,7 +232,11 @@ export default function CardDetailScreen() {
           <Text style={styles.backText}>{s.common.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{s.card.title}</Text>
-        <View style={styles.headerSpacer} />
+        <MoreMenu
+          testID="card-more-menu"
+          onEdit={() => router.push(`/card/edit/${id}` as any)}
+          onDelete={confirmDelete}
+        />
       </View>
 
       {loading ? (
@@ -408,7 +426,6 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 24, color: '#333' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: C.ink },
-  headerSpacer: { width: 32 },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   missingText: { color: '#999' },

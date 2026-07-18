@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, Easing, Modal,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C } from '../constants/theme';
@@ -763,6 +763,75 @@ const fieldS = StyleSheet.create({
   },
   label: { fontSize: 11, color: C.textLight, marginBottom: 4 },
   content: {},
+});
+
+// ─── MoreMenu ─────────────────────────────────────────────────────────────────
+// 상세 화면 우상단 ⋮ 트리거. 누르면 아이콘 바로 아래 드롭다운 팝오버로 수정/삭제를 띄운다.
+// 트리거 위치를 measureInWindow로 재서 화면 어디에 놓여도 메뉴가 아이콘 밑에 붙는다.
+export function MoreMenu({ onEdit, onDelete, testID }: {
+  onEdit: () => void; onDelete: () => void; testID?: string;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [menuTop, setMenuTop] = useState(0);
+  const triggerRef = useRef<View>(null);
+
+  function openMenu() {
+    triggerRef.current?.measureInWindow((_x, y, _w, h) => {
+      setMenuTop(y + h + 4);
+      setOpen(true);
+    });
+  }
+
+  function pick(action: () => void) {
+    setOpen(false);
+    action();
+  }
+
+  return (
+    <>
+      <TouchableOpacity
+        ref={triggerRef as any}
+        accessibilityRole="button"
+        accessibilityLabel={t('common.moreActions')}
+        onPress={openMenu}
+        testID={testID}
+        style={moreS.trigger}
+      >
+        <MoreVertical size={20} color={C.textSub} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={moreS.backdrop} onPress={() => setOpen(false)}>
+          {/* 메뉴 상자 안(버튼 아닌 영역) 탭이 배경 Pressable로 새서 닫히지 않게 터치를 삼킨다. */}
+          <Pressable style={[moreS.menu, { top: menuTop }]} onPress={() => {}}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onEdit)} style={moreS.item}>
+              <Pencil size={15} color={C.text} strokeWidth={2} />
+              <Text style={moreS.itemText}>{t('common.edit')}</Text>
+            </TouchableOpacity>
+            <View style={moreS.divider} />
+            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onDelete)} style={moreS.item}>
+              <Trash2 size={15} color={C.danger} strokeWidth={2} />
+              <Text style={[moreS.itemText, moreS.itemTextDanger]}>{t('common.delete')}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+const moreS = StyleSheet.create({
+  trigger: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  backdrop: { flex: 1 },
+  menu: {
+    position: 'absolute', right: 16, width: 150,
+    backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
+    elevation: 6, overflow: 'hidden',
+  },
+  item: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 },
+  itemText: { fontSize: 13, fontWeight: '700', color: C.text },
+  itemTextDanger: { color: C.danger },
+  divider: { height: 1, backgroundColor: C.border },
 });
 
 // ─── SuccessModal ─────────────────────────────────────────────────────────────

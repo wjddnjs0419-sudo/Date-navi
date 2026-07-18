@@ -172,8 +172,9 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
-  input: { fontSize: 14, color: C.text, lineHeight: 22 },
-  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. paddingVertical: 0으로 기본 패딩도 제거.
+  input: { fontSize: 14, color: C.text, paddingVertical: 0 },
+  inputMultiline: { minHeight: 72, textAlignVertical: 'top', lineHeight: 22 },
   bottomSpacer: { height: 120 },
   footer: {
     position: 'absolute',
