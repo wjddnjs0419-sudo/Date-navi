@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Image,
-  Dimensions, NativeSyntheticEvent, NativeScrollEvent,
+  Dimensions, NativeSyntheticEvent, NativeScrollEvent, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -12,7 +12,7 @@ import {
   CalendarHeart, Clock, MapPin,
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { G, R } from '../../constants/theme';
 import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { pickLatestReaction, formatReactionText, filterActiveCards } from '../../lib/partnerReaction';
@@ -192,6 +192,8 @@ export default function HomeScreen() {
               .limit(2);
             setUpcoming(planRows ?? []);
           }
+        } catch {
+          Alert.alert(t('common.error'), t('home.loadError'));
         } finally {
           setLoading(false);
         }
@@ -245,6 +247,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={s.bellBtn}
                 onPress={() => router.push('/account/notifications' as any)}
+                accessibilityLabel={t('home.accessibility.notifications')}
               >
                 <Bell size={18} color={C.textSub} />
                 {hasNotif && <View style={s.notifDot} />}
@@ -252,6 +255,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={s.avatarBtn}
                 onPress={() => router.push('/settings' as any)}
+                accessibilityLabel={t('home.accessibility.settings')}
               >
                 {profile?.profile_photo_url ? (
                   <Image source={{ uri: profile.profile_photo_url }} style={s.avatarImage} />
@@ -338,8 +342,8 @@ export default function HomeScreen() {
                 <Text style={s.modeItemLabel}>{m.title}</Text>
                 <Text style={s.modeItemDesc}>{m.desc}</Text>
                 <View style={s.modeCardFooter}>
-                  <Text style={[s.modeCardCta, { color: m.fg }]}>{t('home.startCta')}</Text>
-                  <ChevronRight size={16} color={m.fg} />
+                  <Text style={[s.modeCardCta, { color: C.pinkDeep }]}>{t('home.startCta')}</Text>
+                  <ChevronRight size={16} color={C.pinkDeep} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -507,7 +511,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: C.pinkLight,
-    borderRadius: 16,
+    borderRadius: R.card,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: 12,
@@ -517,10 +521,15 @@ const s = StyleSheet.create({
   connectText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
   modeCard: {
     backgroundColor: C.white,
-    borderRadius: 20,
+    borderRadius: R.card,
     padding: 20,
     borderWidth: 1,
     borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 7,
+    elevation: 3,
   },
   modeCardSized: { width: CARD_W },
   modeScrollContent: { paddingRight: 20 },
@@ -531,7 +540,7 @@ const s = StyleSheet.create({
   modeIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   modeItemLabel: { fontSize: 17, fontWeight: '700', color: C.text, marginTop: 16 },
   modeItemDesc: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: 6 },
-  modeCardFooter: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 16 },
+  modeCardFooter: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 16 },
   modeCardCta: { fontSize: 13, fontWeight: '700' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 14 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
@@ -547,7 +556,7 @@ const s = StyleSheet.create({
   planRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
   planMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
-  planMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  planMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   planMetaText: { fontSize: 12, color: C.textSub },
   partnerAvatar: {
     width: 40, height: 40, borderRadius: 20,
@@ -555,7 +564,7 @@ const s = StyleSheet.create({
   },
   partnerAvatarText: { fontSize: 13, fontWeight: '700', color: C.lavenderFg },
   partnerText: { fontSize: 13, color: C.text },
-  partnerTime: { fontSize: 11, color: C.textLight, marginTop: 2 },
+  partnerTime: { fontSize: 12, color: C.textLight, marginTop: 2 },
   partnerSection: { marginTop: 20 },
   partnerCard: { marginTop: 10 },
   partnerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

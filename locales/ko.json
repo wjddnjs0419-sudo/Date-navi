@@ -150,7 +150,12 @@
     "partnerReactionsTitle": "상대가 남긴 반응",
     "partnerReactionPrefix": "{{name}}가 ",
     "partnerReactionSuffix": "를 남겼어요",
-    "createCta": "데이트 후보 만들기"
+    "createCta": "데이트 후보 만들기",
+    "loadError": "정보를 불러오지 못했어요. 다시 시도해주세요.",
+    "accessibility": {
+      "notifications": "알림",
+      "settings": "설정"
+    }
   },
   "nickname": {
     "title": "어떻게 불러드릴까요?",

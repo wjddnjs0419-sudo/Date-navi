@@ -150,7 +150,12 @@
     "partnerReactionsTitle": "Your partner's reaction",
     "partnerReactionPrefix": "{{name}} left ",
     "partnerReactionSuffix": "",
-    "createCta": "Create date options"
+    "createCta": "Create date options",
+    "loadError": "Couldn't load your info. Please try again.",
+    "accessibility": {
+      "notifications": "Notifications",
+      "settings": "Settings"
+    }
   },
   "nickname": {
     "title": "What should we call you?",
