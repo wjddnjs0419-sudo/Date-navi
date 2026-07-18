@@ -57,8 +57,8 @@ export function rankReplacementCandidates(input: {
   return { top: pool.slice(0, 3), additional: pool.slice(3, 15), pool };
 }
 
-export const buildNaverSearchUrl = (placeName: string) => (
-  `https://m.search.naver.com/search.naver?query=${encodeURIComponent(placeName)}`
+export const buildNaverMapUrl = (placeName: string) => (
+  `https://map.naver.com/p/search/${encodeURIComponent(placeName)}`
 );
 
 export const buildKakaoMapUrl = (place: Pick<ReplacementCandidateSource, 'kakaoPlaceId' | 'mapUrl'>) => (

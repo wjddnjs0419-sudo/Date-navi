@@ -20,7 +20,7 @@ describe('Phase 10 replacement/detail wiring', () => {
   });
 
   it('offers external Naver/Kakao verification actions without scraping or persisting third-party review content', () => {
-    expect(screen).toContain('buildNaverSearchUrl');
+    expect(screen).toContain('buildNaverMapUrl');
     expect(screen).toContain('buildKakaoMapUrl');
     expect(screen).toContain('WebBrowser.openBrowserAsync');
     expect(screen).toContain('naverReviews');

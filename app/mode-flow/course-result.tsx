@@ -14,7 +14,7 @@ import { useI18n } from '../../lib/i18n';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { requestRecommendationResponse } from '../../lib/recommend-date';
 import { supabase } from '../../lib/supabase';
-import { buildKakaoMapUrl, buildNaverSearchUrl, type ReplacementCandidate } from '../../lib/replacement-candidates';
+import { buildKakaoMapUrl, buildNaverMapUrl, type ReplacementCandidate } from '../../lib/replacement-candidates';
 import { buildStructuredCourseResultParams, parseStructuredCourseResultParams } from '../../lib/recommendation-route';
 import { omitOneShotRequestFields } from '../../lib/recommendation-request';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
@@ -407,7 +407,7 @@ export default function CourseResultScreen() {
                       <Text style={s.replacementName}>{candidate.name}</Text>
                       <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
                       <View style={s.externalActions}>
-                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverSearchUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
+                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverMapUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
                         <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
                       </View>
                     </View>

@@ -1,6 +1,6 @@
 export {
   buildKakaoMapUrl,
-  buildNaverSearchUrl,
+  buildNaverMapUrl,
   rankReplacementCandidates,
   type ReplacementCandidate,
   type ReplacementCandidateSource,
