@@ -9,7 +9,7 @@ import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
-import { DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
+import { ENABLED_DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
 
 const MODE_ICONS: Record<DateModeId, typeof MessageCircle> = {
   feeling: MessageCircle,
@@ -20,7 +20,7 @@ const MODE_ICONS: Record<DateModeId, typeof MessageCircle> = {
 export default function ModeScreen() {
   const router = useRouter();
   const { t } = useI18n();
-  const MODES = DATE_MODE_IDS.map((id) => ({
+  const MODES = ENABLED_DATE_MODE_IDS.map((id) => ({
     id,
     title: t(`mode.tabModes.${id}.title`),
     desc: t(`mode.tabModes.${id}.desc`),

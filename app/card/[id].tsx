@@ -14,6 +14,7 @@ import { C } from '../../constants/colors';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
+import { isDateModeEnabled } from '../../lib/dateModes';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { PlaceRow, CourseStepList } from '../../components/ui';
@@ -331,7 +332,8 @@ export default function CardDetailScreen() {
                   );
                 })}
               </View>
-              {myConditionTag && (
+              {/* 재생성은 카드 모드가 활성일 때만 — 숨긴 모드의 레거시 생성 경로 차단 */}
+              {myConditionTag && isDateModeEnabled(card.mode ?? 'feeling') && (
                 <TouchableOpacity
                   style={[styles.altBtn, generatingAlt && styles.altBtnBusy]}
                   onPress={() => handleGenerateAlt(myConditionTag)}

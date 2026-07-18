@@ -407,7 +407,7 @@
 - 세션 AP: 사용자가 실기기에서 UI 4건(카드 높이/가로 UI/스크롤 불가/버튼 텍스트 줄바꿈)과 "잠금 외 재추천"·"이 단계 교체" 저장 실패를 재현·보고 → 세로 리스트+전체 스크롤 래핑+버튼 텍스트 축약으로 UI 수정, `candidateId`가 검색 호출 1회 한정 임시 ID라 잠금 스텝이 재검색마다 검증 실패하던 근본 버그를 `recommendation-course-selection.ts`에서 lock 자체 장소 사실 기반 해석으로 수정. `recommend-date` v6 재배포 완료(71 suites/611 tests, validate, diff-check 통과).
 - 세션 AQ: 잠금·재추천·교체가 모두 "저장 실패"로 뜨던 잔여 버그를 Postgres/attestation 로그로 정확히 규명. (1) 잠금·재추천은 `latest_request_drop_locked_steps` 마이그레이션이 살아있던 창에서 RPC가 `current_course.locked=true`인데 `lockedSteps`를 지운 페이로드를 반환 → 클라이언트 lock-flag 교차검증(`schemas.ts:354`)이 예외 → 이미 `restore_full_locked_steps`로 해소됨(라이브 RPC 재현으로 확인). (2) 교체는 클라이언트가 `requestRecommendationResponse` 반환값을 버리고 replacement-candidates 검색의 임시 `candidateId`를 mutate에 넘겨 RPC 조회 실패 → `course-result.tsx`에서 `add` 패턴처럼 응답의 `candidateId`를 꺼내 쓰도록 수정(클라이언트 전용, Edge/RPC 무변경). 620 tests/validate 통과.
 - 세션 AR (2026-07-16): 교체 잔여 실패의 독립 버그 2개를 순차 확정·수정, **실기기 성공 확인 완료**. (1) Edge가 핀(lockedSteps) 멤버십을 응답 `locked`로 마킹 → 비잠금 스텝에서 RPC 검증 거부 — 핀의 `locked` 필드 에코로 변경(`recommend-date` v9 + 공용 검증기, 재빌드 완료). (2) RPC replace 분기가 임시 `candidateId`로 "변경 여부"를 비교해 검색 재번호 충돌(`candidate_001` vs `candidate_001`) 시 거부 — `20260716050000_replace_compare_stable_place_id`로 `kakaoPlaceId` 비교로 교체·적용. 실패했던 실제 mutation을 트랜잭션 롤백 재현으로 수정 전/후 인과 확정. 74 suites/626 tests, validate 통과.
-- **다음 세션 우선 작업**: 스텝 추가 간헐 실패 수정(`addVerifiedStep`이 잠긴 스텝만 핀 → 비잠금 스텝 재검색 드리프트 시 add 거부. locked 에코 수정으로 전체 스텝 핀 전송 가능해짐 — 클라이언트 소규모 수정). `generate-ai` 매 호출 502 원인 조사(Anthropic API 키/모델 추정, 결정론 폴백으로 사용자 비노출).
+- **다음 세션 우선 작업**: 세션 AT(2026-07-18) 변경분 실기기 확인 — 홈 카드 이미지 높이(RN aspectRatio 버그 수정본), 모드 탭 직행/뒤로가기, 후보 탭 필터·FAB, 탭바 4개. 이후 스텝 추가 간헐 실패 수정(`addVerifiedStep`이 잠긴 스텝만 핀 → 비잠금 스텝 재검색 드리프트 시 add 거부. locked 에코 수정으로 전체 스텝 핀 전송 가능해짐 — 클라이언트 소규모 수정). `generate-ai` 매 호출 502 원인 조사(Anthropic API 키/모델 추정, 결정론 폴백으로 사용자 비노출).
 - **다음다음 세션 백로그**: 방문 확인 트리거(피드백 재도입) 설계 — `record_recommendation_place_feedback` RPC/DB는 유지됨. 장소 실사진 연동(현재는 카테고리 아이콘까지만, Kakao 로컬 API가 사진 URL 미제공 확인됨).
 
 #### 목표와 권장 범위
@@ -577,10 +577,6 @@ course.tsx / feeling.tsx
 
 ## 완료된 항목
 
-- [Done] 온보딩 뒤로가기 버그 수정(각 단계 이동을 replace→push) + 닉네임 화면 뒤로가기 시 auth로 이동 + 커플연결(필수 단계) 화면에 로그아웃 탈출구 추가 — 커플 연결 전엔 계정 갇힘 문제 해결 (2026-07-07)
-- [Done] 온보딩 라우팅 게이트 버그 수정 — `couple_id` 존재만으로 통과시키던 걸 실제 `status==='linked' && partner_user_id` 확인(`isCoupleRowLinked`)으로 변경. 초대 코드만 만들고 파트너 없이도 온보딩 통과되던 문제 해결 (2026-07-07)
-- [Done] "DateMate" → "Date Navi" 리브랜딩 — app.json name/scheme(`datenavi`), locales 전체(앱 이름/약관/개인정보처리방침 포함), 저장 키(`datenavi.language` 등), package.json name, 이메일 placeholder 정리, EAS Display name도 "Date Navi"로 변경. `slug`(`datemate-app`)는 대시보드에서 변경 불가(프로젝트 재생성 필요)라 그대로 유지하기로 결정 — 내부 식별자일 뿐 사용자 노출 없음. 새 네이티브 빌드 필요 (2026-07-07)
-- [Done] 커플연결(필수 단계) 화면 뒤로가기 시 GO_BACK 콘솔 에러 대신 안내 모달 표시 — 기존 `PickerSheet` 재사용, "연결 전엔 못 나감 + 로그아웃" 안내 (2026-07-07)
 - [Done] 추천 검색 원문 우선화 + 단일 anchor 코스 반복 방지 — raw/cleaned query 우선, keyword-first place-search 배포, primary query 랭킹 가중치, 동일 anchor steps 반복 trim (2026-07-09)
 - [Done] 코스 steps ordered anchors + 동선 최적화 — 복합 입력 anchor 순서 추출, Haversine route compactness 후보 정렬, origin meta 반환, place-search 재배포 (2026-07-09)
 - [Done] AI 추천 재설계 실행 Phase 1 — shared Zod 계약·typed error·ko/en 직렬화/검증 테스트 추가, 기존 런타임 미연결 유지 (2026-07-14)
@@ -588,3 +584,4 @@ course.tsx / feeling.tsx
 - [Done] AI 코스 생성 에러 3건 근본 원인 수정 — 준비된 요청 캐시 미스 오분류, `ai_recommendation_logs` action 체크 제약 누락, `get_recommendation_session`의 `extra_float_digits=0`로 인한 좌표 반올림/malformed 오탐 (2026-07-16)
 - [Done] 코스 입력 화면(`course.tsx`) UI 개선 — 단계추가 버튼 위치, 카테고리 아이콘화, 위치 아이콘 통일, AI 동의 체크박스 제거, 헤더 텍스트 축소, 예산/전체시간 드래그 슬라이더 전환(신규 `StepSlider` + `lib/slider-math.ts`, 예산 0~100,000원 1,000원 단위, 시간 0~24시간 1시간 단위). 실기기 테스트로 스크롤 충돌과 `useRef(PanResponder.create())` 렌더링별 재생성으로 인한 제스처 상태 리셋 버그를 순차 발견·수정 (2026-07-16)
 - [Done] 영어 로컬라이제이션 버그 수정 + 커플 이중언어 카드 + 마이페이지 뒤로가기 + 코스 결과 화면 UI 폴리시 — 상세 내역은 `RESULT.md` 세션 AS 참조 (2026-07-17)
+- [Done] MVP 단일 모드 전환("코스로 정리해줘"만 노출, feeling/next_meet UI 숨김+복원 가능) + 마음 전하기 코드 삭제 + 홈 코스 카드 커플 이미지·정렬 개선(RN aspectRatio 무시 버그 회피) — 상세 내역은 `RESULT.md` 세션 AT 참조 (2026-07-18)

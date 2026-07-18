@@ -25,7 +25,6 @@
     "home": "Home",
     "mode": "Date Mode",
     "candidates": "Candidates",
-    "softMessage": "Soft Message",
     "memories": "Memories"
   },
   "settings": {
@@ -668,6 +667,7 @@
     "partner": "Partner",
     "noReaction": "No reaction",
     "fabAddFeeling": "Share a mood",
+    "fabAddCourse": "Create a course",
     "bucketEmptyTitle": "Your bucket list is empty",
     "bucketEmptySub": "Freely save things you'd like to do\nnext time you meet.",
     "bucketAddIdea": "Add an idea",
@@ -696,108 +696,6 @@
       "closer": "🚶 If it's closer",
       "indoor": "🏠 If it's indoors"
     }
-  },
-  "softMessage": {
-    "title": "Say it gently 💬",
-    "subtitle": "Choose what feels hard to say.\nDate Navi will make it softer.",
-    "stepTitle": "How are you feeling? (choose more than one)",
-    "stepSubtitle": "Anything else you want to add? (optional)",
-    "reasons": [
-      {
-        "key": "tired",
-        "label": "I am tired",
-        "emoji": "😴"
-      },
-      {
-        "key": "budget",
-        "label": "Budget feels tight",
-        "emoji": "💸"
-      },
-      {
-        "key": "far",
-        "label": "I do not want to travel far",
-        "emoji": "🏠"
-      },
-      {
-        "key": "sorry",
-        "label": "I feel bad saying no",
-        "emoji": "🥺"
-      },
-      {
-        "key": "near",
-        "label": "A nearby place is better",
-        "emoji": "📍"
-      },
-      {
-        "key": "crowded",
-        "label": "Crowded places are not my thing",
-        "emoji": "😬"
-      },
-      {
-        "key": "time",
-        "label": "I am short on time",
-        "emoji": "⏰"
-      },
-      {
-        "key": "weather",
-        "label": "The weather is not great",
-        "emoji": "🌧️"
-      }
-    ],
-    "additionalLabel": "Anything else you want to say? (optional)",
-    "additionalPlaceholder": "For example: I really want to go together next week",
-    "createButton": "Make a message ✨",
-    "resultTitle": "Say it gently 💬",
-    "resultSubtitle": "Here is a softer version.\nEdit it, then copy it when it feels right.",
-    "messageLabel": "My message",
-    "autoSendNotice": "✋ Date Navi never sends this automatically. You stay in control.",
-    "copyButton": "📋 Copy to clipboard",
-    "copiedButton": "✅ Copied!",
-    "saveButton": "Save",
-    "resetButton": "Make again",
-    "errorNeedReason": "Please choose at least one feeling to express.",
-    "errorCoupleRequired": "You need to connect with your partner first.",
-    "errorSave": "Something went wrong while saving.",
-    "composeHeading": "Is there something\nhard to say?",
-    "composeSubtitle": "Write it comfortably and the app will turn it into a gentle message.",
-    "freeTextPlaceholder": "Write what you want to say, comfortably",
-    "situationLabel": "Is this your situation? (optional)",
-    "toneSectionLabel": "Choose a tone",
-    "tones": {
-      "warm": "Warm",
-      "light": "Light",
-      "honest": "Honest"
-    },
-    "quickCards": {
-      "tired": "I'm a bit tired today",
-      "budget": "I want to save a bit of money",
-      "far": "Going far is hard",
-      "crowded": "Crowded places feel like a lot",
-      "changeDate": "I like the idea, but want to change the date",
-      "placeOkMoodGood": "The place isn't great, but the mood is",
-      "stillWantTogether": "I still want to be together"
-    },
-    "generateCta": "Write it for me",
-    "generatingSteps": [
-      "Checking your feelings",
-      "Picking warm phrasing",
-      "Polishing the message"
-    ],
-    "generatingHeading": "Crafting a warm\nmessage for you",
-    "resultHeading2": "How about saying it like this?",
-    "adjustWarmer": "A bit warmer",
-    "adjustShorter": "Make it shorter",
-    "adjustEdit": "Edit it myself",
-    "sendingNote": "This isn't sent automatically — review it, then send.",
-    "copyCta": "Copy message",
-    "copiedCta": "Copied ✓",
-    "sendCta": "Send",
-    "needCoupleAlert": "Please connect with your partner first.",
-    "genErrorAlert": "Something went wrong generating the message. Please try again.",
-    "sentAlertTitle": "Sent",
-    "sentAlertMessage": "Your partner can check it in their notifications.",
-    "sentSuccessMessage": "Your message is on its way",
-    "sendErrorAlert": "Something went wrong sending it."
   },
   "memories": {
     "title": "Memories",

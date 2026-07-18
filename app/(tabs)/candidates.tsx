@@ -13,6 +13,7 @@ import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
+import { DATE_MODE_ROUTES, isDateModeEnabled } from '../../lib/dateModes';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { getCardStyle } from '../../lib/tagStyle';
 import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
@@ -67,7 +68,10 @@ export default function CandidatesScreen() {
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [pendingProposals, setPendingProposals] = useState<{ cardId: string; title: string }[]>([]);
 
-  const FILTERS: FilterTab[] = ['all', 'both', 'conditional', 'nextTime', 'bucket'];
+  // bucket 필터는 next_meet 모드 진입점이므로 모드 활성 여부에 연동해 숨긴다.
+  const FILTERS: FilterTab[] = isDateModeEnabled('next_meet')
+    ? ['all', 'both', 'conditional', 'nextTime', 'bucket']
+    : ['all', 'both', 'conditional', 'nextTime'];
 
   useFocusEffect(
     useCallback(() => {
@@ -437,14 +441,11 @@ export default function CandidatesScreen() {
         {activeFilter !== 'bucket' && (
           <TouchableOpacity
             style={s.fab}
-            onPress={() => router.push({
-              pathname: '/mode-flow/feeling',
-              params: { mode: 'feeling' },
-            } as any)}
+            onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}
             activeOpacity={0.85}
           >
             <Plus size={16} color={C.white} />
-            <Text style={s.fabText}>{t('candidates.fabAddFeeling')}</Text>
+            <Text style={s.fabText}>{t('candidates.fabAddCourse')}</Text>
           </TouchableOpacity>
         )}
       </View>

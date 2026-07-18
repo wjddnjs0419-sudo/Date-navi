@@ -17,7 +17,7 @@ import { SoftCard, Chip } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { pickLatestReaction, formatReactionText, filterActiveCards } from '../../lib/partnerReaction';
 import { relativeTime } from '../../lib/time';
-import { DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
+import { ENABLED_DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type Partner = { display_name: string } | null;
@@ -38,7 +38,7 @@ const MODE_CARD_STYLE: Record<DateModeId, { Icon: typeof MessageCircle; bg: stri
 
 function useModes() {
   const { t } = useI18n();
-  return DATE_MODE_IDS.map((id) => ({
+  return ENABLED_DATE_MODE_IDS.map((id) => ({
     id,
     title: t(`mode.tabModes.${id}.title`),
     desc: t(`mode.tabModes.${id}.desc`),
@@ -50,6 +50,10 @@ const SCREEN_W = Dimensions.get('window').width;
 const CARD_GAP = 12;
 const CARD_W = SCREEN_W - 64; // 살짝 다음 카드가 보이도록
 const SNAP = CARD_W + CARD_GAP;
+// 단일 모드 카드 이미지: RN이 width:'100%'+aspectRatio 조합을 무시하고 원본 고유 크기로
+// 렌더하는 문제가 있어, 카드 폭(SCREEN_W-40) 기준 명시적 숫자 높이로 계산한다.
+const SINGLE_MODE_IMAGE_RATIO = 2.3;
+const SINGLE_MODE_IMAGE_HEIGHT = Math.round((SCREEN_W - 40) / SINGLE_MODE_IMAGE_RATIO);
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -276,51 +280,81 @@ export default function HomeScreen() {
         {/* 오늘 필요한 도움 — 가로 스와이프 카드 */}
         <View style={s.sectionRow}>
           <Text style={s.sectionTitle}>{t('home.todayHelp')}</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/mode')}>
-            <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
-          </TouchableOpacity>
+          {MODES.length > 1 && (
+            <TouchableOpacity onPress={() => router.push('/(tabs)/mode')}>
+              <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          decelerationRate="fast"
-          snapToInterval={SNAP}
-          snapToAlignment="start"
-          onScroll={onModeScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={s.modeScrollContent}
-        >
-          {MODES.map((m, i) => (
+        {MODES.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToInterval={SNAP}
+            snapToAlignment="start"
+            onScroll={onModeScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={s.modeScrollContent}
+          >
+            {MODES.map((m, i) => (
+              <TouchableOpacity
+                key={m.id}
+                activeOpacity={0.9}
+                onPress={() => router.push(DATE_MODE_ROUTES[m.id] as any)}
+                style={[
+                  s.modeCard,
+                  s.modeCardSized,
+                  { marginRight: i === MODES.length - 1 ? 0 : CARD_GAP },
+                ]}
+              >
+                <View style={[s.modeIcon, { backgroundColor: m.bg }]}>
+                  <m.Icon size={26} strokeWidth={1.8} color={m.fg} />
+                </View>
+                <Text style={s.modeItemLabel}>{m.title}</Text>
+                <Text style={s.modeItemDesc}>{m.desc}</Text>
+                <View style={s.modeCardFooter}>
+                  <Text style={[s.modeCardCta, { color: m.fg }]}>{t('home.startCta')}</Text>
+                  <ChevronRight size={16} color={m.fg} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          // 단일 모드: 가로 스크롤 없이 좌우 여백 동일한 전폭 카드 + 상단 커플 이미지(위쪽만 둥근).
+          MODES.map((m) => (
             <TouchableOpacity
               key={m.id}
               activeOpacity={0.9}
               onPress={() => router.push(DATE_MODE_ROUTES[m.id] as any)}
-              style={[
-                s.modeCard,
-                s.modeCardSized,
-                { marginRight: i === MODES.length - 1 ? 0 : CARD_GAP },
-              ]}
+              style={[s.modeCard, s.singleModeCard]}
             >
-              <View style={[s.modeIcon, { backgroundColor: m.bg }]}>
-                <m.Icon size={26} strokeWidth={1.8} color={m.fg} />
-              </View>
-              <Text style={s.modeItemLabel}>{m.title}</Text>
-              <Text style={s.modeItemDesc}>{m.desc}</Text>
-              <View style={s.modeCardFooter}>
-                <Text style={[s.modeCardCta, { color: m.fg }]}>{t('home.startCta')}</Text>
-                <ChevronRight size={16} color={m.fg} />
+              <Image
+                source={require('../../assets/images/couple-card.jpg')}
+                style={s.singleModeImage}
+                resizeMode="cover"
+              />
+              <View style={s.singleModeBody}>
+                <Text style={s.modeItemLabel}>{m.title}</Text>
+                <Text style={s.modeItemDesc}>{m.desc}</Text>
+                <View style={s.modeCardFooter}>
+                  <Text style={[s.modeCardCta, { color: m.fg }]}>{t('home.startCta')}</Text>
+                  <ChevronRight size={16} color={m.fg} />
+                </View>
               </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={s.dots}>
-          {MODES.map((m, i) => (
-            <View
-              key={m.id}
-              style={[s.dot, i === activeMode && s.dotActive]}
-            />
-          ))}
-        </View>
+          ))
+        )}
+        {MODES.length > 1 && (
+          <View style={s.dots}>
+            {MODES.map((m, i) => (
+              <View
+                key={m.id}
+                style={[s.dot, i === activeMode && s.dotActive]}
+              />
+            ))}
+          </View>
+        )}
 
         {/* 다가오는 데이트 — 확정된 데이트 있을 때만 */}
         {upcoming.length > 0 && (
@@ -425,10 +459,7 @@ export default function HomeScreen() {
         {/* AI 추천 빠른 시작 */}
         <TouchableOpacity
           style={s.startBtnWrap}
-          onPress={() => router.push({
-            pathname: '/mode-flow/feeling',
-            params: { mode: 'feeling' },
-          } as any)}
+          onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}
           activeOpacity={0.85}
         >
           <View style={s.startBtn}>
@@ -493,6 +524,10 @@ const s = StyleSheet.create({
   },
   modeCardSized: { width: CARD_W },
   modeScrollContent: { paddingRight: 20 },
+  // 이미지가 카드 위쪽 radius를 그대로 따르도록 카드에서 클리핑하고, 텍스트만 내부 패딩을 준다.
+  singleModeCard: { width: '100%', padding: 0, overflow: 'hidden' },
+  singleModeImage: { width: '100%', height: SINGLE_MODE_IMAGE_HEIGHT },
+  singleModeBody: { padding: 20 },
   modeIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   modeItemLabel: { fontSize: 17, fontWeight: '700', color: C.text, marginTop: 16 },
   modeItemDesc: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: 6 },

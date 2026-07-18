@@ -25,7 +25,6 @@
     "home": "홈",
     "mode": "데이트 모드",
     "candidates": "우리 후보",
-    "softMessage": "마음 전하기",
     "memories": "추억"
   },
   "settings": {
@@ -668,6 +667,7 @@
     "partner": "상대",
     "noReaction": "반응 없음",
     "fabAddFeeling": "느낌 남기기",
+    "fabAddCourse": "코스 만들기",
     "bucketEmptyTitle": "버킷리스트가 비어있어요",
     "bucketEmptySub": "다음에 만나면 하고 싶은 것들을\n자유롭게 저장해보세요.",
     "bucketAddIdea": "아이디어 추가하기",
@@ -696,108 +696,6 @@
       "closer": "🚶 가까우면",
       "indoor": "🏠 실내면"
     }
-  },
-  "softMessage": {
-    "title": "마음 전하기 💬",
-    "subtitle": "말하기 어려운 마음을 골라주세요.\n앱이 부드럽게 바꿔드릴게요.",
-    "stepTitle": "지금 어떤 마음인가요? (복수 선택 가능)",
-    "stepSubtitle": "추가로 전하고 싶은 말이 있나요? (선택)",
-    "reasons": [
-      {
-        "key": "tired",
-        "label": "피곤해요",
-        "emoji": "😴"
-      },
-      {
-        "key": "budget",
-        "label": "예산이 부담돼요",
-        "emoji": "💸"
-      },
-      {
-        "key": "far",
-        "label": "멀리 가기 싫어요",
-        "emoji": "🏠"
-      },
-      {
-        "key": "sorry",
-        "label": "거절하기 미안해요",
-        "emoji": "🥺"
-      },
-      {
-        "key": "near",
-        "label": "가까운 곳이 좋아요",
-        "emoji": "📍"
-      },
-      {
-        "key": "crowded",
-        "label": "사람 많은 곳은 싫어요",
-        "emoji": "😬"
-      },
-      {
-        "key": "time",
-        "label": "시간이 촉박해요",
-        "emoji": "⏰"
-      },
-      {
-        "key": "weather",
-        "label": "날씨가 맞지 않아요",
-        "emoji": "🌧️"
-      }
-    ],
-    "additionalLabel": "추가로 전하고 싶은 말이 있나요? (선택)",
-    "additionalPlaceholder": "예: 다음 주엔 꼭 같이 가고 싶어",
-    "createButton": "문장 만들기 ✨",
-    "resultTitle": "마음 전하기 💬",
-    "resultSubtitle": "AI가 만들어준 문장이에요.\n직접 수정하고 복사해서 보내보세요.",
-    "messageLabel": "내 마음 문장",
-    "autoSendNotice": "✋ 앱이 자동으로 보내지 않아요. 직접 확인하고 전송해주세요.",
-    "copyButton": "📋 클립보드에 복사",
-    "copiedButton": "✅ 복사됐어요!",
-    "saveButton": "저장하기",
-    "resetButton": "다시 만들기",
-    "errorNeedReason": "전달하고 싶은 마음을 하나 이상 선택해주세요.",
-    "errorCoupleRequired": "커플 연결이 필요해요.",
-    "errorSave": "저장 중 문제가 발생했어요.",
-    "composeHeading": "말하기 어려운\n마음이 있나요?",
-    "composeSubtitle": "편하게 적어주시면 앱이 부드러운 문장으로 바꿔드릴게요.",
-    "freeTextPlaceholder": "하고 싶은 말을 편하게 적어주세요",
-    "situationLabel": "이런 상황인가요? (선택)",
-    "toneSectionLabel": "톤 선택",
-    "tones": {
-      "warm": "다정하게",
-      "light": "가볍게",
-      "honest": "솔직하게"
-    },
-    "quickCards": {
-      "tired": "오늘은 조금 피곤해",
-      "budget": "돈을 조금 아끼고 싶어",
-      "far": "멀리 가긴 어려워",
-      "crowded": "사람 많은 곳은 부담돼",
-      "changeDate": "아이디어는 좋은데 날짜를 바꾸고 싶어",
-      "placeOkMoodGood": "장소는 별로지만 분위기는 좋아",
-      "stillWantTogether": "그래도 같이 있고 싶어"
-    },
-    "generateCta": "문장 만들어줘",
-    "generatingSteps": [
-      "마음 확인하는 중",
-      "다정한 표현 고르는 중",
-      "문장 다듬는 중"
-    ],
-    "generatingHeading": "다정한 문장을\n만드는 중이에요",
-    "resultHeading2": "이렇게 말해볼까요?",
-    "adjustWarmer": "조금 더 다정하게",
-    "adjustShorter": "짧게 줄이기",
-    "adjustEdit": "직접 수정하기",
-    "sendingNote": "문장은 바로 전송되지 않아요. 확인하고 보낼 수 있어요.",
-    "copyCta": "문장 복사하기",
-    "copiedCta": "복사됨 ✓",
-    "sendCta": "보내기",
-    "needCoupleAlert": "연인과 연결 후 사용해주세요.",
-    "genErrorAlert": "AI 문장 생성에 실패했어요. 다시 시도해주세요.",
-    "sentAlertTitle": "보냈어요",
-    "sentAlertMessage": "상대방 알림함에서 확인할 수 있어요.",
-    "sentSuccessMessage": "마음을 전했어요",
-    "sendErrorAlert": "보내는 중 오류가 발생했어요."
   },
   "memories": {
     "title": "추억",

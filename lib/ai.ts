@@ -1,7 +1,6 @@
 import { supabase } from './supabase';
 import type { AppLanguage } from './i18n';
-import { buildPrompt, buildAdjustSoftMessagePrompt, buildSoftMessagePrompt, PROMPT_VERSION, type SoftMessageInput } from './prompt';
-export type { SoftMessageInput };
+import { buildPrompt, PROMPT_VERSION } from './prompt';
 import type { CourseStep } from './course';
 export type { CourseStep };
 import { distanceToRadius, formatPlacesBlock, detectPlaceFocus, buildRetrievalPlan, type KakaoPlace, type PlaceFocus, type RetrievalPlan } from './place';
@@ -187,13 +186,8 @@ export const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
 };
 
 
-const SOFT_MESSAGE_FALLBACKS: Record<AppLanguage, string> = {
-  ko: '오늘은 조금 쉬고 싶어. 가까운 데서 편하게 보내는 건 어때? 그래도 같이 있고 싶어 😊',
-  en: 'I would like to rest a bit today. How about something comfortable nearby? I still want to be with you 😊',
-};
-
 // ─── 초대 한마디 (긍정·설레는 톤) ───────────────────────────────────────────────
-// send 화면 전용. generateSoftMessage(거절 완곡용)와 톤이 정반대이므로 별도 함수로 둔다.
+// send 화면 전용.
 export type InviteCard = { title: string; summary?: string; tags?: string[] };
 
 function buildInviteMessagePrompt(card: InviteCard, language: AppLanguage): string {
@@ -249,34 +243,6 @@ export async function generateInviteMessage(card: InviteCard, language: AppLangu
     return msg;
   } catch {
     return INVITE_FALLBACKS[language];
-  }
-}
-
-export async function generateSoftMessage(input: SoftMessageInput, language: AppLanguage = 'ko'): Promise<string> {
-  try {
-    const prompt = buildSoftMessagePrompt(input, language);
-    const { data } = await invokeAI('soft_message', prompt);
-    const msg = (data as { message?: string })?.message;
-    if (!msg) throw new Error('No message in response');
-    return msg;
-  } catch {
-    return SOFT_MESSAGE_FALLBACKS[language];
-  }
-}
-
-export async function adjustSoftMessage(
-  currentText: string,
-  instruction: 'warmer' | 'shorter',
-  language: AppLanguage = 'ko',
-): Promise<string> {
-  try {
-    const prompt = buildAdjustSoftMessagePrompt(currentText, instruction, language);
-    const { data } = await invokeAI('soft_message', prompt);
-    const msg = (data as { message?: string })?.message;
-    if (!msg) throw new Error('No message in response');
-    return msg;
-  } catch {
-    return currentText;
   }
 }
 
