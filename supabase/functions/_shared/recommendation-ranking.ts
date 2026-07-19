@@ -8,6 +8,7 @@ import {
   normalizeRecommendationCategory,
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
+import { parseStepIntents } from './step-intent.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
@@ -16,6 +17,10 @@ export const RANKING_SCORE_WEIGHTS = {
   routeFitMax: 10,
   diversityRecall: 5,
   exclusionPenalty: -100,
+  stepIntentExact: 35,
+  stepIntentNameMatch: 20,
+  stepIntentExpansion1: 12,
+  stepIntentExpansion2: 6,
 } as const;
 
 export type CandidateScoreBreakdown = {
@@ -92,14 +97,37 @@ export function rankPlaceCandidates(
     return Math.max(0, RANKING_SCORE_WEIGHTS.routeFitMax - Math.floor(nearestMeters / 500));
   };
 
+  const { stepIntents } = parseStepIntents(request);
+  const intentBoostFor = (place: EvidencedKakaoPlace): number => {
+    let boost = 0;
+    for (const intent of stepIntents) {
+      const levels = place.matchedSearchEvidence
+        .filter((evidence) => evidence.phase === 'step_intent' && evidence.canonicalTerm === intent.canonicalTerm)
+        .map((evidence) => evidence.expansionLevel ?? 0);
+      if (levels.length > 0) {
+        const bestLevel = Math.min(...levels);
+        boost += bestLevel === 0
+          ? RANKING_SCORE_WEIGHTS.stepIntentExact
+          : bestLevel === 1
+            ? RANKING_SCORE_WEIGHTS.stepIntentExpansion1
+            : RANKING_SCORE_WEIGHTS.stepIntentExpansion2;
+      }
+      if (place.name.normalize('NFKC').toLocaleLowerCase().includes(intent.canonicalTerm.toLocaleLowerCase())) {
+        boost += RANKING_SCORE_WEIGHTS.stepIntentNameMatch;
+      }
+    }
+    return boost;
+  };
+
   const scored = eligiblePlaces.map((place) => {
     const distanceFromSearchCenterMeters = haversineDistanceMeters(request.location, place);
     const requiredMatch = requiredCategories.some((category) => verifiedPlaceMatchesCategory(place, category));
     const explicitKeywordMatch = place.matchedSearchEvidence.some(isExplicitKeywordEvidence);
     const scoreBreakdown: CandidateScoreBreakdown = {
-      intent: requiredMatch
+      intent: (requiredMatch
         ? RANKING_SCORE_WEIGHTS.requiredCategory
-        : explicitKeywordMatch ? RANKING_SCORE_WEIGHTS.explicitKeywordEvidence : 0,
+        : explicitKeywordMatch ? RANKING_SCORE_WEIGHTS.explicitKeywordEvidence : 0)
+        + intentBoostFor(place),
       distance: Math.max(0, RANKING_SCORE_WEIGHTS.distanceMax - Math.floor(distanceFromSearchCenterMeters / 250)),
       budget: 0,
       preference: 0,

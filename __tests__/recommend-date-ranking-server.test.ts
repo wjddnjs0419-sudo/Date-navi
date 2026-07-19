@@ -57,6 +57,10 @@ describe('recommend-date deterministic ranking', () => {
       routeFitMax: 10,
       diversityRecall: 5,
       exclusionPenalty: -100,
+      stepIntentExact: 35,
+      stepIntentNameMatch: 20,
+      stepIntentExpansion1: 12,
+      stepIntentExpansion2: 6,
     });
   });
 
@@ -177,6 +181,65 @@ describe('recommend-date deterministic ranking', () => {
     const farRouteFit = ranked.candidates.find((candidate) => candidate.kakaoPlaceId === 'far-cafe')!
       .scoreBreakdown.routeFit;
     expect(nearRouteFit).toBeGreaterThan(farRouteFit);
+  });
+});
+
+describe('rankPlaceCandidates — step intent boost', () => {
+  const intentRequest: RecommendationRequest = {
+    requestId: 'request-rank-intent', mode: 'course', language: 'ko',
+    location: { source: 'kakao', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark' },
+    courseSteps: [
+      { id: 'step-0', category: 'meal', label: 'meal' },
+      { id: 'step-1', category: 'cafe', label: 'cafe' },
+    ],
+    additionalRequest: '삼겹살 먹고 싶어',
+  };
+  const mealPlace = (kakaoPlaceId: string, overrides: Partial<EvidencedKakaoPlace> = {}): EvidencedKakaoPlace => ({
+    kakaoPlaceId, name: `식당 ${kakaoPlaceId}`,
+    categoryGroupCode: 'FD6', categoryGroupName: '음식점', categoryName: '음식점 > 한식',
+    address: '', roadAddress: '', latitude: 37.5444, longitude: 127.0374, mapUrl: '',
+    matchedSearchEvidence: [], ...overrides,
+  });
+
+  it('exact intent evidence 후보가 동일 카테고리 무관 후보보다 상위 랭크된다', () => {
+    const withEvidence = mealPlace('aaa', {
+      matchedSearchEvidence: [{
+        queryId: 'query_002', source: 'keyword', page: 1, queryText: '삼겹살',
+        phase: 'step_intent', stepId: 'step-0', canonicalTerm: '삼겹살', strength: 'preferred', expansionLevel: 0,
+      }],
+    });
+    const unrelated = mealPlace('aab');
+    const { candidates } = rankPlaceCandidates([unrelated, withEvidence], intentRequest);
+    expect(candidates.findIndex((candidate) => candidate.kakaoPlaceId === 'aaa'))
+      .toBeLessThan(candidates.findIndex((candidate) => candidate.kakaoPlaceId === 'aab'));
+    const boosted = candidates.find((candidate) => candidate.kakaoPlaceId === 'aaa')!;
+    const plain = candidates.find((candidate) => candidate.kakaoPlaceId === 'aab')!;
+    expect(boosted.scoreBreakdown.intent - plain.scoreBreakdown.intent).toBe(35);
+  });
+
+  it('이름에 canonical이 포함되면 +20 가산한다', () => {
+    const named = mealPlace('bbb', { name: '성수 삼겹살집' });
+    const plain = mealPlace('bba');
+    const { candidates } = rankPlaceCandidates([named, plain], intentRequest);
+    const boosted = candidates.find((candidate) => candidate.kakaoPlaceId === 'bbb')!;
+    const base = candidates.find((candidate) => candidate.kakaoPlaceId === 'bba')!;
+    expect(boosted.scoreBreakdown.intent - base.scoreBreakdown.intent).toBe(20);
+  });
+
+  it('expansion evidence는 exact보다 낮게(1차 +12, 2차 +6) 가산한다', () => {
+    const evidence = (expansionLevel: 0 | 1 | 2, queryText: string) => mealPlace(`c${expansionLevel}x`, {
+      matchedSearchEvidence: [{
+        queryId: `query_00${expansionLevel + 2}`, source: 'keyword', page: 1, queryText,
+        phase: 'step_intent', stepId: 'step-0', canonicalTerm: '삼겹살', strength: 'preferred', expansionLevel,
+      }],
+    });
+    const { candidates } = rankPlaceCandidates(
+      [evidence(0, '삼겹살'), evidence(1, '돼지고기구이'), evidence(2, '고기집')],
+      intentRequest,
+    );
+    const intentOf = (id: string) => candidates.find((candidate) => candidate.kakaoPlaceId === id)!.scoreBreakdown.intent;
+    expect(intentOf('c0x') - intentOf('c1x')).toBe(35 - 12);
+    expect(intentOf('c1x') - intentOf('c2x')).toBe(12 - 6);
   });
 });
 
