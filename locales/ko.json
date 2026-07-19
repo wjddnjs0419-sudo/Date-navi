@@ -1066,7 +1066,13 @@
       "courseEdit": "조건 다시 편집하기",
       "defaultError": "추천을 만드는 중 문제가 생겼어요.",
       "errorTitle": "잠깐 문제가 생겼어요",
-      "errorSuffix": "다시 한 번 시도해볼게요."
+      "errorSuffix": "다시 한 번 시도해볼게요.",
+      "relaxation": {
+        "title": "이 조건에 딱 맞는 곳을 못 찾았어요",
+        "body": "‘{{conditions}}’ 조건을 지금 지역에서 만족하는 곳이 없어요. 조건을 완화하면 비슷한 곳으로 다시 찾아볼게요.",
+        "relaxButton": "조건 완화하고 다시 찾기",
+        "editButton": "조건 직접 수정"
+      }
     },
     "result": {
       "coupleRequired": "연인과 연결 후 사용해주세요.",
@@ -1103,6 +1109,11 @@
       "badge": "AI 코스",
       "heading": "이런 코스는 어때요?",
       "sub": "조건을 눌러 확인하고, 각 장소를 눌러 조정해보세요.",
+      "stepIntents": {
+        "title": "요청 반영",
+        "excludedSuffix": "제외",
+        "unsupported": "‘{{term}}’은(는) 이 코스 구성에 반영하지 못했어요"
+      },
       "conditions": "적용한 조건 보기",
       "editError": "코스 변경을 저장하지 못했어요. 다시 시도해주세요.",
       "confirm": "코스 확정",

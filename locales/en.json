@@ -1066,7 +1066,13 @@
       "courseEdit": "Edit course preferences",
       "defaultError": "Something went wrong while creating recommendations.",
       "errorTitle": "Something went wrong",
-      "errorSuffix": "We'll try again."
+      "errorSuffix": "We'll try again.",
+      "relaxation": {
+        "title": "No exact match for that condition",
+        "body": "We couldn't find a place that meets your ‘{{conditions}}’ condition nearby. Relax it and we'll look for similar spots.",
+        "relaxButton": "Relax the condition and search again",
+        "editButton": "Edit conditions myself"
+      }
     },
     "result": {
       "coupleRequired": "Connect with your partner first.",
@@ -1103,6 +1109,11 @@
       "badge": "AI course",
       "heading": "How about this course?",
       "sub": "Tap the conditions to review them, and tap a place to adjust it.",
+      "stepIntents": {
+        "title": "Your request",
+        "excludedSuffix": "excluded",
+        "unsupported": "‘{{term}}’ couldn't be applied to this course"
+      },
       "conditions": "View applied conditions",
       "editError": "We couldn't save this course change. Please try again.",
       "confirm": "Confirm",

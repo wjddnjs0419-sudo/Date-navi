@@ -14,6 +14,7 @@ import { useRecommendationSessionStore } from '../../components/recommendation/r
 import {
   RecommendationRequestError,
   isPreparedRequestExpiredError,
+  relaxRequiredMarkers,
   requestRecommendationResponse,
 } from '../../lib/recommend-date';
 import {
@@ -32,11 +33,13 @@ export default function GeneratingScreen() {
   const { language, t } = useI18n();
   const {
     getPreparedRecommendationRequest,
+    prepareRecommendationRequest,
     persistRecommendationSession,
   } = useRecommendationSessionStore();
   const [step, setStep] = useState(0);
   const [courseStage, setCourseStage] = useState<'preparing' | 'requesting' | 'validating' | 'ready'>('preparing');
   const [errorMsg, setErrorMsg] = useState('');
+  const [courseError, setCourseError] = useState<RecommendationRequestError | null>(null);
   const [requestExpired, setRequestExpired] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -127,6 +130,7 @@ export default function GeneratingScreen() {
       } catch (error) {
         if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
         setRequestExpired(isCourse && isPreparedRequestExpiredError(error));
+        setCourseError(isCourse && error instanceof RecommendationRequestError ? error : null);
         setErrorMsg(isCourse ? courseErrorMessage(error) : t('modeFlow.generating.defaultError'));
       }
     })();
@@ -148,6 +152,46 @@ export default function GeneratingScreen() {
     t,
   ]);
 
+  const unsatisfiedIntents = courseError?.code === 'STEP_INTENT_UNSATISFIED' ? courseError.unsatisfiedIntents ?? [] : [];
+  const canRelax = typeof requestId === 'string' && unsatisfiedIntents.length > 0;
+
+  const handleRelax = () => {
+    if (typeof requestId !== 'string') return;
+    const original = getPreparedRecommendationRequest(requestId);
+    const relaxedText = relaxRequiredMarkers(original.additionalRequest);
+    const relaxed = prepareRecommendationRequest({
+      ...original,
+      requestId: `${original.requestId}-relaxed-${retryKey + 1}`,
+      additionalRequest: relaxedText.length > 0 ? relaxedText : undefined,
+    });
+    setCourseError(null);
+    setErrorMsg('');
+    router.replace({ pathname: '/mode-flow/generating', params: { requestId: relaxed.requestId } } as any);
+  };
+
+  if (canRelax) {
+    const conditions = unsatisfiedIntents
+      .map((intent) => (language === 'en' ? intent.displayLabel.en : intent.displayLabel.ko))
+      .join(', ');
+    return (
+      <View style={s.container}>
+        <View style={[s.iconWrap, s.iconWrapGray]}>
+          <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
+        </View>
+        <Text style={s.heading}>{t('modeFlow.generating.relaxation.title')}</Text>
+        <Text style={s.errSub}>{t('modeFlow.generating.relaxation.body', { conditions })}</Text>
+        <BigButton onPress={handleRelax} style={s.retryBtn}>{t('modeFlow.generating.relaxation.relaxButton')}</BigButton>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => router.replace('/mode-flow/course' as any)}
+          style={s.editButton}
+        >
+          <Text style={s.editButtonText}>{t('modeFlow.generating.relaxation.editButton')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (errorMsg !== '') {
     return (
       <View style={s.container}>
@@ -157,7 +201,7 @@ export default function GeneratingScreen() {
         <Text style={s.heading}>{t('modeFlow.generating.errorTitle')}</Text>
         <Text style={s.errSub}>{errorMsg}{requestExpired ? '' : `\n${t('modeFlow.generating.errorSuffix')}`}</Text>
         {!requestExpired && (
-          <BigButton onPress={() => { setErrorMsg(''); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
+          <BigButton onPress={() => { setErrorMsg(''); setCourseError(null); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
         )}
         {isCourse && (
           <TouchableOpacity

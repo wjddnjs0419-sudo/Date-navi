@@ -24,7 +24,7 @@ import type { RecommendationSessionSnapshot } from '../../lib/recommendation-ses
 export default function CourseResultScreen() {
   const rawParams = useLocalSearchParams();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const {
     getRecommendationSession,
     loadRecommendationSession,
@@ -326,6 +326,38 @@ export default function CourseResultScreen() {
           <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
           <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
           <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
+          {(() => {
+            const stepIntent = snapshot.response.metadata.stepIntent;
+            if (!stepIntent) return null;
+            const hasChips = stepIntent.resolved.length > 0 || stepIntent.unsupported.length > 0;
+            if (!hasChips) return null;
+            const label = (display: { ko: string; en: string }) => (language === 'en' ? display.en : display.ko);
+            return (
+              <View style={s.intentSection}>
+                <Text style={s.intentTitle}>{t('modeFlow.courseResult.stepIntents.title')}</Text>
+                <View style={s.intentChips}>
+                  {stepIntent.resolved.map((intent) => (
+                    intent.negated
+                      ? (
+                        <Badge key={`${intent.stepId}-${intent.canonicalTerm}`} tone="gray">
+                          {`${label(intent.displayLabel)} ${t('modeFlow.courseResult.stepIntents.excludedSuffix')}`}
+                        </Badge>
+                      )
+                      : (
+                        <Badge key={`${intent.stepId}-${intent.canonicalTerm}`} tone={intent.strength === 'required' ? 'pink' : 'lavender'}>
+                          {label(intent.displayLabel)}
+                        </Badge>
+                      )
+                  ))}
+                </View>
+                {stepIntent.unsupported.map((item) => (
+                  <Text key={item.term} style={s.intentUnsupported}>
+                    {t('modeFlow.courseResult.stepIntents.unsupported', { term: item.term })}
+                  </Text>
+                ))}
+              </View>
+            );
+          })()}
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityState={{ expanded: conditionsExpanded }}
@@ -506,6 +538,10 @@ const s = StyleSheet.create({
   conditionsPanel: { backgroundColor: C.white, borderRadius: 12, padding: 12, gap: 3 },
   conditionText: { fontSize: 12, color: C.textSub },
   relaxedText: { fontSize: 12, color: C.pinkDeep },
+  intentSection: { gap: 8, marginTop: 4 },
+  intentTitle: { fontSize: 12, fontWeight: '700', color: C.textSub },
+  intentChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  intentUnsupported: { fontSize: 12, color: C.textMuted, lineHeight: 17 },
   scrollContent: { paddingBottom: 12 },
   timeline: { paddingHorizontal: 20 },
   timelineCard: { backgroundColor: C.white, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: C.border },
