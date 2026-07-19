@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { PARSE_STEP_INTENTS_SCHEMA } from './parse-step-intents-schema.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -160,6 +161,7 @@ const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; tempera
   course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7, logged: true },
   recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
   replacement_select: { schema: REPLACEMENT_SELECT_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
+  parse_step_intents: { schema: PARSE_STEP_INTENTS_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -315,7 +317,7 @@ Deno.serve(async (req) => {
       latencyMs: Date.now() - startedAt,
     });
 
-    if (action === 'recommend_date_select' || action === 'replacement_select') return json(parsed);
+    if (action === 'recommend_date_select' || action === 'replacement_select' || action === 'parse_step_intents') return json(parsed);
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);
