@@ -61,6 +61,12 @@ Deno.serve(async (request) => {
       supabaseUrl: Deno.env.get('SUPABASE_URL')!,
       anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
     }),
+    parseStepIntentsAi: (input) => invokeGenerateAiSelection({
+      ...input,
+      action: 'parse_step_intents',
+      supabaseUrl: Deno.env.get('SUPABASE_URL')!,
+      anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
+    }, { timeoutMs: 8_000 }),
     stageAttestation: async ({ ownerUserId, request, response }) => {
       const serviceClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
