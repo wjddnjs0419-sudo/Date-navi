@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-07-19 세션 AZ — Step Intent Phase 2·3 (AI 파서 fallback + 부정어 + 미지원/충돌 + 감지 칩 + 완화 UI)
+
+> 요청: `/goal phase2-4까지`. Phase 1(결정론 규칙 파서) 위에 AI fallback·부정어·충돌/미지원 감지·감지 칩·완화 UI를 쌓는다. Phase 4(가격/외부증거)는 데이터 소스 부재로 연기.
+
+### 사전 작업 (브레인스토밍 → 스펙 → 플랜)
+- `docs/superpowers/specs/2026-07-19-step-intent-phase2-3-design.md`: 설계 스펙. 핵심 = resolvedStepIntents 1회-resolve 부착 아키텍처.
+- `docs/superpowers/plans/2026-07-19-step-intent-phase2-server.md`: 7태스크 TDD 서버 플랜.
+- **AI 게이트 결정(사용자 재확정)**: 스펙 §8.2 **전체 신호** — 비용 감수. `additionalRequest` 있고 사전어+불용어 제거 후 **유의미 잔여 텍스트**가 있으면 AI 호출(다중타깃·복합패러프레이즈·저신뢰·미등재영어 포괄). 사전 통문장 히트 = AI 0.
+
+### 구현 (TDD, 12 커밋)
+- **부정어**: `step-intent.ts` — 말고/빼고/제외/not/except 감지(한국어 뒤·영어 앞 방향 분리). `excludedIntents` 분리, `negated` 필드.
+- **resolve 배선**: `step-intent-resolve.ts`(신규) `resolveStepIntents`(규칙 → 고재현 게이트 → AI 병합, 실패 시 graceful degrade), `coerceAiParseResult`(AI 출력→ParsedStepIntent 바인딩). 핸들러 1회 resolve → 내부 request에 `resolvedStepIntents`/`resolvedExcludedIntents` 부착. 하위 모듈은 `effectiveStepIntents`/`effectiveExcludedIntents`로 읽음(무회귀).
+- **AI 파서 action**: `generate-ai`에 `parse_step_intents`(Haiku 4.5, temp0, json_schema, logged) + `recommend-date` 진입점 배선(8s 타임아웃).
+- **랭킹**: negated 이름매칭 페널티 `-60`.
+- **메트릭**: 응답 `metadata.stepIntent`(parserSource/aiFallbackUsed/resolved/unsupported/conflicts) — optional, breaking 없음.
+- **Phase 3 서버**: 422 `STEP_INTENT_UNSATISFIED`에 `unsatisfiedIntents` 부착. 클라 `RecommendationRequestError.unsatisfiedIntents` 파싱 + `relaxRequiredMarkers` 완화 유틸.
+- **UI**: 결과 화면 감지 칩(`snapshot.response.metadata.stepIntent` 기반, pink=required/lavender=preferred/gray=제외, 미지원 경고). 생성 화면 완화 카드(실패 조건 표시 + [조건 완화하고 다시 찾기]=required 마커 제거 재요청 + [조건 직접 수정]). i18n ko/en 대칭.
+- **StyleSeed 게이트**: 감지 칩 86, 완화 UI 88 (둘 다 ≥80). design-review AI-generic 텔 없음.
+
+### 검증
+- `npx jest`: **97 suites / 792 tests 전부 통과**(기준선 767 + 신규 25). `npm run validate`(tsc) 클린.
+- **미배포**: Phase 2·3 로컬 완결. edge function 배포(`recommend-date`·`generate-ai`)는 승인 후 별도 — 프롬프트/검색플랜/AI action 변화로 캐시 히트율·비용 변동 사전 보고 필요.
+
+### 남은 것
+- **Phase 4 연기**(문서화만): 가격/외부증거 — 카카오 무료 티어 데이터 부재. 선행조건 = 유료 API/크롤링. `docs/superpowers/plans/2026-07-19-step-intent-phase4-deferred.md`.
+- 배포 승인 대기.
+
+---
+
 ## 2026-07-19 세션 AY — AI 추천 Step Intent Phase 1 (결정론 수직슬라이스)
 
 > 요청: V4 Step Intent 스펙 검토 → 현재 코드와 충돌 대조 → 조율 애드덤 작성 → Phase 1 구현. "삼겹살 먹고 싶어"/"I want samgyupsal" 같은 구체 자유텍스트를 규칙 파서로 step별 canonical 카카오 검색 의도로 변환해 검색→evidence→랭킹→선택검증→폴백→교체까지 전파. **AI 파서 없음(Phase 2)**.

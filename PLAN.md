@@ -286,6 +286,8 @@
 
 ## Pending Approval
 
+### [배포 대기] 2026-07-19 — Step Intent Phase 2·3: AI 파서 fallback(`parse_step_intents`, 스펙 §8.2 고재현 게이트) + 부정어("삼겹살 말고") + 미지원/충돌 감지 + 응답 `metadata.stepIntent` + 결과 화면 감지 칩 + required 미충족 완화 UI. 792 테스트/tsc 통과, 로컬 완결. **edge function 배포(`recommend-date`·`generate-ai`) 승인 필요** — 캐시 히트율·AI 비용 변동 사전 보고. Phase 4(가격/외부증거)는 데이터 소스 부재로 연기(`docs/superpowers/plans/2026-07-19-step-intent-phase4-deferred.md`).
+
 ### [Done] 2026-07-18 — 카카오 검색 크로스 유저 캐시 + 교체 시트 AI 큐레이션 제거: `kakao_search_cache`(500m 격자, TTL 30일, service-role 전용) 신설, `recommend-date`·`replacement-candidates` read-through 배선, 교체 시트는 결정론 랭킹만. 교체 시트 2~3초 → 0.3~0.6초 실측. 마이그레이션·함수 2개 배포, KPI 시뮬레이션 완료(RESULT.md 참조). 유저 자유텍스트(explicit 쿼리)는 캐시 제외.
 
 ### [Done] 2026-07-18 — 이용약관·개인정보처리방침 사실관계 정정 및 페이지 업데이트: ko/en 10개 섹션 문서와 로그인 법률 링크를 반영했고, 구조 계약 테스트·전체 검증을 통과했다. 배포 전 법률 검토 및 미확정 대괄호 값 확정이 필요하다.
