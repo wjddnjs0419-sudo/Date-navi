@@ -129,7 +129,15 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: intentRequest }, deps);
 
-    expect(result).toEqual({ status: 422, body: { error: createRecommendationError('STEP_INTENT_UNSATISFIED') } });
+    expect(result).toEqual({
+      status: 422,
+      body: {
+        error: {
+          ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
+          unsatisfiedIntents: [{ canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' } }],
+        },
+      },
+    });
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 
@@ -161,7 +169,15 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: cultureRequest }, deps);
 
-    expect(result).toEqual({ status: 422, body: { error: createRecommendationError('STEP_INTENT_UNSATISFIED') } });
+    expect(result).toEqual({
+      status: 422,
+      body: {
+        error: {
+          ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
+          unsatisfiedIntents: [{ canonicalTerm: '전시', displayLabel: { ko: '전시', en: 'Exhibition' } }],
+        },
+      },
+    });
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 

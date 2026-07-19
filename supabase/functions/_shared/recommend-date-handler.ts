@@ -181,14 +181,26 @@ export async function handleRecommendDate(
   // 폴백(buildDeterministicCandidateCourse)은 categoryEligible ∩ placeMatchesStepIntent로 후보를
   // 고르므로, 게이트도 카테고리를 함께 검사해야 이름만 매칭되는 비-카테고리 장소가 게이트를 통과하고
   // 폴백에서 INSUFFICIENT_CANDIDATES로 어긋나는 일을 막는다.
-  const hasEveryRequiredIntent = requiredStepIntents.every((intent) => (
+  const unsatisfiedIntents = requiredStepIntents.filter((intent) => !(
     search.candidates.some((candidate) => (
       verifiedPlaceMatchesCategory(candidate, intent.stepCategory)
       && placeMatchesStepIntent(candidate, intent)
     ))
   ));
-  if (!hasEveryRequiredIntent) {
-    return errorResult(422, 'STEP_INTENT_UNSATISFIED');
+  if (unsatisfiedIntents.length > 0) {
+    // 완화 UI(Phase 3)가 어떤 조건을 못 맞췄는지 알 수 있도록 실패한 intent를 함께 실어 보낸다.
+    return {
+      status: 422,
+      body: {
+        error: {
+          ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
+          unsatisfiedIntents: unsatisfiedIntents.map((intent) => ({
+            canonicalTerm: intent.canonicalTerm,
+            displayLabel: intent.displayLabel,
+          })),
+        },
+      },
+    };
   }
 
   const generatedAt = dependencies.now?.() ?? new Date().toISOString();
