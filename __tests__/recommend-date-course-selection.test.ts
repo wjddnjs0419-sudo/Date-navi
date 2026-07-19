@@ -440,3 +440,78 @@ describe('deterministic candidate-only fallback', () => {
     })).toThrow(CourseSelectionError);
   });
 });
+
+describe('required step intent 검증', () => {
+  const requiredRequest: RecommendationRequest = {
+    requestId: 'request-required', mode: 'course', language: 'ko',
+    location: { source: 'kakao', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark' },
+    courseSteps: [
+      { id: 'step-1', category: 'meal', label: '식사' },
+      { id: 'step-2', category: 'cafe', label: '카페' },
+    ],
+    additionalRequest: '무조건 삼겹살이어야 해',
+  };
+  const intentCandidate = (candidateId: string, kakaoPlaceId: string, overrides: Partial<PlaceCandidate> = {}): PlaceCandidate => ({
+    candidateId, kakaoPlaceId, name: `장소 ${kakaoPlaceId}`,
+    categoryGroupCode: 'FD6', categoryGroupName: '음식점', categoryName: '음식점 > 한식',
+    address: '주소', roadAddress: '도로명', latitude: 37.5444, longitude: 127.0374,
+    mapUrl: 'https://place.map.kakao.com/1', matchedSearchEvidence: [],
+    distanceFromSearchCenterMeters: 0, score: 50,
+    scoreBreakdown: { intent: 40, distance: 10, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: 0 },
+    ...overrides,
+  });
+  const cafeCandidate = (candidateId: string, kakaoPlaceId: string) => intentCandidate(candidateId, kakaoPlaceId, {
+    categoryGroupCode: 'CE7', categoryGroupName: '카페', categoryName: '음식점 > 카페',
+  });
+  const porkCandidate = (candidateId: string, kakaoPlaceId: string) => intentCandidate(candidateId, kakaoPlaceId, {
+    categoryName: '음식점 > 한식 > 육류,고기 > 삼겹살',
+  });
+
+  it('AI가 required intent 미충족 후보를 고르면 COURSE_VALIDATION_FAILED', () => {
+    expect(() => buildCandidateOnlyCourse({
+      request: requiredRequest,
+      candidates: [intentCandidate('candidate_001', 'p1'), porkCandidate('candidate_002', 'p2'), cafeCandidate('candidate_003', 'p3')],
+      selection: { steps: [
+        { stepId: 'step-1', candidateId: 'candidate_001' },
+        { stepId: 'step-2', candidateId: 'candidate_003' },
+      ] },
+      generatedAt: '2026-07-19T00:00:00.000Z',
+    })).toThrow(CourseSelectionError);
+  });
+
+  it('required intent 충족 후보 선택은 통과한다', () => {
+    const built = buildCandidateOnlyCourse({
+      request: requiredRequest,
+      candidates: [intentCandidate('candidate_001', 'p1'), porkCandidate('candidate_002', 'p2'), cafeCandidate('candidate_003', 'p3')],
+      selection: { steps: [
+        { stepId: 'step-1', candidateId: 'candidate_002' },
+        { stepId: 'step-2', candidateId: 'candidate_003' },
+      ] },
+      generatedAt: '2026-07-19T00:00:00.000Z',
+    });
+    expect(built.course.steps[0].kakaoPlaceId).toBe('p2');
+  });
+
+  it('결정론 폴백은 required intent 충족 후보만 사용한다', () => {
+    const built = buildDeterministicCandidateCourse({
+      request: requiredRequest,
+      candidates: [
+        intentCandidate('candidate_001', 'p1', { score: 90 }),
+        porkCandidate('candidate_002', 'p2'),
+        cafeCandidate('candidate_003', 'p3'),
+      ],
+      generatedAt: '2026-07-19T00:00:00.000Z',
+    });
+    expect(built.course.steps[0].kakaoPlaceId).toBe('p2');
+  });
+
+  it('preferred intent는 폴백에서 우선하되 없으면 카테고리 후보를 허용한다', () => {
+    const preferredRequest = { ...requiredRequest, additionalRequest: '삼겹살 먹고 싶어' };
+    const built = buildDeterministicCandidateCourse({
+      request: preferredRequest,
+      candidates: [intentCandidate('candidate_001', 'p1', { score: 90 }), cafeCandidate('candidate_003', 'p3')],
+      generatedAt: '2026-07-19T00:00:00.000Z',
+    });
+    expect(built.course.steps[0].kakaoPlaceId).toBe('p1');
+  });
+});

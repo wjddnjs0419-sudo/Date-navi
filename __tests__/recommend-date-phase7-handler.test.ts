@@ -116,6 +116,23 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 
+  it('returns STEP_INTENT_UNSATISFIED when a required step intent has no matching candidate', async () => {
+    // meal 카테고리는 충족(무관 식당)하지만 "무조건 삼겹살" required intent를 만족하는 후보는 0.
+    const intentRequest: RecommendationRequest = { ...request(), additionalRequest: '무조건 삼겹살이어야 해' };
+    const deps = dependencies({
+      searchCandidates: jest.fn(async () => ({
+        candidates,
+        recallByCategory: { meal: 1, cafe: 1 },
+        searchMetadata: metadata(),
+      })),
+    });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: intentRequest }, deps);
+
+    expect(result).toEqual({ status: 422, body: { error: createRecommendationError('STEP_INTENT_UNSATISFIED') } });
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+  });
+
   it('continues after partial search failure when every required step still has candidates', async () => {
     const deps = dependencies({
       searchCandidates: jest.fn(async () => ({

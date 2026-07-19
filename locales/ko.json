@@ -1045,6 +1045,7 @@
       "courseExpired": "요청 정보가 만료됐어요. 조건을 다시 확인하고 시도해주세요.",
       "courseErrors": {
         "INSUFFICIENT_CANDIDATES": "주변에서 조건에 맞는 장소를 충분히 찾지 못했어요. 위치·코스·도보 조건을 조금 넓혀주세요.",
+        "STEP_INTENT_UNSATISFIED": "요청한 조건에 딱 맞는 장소를 근처에서 찾지 못했어요. 조건을 조금 완화하거나 지역을 넓혀주세요.",
         "PLACE_SEARCH_TIMEOUT": "장소 검색이 지연됐어요. 잠시 후 다시 시도해주세요.",
         "PLACE_SEARCH_RATE_LIMITED": "장소 검색 요청이 많아요. 잠시 후 다시 시도해주세요.",
         "AUTH_EXPIRED": "로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.",

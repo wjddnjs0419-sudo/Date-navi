@@ -14,6 +14,7 @@ import {
   type StraightLineRouteMetadata,
 } from './recommendation-ranking.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
+import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 
 export const MAX_CANDIDATE_POOL_SIZE = 40;
 
@@ -175,6 +176,11 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
   }
   const byCandidateId = new Map(input.candidates.map((candidate) => [candidate.candidateId, candidate]));
   const locks = new Map((input.request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
+  const requiredIntents = new Map(
+    parseStepIntents(input.request).stepIntents
+      .filter((intent) => intent.strength === 'required')
+      .map((intent) => [intent.stepId, intent]),
+  );
   const selected: PlaceCandidate[] = [];
   for (let index = 0; index < input.request.courseSteps.length; index++) {
     const requestedStep = input.request.courseSteps[index];
@@ -191,6 +197,10 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
     } else {
       candidate = byCandidateId.get(selectedStep.candidateId);
       if (!candidate || !candidateMatchesCategory(candidate, requestedStep.category)) {
+        throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+      }
+      const requiredIntent = requiredIntents.get(requestedStep.id);
+      if (requiredIntent && !placeMatchesStepIntent(candidate, requiredIntent)) {
         throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
       }
     }
@@ -245,6 +255,8 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
     || a.distanceFromSearchCenterMeters - b.distanceFromSearchCenterMeters
     || a.kakaoPlaceId.localeCompare(b.kakaoPlaceId)
   );
+  const { stepIntents } = parseStepIntents(input.request);
+  const intentByStepId = new Map(stepIntents.map((intent) => [intent.stepId, intent]));
   const choices = input.request.courseSteps.map((step) => {
     const lock = locks.get(step.id);
     if (lock) {
@@ -252,11 +264,19 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
       // in this call's fresh candidate pool, pin it from its own carried facts instead.
       return [candidateFromLock(lock)];
     }
-    const eligible = input.candidates
-      .filter((candidate) => candidateMatchesCategory(candidate, step.category))
-      .sort(compareStable);
-    if (eligible.length === 0) throw new CourseSelectionError('INSUFFICIENT_CANDIDATES');
-    return eligible;
+    const categoryEligible = input.candidates
+      .filter((candidate) => candidateMatchesCategory(candidate, step.category));
+    const intent = intentByStepId.get(step.id);
+    const intentMatched = intent
+      ? categoryEligible.filter((candidate) => placeMatchesStepIntent(candidate, intent))
+      : [];
+    // required intent은 매칭 후보로만 제한. preferred는 매칭 후보 우선하되 없으면 카테고리 완화 허용.
+    const eligible = intent?.strength === 'required'
+      ? intentMatched
+      : intentMatched.length > 0 ? intentMatched : categoryEligible;
+    const sorted = [...eligible].sort(compareStable);
+    if (sorted.length === 0) throw new CourseSelectionError('INSUFFICIENT_CANDIDATES');
+    return sorted;
   });
 
   type AssessedRoute = {

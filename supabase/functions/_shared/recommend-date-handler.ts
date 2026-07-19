@@ -25,6 +25,7 @@ import {
   candidateOnlySelectionSchema,
   CourseSelectionError,
 } from './recommendation-course-selection.ts';
+import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 
 export type RecommendDateRequest = {
   method: string;
@@ -144,6 +145,14 @@ export async function handleRecommendDate(
   ));
   if (search.candidates.length === 0 || !hasEveryRequiredCategory) {
     return errorResult(422, 'INSUFFICIENT_CANDIDATES');
+  }
+  const requiredStepIntents = parseStepIntents(serverRequest).stepIntents
+    .filter((intent) => intent.strength === 'required');
+  const hasEveryRequiredIntent = requiredStepIntents.every((intent) => (
+    search.candidates.some((candidate) => placeMatchesStepIntent(candidate, intent))
+  ));
+  if (!hasEveryRequiredIntent) {
+    return errorResult(422, 'STEP_INTENT_UNSATISFIED');
   }
 
   const generatedAt = dependencies.now?.() ?? new Date().toISOString();
