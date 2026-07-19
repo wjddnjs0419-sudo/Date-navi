@@ -21,16 +21,15 @@ const REACTION_LABELS: Record<string, string> = {
 };
 
 function buildMessage(type: NotifType, payload: Record<string, unknown>): { title: string; body: string } {
-  if (type === 'new_card') {
-    return { title: '새 데이트 추천이 도착했어요', body: String(payload.card_title ?? '') };
-  }
   if (type === 'reaction') {
     const label = REACTION_LABELS[String(payload.reaction_type)] ?? '';
     const cardTitle = String(payload.card_title ?? '');
     return { title: '상대가 반응을 남겼어요', body: [label, cardTitle].filter(Boolean).join(' · ') };
   }
+  // new_card = 데이트 제안(카드 + 문구). legacy soft_message도 동일하게 처리한다.
+  const cardTitle = String(payload.card_title ?? '');
   const preview = String(payload.message ?? '').slice(0, 60);
-  return { title: '다정한 문장이 도착했어요', body: preview };
+  return { title: '데이트 제안이 도착했어요', body: cardTitle || preview };
 }
 
 Deno.serve(async (req) => {

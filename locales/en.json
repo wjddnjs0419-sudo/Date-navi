@@ -944,16 +944,16 @@
     "groupWeek": "This week",
     "groupEarlier": "Earlier",
     "reactionTitle": "Your partner reacted",
-    "newCardTitle": "New date picks arrived",
-    "softMessageTitle": "A gentle message arrived",
+    "proposalTitle": "A date proposal arrived",
+    "proposalModalTitle": "Date proposal",
+    "proposalCta": "View proposal",
+    "tapToView": "Tap to view",
     "timeJustNow": "just now",
     "timeMinutes": "m ago",
     "timeHours": "h ago",
     "timeYesterday": "yesterday",
     "timeDays": "d ago",
-    "modalCopyButton": "Copy",
-    "modalCloseButton": "Close",
-    "copiedLabel": "Copied ✓"
+    "modalCloseButton": "Close"
   },
   "location": {
     "gpsActive": "Using my location",
@@ -1378,7 +1378,7 @@
     "send": {
       "defaultMessage": "Want to check this out together? 😊",
       "heading": "Send this candidate\nto your partner?",
-      "subText": "It's delivered gently so your partner can react without pressure.",
+      "subText": "Your note is included in the date proposal your partner receives.",
       "tagsFallback": [
         "Low travel",
         "Low cost",

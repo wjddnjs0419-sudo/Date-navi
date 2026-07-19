@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Clipboard,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Heart, Sparkles, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
+import { Heart, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
@@ -30,7 +30,6 @@ export default function NotificationsScreen() {
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Notif | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,10 +61,12 @@ export default function NotificationsScreen() {
     await supabase.from('notifications').delete().in('id', ids);
   }
 
+  // new_card(데이트 제안)와 legacy soft_message는 문구를 모달로 확인시킨다.
+  const isProposal = (n: Notif) => n.type === 'new_card' || n.type === 'soft_message';
+
   function renderTitle(n: Notif): string {
     if (n.type === 'reaction') return t.reactionTitle;
-    if (n.type === 'soft_message') return t.softMessageTitle;
-    return t.newCardTitle;
+    return t.proposalTitle;
   }
 
   function renderBody(n: Notif): string {
@@ -75,14 +76,14 @@ export default function NotificationsScreen() {
       const card = n.payload?.card_title ?? '';
       return [label, card].filter(Boolean).join(' · ');
     }
-    if (n.type === 'soft_message') return n.payload?.message ?? '';
-    return n.payload?.card_title ?? '';
+    const card = n.payload?.card_title ?? '';
+    return [card, t.tapToView].filter(Boolean).join(' · ');
   }
 
-  // soft_message는 눌렀을 때 바로 지우지 않고 전체 문장을 모달로 보여준다.
-  // 모달을 닫으면(확인 완료로 간주) 그때 삭제한다.
+  // 제안은 눌렀을 때 바로 지우지 않고 카드+문구를 모달로 보여준다.
+  // 반응 화면으로 넘어가면(제안 보러가기) 그때 삭제한다. 단순히 닫으면 유지.
   function handleRowPress(n: Notif) {
-    if (n.type === 'soft_message') {
+    if (isProposal(n)) {
       setSelected(n);
       return;
     }
@@ -92,16 +93,15 @@ export default function NotificationsScreen() {
   }
 
   function closeModal() {
-    if (selected) removeOne(selected.id);
     setSelected(null);
-    setCopied(false);
   }
 
-  function copySelectedMessage() {
+  function goToProposal() {
     if (!selected) return;
-    Clipboard.setString(selected.payload?.message ?? '');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const cardId = selected.payload?.card_id;
+    removeOne(selected.id);
+    setSelected(null);
+    if (cardId) router.push({ pathname: '/share/reaction', params: { cardId } } as any);
   }
 
   // 시간 그룹핑: 오늘 / 이번 주 / 이전
@@ -167,9 +167,7 @@ export default function NotificationsScreen() {
                         <View style={[s.iconBox, { backgroundColor: n.type === 'reaction' ? C.pinkLight : C.lavender }]}>
                           {n.type === 'reaction'
                             ? <Heart size={16} strokeWidth={1.8} color={C.pinkDeep} />
-                            : n.type === 'soft_message'
-                              ? <Mail size={16} strokeWidth={1.8} color={C.lavenderFg} />
-                              : <Sparkles size={16} strokeWidth={1.8} color={C.lavenderFg} />}
+                            : <Mail size={16} strokeWidth={1.8} color={C.lavenderFg} />}
                         </View>
                       }
                       label={
@@ -203,14 +201,24 @@ export default function NotificationsScreen() {
         <View style={s.modalBackdrop}>
           <View style={s.modalCard}>
             <View style={s.modalHeaderRow}>
-              <Text style={s.modalTitle}>{t.softMessageTitle}</Text>
+              <Text style={s.modalTitle}>{t.proposalModalTitle}</Text>
               <TouchableOpacity onPress={closeModal} hitSlop={8}>
                 <X size={20} color={C.textSub} />
               </TouchableOpacity>
             </View>
-            <Text style={s.modalMessage}>{selected?.payload?.message}</Text>
-            <BigButton onPress={copySelectedMessage} variant={copied ? 'secondary' : 'primary'} style={s.modalCopyBtn}>
-              {copied ? strings.notifications.copiedLabel : t.modalCopyButton}
+            {!!selected?.payload?.card_title && (
+              <View style={s.modalCardChip}>
+                <View style={s.modalCardIcon}>
+                  <Heart size={16} strokeWidth={1.8} color={C.pinkDeep} />
+                </View>
+                <Text style={s.modalCardTitle} numberOfLines={2}>{selected.payload.card_title}</Text>
+              </View>
+            )}
+            {!!selected?.payload?.message && (
+              <Text style={s.modalMessage}>“{selected.payload.message}”</Text>
+            )}
+            <BigButton onPress={goToProposal} variant="primary" style={s.modalCopyBtn}>
+              {t.proposalCta}
             </BigButton>
             <TouchableOpacity onPress={closeModal} style={s.modalCloseBtn}>
               <Text style={s.modalCloseText}>{t.modalCloseButton}</Text>
@@ -259,7 +267,16 @@ const s = StyleSheet.create({
   },
   modalHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modalTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: 16 },
+  modalCardChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: C.bg, borderRadius: 14, padding: 12, marginTop: 16,
+  },
+  modalCardIcon: {
+    width: 32, height: 32, borderRadius: 9, backgroundColor: C.pinkLight,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  modalCardTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: C.text },
+  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: 14, fontStyle: 'italic' },
   modalCopyBtn: { marginTop: 20 },
   modalCloseBtn: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   modalCloseText: { fontSize: 13, color: C.textSub, fontWeight: '600' },

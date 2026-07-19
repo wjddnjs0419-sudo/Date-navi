@@ -589,3 +589,4 @@ course.tsx / feeling.tsx
 - [Done] 코스 입력 화면(`course.tsx`) UI 개선 — 단계추가 버튼 위치, 카테고리 아이콘화, 위치 아이콘 통일, AI 동의 체크박스 제거, 헤더 텍스트 축소, 예산/전체시간 드래그 슬라이더 전환(신규 `StepSlider` + `lib/slider-math.ts`, 예산 0~100,000원 1,000원 단위, 시간 0~24시간 1시간 단위). 실기기 테스트로 스크롤 충돌과 `useRef(PanResponder.create())` 렌더링별 재생성으로 인한 제스처 상태 리셋 버그를 순차 발견·수정 (2026-07-16)
 - [Done] 영어 로컬라이제이션 버그 수정 + 커플 이중언어 카드 + 마이페이지 뒤로가기 + 코스 결과 화면 UI 폴리시 — 상세 내역은 `RESULT.md` 세션 AS 참조 (2026-07-17)
 - [Done] MVP 단일 모드 전환("코스로 정리해줘"만 노출, feeling/next_meet UI 숨김+복원 가능) + 마음 전하기 코드 삭제 + 홈 코스 카드 커플 이미지·정렬 개선(RN aspectRatio 무시 버그 회피) — 상세 내역은 `RESULT.md` 세션 AT 참조 (2026-07-18)
+- [Done] soft message 제거 + 알림 통합 — 카드 보낼 때 가던 `new_card`+`soft_message` 2개 알림을 문구 포함 "데이트 제안" 알림 1개로 통합(목업 3안+A). `trg_notify_card` DROP·`notify_on_soft_message` 재작성(카드+문구 payload)·`send-push` v3 프로덕션 배포, 알림함 모달 재구성(복사 삭제, "제안 보러가기"→반응 화면), push 라우팅 TDD, i18n 정리. 카드 생성만으론 무알림(보낼 때만). tsc·733테스트 통과, 실기기 확인 대기. 상세 `RESULT.md` 세션 AW 참조 (2026-07-19)

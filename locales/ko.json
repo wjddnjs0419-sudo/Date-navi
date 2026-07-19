@@ -944,16 +944,16 @@
     "groupWeek": "이번 주",
     "groupEarlier": "이전",
     "reactionTitle": "상대가 반응을 남겼어요",
-    "newCardTitle": "새 데이트 추천이 도착했어요",
-    "softMessageTitle": "다정한 문장이 도착했어요",
+    "proposalTitle": "데이트 제안이 도착했어요",
+    "proposalModalTitle": "데이트 제안",
+    "proposalCta": "제안 보러가기",
+    "tapToView": "탭해서 보기",
     "timeJustNow": "방금",
     "timeMinutes": "분 전",
     "timeHours": "시간 전",
     "timeYesterday": "어제",
     "timeDays": "일 전",
-    "modalCopyButton": "복사하기",
-    "modalCloseButton": "닫기",
-    "copiedLabel": "복사됨 ✓"
+    "modalCloseButton": "닫기"
   },
   "location": {
     "gpsActive": "내 위치 사용 중",
@@ -1378,7 +1378,7 @@
     "send": {
       "defaultMessage": "이거 우리 같이 가보면 어때? 😊",
       "heading": "이 후보를 상대에게\n보내볼까요?",
-      "subText": "상대방이 부담 없이 반응할 수 있게 부드럽게 전달돼요.",
+      "subText": "이 후보와 함께 보낼 한마디가 상대의 제안 알림에 담겨요.",
       "tagsFallback": [
         "이동 적음",
         "돈 적게 듦",

@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-07-19 세션 AW — soft message 제거 + 알림 통합("데이트 제안" 1개, 문구 포함)
+
+> 요청: 안 쓰기로 한 soft message의 잔재 제거. 카드 보낼 때 상대에게 **`new_card`("새 데이트 추천") + `soft_message`("다정한 문장/복사 모달") 2개** 알림이 가던 것을, **문구 포함된 "데이트 제안" 알림 1개**로 통합. 목업 4안 중 **3안(간결 리스트 → 탭 시 미리보기 모달) + A(모달의 "제안 보러가기"는 기존 반응 화면으로 이동)** 채택. 결정: 카드 생성만으론 알림 안 가고 **보낼 때만** 알림.
+
+### 구조 변경
+- `soft_messages` row insert는 **유지**(후보 탭 "상대가 보낸 제안" 배너 + 반응 화면의 문구 표시가 이 테이블 의존). 이 insert가 곧 제안 알림의 트리거이자 문구 출처.
+- 카드 생성 알림(`trg_notify_card`) **제거** → 만들기만 하면 알림 없음. 버킷 확정 등 send 없는 카드 생성도 이제 무알림(사용자 결정).
+- 보내기 화면(`send.tsx`) 메시지 입력칸·AI추천 **유지**(문구 출처), soft message 톤 문구만 중립화.
+
+### 구현 (TDD)
+- **`lib/push.ts` + `__tests__/push.test.ts`**: `new_card` 라우팅을 `/card/{id}` → `/account/notifications`로(제안 모달에서 문구 확인 후 반응 이동). RED→GREEN, push 3/3.
+- **`app/account/notifications.tsx`**: `new_card`(+legacy `soft_message`) → 탭 시 모달. 모달 재구성 = 카드 칩 + 문구 인용 + **"제안 보러가기"**(→ `/share/reaction?cardId=`). **복사 버튼·Clipboard 삭제**. 닫기는 알림 유지(반응 전까지), "제안 보러가기" 눌러야 삭제. 리스트 아이콘 정리(reaction=핑크 Heart, 제안=라벤더 Mail; Sparkles 제거).
+- **i18n ko/en**: `proposalTitle/proposalModalTitle/proposalCta/tapToView` 추가, `softMessageTitle·newCardTitle·modalCopyButton·copiedLabel` 제거, `share.send.subText` 중립화.
+- **DB 마이그레이션** `20260719120000_merge_proposal_notification.sql`: `trg_notify_card` DROP + `notify_on_soft_message` 재작성(카드 title 조인 → `new_card` payload `{card_id, card_title, message}`).
+- **edge function** `send-push`: `new_card`/legacy 모두 title "데이트 제안이 도착했어요", body=card_title(폴백 문구).
+
+### 배포 (프로덕션 적용 완료)
+- 마이그레이션 히스토리가 로컬↔리모트 크게 어긋난 상태라 `db push`(오래된 미적용 파일 전부 밀림) 대신 **내 변경만 MCP `apply_migration`으로 직접 적용**. 적용 후 `trg_notify_card` 제거·`trg_notify_soft_message`만 잔존 확인.
+- edge function `send-push` **v3 배포**(verify_jwt:false 유지 — X-Internal-Secret 커스텀 인증).
+
+### 검증
+- `npm run validate`(tsc) 클린, 전체 **92 suites / 733 tests** 통과.
+- **실기기 미확인**(JS 변경 → Xcode Release Run 필요): ①보내기 시 상대 알림함에 제안 1개만 ②탭→모달(카드 칩+문구+"제안 보러가기", 복사 없음) ③"제안 보러가기"→반응 화면·알림 삭제 ④닫기 시 유지 ⑤카드 만들기만 하면 무알림.
+- 참고: 배포 전 쌓인 legacy `soft_message` 알림은 새 제안 모달로 열림(card_id 없으면 CTA 숨김).
+
+---
+
 ## 2026-07-18 세션 AU — 카카오 검색 크로스 유저 캐시 + 교체 시트 즉시 로딩
 
 > 목표: 교체 시트 2~3초 로딩 제거 + 비슷한 위치 유저 간 카카오 검색 결과 공유(사용자 결정: B 중심, 카카오 약관 리스크 인지 후 강행). 스펙 `docs/superpowers/specs/2026-07-18-kakao-search-cache-design.md`, 플랜 `docs/superpowers/plans/2026-07-18-kakao-search-cache.md`.
