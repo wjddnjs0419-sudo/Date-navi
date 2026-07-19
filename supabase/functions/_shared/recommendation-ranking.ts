@@ -8,7 +8,7 @@ import {
   normalizeRecommendationCategory,
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
-import { effectiveStepIntents } from './step-intent.ts';
+import { effectiveStepIntents, effectiveExcludedIntents } from './step-intent.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
@@ -21,6 +21,7 @@ export const RANKING_SCORE_WEIGHTS = {
   stepIntentNameMatch: 20,
   stepIntentExpansion1: 12,
   stepIntentExpansion2: 6,
+  stepIntentNegatedPenalty: -60,
 } as const;
 
 export type CandidateScoreBreakdown = {
@@ -98,6 +99,13 @@ export function rankPlaceCandidates(
   };
 
   const stepIntents = effectiveStepIntents(request);
+  const excludedIntents = effectiveExcludedIntents(request);
+  const negatedPenaltyFor = (place: EvidencedKakaoPlace): number => {
+    const name = place.name.normalize('NFKC').toLocaleLowerCase();
+    return excludedIntents.some((intent) => name.includes(intent.canonicalTerm.toLocaleLowerCase()))
+      ? RANKING_SCORE_WEIGHTS.stepIntentNegatedPenalty
+      : 0;
+  };
   const intentBoostFor = (place: EvidencedKakaoPlace): number => {
     let boost = 0;
     for (const intent of stepIntents) {
@@ -127,7 +135,8 @@ export function rankPlaceCandidates(
       intent: (requiredMatch
         ? RANKING_SCORE_WEIGHTS.requiredCategory
         : explicitKeywordMatch ? RANKING_SCORE_WEIGHTS.explicitKeywordEvidence : 0)
-        + intentBoostFor(place),
+        + intentBoostFor(place)
+        + negatedPenaltyFor(place),
       distance: Math.max(0, RANKING_SCORE_WEIGHTS.distanceMax - Math.floor(distanceFromSearchCenterMeters / 250)),
       budget: 0,
       preference: 0,

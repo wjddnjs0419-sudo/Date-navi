@@ -61,6 +61,7 @@ describe('recommend-date deterministic ranking', () => {
       stepIntentNameMatch: 20,
       stepIntentExpansion1: 12,
       stepIntentExpansion2: 6,
+      stepIntentNegatedPenalty: -60,
     });
   });
 
@@ -240,6 +241,27 @@ describe('rankPlaceCandidates — step intent boost', () => {
     const intentOf = (id: string) => candidates.find((candidate) => candidate.kakaoPlaceId === id)!.scoreBreakdown.intent;
     expect(intentOf('c0x') - intentOf('c1x')).toBe(35 - 12);
     expect(intentOf('c1x') - intentOf('c2x')).toBe(12 - 6);
+  });
+
+  it('negated intent에 이름 매칭되는 후보는 페널티(-60)로 하위 랭크된다', () => {
+    // resolvedExcludedIntents 부착으로 "삼겹살 제외"를 표현(재파싱 대신 부착 우선).
+    const negatedReq = {
+      ...intentRequest,
+      additionalRequest: undefined,
+      resolvedStepIntents: [],
+      resolvedExcludedIntents: [{
+        stepId: 'step-0', stepCategory: 'meal', intentType: 'dish', canonicalTerm: '삼겹살',
+        kakaoSearchTerms: ['삼겹살'], strength: 'preferred', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' }, negated: true,
+      }],
+    } as never;
+    const porky = mealPlace('neg', { name: '역전 삼겹살' });
+    const plain = mealPlace('pla');
+    const { candidates } = rankPlaceCandidates([porky, plain], negatedReq);
+    expect(candidates.findIndex((candidate) => candidate.kakaoPlaceId === 'pla'))
+      .toBeLessThan(candidates.findIndex((candidate) => candidate.kakaoPlaceId === 'neg'));
+    const penalized = candidates.find((candidate) => candidate.kakaoPlaceId === 'neg')!;
+    const clean = candidates.find((candidate) => candidate.kakaoPlaceId === 'pla')!;
+    expect(penalized.scoreBreakdown.intent - clean.scoreBreakdown.intent).toBe(-60);
   });
 });
 
