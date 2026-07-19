@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-07-19 세션 AX — 부적합 장소 필터 (A안, 카카오 무료 결정론)
+
+> 요청: 카카오 API로 쌓은 장소를 "자체 리스트"로 만들어 퀄리티↑. 브레인스토밍 결과 **무료 카카오엔 별점·리뷰 신호가 없음** 확인 → 빈도 기반 인기도 부스팅(C안)은 상권 중심성만 재고 프랜차이즈 편향 역효과라 **폐기**. 확실한 이득인 **부적합 장소 필터(A안)만** 진행, 구글 Places 품질 레벨링(B안)은 백로그 기록.
+
+### 구현 (TDD)
+- `recommendation-category.ts`: `UNFIT_CATEGORY_GROUP_CODES`(HP8·PM9·AD5·BK9·PK6·OL7·SW8·MT1·CS2·PS3·SC4·AC5·AG2·PO3) + `UNFIT_CATEGORY_NAME_KEYWORDS`(키즈카페·모텔·무인텔·병원·산부인과·성인) + `isUnfitDatePlace()` 순수 술어.
+- `recommendation-ranking.ts` `eligiblePlaces` 필터에 술어 1줄 추가 → **단일 choke point**로 recommend-date(후보)·replacement-candidates(대안) 양쪽 동시 적용.
+- 새 테이블·집계·마이그레이션 없음. `EvidencedKakaoPlace`에 이미 있는 `categoryGroupCode`/`categoryName`만 사용.
+- 기존 랭킹 테스트가 PK6(주차장)를 중립 픽스처로 쓰던 것 → 실제 부적합이라 AT4로 교체(테스트 의도 보존).
+
+### 검증
+- `npx jest`: 729/729 통과. `npm run validate`(tsc): 클린.
+- 배포: **미배포** (엣지 함수 `deploy` 필요 시 후속).
+
+### 참고
+- 스펙: `docs/superpowers/specs/2026-07-19-unfit-place-filter-design.md`
+- 후속 B안(구글 Places 별점): PLAN.md Long-Term Backlog 기록.
+
+---
+
 ## 2026-07-19 세션 AW — soft message 제거 + 알림 통합("데이트 제안" 1개, 문구 포함)
 
 > 요청: 안 쓰기로 한 soft message의 잔재 제거. 카드 보낼 때 상대에게 **`new_card`("새 데이트 추천") + `soft_message`("다정한 문장/복사 모달") 2개** 알림이 가던 것을, **문구 포함된 "데이트 제안" 알림 1개**로 통합. 목업 4안 중 **3안(간결 리스트 → 탭 시 미리보기 모달) + A(모달의 "제안 보러가기"는 기존 반응 화면으로 이동)** 채택. 결정: 카드 생성만으론 알림 안 가고 **보낼 때만** 알림.

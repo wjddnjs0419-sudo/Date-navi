@@ -23,6 +23,42 @@ const VERIFIED_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
   activity: ['액티비티', '체험', '영화관', '볼링', '방탈출', '공방', '놀이공원', '테마파크'],
 };
 
+// 데이트에 부적합한 카카오 카테고리 그룹코드. 적합 코드(FD6·CE7·CT1·AT4)만 통과.
+export const UNFIT_CATEGORY_GROUP_CODES = new Set<string>([
+  'HP8', // 병원
+  'PM9', // 약국
+  'AD5', // 숙박(모텔)
+  'BK9', // 은행
+  'PK6', // 주차장
+  'OL7', // 주유소·충전소
+  'SW8', // 지하철역
+  'MT1', // 대형마트
+  'CS2', // 편의점
+  'PS3', // 어린이집·유치원
+  'SC4', // 학교
+  'AC5', // 학원
+  'AG2', // 중개업소(부동산)
+  'PO3', // 공공기관
+]);
+
+// 허용 그룹코드 안에 숨은 부적합 장소를 categoryName 부분일치로 제거.
+export const UNFIT_CATEGORY_NAME_KEYWORDS: readonly string[] = [
+  '키즈카페',
+  '모텔',
+  '무인텔',
+  '병원',
+  '산부인과',
+  '성인',
+];
+
+export function isUnfitDatePlace(
+  place: { categoryGroupCode: string; categoryName: string },
+): boolean {
+  if (place.categoryGroupCode && UNFIT_CATEGORY_GROUP_CODES.has(place.categoryGroupCode)) return true;
+  const name = (place.categoryName ?? '').normalize('NFKC');
+  return UNFIT_CATEGORY_NAME_KEYWORDS.some((keyword) => name.includes(keyword));
+}
+
 export function normalizeRecommendationCategory(category: string): string {
   if (category === 'restaurant') return 'meal';
   if (category === 'bar') return 'drinks';

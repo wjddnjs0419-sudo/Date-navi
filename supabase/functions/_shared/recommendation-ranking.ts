@@ -4,6 +4,7 @@ import type {
   SearchEvidence,
 } from './recommendation-search.ts';
 import {
+  isUnfitDatePlace,
   normalizeRecommendationCategory,
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
@@ -74,6 +75,7 @@ export function rankPlaceCandidates(
   const excludedPlaceIds = new Set(request.excludedPlaceIds ?? []);
   const eligiblePlaces = places.filter((place) => (
     !excludedPlaceIds.has(place.kakaoPlaceId)
+    && !isUnfitDatePlace(place)
     && ![...excludedCategories].some((category) => verifiedPlaceMatchesCategory(place, category))
   ));
 

@@ -26,7 +26,7 @@ const CATEGORY_FACTS: Record<string, { group: string; name: string }> = {
   FD6: { group: '음식점', name: '음식점 > 한식' },
   CE7: { group: '카페', name: '음식점 > 카페' },
   CT1: { group: '문화시설', name: '문화시설 > 전시' },
-  PK6: { group: '서비스업', name: '서비스업 > 대여' },
+  AT4: { group: '관광명소', name: '관광명소 > 전망대' },
 };
 
 const place = (id: string, categoryCode: string, longitude = 127.001): EvidencedKakaoPlace => ({
@@ -63,11 +63,11 @@ describe('recommend-date deterministic ranking', () => {
   it('ranks required category and explicit-query evidence ahead of broad fallback', () => {
     const required = place('required', 'FD6', 127.01);
     const explicit = {
-      ...place('explicit', 'PK6', 127.005),
+      ...place('explicit', 'AT4', 127.005),
       matchedSearchEvidence: [{ queryId: 'explicit', source: 'keyword' as const, queryText: '루프탑', page: 1 }],
     };
     const fallback = {
-      ...place('fallback', 'PK6', 127.001),
+      ...place('fallback', 'AT4', 127.001),
       matchedSearchEvidence: [{ queryId: 'fallback', source: 'fallback' as const, queryText: '주변 데이트 장소', page: 1 }],
     };
 
@@ -122,6 +122,19 @@ describe('recommend-date deterministic ranking', () => {
     }
   });
 
+  it('drops unfit places (hospital group, kids cafe name) before recall', () => {
+    const survivor = place('survivor', 'FD6');
+    const hospital = place('hospital', 'HP8', 127.001);
+    const kidsCafe = {
+      ...place('kids', 'CE7'),
+      categoryName: '음식점 > 카페 > 키즈카페',
+    };
+
+    const ranked = rankPlaceCandidates([hospital, kidsCafe, survivor], request(['meal']));
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toEqual(['survivor']);
+  });
+
   it('uses query evidence for intent only, never verified category exclusion or recall', () => {
     const restaurantFromDrinksQuery = {
       ...place('restaurant', 'FD6'),
@@ -130,10 +143,10 @@ describe('recommend-date deterministic ranking', () => {
       }],
     };
     const genericFromActivityQuery = {
-      ...place('generic', 'PK6'),
+      ...place('generic', 'AT4'),
       name: '데이트 플레이스',
-      categoryGroupName: '서비스업',
-      categoryName: '서비스업 > 대여',
+      categoryGroupName: '관광명소',
+      categoryName: '관광명소 > 기타',
       matchedSearchEvidence: [{
         queryId: 'activity-query', source: 'keyword' as const, queryText: '액티비티', page: 1,
       }],
