@@ -16,7 +16,7 @@
 
 ### 검증
 - `npx jest`: 729/729 통과. `npm run validate`(tsc): 클린.
-- 배포: **미배포** (엣지 함수 `deploy` 필요 시 후속).
+- 배포: **완료** — `recommend-date` + `replacement-candidates` 프로덕션 적용(project wqjguifsmtblgrhdfnji).
 
 ### 참고
 - 스펙: `docs/superpowers/specs/2026-07-19-unfit-place-filter-design.md`
