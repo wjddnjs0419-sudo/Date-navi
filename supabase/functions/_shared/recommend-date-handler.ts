@@ -297,6 +297,23 @@ export async function handleRecommendDate(
         candidateCount: search.candidates.length,
       },
       route: built.route,
+      ...(resolved.source !== 'none' || resolved.unsupported.length > 0 || resolved.conflicts.length > 0
+        ? {
+          stepIntent: {
+            parserSource: resolved.source,
+            aiFallbackUsed: resolved.source === 'ai',
+            resolved: [...resolved.stepIntents, ...resolved.excludedIntents].map((intent) => ({
+              canonicalTerm: intent.canonicalTerm,
+              displayLabel: intent.displayLabel,
+              strength: intent.strength,
+              negated: intent.negated ?? false,
+              stepId: intent.stepId,
+            })),
+            unsupported: resolved.unsupported,
+            conflicts: resolved.conflicts,
+          },
+        }
+        : {}),
     },
   });
   if (!response.success) return courseValidationFailure(dependencies, 'response_schema');

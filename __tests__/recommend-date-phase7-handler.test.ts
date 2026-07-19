@@ -290,4 +290,22 @@ describe('recommend-date step intent resolve 배선', () => {
     await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
     expect(parseStepIntentsAi).not.toHaveBeenCalled();
   });
+
+  it('응답 metadata.stepIntent에 parserSource와 resolved 칩 데이터가 담긴다', async () => {
+    const deps = dependencies({
+      searchCandidates: jest.fn(async () => ({ candidates: porkCandidates, recallByCategory: { meal: 1, cafe: 1 }, searchMetadata: metadata() })),
+    });
+    const body: RecommendationRequest = { ...request(), additionalRequest: '삼겹살 먹고 싶어' };
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+    expect(result.status).toBe(200);
+    const meta = (result.body as { metadata: { stepIntent?: { parserSource: string; resolved: { canonicalTerm: string }[] } } }).metadata.stepIntent;
+    expect(meta?.parserSource).toBe('rule');
+    expect(meta?.resolved.map((r) => r.canonicalTerm)).toContain('삼겹살');
+  });
+
+  it('additionalRequest가 없으면 metadata.stepIntent를 넣지 않는다', async () => {
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, dependencies());
+    const meta = (result.body as { metadata: { stepIntent?: unknown } }).metadata;
+    expect(meta.stepIntent).toBeUndefined();
+  });
 });

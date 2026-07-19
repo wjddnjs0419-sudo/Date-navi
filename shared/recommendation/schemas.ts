@@ -215,12 +215,27 @@ export const recommendDateRouteMetadataSchema = z.object({
   hardConstraintValidated: z.literal(false),
 }).strict();
 
+export const stepIntentMetadataSchema = z.object({
+  parserSource: z.enum(['none', 'rule', 'ai']),
+  aiFallbackUsed: z.boolean(),
+  resolved: z.array(z.object({
+    canonicalTerm: boundedText(80),
+    displayLabel: z.object({ ko: boundedText(80), en: boundedText(80) }),
+    strength: z.enum(['required', 'preferred']),
+    negated: z.boolean(),
+    stepId: boundedText(120),
+  })),
+  unsupported: z.array(z.object({ term: boundedText(80), reason: boundedText(200) })),
+  conflicts: z.array(z.object({ description: boundedText(280) })),
+}).strict();
+
 export const recommendDateMetadataSchema = z.object({
   fallbackUsed: z.boolean(),
   selectionSource: z.enum(['ai', 'deterministic_fallback']),
   selectionReason: z.enum(['none', 'ai_timeout', 'ai_malformed', 'ai_invalid_selection', 'ai_route_constraint', 'ai_unavailable']),
   search: recommendDateSearchMetadataSchema,
   route: recommendDateRouteMetadataSchema,
+  stepIntent: stepIntentMetadataSchema.optional(),
 }).strict();
 
 const ROUTE_DISTANCE_TOLERANCE_METERS = 0.5;
