@@ -386,6 +386,39 @@ describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
   });
 });
 
+describe('searchAndRankRecommendation — 교체 경로 step intent 전파', () => {
+  it('교체 재검색도 원 요청의 step intent 쿼리·가산을 반영한다', async () => {
+    const replacementRequest: RecommendationRequest = {
+      ...request(['meal']),
+      additionalRequest: '삼겹살 먹고 싶어',
+    };
+    const executedQueries: string[] = [];
+    const fetcher: KakaoFetch = jest.fn(async (input: string | URL | Request) => {
+      const parsed = new URL(String(input));
+      const query = parsed.searchParams.get('query') ?? parsed.searchParams.get('category_group_code') ?? '';
+      executedQueries.push(query);
+      const isPork = query === '삼겹살';
+      const documents = isPork
+        ? [document('pork-1', {
+          category_group_code: 'FD6', category_group_name: '음식점',
+          category_name: '음식점 > 한식 > 육류,고기 > 삼겹살',
+        })]
+        : [document(`plain-${executedQueries.length}`, {
+          category_group_code: 'FD6', category_group_name: '음식점', category_name: '음식점 > 한식',
+        })];
+      return response(200, { documents });
+    }) as KakaoFetch;
+
+    const result = await searchAndRankRecommendation(replacementRequest, { kakaoRestApiKey: 'k', fetcher });
+
+    expect(executedQueries).toContain('삼겹살');
+    const porkIndex = result.candidates.findIndex((candidate) => candidate.kakaoPlaceId === 'pork-1');
+    const plainIndex = result.candidates.findIndex((candidate) => candidate.kakaoPlaceId.startsWith('plain-'));
+    expect(porkIndex).toBeGreaterThanOrEqual(0);
+    expect(porkIndex).toBeLessThan(plainIndex);
+  });
+});
+
 describe('executeKakaoSearchPlan — step intent progressive expansion', () => {
   const intentPlan = () => buildKakaoSearchPlan({ ...request(['meal', 'cafe']), additionalRequest: '삼겹살' });
   const outcomeFor = (query: KakaoSearchQuery, ids: string[]): KakaoSearchOutcome => ({
