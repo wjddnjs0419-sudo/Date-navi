@@ -371,7 +371,7 @@ describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
     });
   });
 
-  it('실행 시 step_intent 쿼리가 required와 같은 1차 패스에서 실행된다', async () => {
+  it('실행 시 step_intent exact(레벨 0) 쿼리가 required와 같은 1차 패스에서 실행된다', async () => {
     const searchPage = jest.fn(async (query: KakaoSearchQuery): Promise<KakaoSearchOutcome> => ({
       query,
       status: 'success' as const,
@@ -383,5 +383,43 @@ describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
     const phases = searchPage.mock.calls.map(([query]) => (query as KakaoSearchQuery & { phase?: string }).phase);
     expect(phases).toContain('step_intent');
     expect(phases).not.toContain('intent');
+  });
+});
+
+describe('executeKakaoSearchPlan — step intent progressive expansion', () => {
+  const intentPlan = () => buildKakaoSearchPlan({ ...request(['meal', 'cafe']), additionalRequest: '삼겹살' });
+  const outcomeFor = (query: KakaoSearchQuery, ids: string[]): KakaoSearchOutcome => ({
+    query,
+    status: 'success',
+    documents: ids.map((id) => document(id, query.phase === 'step_intent'
+      ? { category_group_code: 'FD6', category_name: '음식점 > 한식 > 육류,고기 > 삼겹살' }
+      : {})),
+  });
+
+  it('exact가 충분(≥3)하면 expansion 쿼리를 실행하지 않는다', async () => {
+    const executed: KakaoSearchQuery[] = [];
+    const search = async (query: KakaoSearchQuery) => {
+      executed.push(query);
+      if (query.phase === 'step_intent' && query.expansionLevel === 0) {
+        return outcomeFor(query, ['i1', 'i2', 'i3']);
+      }
+      return outcomeFor(query, [`${query.queryId}-a`, `${query.queryId}-b`, `${query.queryId}-c`,
+        `${query.queryId}-d`, `${query.queryId}-e`, `${query.queryId}-f`]);
+    };
+    await executeKakaoSearchPlan(intentPlan(), search);
+    expect(executed.filter((query) => query.phase === 'step_intent').map((query) => query.expansionLevel))
+      .toEqual([0]);
+  });
+
+  it('exact가 부족하면 expansion 1 → 2 순서로 추가 실행한다', async () => {
+    const executed: KakaoSearchQuery[] = [];
+    const search = async (query: KakaoSearchQuery) => {
+      executed.push(query);
+      return outcomeFor(query, query.phase === 'step_intent' ? [] : [`${query.queryId}-a`, `${query.queryId}-b`,
+        `${query.queryId}-c`, `${query.queryId}-d`, `${query.queryId}-e`, `${query.queryId}-f`]);
+    };
+    await executeKakaoSearchPlan(intentPlan(), search);
+    expect(executed.filter((query) => query.phase === 'step_intent').map((query) => query.expansionLevel))
+      .toEqual([0, 1, 2]);
   });
 });

@@ -339,10 +339,27 @@ export async function executeKakaoSearchPlan(
   };
   const uniqueCount = () => mergeKakaoSearchEvidence(outcomes).length;
 
+  const MIN_INTENT_MATCHES = 3;
+  const intentMatchCount = (canonicalTerm: string) => mergeKakaoSearchEvidence(outcomes)
+    .filter((place) => place.matchedSearchEvidence.some((evidence) => (
+      evidence.phase === 'step_intent' && evidence.canonicalTerm === canonicalTerm
+    )) || place.name.normalize('NFKC').toLocaleLowerCase().includes(canonicalTerm.toLocaleLowerCase()))
+    .length;
+
+  // 1차: required 카테고리 + step-intent exact + (파싱 실패 시) raw explicit
   for (const item of plan.filter((entry) => (
-    entry.phase === 'required' || entry.phase === 'step_intent' || entry.phase === 'explicit'
+    entry.phase === 'required'
+    || (entry.phase === 'step_intent' && entry.expansionLevel === 0)
+    || entry.phase === 'explicit'
   ))) {
     await run(item, 1);
+  }
+  // step-intent progressive expansion(스펙 §10.3): exact 매칭 후보가 부족할 때만 확장.
+  for (const level of [1, 2] as const) {
+    for (const item of plan.filter((entry) => entry.phase === 'step_intent' && entry.expansionLevel === level)) {
+      if (!item.canonicalTerm || intentMatchCount(item.canonicalTerm) >= MIN_INTENT_MATCHES) continue;
+      await run(item, 1);
+    }
   }
   if (uniqueCount() < limits.minUniqueCandidates) {
     for (const item of plan.filter((entry) => entry.phase === 'intent' || entry.phase === 'fallback')) {
@@ -352,6 +369,8 @@ export async function executeKakaoSearchPlan(
   }
   for (let page = 2; page <= limits.maxPagesPerQuery && uniqueCount() < limits.minUniqueCandidates; page++) {
     for (const item of plan) {
+      // 예산 보호: step-intent expansion(레벨 1·2)은 page 2 재실행 대상에서 제외.
+      if (item.phase === 'step_intent' && item.expansionLevel !== 0) continue;
       await run(item, page);
       if (outcomes.length >= limits.maxRequests || uniqueCount() >= limits.minUniqueCandidates) break;
     }
