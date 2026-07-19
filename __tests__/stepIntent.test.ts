@@ -57,10 +57,28 @@ describe('parseStepIntents', () => {
   });
 
   it('required 마커는 대상어 앞쪽만 본다(뒤 매칭어로 번지지 않음)', () => {
-    // 삼겹살은 required 마커('무조건')보다 앞에 있으므로 required로 오판되면 안 된다.
+    // 삼겹살은 '말고'로 부정되어 excludedIntents로 빠지고, 파스타가 무조건(required)으로 남는다.
     const parsed = parseStepIntents(request('삼겹살 말고 무조건 파스타'));
-    expect(parsed.stepIntents[0]?.canonicalTerm).toBe('삼겹살');
-    expect(parsed.stepIntents[0]?.strength).toBe('preferred');
+    expect(parsed.stepIntents.map((i) => [i.canonicalTerm, i.strength])).toEqual([['파스타', 'required']]);
+    expect(parsed.excludedIntents.map((i) => i.canonicalTerm)).toEqual(['삼겹살']);
+  });
+
+  it('부정 마커(말고/빼고)는 intent를 negated로 표시하고 positive에서 제외한다', () => {
+    const parsed = parseStepIntents(request('삼겹살 말고 파스타 먹고 싶어'));
+    const pasta = parsed.stepIntents.find((i) => i.canonicalTerm === '파스타');
+    expect(pasta?.negated ?? false).toBe(false);
+    expect(parsed.stepIntents.some((i) => i.canonicalTerm === '삼겹살')).toBe(false);
+    expect(parsed.excludedIntents.map((i) => i.canonicalTerm)).toEqual(['삼겹살']);
+    expect(parsed.excludedIntents[0]?.negated).toBe(true);
+  });
+
+  it('영어 부정(not/except)도 감지한다', () => {
+    const parsed = parseStepIntents(request('pasta but not sushi'));
+    expect(parsed.excludedIntents.map((i) => i.canonicalTerm)).toEqual(['초밥']);
+  });
+
+  it('부정 마커 없으면 excludedIntents는 빈 배열', () => {
+    expect(parseStepIntents(request('삼겹살 먹고 싶어')).excludedIntents).toEqual([]);
   });
 
   it('locked 스텝에는 intent를 배정하지 않는다', () => {

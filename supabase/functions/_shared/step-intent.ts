@@ -19,10 +19,13 @@ export type ParsedStepIntent = {
   kakaoSearchTerms: string[];
   strength: StepIntentStrength;
   displayLabel: { ko: string; en: string };
+  /** 부정 마커(말고/빼고/not)로 걸린 intent. positive가 아니라 excludedIntents로 분리된다. */
+  negated?: boolean;
 };
 
 export type ParsedStepIntents = {
   stepIntents: ParsedStepIntent[];
+  excludedIntents: ParsedStepIntent[];
   parserVersion: string;
 };
 
@@ -56,9 +59,22 @@ function isRequiredAt(text: string, matchIndex: number): boolean {
   return REQUIRED_MARKERS_KO.test(windowText) || REQUIRED_MARKERS_EN.test(windowText);
 }
 
+const NEGATION_MARKERS_KO = /(?:말고|말구|빼고|제외|아니)/;
+const NEGATION_MARKERS_EN = /\b(?:not|except|no)\b/i;
+const NEGATION_WINDOW = 10;
+
+function isNegatedAt(text: string, matchIndex: number, canonicalLen: number): boolean {
+  // 한국어 부정은 대상어 뒤에 온다("삼겹살 말고"), 영어 부정은 앞에 온다("not sushi").
+  // 영어 마커를 뒤 창에서 보면 다음 단어의 부정어를 앞 단어가 가로채므로("pasta but not sushi"에서
+  // pasta가 sushi의 not을 삼킴) 방향을 분리한다.
+  const after = text.slice(matchIndex + canonicalLen, matchIndex + canonicalLen + NEGATION_WINDOW);
+  const before = text.slice(Math.max(0, matchIndex - NEGATION_WINDOW), matchIndex);
+  return NEGATION_MARKERS_KO.test(after) || NEGATION_MARKERS_EN.test(before);
+}
+
 export function parseStepIntents(request: RecommendationRequest): ParsedStepIntents {
   const raw = request.additionalRequest?.trim();
-  if (!raw) return { stepIntents: [], parserVersion: STEP_INTENT_PARSER_VERSION };
+  if (!raw) return { stepIntents: [], excludedIntents: [], parserVersion: STEP_INTENT_PARSER_VERSION };
   const text = normalize(raw);
 
   // 사전 순회로 매칭 수집. 같은 canonical은 1회만.
@@ -74,25 +90,35 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   const lockedStepIds = new Set((request.lockedSteps ?? []).map((lock) => lock.stepId));
   const usedStepIds = new Set<string>();
   const stepIntents: ParsedStepIntent[] = [];
+  const excludedIntents: ParsedStepIntent[] = [];
   for (const { entry, index } of matches) {
-    const step = request.courseSteps.find((candidate) => (
-      !usedStepIds.has(candidate.id)
-      && !lockedStepIds.has(candidate.id)
+    const negated = isNegatedAt(text, index, normalize(entry.canonicalTerm).length);
+    // 부정 intent는 step을 점유하지 않으므로(제외는 이름/카테고리 기반) 사용 여부와 무관하게 수집한다.
+    // positive는 아직 안 쓴 대상 category step이 있어야 바인딩된다.
+    const matchingStep = request.courseSteps.find((candidate) => (
+      !lockedStepIds.has(candidate.id)
+      && (negated || !usedStepIds.has(candidate.id))
       && normalizeRecommendationCategory(candidate.category) === entry.targetCategory
     ));
-    if (!step) continue; // 대상 category step 없음 → intent 미생성(Phase 2에서 unsupported로 노출)
-    usedStepIds.add(step.id);
-    stepIntents.push({
-      stepId: step.id,
+    if (!matchingStep) continue; // 대상 category step 없음 → intent 미생성(Phase 2에서 unsupported로 노출)
+    const intent: ParsedStepIntent = {
+      stepId: matchingStep.id,
       stepCategory: entry.targetCategory,
       intentType: entry.intentType,
       canonicalTerm: entry.canonicalTerm,
       kakaoSearchTerms: [entry.canonicalTerm, ...entry.expansions].slice(0, 3),
       strength: isRequiredAt(text, index) ? 'required' : 'preferred',
       displayLabel: entry.displayLabel,
-    });
+      ...(negated ? { negated: true } : {}),
+    };
+    if (negated) {
+      excludedIntents.push(intent);
+    } else {
+      usedStepIds.add(matchingStep.id);
+      stepIntents.push(intent);
+    }
   }
-  return { stepIntents, parserVersion: STEP_INTENT_PARSER_VERSION };
+  return { stepIntents, excludedIntents, parserVersion: STEP_INTENT_PARSER_VERSION };
 }
 
 type IntentEvidence = {
