@@ -32,6 +32,6 @@ describe('generate-ai replacement candidate curation action', () => {
 
   it('logs the action and returns the strict selection without the legacy usage envelope field', () => {
     expect(source).toContain('replacement_select: { schema: REPLACEMENT_SELECT_SCHEMA, maxTokens: 256, temperature: 0, logged: true }');
-    expect(source).toContain("if (action === 'recommend_date_select' || action === 'replacement_select') return json(parsed);");
+    expect(source).toContain("if (action === 'recommend_date_select' || action === 'replacement_select' || action === 'parse_step_intents') return json(parsed);");
   });
 });

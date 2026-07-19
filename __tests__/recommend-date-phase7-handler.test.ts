@@ -257,3 +257,37 @@ describe('recommend-date Phase 7 candidate-only recovery and response', () => {
     expect(serialized).not.toMatch(/outcomes|prompt|price|quiet|opening/i);
   });
 });
+
+describe('recommend-date step intent resolve 배선', () => {
+  const porkCandidates = [
+    { ...candidate('meal-candidate', 'meal-id', 'FD6', 127), categoryName: '음식점 > 한식 > 육류,고기 > 삼겹살' },
+    candidate('cafe-candidate', 'cafe-id', 'CE7', 127.001),
+  ];
+
+  it('규칙 사전 히트("삼겹살")는 AI 파서를 호출하지 않고 200을 반환한다', async () => {
+    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
+    const deps = dependencies({
+      searchCandidates: jest.fn(async () => ({ candidates: porkCandidates, recallByCategory: { meal: 1, cafe: 1 }, searchMetadata: metadata() })),
+      parseStepIntentsAi,
+    });
+    const body: RecommendationRequest = { ...request(), additionalRequest: '삼겹살 먹고 싶어' };
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+    expect(result.status).toBe(200);
+    expect(parseStepIntentsAi).not.toHaveBeenCalled();
+  });
+
+  it('사전 미검출 + 유의미 잔여 텍스트면 AI 파서를 한 번 호출한다', async () => {
+    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
+    const deps = dependencies({ parseStepIntentsAi });
+    const body: RecommendationRequest = { ...request(), additionalRequest: '뭔가 색다르고 이색적인 곳으로 가고파' };
+    await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+    expect(parseStepIntentsAi).toHaveBeenCalledTimes(1);
+  });
+
+  it('additionalRequest가 없으면 AI 파서를 호출하지 않는다', async () => {
+    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
+    const deps = dependencies({ parseStepIntentsAi });
+    await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+    expect(parseStepIntentsAi).not.toHaveBeenCalled();
+  });
+});

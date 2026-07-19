@@ -1,6 +1,10 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/contracts.ts';
-import { parseStepIntents, type ParsedStepIntent } from './step-intent.ts';
-import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
+import { parseStepIntents, type ParsedStepIntent, type StepIntentStrength } from './step-intent.ts';
+import { normalizeRecommendationCategory } from './recommendation-category.ts';
+import {
+  STEP_INTENT_DICTIONARY,
+  type StepIntentType,
+} from './step-intent-dictionary.ts';
 
 export type StepIntentSource = 'none' | 'rule' | 'ai';
 
@@ -9,9 +13,79 @@ export type IntentConflict = { description: string };
 
 export type AiParseResult = {
   stepIntents: ParsedStepIntent[];
+  excludedIntents?: ParsedStepIntent[];
   unsupported: UnsupportedIntent[];
   conflicts: IntentConflict[];
 };
+
+const INTENT_TYPES: readonly StepIntentType[] = ['dish', 'cuisine', 'venue_subtype', 'activity', 'culture_subtype', 'drink_type'];
+
+/**
+ * generate-ai(parse_step_intents)의 원출력을 ParsedStepIntent로 강제 변환한다.
+ * targetCategory가 일치하는 첫 미사용·미잠금 course step에 바인딩(규칙 파서와 동일 원칙).
+ * 바인딩할 step이 없는 항목은 unsupported로 옮긴다.
+ */
+export function coerceAiParseResult(raw: unknown, request: RecommendationRequest): AiParseResult {
+  const root = (raw ?? {}) as Record<string, unknown>;
+  const rawIntents = Array.isArray(root.stepIntents) ? root.stepIntents : [];
+  const lockedStepIds = new Set((request.lockedSteps ?? []).map((lock) => lock.stepId));
+  const usedStepIds = new Set<string>();
+  const stepIntents: ParsedStepIntent[] = [];
+  const excludedIntents: ParsedStepIntent[] = [];
+  const unsupported: UnsupportedIntent[] = [];
+
+  for (const item of rawIntents) {
+    const entry = (item ?? {}) as Record<string, unknown>;
+    const canonicalTerm = typeof entry.canonicalTerm === 'string' ? entry.canonicalTerm.trim() : '';
+    const targetCategory = typeof entry.targetCategory === 'string' ? entry.targetCategory : '';
+    if (!canonicalTerm || !targetCategory) continue;
+    const negated = entry.negated === true;
+    const step = request.courseSteps.find((candidate) => (
+      !lockedStepIds.has(candidate.id)
+      && (negated || !usedStepIds.has(candidate.id))
+      && normalizeRecommendationCategory(candidate.category) === targetCategory
+    ));
+    if (!step) {
+      unsupported.push({ term: canonicalTerm, reason: `no ${targetCategory} step in course` });
+      continue;
+    }
+    const dictionaryEntry = STEP_INTENT_DICTIONARY.find((candidate) => candidate.canonicalTerm === canonicalTerm);
+    const kakaoSearchTerms = Array.isArray(entry.kakaoSearchTerms)
+      ? entry.kakaoSearchTerms.filter((term): term is string => typeof term === 'string').slice(0, 3)
+      : [];
+    const intent: ParsedStepIntent = {
+      stepId: step.id,
+      stepCategory: targetCategory,
+      intentType: INTENT_TYPES.includes(entry.intentType as StepIntentType) ? entry.intentType as StepIntentType : 'dish',
+      canonicalTerm,
+      kakaoSearchTerms: kakaoSearchTerms.length > 0 ? kakaoSearchTerms : [canonicalTerm],
+      strength: (entry.strength === 'required' ? 'required' : 'preferred') as StepIntentStrength,
+      displayLabel: dictionaryEntry?.displayLabel ?? { ko: canonicalTerm, en: canonicalTerm },
+      ...(negated ? { negated: true } : {}),
+    };
+    if (negated) {
+      excludedIntents.push(intent);
+    } else {
+      usedStepIds.add(step.id);
+      stepIntents.push(intent);
+    }
+  }
+
+  const rawUnsupported = Array.isArray(root.unsupported) ? root.unsupported : [];
+  for (const item of rawUnsupported) {
+    const entry = (item ?? {}) as Record<string, unknown>;
+    if (typeof entry.term === 'string' && typeof entry.reason === 'string') {
+      unsupported.push({ term: entry.term, reason: entry.reason });
+    }
+  }
+  const rawConflicts = Array.isArray(root.conflicts) ? root.conflicts : [];
+  const conflicts: IntentConflict[] = rawConflicts
+    .map((item) => (item ?? {}) as Record<string, unknown>)
+    .filter((entry) => typeof entry.description === 'string')
+    .map((entry) => ({ description: entry.description as string }));
+
+  return { stepIntents, excludedIntents, unsupported, conflicts };
+}
 
 export type ResolvedStepIntents = {
   source: StepIntentSource;
@@ -96,7 +170,7 @@ export async function resolveStepIntents(
     return {
       source: 'ai',
       stepIntents: ai.stepIntents,
-      excludedIntents: rule.excludedIntents,
+      excludedIntents: [...rule.excludedIntents, ...(ai.excludedIntents ?? [])],
       unsupported: ai.unsupported ?? [],
       conflicts: ai.conflicts ?? [],
     };

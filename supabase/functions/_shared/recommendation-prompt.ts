@@ -1,16 +1,18 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { mergeServerPreferences } from './recommendation-intent.ts';
-import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
 
 export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v4-step-intent';
+export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v1';
 
 export function buildRecommendationPrompt(
   request: RecommendationRequest,
   candidates: readonly PlaceCandidate[] = [],
 ): string {
   const serverPreferences = mergeServerPreferences(request);
-  const { stepIntents } = parseStepIntents(request);
+  const stepIntents = effectiveStepIntents(request);
   const resolvedStepIntents = stepIntents.map((intent) => ({
     stepId: intent.stepId,
     canonicalTerm: intent.canonicalTerm,
@@ -88,5 +90,42 @@ export function buildRecommendationPrompt(
     JSON.stringify(structuredConstraints, null, 2),
     'Verified Kakao candidates:',
     JSON.stringify(verifiedCandidates, null, 2),
+  ].join('\n');
+}
+
+/**
+ * parse_step_intents(AI fallback) 프롬프트. 규칙 파서가 못 잡은 자유텍스트를 course step별
+ * canonical 검색 의도로 변환한다. 등재 canonical 우선, 미매핑은 unsupported로.
+ */
+export function buildParseStepIntentsPrompt(request: RecommendationRequest): string {
+  const registeredCanonicals = STEP_INTENT_DICTIONARY.map((entry) => ({
+    canonicalTerm: entry.canonicalTerm,
+    targetCategory: entry.targetCategory,
+    intentType: entry.intentType,
+    expansions: entry.expansions,
+  }));
+  const orderedCourseSteps = request.courseSteps.map((step, index) => ({
+    order: index + 1,
+    stepId: step.id,
+    category: step.category,
+    label: step.label,
+  }));
+
+  return [
+    'Extract structured step intents from a Korean/English free-text date request.',
+    'Map each concrete desire (a specific dish, cuisine, venue subtype, activity, culture subtype, or drink type) to a targetCategory that matches one of the course steps.',
+    'Prefer a registered canonicalTerm when the desire matches one; otherwise use a concise Korean canonical noun suitable for a Kakao keyword search.',
+    'targetCategory must be one of: meal, cafe, culture, walk, drinks, activity.',
+    'strength is "required" only for unconditional demands (무조건/반드시/꼭/only/must); otherwise "preferred".',
+    'negated is true when the user excludes it (말고/빼고/제외/not/except).',
+    'kakaoSearchTerms: 1-3 short Korean keywords, canonical first, then optional broader terms.',
+    'If a desire has no matching course-step category, put it in unsupported with a short reason instead of stepIntents.',
+    'Report contradictory demands (e.g. two required dishes for one meal step) in conflicts.',
+    'Return only the strict JSON schema shape. Do not invent places or facts.',
+    'Registered canonical terms (prefer these):',
+    JSON.stringify(registeredCanonicals, null, 2),
+    'Ordered course steps:',
+    JSON.stringify(orderedCourseSteps, null, 2),
+    `Free-text request: ${JSON.stringify(request.additionalRequest ?? '')}`,
   ].join('\n');
 }

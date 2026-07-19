@@ -36,6 +36,6 @@ describe('generate-ai candidate-only recommend-date action', () => {
   });
 
   it('returns the strict recommend-date selection without the legacy usage envelope field', () => {
-    expect(source).toContain("if (action === 'recommend_date_select' || action === 'replacement_select') return json(parsed);");
+    expect(source).toContain("if (action === 'recommend_date_select' || action === 'replacement_select' || action === 'parse_step_intents') return json(parsed);");
   });
 });

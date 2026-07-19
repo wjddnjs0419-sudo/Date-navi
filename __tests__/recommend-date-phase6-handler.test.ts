@@ -131,7 +131,8 @@ describe('recommend-date Phase 6 handler boundary', () => {
 
     await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: input }, deps);
 
-    expect(deps.searchCandidates).toHaveBeenCalledWith(input);
+    // 핸들러가 resolvedStepIntents/resolvedExcludedIntents(내부 부착 필드)를 더해 넘기므로 상위 집합으로 검증.
+    expect(deps.searchCandidates).toHaveBeenCalledWith(expect.objectContaining({ ...input, resolvedStepIntents: [], resolvedExcludedIntents: [] }));
     expect(deps.generateSelection).toHaveBeenCalledWith(expect.objectContaining({
       prompt: buildRecommendationPrompt(input, searchResult.candidates),
     }));

@@ -1,7 +1,7 @@
 import { PARSE_STEP_INTENTS_SCHEMA } from '../supabase/functions/generate-ai/parse-step-intents-schema';
 
 describe('PARSE_STEP_INTENTS_SCHEMA', () => {
-  const schema = PARSE_STEP_INTENTS_SCHEMA as {
+  const schema = PARSE_STEP_INTENTS_SCHEMA as unknown as {
     properties: Record<string, { items?: { properties?: Record<string, unknown> } }>;
     required: string[];
     additionalProperties: boolean;

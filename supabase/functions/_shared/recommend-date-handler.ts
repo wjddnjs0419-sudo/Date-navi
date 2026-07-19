@@ -6,9 +6,12 @@ import {
   type RecommendationRequest,
 } from '../../../shared/recommendation/schemas.ts';
 import {
+  buildParseStepIntentsPrompt,
   buildRecommendationPrompt,
+  PARSE_STEP_INTENTS_PROMPT_VERSION,
   RECOMMEND_DATE_PROMPT_VERSION,
 } from './recommendation-prompt.ts';
+import { coerceAiParseResult, resolveStepIntents } from './step-intent-resolve.ts';
 import {
   RecommendDateDownstreamMalformedError,
   RecommendDateDownstreamTimeoutError,
@@ -25,7 +28,7 @@ import {
   candidateOnlySelectionSchema,
   CourseSelectionError,
 } from './recommendation-course-selection.ts';
-import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { placeMatchesStepIntent } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 
 export type RecommendDateRequest = {
@@ -38,6 +41,12 @@ export type RecommendDateDependencies = {
   authenticate: (authorization: string) => Promise<{ id: string } | null>;
   searchCandidates: (request: RecommendationRequest) => Promise<RecommendationSearchPipelineResult>;
   generateSelection: (input: {
+    authorization: string;
+    prompt: string;
+    promptVersion: string;
+  }) => Promise<unknown>;
+  /** step intent AI fallback(parse_step_intents). 규칙 미검출+유의미 잔여 시에만 resolve가 호출한다. */
+  parseStepIntentsAi?: (input: {
     authorization: string;
     prompt: string;
     promptVersion: string;
@@ -128,9 +137,29 @@ export async function handleRecommendDate(
     }
     : trustedRequest;
 
+  // step intent를 요청당 1회 resolve(규칙 → 게이트 충족 시 AI 병합)해 서버 내부 request에 부착한다.
+  // 하위 순수함수(search/ranking/selection/prompt)는 effectiveStepIntents로 이 값을 읽어 재파싱하지 않는다.
+  const resolved = await resolveStepIntents(serverRequest, {
+    invokeAi: dependencies.parseStepIntentsAi
+      ? async (req) => coerceAiParseResult(
+        await dependencies.parseStepIntentsAi!({
+          authorization,
+          prompt: buildParseStepIntentsPrompt(req),
+          promptVersion: PARSE_STEP_INTENTS_PROMPT_VERSION,
+        }),
+        req,
+      )
+      : undefined,
+  });
+  const intentAwareRequest = {
+    ...serverRequest,
+    resolvedStepIntents: resolved.stepIntents,
+    resolvedExcludedIntents: resolved.excludedIntents,
+  };
+
   let search: RecommendationSearchPipelineResult;
   try {
-    search = await dependencies.searchCandidates(serverRequest);
+    search = await dependencies.searchCandidates(intentAwareRequest);
   } catch {
     return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
   }
@@ -147,7 +176,7 @@ export async function handleRecommendDate(
   if (search.candidates.length === 0 || !hasEveryRequiredCategory) {
     return errorResult(422, 'INSUFFICIENT_CANDIDATES');
   }
-  const requiredStepIntents = parseStepIntents(serverRequest).stepIntents
+  const requiredStepIntents = resolved.stepIntents
     .filter((intent) => intent.strength === 'required');
   // 폴백(buildDeterministicCandidateCourse)은 categoryEligible ∩ placeMatchesStepIntent로 후보를
   // 고르므로, 게이트도 카테고리를 함께 검사해야 이름만 매칭되는 비-카테고리 장소가 게이트를 통과하고
@@ -177,7 +206,7 @@ export async function handleRecommendDate(
         return errorResult(422, 'COURSE_VALIDATION_FAILED');
       }
       built = buildCandidateOnlyCourse({
-        request: serverRequest,
+        request: intentAwareRequest,
         candidates: search.candidates,
         selection: {
           steps: serverRequest.courseSteps.map((step) => ({
@@ -195,7 +224,7 @@ export async function handleRecommendDate(
       try {
         downstream = await dependencies.generateSelection({
           authorization,
-          prompt: buildRecommendationPrompt(serverRequest, search.candidates),
+          prompt: buildRecommendationPrompt(intentAwareRequest, search.candidates),
           promptVersion: RECOMMEND_DATE_PROMPT_VERSION,
         });
       } catch (error) {
@@ -236,7 +265,7 @@ export async function handleRecommendDate(
 
     if (!built) {
       built = buildDeterministicCandidateCourse({
-        request: serverRequest,
+        request: intentAwareRequest,
         candidates: search.candidates,
         generatedAt,
       });
