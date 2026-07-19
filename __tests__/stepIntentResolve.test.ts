@@ -1,5 +1,5 @@
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
-import { resolveStepIntents } from '../supabase/functions/_shared/step-intent-resolve';
+import { resolveStepIntents, type AiParseResult } from '../supabase/functions/_shared/step-intent-resolve';
 
 const request = (additionalRequest?: string): RecommendationRequest => ({
   requestId: 'req-resolve',
@@ -45,7 +45,7 @@ describe('resolveStepIntents — 고재현 AI 게이트', () => {
   });
 
   it('사전 히트가 있어도 유의미 잔여 뉘앙스가 남으면 AI 호출(다중타깃/패러프레이즈)', async () => {
-    const invokeAi = jest.fn(async () => ({
+    const invokeAi = jest.fn(async (): Promise<AiParseResult> => ({
       stepIntents: [{
         stepId: 'step-1', stepCategory: 'meal', intentType: 'dish', canonicalTerm: '삼겹살',
         kakaoSearchTerms: ['삼겹살'], strength: 'preferred', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' },
@@ -63,10 +63,10 @@ describe('resolveStepIntents — 고재현 AI 게이트', () => {
   });
 
   it('AI 성공 시 source=ai, stepIntents는 AI 결과, excluded는 규칙 유지', async () => {
-    const invokeAi = jest.fn(async () => ({
+    const invokeAi = jest.fn(async (): Promise<AiParseResult> => ({
       stepIntents: [{
         stepId: 'step-1', stepCategory: 'meal', intentType: 'dish', canonicalTerm: '브런치',
-        kakaoSearchTerms: ['브런치'], strength: 'preferred' as const, displayLabel: { ko: '브런치', en: 'Brunch' },
+        kakaoSearchTerms: ['브런치'], strength: 'preferred', displayLabel: { ko: '브런치', en: 'Brunch' },
       }],
       unsupported: [{ term: '루프탑', reason: 'no cafe-subtype step' }],
       conflicts: [],
