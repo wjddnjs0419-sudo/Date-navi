@@ -26,14 +26,33 @@ const courseFailureStages = new Set([
 
 export type CourseFailureStage = typeof courseFailureStages extends Set<infer Stage> ? Stage : never;
 
+export type UnsatisfiedStepIntent = {
+  canonicalTerm: string;
+  displayLabel: { ko: string; en: string };
+};
+
 export class RecommendationRequestError extends Error {
   constructor(
     public readonly code: RecommendationErrorCode,
     public readonly failureStage?: CourseFailureStage,
+    public readonly unsatisfiedIntents?: UnsatisfiedStepIntent[],
   ) {
     super(code);
     this.name = 'RecommendationRequestError';
   }
+}
+
+function parseUnsatisfiedIntents(value: unknown): UnsatisfiedStepIntent[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const intents = value.flatMap((item) => {
+    const entry = (item ?? {}) as Record<string, unknown>;
+    const label = (entry.displayLabel ?? {}) as Record<string, unknown>;
+    if (typeof entry.canonicalTerm === 'string' && typeof label.ko === 'string' && typeof label.en === 'string') {
+      return [{ canonicalTerm: entry.canonicalTerm, displayLabel: { ko: label.ko, en: label.en } }];
+    }
+    return [];
+  });
+  return intents.length > 0 ? intents : undefined;
 }
 
 export function isPreparedRequestExpiredError(error: unknown): boolean {
@@ -44,8 +63,9 @@ async function toRecommendationRequestError(error: unknown): Promise<Recommendat
   const context = (error as { context?: { json?: () => Promise<unknown> } } | null)?.context;
   let payload: unknown;
   try { payload = await context?.json?.(); } catch { payload = undefined; }
-  const code = (payload as { error?: { code?: unknown } } | null)?.error?.code;
-  const failureStage = (payload as { error?: { failureStage?: unknown } } | null)?.error?.failureStage;
+  const errorPayload = (payload as { error?: Record<string, unknown> } | null)?.error;
+  const code = errorPayload?.code;
+  const failureStage = errorPayload?.failureStage;
   const typedCode =
     typeof code === 'string' && recommendationErrorCodes.has(code as RecommendationErrorCode)
       ? code as RecommendationErrorCode
@@ -56,6 +76,9 @@ async function toRecommendationRequestError(error: unknown): Promise<Recommendat
       && typeof failureStage === 'string'
       && courseFailureStages.has(failureStage as CourseFailureStage)
       ? failureStage as CourseFailureStage
+      : undefined,
+    typedCode === 'STEP_INTENT_UNSATISFIED'
+      ? parseUnsatisfiedIntents(errorPayload?.unsatisfiedIntents)
       : undefined,
   );
 }

@@ -165,6 +165,26 @@ describe('structured recommend-date client', () => {
     );
   });
 
+  it('preserves unsatisfiedIntents from STEP_INTENT_UNSATISFIED for the relaxation UI', async () => {
+    const requestBody = buildRecommendationRequest(courseDraft, 'req-client-intent-001', 'ko');
+    invoke.mockResolvedValue({
+      data: null,
+      error: { context: { json: async () => ({
+        error: {
+          code: 'STEP_INTENT_UNSATISFIED',
+          unsatisfiedIntents: [{ canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' } }],
+        },
+      }) } },
+    });
+
+    await expect(requestRecommendationResponse(requestBody)).rejects.toEqual(
+      expect.objectContaining<Partial<RecommendationRequestError>>({
+        code: 'STEP_INTENT_UNSATISFIED',
+        unsatisfiedIntents: [{ canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' } }],
+      }),
+    );
+  });
+
   it('returns the complete validated Phase 7 response for DB session persistence', async () => {
     const requestBody = buildRecommendationRequest(courseDraft, 'req-client-001', 'ko');
     const responseBody = response(requestBody.requestId);
