@@ -324,3 +324,64 @@ describe('recommend-date Kakao fetch adapter and evidence', () => {
     expect(reversed.candidates).toEqual(forward.candidates);
   });
 });
+
+describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
+  const intentRequest = (additionalRequest: string): RecommendationRequest => ({
+    ...request(['meal', 'cafe']),
+    additionalRequest,
+  });
+
+  it('사전 매칭 시 step_intent 쿼리를 만들고 raw explicit 쿼리를 제거한다', () => {
+    const plan = buildKakaoSearchPlan(intentRequest('삼겹살 먹고 싶어'));
+    const stepIntent = plan.filter((item) => item.phase === 'step_intent');
+    expect(stepIntent.map((item) => [item.queryText, item.expansionLevel])).toEqual([
+      ['삼겹살', 0], ['돼지고기구이', 1], ['고기집', 2],
+    ]);
+    expect(stepIntent[0]).toMatchObject({
+      stepId: 'step-0', canonicalTerm: '삼겹살', strength: 'preferred', source: 'keyword',
+    });
+    expect(plan.some((item) => item.phase === 'explicit')).toBe(false);
+  });
+
+  it('사전 미매칭 시 기존처럼 raw explicit 쿼리를 유지한다', () => {
+    const plan = buildKakaoSearchPlan(intentRequest('감성 있는 곳이면 좋겠어'));
+    expect(plan.some((item) => item.phase === 'step_intent')).toBe(false);
+    expect(plan.find((item) => item.phase === 'explicit')?.queryText).toBe('감성 있는 곳이면 좋겠어');
+  });
+
+  it('step_intent 쿼리는 generic intent(데이트 코스)보다 앞에 온다', () => {
+    const plan = buildKakaoSearchPlan(intentRequest('삼겹살'));
+    const stepIntentIndex = plan.findIndex((item) => item.phase === 'step_intent');
+    const genericIndex = plan.findIndex((item) => item.phase === 'intent');
+    expect(stepIntentIndex).toBeGreaterThan(-1);
+    expect(stepIntentIndex).toBeLessThan(genericIndex);
+  });
+
+  it('evidence에 phase/stepId/canonicalTerm/expansionLevel이 보존된다', () => {
+    const plan = buildKakaoSearchPlan(intentRequest('삼겹살'));
+    const exact = plan.find((item) => item.phase === 'step_intent' && item.expansionLevel === 0)!;
+    const outcome: KakaoSearchOutcome = {
+      query: { ...exact, page: 1 },
+      status: 'success',
+      documents: [document('intent-place')],
+    };
+    const [place] = mergeKakaoSearchEvidence([outcome]);
+    expect(place.matchedSearchEvidence[0]).toMatchObject({
+      phase: 'step_intent', stepId: 'step-0', canonicalTerm: '삼겹살', strength: 'preferred', expansionLevel: 0,
+    });
+  });
+
+  it('실행 시 step_intent 쿼리가 required와 같은 1차 패스에서 실행된다', async () => {
+    const searchPage = jest.fn(async (query: KakaoSearchQuery): Promise<KakaoSearchOutcome> => ({
+      query,
+      status: 'success' as const,
+      documents: Array.from({ length: 12 }, (_, index) => document(`${query.queryId}-${index}`)),
+    }));
+
+    await executeKakaoSearchPlan(buildKakaoSearchPlan(intentRequest('삼겹살')), searchPage);
+
+    const phases = searchPage.mock.calls.map(([query]) => (query as KakaoSearchQuery & { phase?: string }).phase);
+    expect(phases).toContain('step_intent');
+    expect(phases).not.toContain('intent');
+  });
+});

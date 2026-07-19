@@ -2,6 +2,9 @@ import type {
   RecommendationLocation,
   RecommendationRequest,
 } from '../../../shared/recommendation/contracts.ts';
+import { parseStepIntents } from './step-intent.ts';
+
+type SearchPhase = 'required' | 'step_intent' | 'explicit' | 'intent' | 'fallback';
 
 export type SearchEvidence = {
   queryId: string;
@@ -9,9 +12,13 @@ export type SearchEvidence = {
   source: 'category' | 'keyword' | 'fallback';
   page: number;
   categoryCode?: string;
+  phase?: SearchPhase;
+  stepId?: string;
+  intentType?: string;
+  canonicalTerm?: string;
+  strength?: 'required' | 'preferred';
+  expansionLevel?: 0 | 1 | 2;
 };
-
-type SearchPhase = 'required' | 'explicit' | 'intent' | 'fallback';
 
 export type KakaoSearchPlanItem = Omit<SearchEvidence, 'page'> & {
   category?: string;
@@ -123,8 +130,26 @@ export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearc
     });
   }
 
+  const { stepIntents } = parseStepIntents(request);
+  for (const intent of stepIntents) {
+    intent.kakaoSearchTerms.forEach((term, level) => {
+      items.push({
+        source: 'keyword',
+        phase: 'step_intent',
+        queryText: term,
+        stepId: intent.stepId,
+        intentType: intent.intentType,
+        canonicalTerm: intent.canonicalTerm,
+        strength: intent.strength,
+        expansionLevel: level as 0 | 1 | 2,
+      });
+    });
+  }
+  // 파싱 성공 시 raw 통문장 검색 제거(카카오는 짧은 키워드용), 실패 시에만 최후 보조로 유지.
   const explicit = request.additionalRequest?.trim();
-  if (explicit) items.push({ source: 'keyword', phase: 'explicit', queryText: explicit });
+  if (explicit && stepIntents.length === 0) {
+    items.push({ source: 'keyword', phase: 'explicit', queryText: explicit });
+  }
   items.push({ source: 'keyword', phase: 'intent', queryText: '데이트 코스' });
   items.push({ source: 'fallback', phase: 'fallback', queryText: '주변 데이트 장소' });
 
@@ -141,6 +166,12 @@ function evidenceFromQuery(query: KakaoSearchQuery): SearchEvidence {
     page: query.page,
     ...(query.queryText ? { queryText: query.queryText } : {}),
     ...(query.categoryCode ? { categoryCode: query.categoryCode } : {}),
+    ...(query.phase ? { phase: query.phase } : {}),
+    ...(query.stepId ? { stepId: query.stepId } : {}),
+    ...(query.intentType ? { intentType: query.intentType } : {}),
+    ...(query.canonicalTerm ? { canonicalTerm: query.canonicalTerm } : {}),
+    ...(query.strength ? { strength: query.strength } : {}),
+    ...(query.expansionLevel !== undefined ? { expansionLevel: query.expansionLevel } : {}),
   };
 }
 
@@ -308,7 +339,9 @@ export async function executeKakaoSearchPlan(
   };
   const uniqueCount = () => mergeKakaoSearchEvidence(outcomes).length;
 
-  for (const item of plan.filter((entry) => entry.phase === 'required' || entry.phase === 'explicit')) {
+  for (const item of plan.filter((entry) => (
+    entry.phase === 'required' || entry.phase === 'step_intent' || entry.phase === 'explicit'
+  ))) {
     await run(item, 1);
   }
   if (uniqueCount() < limits.minUniqueCandidates) {
