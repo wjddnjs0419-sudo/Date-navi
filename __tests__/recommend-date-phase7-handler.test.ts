@@ -133,6 +133,38 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 
+  it('required intent 게이트는 카테고리까지 검사한다(이름만 전시인 비-culture는 통과 못 함)', async () => {
+    // culture 스텝은 CT1 후보로 category 게이트를 통과하지만, "무조건 전시" required intent를
+    // 만족하는 후보는 이름만 전시인 FD6뿐이라 culture ∩ 전시 매칭은 0 → STEP_INTENT_UNSATISFIED.
+    const cultureRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사' },
+        { id: 'culture', category: 'culture', label: '문화' },
+      ],
+      additionalRequest: '무조건 전시',
+    };
+    const nameOnlyExhibit = { ...candidate('meal-c', 'meal-id', 'FD6', 127), name: '전시렌탈샵' };
+    const cultureVenue = {
+      ...candidate('culture-c', 'culture-id', 'CT1', 127.001),
+      name: '서울숲 문화공간',
+      categoryGroupName: '문화시설',
+      categoryName: '문화시설 > 공연장',
+    };
+    const deps = dependencies({
+      searchCandidates: jest.fn(async () => ({
+        candidates: [nameOnlyExhibit, cultureVenue],
+        recallByCategory: { meal: 1, culture: 1 },
+        searchMetadata: metadata(),
+      })),
+    });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: cultureRequest }, deps);
+
+    expect(result).toEqual({ status: 422, body: { error: createRecommendationError('STEP_INTENT_UNSATISFIED') } });
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+  });
+
   it('continues after partial search failure when every required step still has candidates', async () => {
     const deps = dependencies({
       searchCandidates: jest.fn(async () => ({

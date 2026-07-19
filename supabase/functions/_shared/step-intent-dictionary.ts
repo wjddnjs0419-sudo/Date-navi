@@ -72,7 +72,8 @@ export const STEP_INTENT_DICTIONARY: readonly StepIntentDictionaryEntry[] = [
     expansions: ['루프탑', '옥상 카페'],
     koAliases: ['루프탑카페', '루프탑'],
     enAliases: ['rooftop cafe', 'rooftop coffee', 'rooftop'],
-    compatibleCategoryNameKeywords: ['카페'],
+    // 카카오 상세 카테고리는 루프탑 여부를 구분하지 못하고(모든 CE7이 '카페' 포함) evidence·이름으로만 판정한다.
+    compatibleCategoryNameKeywords: [],
     displayLabel: { ko: '루프탑 카페', en: 'Rooftop cafe' },
   },
   {

@@ -1,4 +1,5 @@
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
+import type { LockedCourseStepInput } from '../shared/recommendation/contracts';
 import { parseStepIntents, placeMatchesStepIntent, STEP_INTENT_PARSER_VERSION } from '../supabase/functions/_shared/step-intent';
 
 const request = (additionalRequest?: string, steps: Array<{ id: string; category: string }> = [
@@ -11,6 +12,16 @@ const request = (additionalRequest?: string, steps: Array<{ id: string; category
   location: { source: 'kakao', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark' },
   courseSteps: steps.map((step) => ({ ...step, label: step.category })),
   ...(additionalRequest ? { additionalRequest } : {}),
+});
+
+const lockedStep = (stepId: string): LockedCourseStepInput => ({
+  stepId,
+  candidateId: `candidate-${stepId}`,
+  kakaoPlaceId: `place-${stepId}`,
+  name: `Locked ${stepId}`,
+  address: '', roadAddress: '', mapUrl: '',
+  latitude: 37.5444, longitude: 127.0374,
+  locked: true,
 });
 
 describe('parseStepIntents', () => {
@@ -43,6 +54,26 @@ describe('parseStepIntents', () => {
     expect(parseStepIntents(request('무조건 삼겹살이어야 해')).stepIntents[0]?.strength).toBe('required');
     expect(parseStepIntents(request('Only sushi for dinner.')).stepIntents[0]?.strength).toBe('required');
     expect(parseStepIntents(request('파스타가 좋을 것 같아')).stepIntents[0]?.strength).toBe('preferred');
+  });
+
+  it('required 마커는 대상어 앞쪽만 본다(뒤 매칭어로 번지지 않음)', () => {
+    // 삼겹살은 required 마커('무조건')보다 앞에 있으므로 required로 오판되면 안 된다.
+    const parsed = parseStepIntents(request('삼겹살 말고 무조건 파스타'));
+    expect(parsed.stepIntents[0]?.canonicalTerm).toBe('삼겹살');
+    expect(parsed.stepIntents[0]?.strength).toBe('preferred');
+  });
+
+  it('locked 스텝에는 intent를 배정하지 않는다', () => {
+    const req: RecommendationRequest = { ...request('삼겹살'), lockedSteps: [lockedStep('step-1')] };
+    expect(parseStepIntents(req).stepIntents).toEqual([]);
+  });
+
+  it('meal 스텝이 둘일 때 locked가 아닌 스텝에 배정한다', () => {
+    const req: RecommendationRequest = {
+      ...request('삼겹살', [{ id: 'step-1', category: 'meal' }, { id: 'step-2', category: 'meal' }]),
+      lockedSteps: [lockedStep('step-1')],
+    };
+    expect(parseStepIntents(req).stepIntents.map((intent) => intent.stepId)).toEqual(['step-2']);
   });
 
   it('venue_subtype은 cafe step에, 여러 intent는 각자 category step에 바인딩한다', () => {
@@ -100,5 +131,33 @@ describe('placeMatchesStepIntent', () => {
 
   it('무관한 장소는 매칭하지 않는다', () => {
     expect(placeMatchesStepIntent(place({}), intent)).toBe(false);
+  });
+});
+
+describe('placeMatchesStepIntent - venue_subtype(루프탑 카페)', () => {
+  const rooftopIntent = parseStepIntents(request('루프탑 카페 가고 싶어')).stepIntents[0]!;
+  const cafePlace = (overrides: Record<string, unknown>) => ({
+    kakaoPlaceId: 'c1',
+    name: '어느 카페',
+    categoryGroupCode: 'CE7',
+    categoryGroupName: '카페',
+    categoryName: '음식점 > 카페',
+    address: '', roadAddress: '', latitude: 37.5, longitude: 127.0, mapUrl: '',
+    matchedSearchEvidence: [],
+    ...overrides,
+  });
+
+  it('cafe는 categoryName에 항상 "카페"가 있으므로 categoryName만으로는 매칭하지 않는다', () => {
+    expect(placeMatchesStepIntent(cafePlace({ categoryName: '음식점 > 카페 > 북카페' }), rooftopIntent)).toBe(false);
+  });
+
+  it('이름에 "루프탑 카페"가 포함되면 매칭한다', () => {
+    expect(placeMatchesStepIntent(cafePlace({ name: '옥상 루프탑 카페' }), rooftopIntent)).toBe(true);
+  });
+
+  it('step_intent 검색 evidence로 매칭한다', () => {
+    expect(placeMatchesStepIntent(cafePlace({
+      matchedSearchEvidence: [{ queryId: 'q', source: 'keyword', page: 1, queryText: '루프탑 카페', phase: 'step_intent', canonicalTerm: '루프탑 카페', expansionLevel: 0 }],
+    }), rooftopIntent)).toBe(true);
   });
 });

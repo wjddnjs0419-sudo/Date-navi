@@ -267,13 +267,12 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
     const categoryEligible = input.candidates
       .filter((candidate) => candidateMatchesCategory(candidate, step.category));
     const intent = intentByStepId.get(step.id);
-    const intentMatched = intent
-      ? categoryEligible.filter((candidate) => placeMatchesStepIntent(candidate, intent))
-      : [];
-    // required intent은 매칭 후보로만 제한. preferred는 매칭 후보 우선하되 없으면 카테고리 완화 허용.
+    // required intent만 매칭 후보로 hard 제한한다. preferred는 soft preference이므로 카테고리 후보
+    // 전체를 score 정렬로 넘긴다(랭킹의 +35/+20 우대로 매칭 후보가 앞서고, 매칭이 route를 못 이루면
+    // 비매칭 후보로 완화). spec §18.4: soft preference는 hard 필터를 걸지 않는다.
     const eligible = intent?.strength === 'required'
-      ? intentMatched
-      : intentMatched.length > 0 ? intentMatched : categoryEligible;
+      ? categoryEligible.filter((candidate) => placeMatchesStepIntent(candidate, intent))
+      : categoryEligible;
     const sorted = [...eligible].sort(compareStable);
     if (sorted.length === 0) throw new CourseSelectionError('INSUFFICIENT_CANDIDATES');
     return sorted;

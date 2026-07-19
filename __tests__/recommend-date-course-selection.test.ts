@@ -514,4 +514,25 @@ describe('required step intent 검증', () => {
     });
     expect(built.course.steps[0].kakaoPlaceId).toBe('p1');
   });
+
+  it('preferred intent는 배타적으로 강제하지 않아 가까운 비매칭 후보로 완화된다', () => {
+    // 매칭 후보(삼겹살)는 멀고, 비매칭 카테고리 후보는 걷기 제한 안쪽에 있다.
+    // preferred는 soft여야 하므로 가까운 비매칭으로 route가 성립해야 한다(spec §18.4).
+    const preferredRequest: RecommendationRequest = { ...requiredRequest, additionalRequest: '삼겹살 먹고 싶어', maxWalkingMinutes: 5 };
+    const built = buildDeterministicCandidateCourse({
+      request: preferredRequest,
+      candidates: [
+        intentCandidate('candidate_pork_far', 'pork-far', {
+          categoryName: '음식점 > 한식 > 육류,고기 > 삼겹살', longitude: 127.0300,
+        }),
+        intentCandidate('candidate_meal_near', 'meal-near', { longitude: 127.0000 }),
+        intentCandidate('candidate_cafe', 'cafe-near', {
+          categoryGroupCode: 'CE7', categoryGroupName: '카페', categoryName: '음식점 > 카페', longitude: 127.0000,
+        }),
+      ],
+      generatedAt: '2026-07-19T00:00:00.000Z',
+    });
+    expect(built.course.steps[0].kakaoPlaceId).toBe('meal-near');
+    expect(built.route.walkingLimitAssessment).toBe('provisional_within');
+  });
 });

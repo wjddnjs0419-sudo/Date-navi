@@ -26,6 +26,7 @@ import {
   CourseSelectionError,
 } from './recommendation-course-selection.ts';
 import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 
 export type RecommendDateRequest = {
   method: string;
@@ -148,8 +149,14 @@ export async function handleRecommendDate(
   }
   const requiredStepIntents = parseStepIntents(serverRequest).stepIntents
     .filter((intent) => intent.strength === 'required');
+  // 폴백(buildDeterministicCandidateCourse)은 categoryEligible ∩ placeMatchesStepIntent로 후보를
+  // 고르므로, 게이트도 카테고리를 함께 검사해야 이름만 매칭되는 비-카테고리 장소가 게이트를 통과하고
+  // 폴백에서 INSUFFICIENT_CANDIDATES로 어긋나는 일을 막는다.
   const hasEveryRequiredIntent = requiredStepIntents.every((intent) => (
-    search.candidates.some((candidate) => placeMatchesStepIntent(candidate, intent))
+    search.candidates.some((candidate) => (
+      verifiedPlaceMatchesCategory(candidate, intent.stepCategory)
+      && placeMatchesStepIntent(candidate, intent)
+    ))
   ));
   if (!hasEveryRequiredIntent) {
     return errorResult(422, 'STEP_INTENT_UNSATISFIED');

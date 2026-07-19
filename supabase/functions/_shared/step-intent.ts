@@ -28,7 +28,7 @@ export type ParsedStepIntents = {
 
 const REQUIRED_MARKERS_KO = /(?:무조건|반드시|꼭)/;
 const REQUIRED_MARKERS_EN = /\b(?:only|must|has to be)\b/i;
-/** 매칭 지점 앞뒤로 required 마커를 찾는 로컬 window(자소 단위). */
+/** 대상어 앞쪽에서 required 마커를 찾는 로컬 window(자소 단위). */
 const REQUIRED_WINDOW = 14;
 
 const normalize = (value: string): string => value.normalize('NFKC').toLocaleLowerCase();
@@ -50,7 +50,9 @@ function findAliasMatch(text: string, entry: StepIntentDictionaryEntry): number 
 }
 
 function isRequiredAt(text: string, matchIndex: number): boolean {
-  const windowText = text.slice(Math.max(0, matchIndex - REQUIRED_WINDOW), matchIndex + REQUIRED_WINDOW);
+  // required 마커(무조건/반드시/꼭/only/must/has to be)는 대상어 앞에 오는 게 일반적이라
+  // 앞쪽 prefix만 본다. "삼겹살 말고 무조건 파스타"에서 삼겹살이 뒤 '무조건'을 잡는 오판을 막는다.
+  const windowText = text.slice(Math.max(0, matchIndex - REQUIRED_WINDOW), matchIndex);
   return REQUIRED_MARKERS_KO.test(windowText) || REQUIRED_MARKERS_EN.test(windowText);
 }
 
@@ -67,11 +69,15 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   }
   matches.sort((a, b) => a.index - b.index);
 
+  // locked 스텝은 선택 단계에서 lock으로 pin되어 intent가 무시되므로(유령 거부/무음 무시 방지)
+  // 애초에 intent를 배정하지 않는다.
+  const lockedStepIds = new Set((request.lockedSteps ?? []).map((lock) => lock.stepId));
   const usedStepIds = new Set<string>();
   const stepIntents: ParsedStepIntent[] = [];
   for (const { entry, index } of matches) {
     const step = request.courseSteps.find((candidate) => (
       !usedStepIds.has(candidate.id)
+      && !lockedStepIds.has(candidate.id)
       && normalizeRecommendationCategory(candidate.category) === entry.targetCategory
     ));
     if (!step) continue; // 대상 category step 없음 → intent 미생성(Phase 2에서 unsupported로 노출)
