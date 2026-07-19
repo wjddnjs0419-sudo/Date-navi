@@ -59,6 +59,15 @@ export function isPreparedRequestExpiredError(error: unknown): boolean {
   return error instanceof RecommendationSessionCacheError && error.code === 'missing_prepared_request';
 }
 
+// 서버 step-intent 파서의 required 마커와 동일 집합. 완화 재요청 시 제거해 required→preferred로 낮춘다.
+const REQUIRED_MARKER_PATTERN = /(?:무조건|반드시|꼭)|\b(?:only|must|has to be)\b/gi;
+
+/** required 마커를 제거해 조건을 완화한다(공백 정리 포함). */
+export function relaxRequiredMarkers(additionalRequest: string | undefined): string {
+  if (!additionalRequest) return '';
+  return additionalRequest.replace(REQUIRED_MARKER_PATTERN, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
 async function toRecommendationRequestError(error: unknown): Promise<RecommendationRequestError> {
   const context = (error as { context?: { json?: () => Promise<unknown> } } | null)?.context;
   let payload: unknown;

@@ -8,6 +8,7 @@ import {
 import {
   buildRecommendationRequest,
   RecommendationRequestError,
+  relaxRequiredMarkers,
   requestRecommendationCards,
   requestRecommendationResponse,
 } from '../lib/recommend-date';
@@ -163,6 +164,14 @@ describe('structured recommend-date client', () => {
         failureStage: 'stage_attestation',
       }),
     );
+  });
+
+  it('relaxRequiredMarkers는 required 마커를 제거해 required→preferred로 완화한다', () => {
+    expect(relaxRequiredMarkers('무조건 삼겹살이어야 해')).toBe('삼겹살이어야 해');
+    expect(relaxRequiredMarkers('반드시 꼭 파스타')).toBe('파스타');
+    expect(relaxRequiredMarkers('Only sushi, it must be sushi')).toBe('sushi, it be sushi');
+    expect(relaxRequiredMarkers('삼겹살 먹고 싶어')).toBe('삼겹살 먹고 싶어');
+    expect(relaxRequiredMarkers(undefined)).toBe('');
   });
 
   it('preserves unsatisfiedIntents from STEP_INTENT_UNSATISFIED for the relaxation UI', async () => {
