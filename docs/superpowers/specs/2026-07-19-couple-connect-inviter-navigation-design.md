@@ -76,10 +76,14 @@ export function shouldBlockLeaving(input: {
 
 세 경로(스와이프/하드웨어 백/버튼)가 모두 같은 `shouldBlockLeaving` 조건을 따르게 하여 일관성 확보.
 
-## 전제 조건 / 리스크
+## 전제 조건 / 리스크 (2026-07-19 확인 완료)
 
-- **Realtime publication**: `date_planner_couples`가 Supabase Realtime publication(`supabase_realtime`)에 포함되어 있어야 `postgres_changes` 이벤트를 받는다. 미포함이면 마이그레이션 `alter publication supabase_realtime add table date_planner_couples;` 필요. 구현 전 현재 publication 상태를 확인한다. (외부 콘솔/DB 변경이므로 적용 전 사용자에게 리스크 보고 후 진행.)
-- **RLS**: 초대자는 `owner_user_id`로서 자신의 커플 row에 select 권한이 있어야 Realtime payload를 수신한다. 기존 정책으로 충분한지 확인.
+- **Realtime publication**: `date_planner_couples`는 현재 `supabase_realtime` publication에 **미포함**(확인됨). 마이그레이션 필요:
+  ```sql
+  alter publication supabase_realtime add table public.date_planner_couples;
+  ```
+  리스크: 추가 전용·무중단·되돌리기 가능(`drop table`), 데이터/스키마 변경 없음. RLS가 수신 대상을 계속 게이팅하므로 권한 우회 없음. 저빈도 쓰기 테이블이라 오버헤드 미미. 필터가 PK(`id`) 기준이라 `REPLICA IDENTITY FULL` 불필요.
+- **RLS**: **이미 충분**(확인됨). `couples_select_member_or_waiting_code`(`owner_user_id = auth.uid() OR partner_user_id = auth.uid() OR status = 'waiting'`)로 초대자(owner)가 연결 후에도 자기 row를 SELECT 가능 → Realtime UPDATE 수신 정상. **추가 변경 불필요.**
 - Realtime 미동작 시에도 ②(포그라운드 재진입)와 focus 재조회가 fallback으로 작동하므로 완전 실패는 아니나, "화면 떠 있는 동안 즉시 이동"이라는 핵심 UX는 Realtime에 의존한다.
 
 ## 범위 밖
