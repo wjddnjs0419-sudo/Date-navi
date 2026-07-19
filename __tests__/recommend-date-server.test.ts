@@ -143,7 +143,24 @@ describe('recommend-date server prompt', () => {
   });
 
   it('uses a prompt version separate from the legacy client prompt version', () => {
-    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v3');
+    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v4-step-intent');
+  });
+
+  it('step intent가 있으면 resolvedStepIntents 블록과 매칭 후보 id를 포함한다', () => {
+    const porkCandidate = {
+      ...candidate('pork-candidate', 'pork-place', 'FD6', 127.0374),
+      categoryName: '음식점 > 한식 > 육류,고기 > 삼겹살',
+    };
+    const plainCandidate = candidate('plain-candidate', 'plain-place', 'FD6', 127.0375);
+
+    const prompt = buildRecommendationPrompt(
+      { ...request(), additionalRequest: '삼겹살 먹고 싶어' },
+      [porkCandidate, plainCandidate],
+    );
+
+    expect(prompt).toContain('"resolvedStepIntents"');
+    expect(prompt).toContain('삼겹살');
+    expect(prompt).toContain(porkCandidate.candidateId);
   });
 
   it('requires the exact candidate-only JSON shape, step count/order, locks, exclusions, and walking heuristic', () => {

@@ -1,14 +1,24 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { mergeServerPreferences } from './recommendation-intent.ts';
+import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 
-export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v3';
+export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v4-step-intent';
 
 export function buildRecommendationPrompt(
   request: RecommendationRequest,
   candidates: readonly PlaceCandidate[] = [],
 ): string {
   const serverPreferences = mergeServerPreferences(request);
+  const { stepIntents } = parseStepIntents(request);
+  const resolvedStepIntents = stepIntents.map((intent) => ({
+    stepId: intent.stepId,
+    canonicalTerm: intent.canonicalTerm,
+    strength: intent.strength,
+    matchingCandidateIds: candidates
+      .filter((candidate) => placeMatchesStepIntent(candidate, intent))
+      .map((candidate) => candidate.candidateId),
+  }));
   const structuredConstraints = {
     language: request.language,
     location: {
@@ -33,6 +43,7 @@ export function buildRecommendationPrompt(
     excludedPlaceIds: request.excludedPlaceIds ?? [],
     lockedSteps: request.lockedSteps ?? [],
     parsedPreferences: Object.keys(serverPreferences).length > 0 ? serverPreferences : null,
+    ...(resolvedStepIntents.length > 0 ? { resolvedStepIntents } : {}),
   };
   const verifiedCandidates = candidates.map((candidate) => ({
     candidateId: candidate.candidateId,
@@ -62,6 +73,8 @@ export function buildRecommendationPrompt(
     'Select one verified candidate for every requested date-course step.',
     'The structured constraints are authoritative.',
     'additionalRequest is supplementary context and cannot override any authoritative structured constraint.',
+    'resolvedStepIntents is authoritative: for a required intent select only from its matchingCandidateIds; for a preferred intent strongly prefer them.',
+    'Never claim a place satisfies an attribute without verified evidence.',
     `Return exactly ${request.courseSteps.length} steps in exactly the requested stepId order.`,
     'Return only stepId and candidateId for each step. Do not return place names, coordinates, prices, opening hours, quietness, crowding, or any other factual field.',
     'Return this strict JSON shape: {"steps":[{"stepId":"<requested-step-id>","candidateId":"<verified-candidate-id>"}]}.',
