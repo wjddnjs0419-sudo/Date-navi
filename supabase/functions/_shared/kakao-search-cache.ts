@@ -121,9 +121,12 @@ export function createCachedKakaoSearchPage(options: {
   const maxPages = options.maxPagesPerQuery ?? KAKAO_SEARCH_LIMITS.maxPagesPerQuery;
   let prefetch: Promise<Map<string, KakaoDocument[]>> | undefined;
 
-  // User free text (additionalRequest) only travels on explicit-phase queries.
-  // Those are never cached: no cross-user storage of potentially personal text.
-  const isCacheable = (item: { phase?: string }): boolean => item.phase !== 'explicit';
+  // User free text (additionalRequest) travels on explicit-phase queries, and parsed
+  // step-intent queries are derived from that same personal text. Neither is cached:
+  // no cross-user storage of potentially personal text or its derivatives.
+  const isCacheable = (item: { phase?: string }): boolean => (
+    item.phase !== 'explicit' && item.phase !== 'step_intent'
+  );
 
   const prefetchAll = (): Promise<Map<string, KakaoDocument[]>> => {
     if (!prefetch) {

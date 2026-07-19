@@ -225,6 +225,32 @@ describe('createCachedKakaoSearchPage', () => {
     expect(puts).toHaveLength(0);
   });
 
+  it('never caches step_intent queries derived from user free text, in either prefetch keys or writes', async () => {
+    const { store, puts } = memoryStore();
+    const fetchPage = jest.fn(async (q: KakaoSearchQuery): Promise<KakaoSearchOutcome> => ({
+      query: q,
+      status: 'success',
+      documents: [{ id: 'live' }],
+    }));
+    const searchPage = createCachedKakaoSearchPage({
+      plan: [
+        planItem(),
+        planItem({ queryId: 'q2', categoryCode: undefined, queryText: '삼겹살', source: 'keyword', phase: 'step_intent' }),
+      ],
+      center: location,
+      store,
+      kakaoRestApiKey: 'k',
+      fetchPage: fetchPage as never,
+    });
+
+    await searchPage(query({ queryId: 'q2', categoryCode: undefined, queryText: '삼겹살', source: 'keyword', phase: 'step_intent' }));
+    await Promise.resolve();
+
+    expect((store.fetchFresh as jest.Mock).mock.calls[0][0]).toHaveLength(2);
+    expect(fetchPage).toHaveBeenCalledTimes(1);
+    expect(puts).toHaveLength(0);
+  });
+
   it('registers fire-and-forget cache writes with EdgeRuntime.waitUntil when available', async () => {
     const waitUntil = jest.fn();
     (globalThis as { EdgeRuntime?: unknown }).EdgeRuntime = { waitUntil };
