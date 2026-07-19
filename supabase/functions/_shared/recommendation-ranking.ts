@@ -8,7 +8,7 @@ import {
   normalizeRecommendationCategory,
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
-import { parseStepIntents } from './step-intent.ts';
+import { effectiveStepIntents } from './step-intent.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
@@ -97,7 +97,7 @@ export function rankPlaceCandidates(
     return Math.max(0, RANKING_SCORE_WEIGHTS.routeFitMax - Math.floor(nearestMeters / 500));
   };
 
-  const { stepIntents } = parseStepIntents(request);
+  const stepIntents = effectiveStepIntents(request);
   const intentBoostFor = (place: EvidencedKakaoPlace): number => {
     let boost = 0;
     for (const intent of stepIntents) {

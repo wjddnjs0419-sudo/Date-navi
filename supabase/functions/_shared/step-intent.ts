@@ -121,6 +121,23 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   return { stepIntents, excludedIntents, parserVersion: STEP_INTENT_PARSER_VERSION };
 }
 
+/**
+ * 핸들러가 부착한 resolvedStepIntents(규칙+AI 병합 결과)가 있으면 그걸, 없으면 규칙 파서를 쓴다.
+ * 부착값은 빈 배열도 "이미 resolve됨"의 신호이므로 재파싱하지 않는다(null/undefined일 때만 폴백).
+ */
+export function effectiveStepIntents(
+  request: RecommendationRequest & { resolvedStepIntents?: ParsedStepIntent[] },
+): ParsedStepIntent[] {
+  return request.resolvedStepIntents ?? parseStepIntents(request).stepIntents;
+}
+
+/** effectiveStepIntents의 부정 intent 대칭. resolvedExcludedIntents 우선, 없으면 규칙. */
+export function effectiveExcludedIntents(
+  request: RecommendationRequest & { resolvedExcludedIntents?: ParsedStepIntent[] },
+): ParsedStepIntent[] {
+  return request.resolvedExcludedIntents ?? parseStepIntents(request).excludedIntents;
+}
+
 type IntentEvidence = {
   phase?: string;
   canonicalTerm?: string;

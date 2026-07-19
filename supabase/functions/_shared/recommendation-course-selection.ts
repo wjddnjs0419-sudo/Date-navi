@@ -14,7 +14,7 @@ import {
   type StraightLineRouteMetadata,
 } from './recommendation-ranking.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
-import { parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 
 export const MAX_CANDIDATE_POOL_SIZE = 40;
 
@@ -177,7 +177,7 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
   const byCandidateId = new Map(input.candidates.map((candidate) => [candidate.candidateId, candidate]));
   const locks = new Map((input.request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
   const requiredIntents = new Map(
-    parseStepIntents(input.request).stepIntents
+    effectiveStepIntents(input.request)
       .filter((intent) => intent.strength === 'required')
       .map((intent) => [intent.stepId, intent]),
   );
@@ -255,7 +255,7 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
     || a.distanceFromSearchCenterMeters - b.distanceFromSearchCenterMeters
     || a.kakaoPlaceId.localeCompare(b.kakaoPlaceId)
   );
-  const { stepIntents } = parseStepIntents(input.request);
+  const stepIntents = effectiveStepIntents(input.request);
   const intentByStepId = new Map(stepIntents.map((intent) => [intent.stepId, intent]));
   const choices = input.request.courseSteps.map((step) => {
     const lock = locks.get(step.id);

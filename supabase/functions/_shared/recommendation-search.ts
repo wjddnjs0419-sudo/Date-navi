@@ -2,7 +2,7 @@ import type {
   RecommendationLocation,
   RecommendationRequest,
 } from '../../../shared/recommendation/contracts.ts';
-import { parseStepIntents } from './step-intent.ts';
+import { effectiveStepIntents } from './step-intent.ts';
 
 type SearchPhase = 'required' | 'step_intent' | 'explicit' | 'intent' | 'fallback';
 
@@ -130,7 +130,7 @@ export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearc
     });
   }
 
-  const { stepIntents } = parseStepIntents(request);
+  const stepIntents = effectiveStepIntents(request);
   for (const intent of stepIntents) {
     intent.kakaoSearchTerms.forEach((term, level) => {
       items.push({
