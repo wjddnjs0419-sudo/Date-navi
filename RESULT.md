@@ -29,7 +29,8 @@
 
 ### 검증
 - `npx jest`: **94 suites / 767 tests 전부 통과**(기준선 733 + 신규 34). `npm run validate`(tsc) 클린.
-- **미배포**: Phase 1은 로컬 완결. edge function 배포(`recommend-date`/`replacement-candidates`)는 승인 후 별도 — 프롬프트 v4·검색플랜 변화로 캐시 히트율 일시 하락 가능성 사전 보고 필요.
+- **배포 완료**: `recommend-date` v12→**v13**, `replacement-candidates` →**v9** 프로덕션 적용(project wqjguifsmtblgrhdfnji, `supabase functions deploy --project-ref`, CLI 자동 번들). DB 마이그레이션 없음(스키마 무변경). 신규 import(step-intent) 번들 정상.
+- 배포 노트: CLI가 `supabase projects list`엔 Date-Navi 미표시(다른 org)나 `--project-ref`로는 토큰 접근 가능. 프롬프트 v4·검색플랜 변화로 캐시 히트율 일시 하락 가능. **실기기 미확인**(JS 변경 → Xcode Release Run 필요): 실제 코스 생성에서 "삼겹살" 요청이 검색·랭킹에 반영되는지 육안 검증 권장.
 - 브랜치 `feat/step-intent-phase1`.
 
 ### 남은 것
