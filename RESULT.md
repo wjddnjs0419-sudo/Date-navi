@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-07-19 세션 AY — AI 추천 Step Intent Phase 1 (결정론 수직슬라이스)
+
+> 요청: V4 Step Intent 스펙 검토 → 현재 코드와 충돌 대조 → 조율 애드덤 작성 → Phase 1 구현. "삼겹살 먹고 싶어"/"I want samgyupsal" 같은 구체 자유텍스트를 규칙 파서로 step별 canonical 카카오 검색 의도로 변환해 검색→evidence→랭킹→선택검증→폴백→교체까지 전파. **AI 파서 없음(Phase 2)**.
+
+### 사전 작업 (문서)
+- `docs/AI_RECOMMENDATION_V4_STEP_INTENT_RECONCILIATION.md`: 스펙 vs 코드 조율 애드덤 7항목(중복 파서·AI 재추가·캐시 갭·category enum·evidence phase·로마자·explicit 중복). GPT 교차검증 반영.
+- `docs/superpowers/plans/2026-07-19-step-intent-phase1.md`: 9태스크 TDD 플랜.
+
+### 구현 (TDD, subagent-driven, 8 커밋 + 리뷰 수정 1)
+- **`step-intent-dictionary.ts`(신규)**: 13개 엔트리 데이터 사전. canonicalTerm/expansions/koAliases/enAliases(로마자 samgyeopsal·samgyupsal·samgyopsal 등)/compatibleCategoryNameKeywords/displayLabel(ko/en). 파서 로직과 분리.
+- **`step-intent.ts`(신규)**: `parseStepIntents(request)` 규칙 파서 — NFKC 정규화, 한/영/로마자 단어경계 매칭, required 마커(무조건/반드시/꼭/only/must) **prefix window** 판정, category 기준 step 바인딩(locked 스텝 제외). `placeMatchesStepIntent` 술어(evidence ∨ 이름포함 ∨ 호환 categoryName).
+- **`recommendation-search.ts`**: SearchPhase에 `step_intent`, SearchEvidence에 intent 필드(phase/stepId/canonicalTerm/strength/expansionLevel) 보존. `buildKakaoSearchPlan`이 파서 호출 → step_intent 쿼리 생성, **파싱 성공 시 raw explicit 통문장 검색 제거**(애드덤 패치 7). `executeKakaoSearchPlan` progressive expansion(exact 매칭 ≥3이면 확장 생략, 예산 보호).
+- **`kakao-search-cache.ts`**: `isCacheable`에 `step_intent` 제외 추가(개인 텍스트 파생물 크로스유저 캐시 차단, 보안).
+- **`recommendation-ranking.ts`**: intent 슬롯에 가산 합산(exact +35 / exp1 +12 / exp2 +6 / 이름 +20). 스키마 무변경.
+- **`recommendation-course-selection.ts`**: required intent 선택검증(미충족 후보 → COURSE_VALIDATION_FAILED), 폴백 choices에서 required=매칭만·preferred=카테고리 전체(소프트 우대, spec §18.4).
+- **`recommend-date-handler.ts`**: required 게이트 → 매칭(카테고리 AND intent) 후보 0이면 422 STEP_INTENT_UNSATISFIED.
+- **에러코드**: `STEP_INTENT_UNSATISFIED` — contracts/errors(ko·en)/zod enum/lib client/locales ko·en 대칭.
+- **`recommendation-prompt.ts`**: 버전 `recommend-date-v4-step-intent`, resolvedStepIntents 블록(intent별 matchingCandidateIds) + required 선택 제한 지시.
+- **교체 경로**: 코드 무변경(baseRequest 재사용으로 자동 전파), 회귀 테스트로 고정.
+
+### 리뷰 반영 (IMPORTANT 5건 수정)
+루프탑카페 categoryName키워드 제거·게이트 카테고리검사·locked 스텝 intent제외·preferred 배타강제→소프트완화·required window prefix화. (부정어 "말고" 처리는 Phase 2)
+
+### 검증
+- `npx jest`: **94 suites / 767 tests 전부 통과**(기준선 733 + 신규 34). `npm run validate`(tsc) 클린.
+- **미배포**: Phase 1은 로컬 완결. edge function 배포(`recommend-date`/`replacement-candidates`)는 승인 후 별도 — 프롬프트 v4·검색플랜 변화로 캐시 히트율 일시 하락 가능성 사전 보고 필요.
+- 브랜치 `feat/step-intent-phase1`.
+
+### 남은 것
+- Phase 2: AI 파서 fallback(`parse_step_intents`), 충돌/미지원/부정어 감지, 파서 칩 UI, 메트릭. Phase 3: 완화 UI. Phase 4: 가격/외부증거(데이터 확보 후).
+
+---
+
 ## 2026-07-19 세션 AX — 부적합 장소 필터 (A안, 카카오 무료 결정론)
 
 > 요청: 카카오 API로 쌓은 장소를 "자체 리스트"로 만들어 퀄리티↑. 브레인스토밍 결과 **무료 카카오엔 별점·리뷰 신호가 없음** 확인 → 빈도 기반 인기도 부스팅(C안)은 상권 중심성만 재고 프랜차이즈 편향 역효과라 **폐기**. 확실한 이득인 **부적합 장소 필터(A안)만** 진행, 구글 Places 품질 레벨링(B안)은 백로그 기록.
