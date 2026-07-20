@@ -144,11 +144,12 @@ git commit -m "feat: 레거시 수동 카드 생성 화면(card/new) 제거"
 
 ## Phase 1 — 직접 검색 장소 교체 (결과 화면)
 
-**핵심 아키텍처 (확정):**
-- `search.candidates`는 `PlaceCandidate[]`. `candidateId`는 랭킹 위치 기반 `candidate_NNN`(요청 내 임시 ID). 카카오는 place-id 단건조회 불가, **키워드+좌표 검색만** 가능(`fetchKakaoSearchPage`, endpoint `keyword`).
-- 사용자가 `place-search`로 고른 장소는 `{placeId, x, y, name, address, category}` 형태. 이를 `replacement`에 `pickedName`으로 함께 실어 보낸다.
-- 핸들러는 `searchCandidates` 직후, `replacement.pickedName`이 있고 그 `kakaoPlaceId`가 풀에 없으면 → **`pickedName`을 스텝 좌표 근처에서 카카오 키워드 재검색** → 반환 doc 중 `id === kakaoPlaceId`인 것을 찾아(=서버 실재·좌표 검증, client 좌표 불신) `PlaceCandidate`로 만들어 `search.candidates`에 append.
-- 카테고리 정합은 유지: 주입 candidate가 스텝 category와 안 맞으면 기존 422. 검색 화면이 스텝 category로 bias하므로 대개 일치.
+**핵심 아키텍처 (Task 1.0 스파이크로 확정 — 핸들러가 아닌 파이프라인 주입):**
+- 스파이크 발견: 테스트는 루트 `__tests__/` **Jest**(Deno 아님, 소스는 `.ts` 확장자 import·테스트는 무확장자). `normalizeDocument`는 미export → `mergeKakaoSearchEvidence([outcome])`(export)로 `EvidencedKakaoPlace` 추출. `PlaceCandidate`는 손수 만들지 말고 `rankPlaceCandidates`가 부여. **`KAKAO_REST_API_KEY`·`fetcher`는 핸들러 스코프에 없고 파이프라인에만 있음.**
+- 따라서 주입은 **핸들러가 아니라 파이프라인 `searchAndRankRecommendation`**에서: `request.replacement?.pickedName`이 있으면 그 이름으로 keyword 재검색(`fetchKakaoSearchPage({queryId,source:'keyword',queryText,page:1}, request.location, key, fetcher)`) → `mergeKakaoSearchEvidence([extraOutcome])`에서 `kakaoPlaceId === replacement.kakaoPlaceId`인 place만 골라 `search.places`에 dedup 병합 → 그 합쳐진 places로 `rankPlaceCandidates`. 병합된 place는 candidateId/score를 정상 부여받아 `search.candidates`에 포함됨.
+- **핸들러(recommend-date-handler.ts) 코드 변경 불필요.** 기존 forced-replacement 블록(214)의 `search.candidates.find(kakaoPlaceId)`가 병합된 place를 그대로 찾음. index.ts도 변경 불필요(`request`를 파이프라인에 그대로 전달 중).
+- 카테고리 정합 유지: 병합 place가 스텝 category와 안 맞으면 기존 422. 검색 화면이 스텝 category로 bias하므로 대개 일치.
+- 서버 실재·좌표 검증: 좌표/카테고리는 카카오 재검색 doc에서 옴(client 좌표 불신). `pickedName`은 검색 시드일 뿐, 검증 키는 `kakaoPlaceId`.
 
 **필드 매핑 주의:** place-search edge 응답은 `placeId`/`x`(lng)/`y`(lat)/`address`, recommendation 도메인은 `kakaoPlaceId`/`longitude`/`latitude`/`roadAddress`. 파이프하는 코드는 반드시 매핑.
 
