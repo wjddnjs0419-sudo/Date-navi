@@ -519,8 +519,8 @@
         "ai_decide": "AI가 결정"
       },
       "pin": {
-        "categoryTab": "카테고리",
-        "pinTab": "직접 지정",
+        "aiTab": "AI 추천",
+        "pickTab": "내가 직접",
         "searchEntry": "장소 검색해서 지정하기",
         "clear": "지우기",
         "locationFirstTitle": "만나는 위치를 먼저 선택해주세요",

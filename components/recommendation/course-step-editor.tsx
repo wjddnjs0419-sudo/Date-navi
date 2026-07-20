@@ -12,6 +12,10 @@ import {
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
+// 카테고리는 선택 사항. "AI가 결정"(ai_decide)은 상단 [AI 추천] 토글과 겹쳐 칩에서 제외하고,
+// 실제 카테고리 칩을 다시 누르면 ai_decide로 해제한다.
+const CATEGORY_CHIPS = COURSE_CATEGORIES.filter((category) => category !== 'ai_decide');
+
 function StepAction({
   accessibilityLabel,
   disabled,
@@ -59,17 +63,19 @@ export function CourseStepEditor({
   onRequestPick: (stepId: string) => void;
   t: Translate;
 }) {
-  const [mode, setMode] = useState<'category' | 'pin'>(step.pin ? 'pin' : 'category');
+  const [mode, setMode] = useState<'ai' | 'pick'>(step.pin ? 'pick' : 'ai');
 
-  function switchToCategory() {
-    // 카테고리 탭으로 전환하면 숨겨진 핀이 서버에서 그대로 적용되지 않도록 즉시 제거한다(UI=제출 상태 일치).
+  function switchToAi() {
+    // AI 추천 = AI가 장소를 고른다. 지정해둔 핀이 남으면 서버가 그 장소로 확정하므로 즉시 제거한다.
     if (step.pin) dispatch({ type: 'clearStepPin', stepId: step.id });
-    setMode('category');
+    setMode('ai');
   }
 
   function selectCategory(category: CourseCategory) {
-    if (step.pin) dispatch({ type: 'clearStepPin', stepId: step.id });
-    dispatch({ type: 'setStepCategory', stepId: step.id, category });
+    // 카테고리는 선택 사항: 이미 고른 칩을 다시 누르면 해제(ai_decide)해 AI가 종류까지 정하게 한다.
+    // 핀과 공존하므로 카테고리 선택은 핀을 지우지 않는다.
+    const next = step.category === category ? 'ai_decide' : category;
+    dispatch({ type: 'setStepCategory', stepId: step.id, category: next });
   }
 
   return (
@@ -104,91 +110,93 @@ export function CourseStepEditor({
       <View style={styles.segment}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityState={{ selected: mode === 'category' }}
-          accessibilityLabel={t('course.steps.pin.categoryTab')}
+          accessibilityState={{ selected: mode === 'ai' }}
+          accessibilityLabel={t('course.steps.pin.aiTab')}
           activeOpacity={0.72}
-          onPress={switchToCategory}
-          style={[styles.segmentBtn, mode === 'category' && styles.segmentBtnOn]}
-          testID="course-step-tab-category"
+          onPress={switchToAi}
+          style={[styles.segmentBtn, mode === 'ai' && styles.segmentBtnOn]}
+          testID="course-step-tab-ai"
         >
-          <Text style={[styles.segmentText, mode === 'category' && styles.segmentTextOn]}>
-            {t('course.steps.pin.categoryTab')}
+          <Text style={[styles.segmentText, mode === 'ai' && styles.segmentTextOn]}>
+            {t('course.steps.pin.aiTab')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityState={{ selected: mode === 'pin' }}
-          accessibilityLabel={t('course.steps.pin.pinTab')}
+          accessibilityState={{ selected: mode === 'pick' }}
+          accessibilityLabel={t('course.steps.pin.pickTab')}
           activeOpacity={0.72}
-          onPress={() => setMode('pin')}
-          style={[styles.segmentBtn, mode === 'pin' && styles.segmentBtnOn]}
-          testID="course-step-tab-pin"
+          onPress={() => setMode('pick')}
+          style={[styles.segmentBtn, mode === 'pick' && styles.segmentBtnOn]}
+          testID="course-step-tab-pick"
         >
-          <Text style={[styles.segmentText, mode === 'pin' && styles.segmentTextOn]}>
-            {t('course.steps.pin.pinTab')}
+          <Text style={[styles.segmentText, mode === 'pick' && styles.segmentTextOn]}>
+            {t('course.steps.pin.pickTab')}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {mode === 'category' ? (
-        <View style={styles.categories}>
-          {COURSE_CATEGORIES.map((category) => {
-            const selected = !step.pin && step.category === category;
-            const Icon = CATEGORY_ICONS[category];
-            return (
-              <TouchableOpacity
-                key={category}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                accessibilityLabel={t('course.accessibility.category', {
-                  number: index + 1,
-                  category: categoryLabels[category],
-                })}
-                activeOpacity={0.72}
-                onPress={() => selectCategory(category)}
-                style={[styles.category, selected && styles.categorySelected]}
-                testID={`course-step-category-${category}`}
-              >
-                <Icon size={18} color={selected ? C.pinkDeep : C.inkSoft} strokeWidth={2} />
-                <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
-                  {categoryLabels[category]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ) : step.pin ? (
-        <View style={styles.pinnedRow}>
-          <MapPin size={18} color={C.textSub} strokeWidth={2} />
-          <View style={styles.pinnedInfo}>
-            <Text style={styles.pinnedName} numberOfLines={1}>{step.pin.name}</Text>
-            {step.pin.address ? (
-              <Text style={styles.pinnedAddress} numberOfLines={1}>{step.pin.address}</Text>
-            ) : null}
+      <View style={styles.categories}>
+        {CATEGORY_CHIPS.map((category) => {
+          const selected = step.category === category;
+          const Icon = CATEGORY_ICONS[category];
+          return (
+            <TouchableOpacity
+              key={category}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={t('course.accessibility.category', {
+                number: index + 1,
+                category: categoryLabels[category],
+              })}
+              activeOpacity={0.72}
+              onPress={() => selectCategory(category)}
+              style={[styles.category, selected && styles.categorySelected]}
+              testID={`course-step-category-${category}`}
+            >
+              <Icon size={18} color={selected ? C.pinkDeep : C.inkSoft} strokeWidth={2} />
+              <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
+                {categoryLabels[category]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {mode === 'pick' && (
+        step.pin ? (
+          <View style={styles.pinnedRow}>
+            <MapPin size={18} color={C.textSub} strokeWidth={2} />
+            <View style={styles.pinnedInfo}>
+              <Text style={styles.pinnedName} numberOfLines={1}>{step.pin.name}</Text>
+              {step.pin.address ? (
+                <Text style={styles.pinnedAddress} numberOfLines={1}>{step.pin.address}</Text>
+              ) : null}
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('course.steps.pin.clear')}
+              activeOpacity={0.72}
+              onPress={() => dispatch({ type: 'clearStepPin', stepId: step.id })}
+              style={styles.pinnedClear}
+              testID="course-step-pin-clear"
+            >
+              <Text style={styles.pinnedClearText}>{t('course.steps.pin.clear')}</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={t('course.steps.pin.clear')}
+            accessibilityLabel={t('course.steps.pin.searchEntry')}
             activeOpacity={0.72}
-            onPress={() => dispatch({ type: 'clearStepPin', stepId: step.id })}
-            style={styles.pinnedClear}
-            testID="course-step-pin-clear"
+            onPress={() => onRequestPick(step.id)}
+            style={styles.pickEntry}
+            testID="course-step-pick-entry"
           >
-            <Text style={styles.pinnedClearText}>{t('course.steps.pin.clear')}</Text>
+            <Search size={18} color={C.textSub} strokeWidth={2} />
+            <Text style={styles.pickEntryText}>{t('course.steps.pin.searchEntry')}</Text>
           </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('course.steps.pin.searchEntry')}
-          activeOpacity={0.72}
-          onPress={() => onRequestPick(step.id)}
-          style={styles.pickEntry}
-          testID="course-step-pick-entry"
-        >
-          <Search size={18} color={C.textSub} strokeWidth={2} />
-          <Text style={styles.pickEntryText}>{t('course.steps.pin.searchEntry')}</Text>
-        </TouchableOpacity>
+        )
       )}
     </View>
   );

@@ -519,8 +519,8 @@
         "ai_decide": "Let AI decide"
       },
       "pin": {
-        "categoryTab": "Category",
-        "pinTab": "Pick a place",
+        "aiTab": "AI picks",
+        "pickTab": "I pick",
         "searchEntry": "Search and pick a place",
         "clear": "Clear",
         "locationFirstTitle": "Choose the meeting location first",

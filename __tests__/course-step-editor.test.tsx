@@ -49,7 +49,7 @@ function byTestID(renderer: TestRendererInstance, testID: string): TestNode | un
 }
 
 describe('CourseStepEditor category icons', () => {
-  it('renders exactly one icon per category button, for every category', () => {
+  it('renders one icon per real category, without the removed "let AI decide" chip', () => {
     const renderer = render({ id: 'step-1', category: 'meal' });
     expect(renderer.root.findAllByType(Utensils)).toHaveLength(1);
     expect(renderer.root.findAllByType(Coffee)).toHaveLength(1);
@@ -57,7 +57,9 @@ describe('CourseStepEditor category icons', () => {
     expect(renderer.root.findAllByType(Zap)).toHaveLength(1);
     expect(renderer.root.findAllByType(Palette)).toHaveLength(1);
     expect(renderer.root.findAllByType(Footprints)).toHaveLength(1);
-    expect(renderer.root.findAllByType(Sparkles)).toHaveLength(1);
+    // "AI가 결정"(ai_decide) 칩은 AI 추천 토글과 겹쳐 제거됨.
+    expect(renderer.root.findAllByType(Sparkles)).toHaveLength(0);
+    expect(byTestID(renderer, 'course-step-category-ai_decide')).toBeUndefined();
   });
 
   it('colors the selected category icon with the deep pink accent', () => {
@@ -69,21 +71,22 @@ describe('CourseStepEditor category icons', () => {
   });
 });
 
-describe('CourseStepEditor 직접 지정 세그먼트', () => {
-  it('기본은 카테고리 탭이라 카테고리 칩을 보여준다', () => {
+describe('CourseStepEditor AI/직접 토글 (옵션 B)', () => {
+  it('기본은 AI 추천 모드: 토글 + 카테고리 칩만, 검색 진입 없음', () => {
     const renderer = render({ id: 'step-1', category: 'meal' });
-    expect(byTestID(renderer, 'course-step-tab-category')).toBeDefined();
-    expect(byTestID(renderer, 'course-step-tab-pin')).toBeDefined();
+    expect(byTestID(renderer, 'course-step-tab-ai')).toBeDefined();
+    expect(byTestID(renderer, 'course-step-tab-pick')).toBeDefined();
     expect(renderer.root.findAllByType(Utensils)).toHaveLength(1);
     expect(byTestID(renderer, 'course-step-pick-entry')).toBeUndefined();
   });
 
-  it('직접 지정 탭을 누르면 카테고리 칩 대신 검색 진입 행을 보여주고, 누르면 onRequestPick 호출', () => {
+  it('내가 직접 탭을 눌러도 카테고리 칩은 그대로 보이고 검색 진입 행이 추가된다', () => {
     const onRequestPick = jest.fn();
     const renderer = render({ id: 'step-1', category: 'meal' }, { onRequestPick });
-    act(() => { byTestID(renderer, 'course-step-tab-pin')!.props.onPress(); });
+    act(() => { byTestID(renderer, 'course-step-tab-pick')!.props.onPress(); });
 
-    expect(renderer.root.findAllByType(Utensils)).toHaveLength(0);
+    // 옵션 B: 두 모드 모두 카테고리 칩 유지.
+    expect(renderer.root.findAllByType(Utensils)).toHaveLength(1);
     const entry = byTestID(renderer, 'course-step-pick-entry');
     expect(entry).toBeDefined();
     act(() => { entry!.props.onPress(); });
@@ -102,27 +105,34 @@ describe('CourseStepEditor 직접 지정 세그먼트', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
   });
 
-  it('핀 상태에서 카테고리 탭을 누르는 순간 핀을 지운다(UI=제출 상태 일치)', () => {
+  it('AI 추천 토글을 누르면 핀을 지운다(AI가 고르므로)', () => {
     const dispatch = jest.fn();
     const renderer = render(
       { id: 'step-1', category: 'meal', pin: { kakaoPlaceId: 'k1', name: '블루보틀', address: '서울' } },
       { dispatch },
     );
-    act(() => { byTestID(renderer, 'course-step-tab-category')!.props.onPress(); });
+    act(() => { byTestID(renderer, 'course-step-tab-ai')!.props.onPress(); });
     expect(dispatch).toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
   });
 
-  it('핀 상태에서 카테고리 탭으로 돌아가 칩을 고르면 핀을 지우고 카테고리를 설정한다(상호배타)', () => {
+  it('카테고리 칩 선택은 핀을 지우지 않는다(공존)', () => {
     const dispatch = jest.fn();
     const renderer = render(
       { id: 'step-1', category: 'meal', pin: { kakaoPlaceId: 'k1', name: '블루보틀', address: '서울' } },
       { dispatch },
     );
-    act(() => { byTestID(renderer, 'course-step-tab-category')!.props.onPress(); });
-    const [coffeeButton] = renderer.root.findAll((n) => n.props?.testID === 'course-step-category-cafe');
-    act(() => { coffeeButton.props.onPress(); });
+    const [cafeButton] = renderer.root.findAll((n) => n.props?.testID === 'course-step-category-cafe');
+    act(() => { cafeButton.props.onPress(); });
 
-    expect(dispatch).toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
     expect(dispatch).toHaveBeenCalledWith({ type: 'setStepCategory', stepId: 'step-1', category: 'cafe' });
+    expect(dispatch).not.toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
+  });
+
+  it('선택된 카테고리 칩을 다시 누르면 해제되어 ai_decide로 돌아간다(선택 사항)', () => {
+    const dispatch = jest.fn();
+    const renderer = render({ id: 'step-1', category: 'cafe' }, { dispatch });
+    const [cafeButton] = renderer.root.findAll((n) => n.props?.testID === 'course-step-category-cafe');
+    act(() => { cafeButton.props.onPress(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'setStepCategory', stepId: 'step-1', category: 'ai_decide' });
   });
 });
