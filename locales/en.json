@@ -1156,6 +1156,13 @@
       "tipTitle": "💡 Try ideas like these",
       "tipText": "· Brunch at an ocean-view cafe\n· Go for a night drive\n· Spend the day at a theme park\n· A small camping trip just for us",
       "save": "Save to bucket list"
+    },
+    "placeSearch": {
+      "title": "Search places",
+      "placeholder": "Search by name",
+      "empty": "No results",
+      "error": "Search failed. Please try again",
+      "pick": "Select"
     }
   },
   "legal": {
