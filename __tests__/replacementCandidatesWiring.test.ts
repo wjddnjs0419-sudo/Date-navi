@@ -15,7 +15,7 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(edge).toContain('rankReplacementCandidates');
     expect(edge).toContain('limit: 15');
     expect(screen).toContain("'replacement-candidates'");
-    expect(screen).toContain('replacement: { stepId: targetStepId, kakaoPlaceId }');
+    expect(screen).toContain('replacement: { stepId: targetStepId, kakaoPlaceId, ...(pickedName ? { pickedName } : {}) }');
     expect(screen).toContain("attestationRequestId: request.requestId");
   });
 

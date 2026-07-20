@@ -19,7 +19,20 @@ import { buildStructuredCourseResultParams, parseStructuredCourseResultParams } 
 import { omitOneShotRequestFields } from '../../lib/recommendation-request';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { StepActionSheet } from '../../components/recommendation/step-action-sheet';
+import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
+
+// 대상 스텝 카테고리 → 카카오 place-search 카테고리 코드.
+// 매핑에 없는 카테고리(drinks/ai_decide 등)는 undefined → 전체 검색으로 동작.
+const KAKAO_CATEGORY_CODE: Record<string, string> = {
+  meal: 'FD6',
+  restaurant: 'FD6',
+  cafe: 'CE7',
+  culture: 'CT1',
+  walk: 'AT4',
+  activity: 'AT4',
+  attraction: 'AT4',
+};
 
 export default function CourseResultScreen() {
   const rawParams = useLocalSearchParams();
@@ -76,6 +89,7 @@ export default function CourseResultScreen() {
   const [editError, setEditError] = useState('');
   const [replacementTargetId, setReplacementTargetId] = useState<string | null>(null);
   const [replacementCandidates, setReplacementCandidates] = useState<ReplacementCandidate[]>([]);
+  const [replacementTab, setReplacementTab] = useState<'recommend' | 'search'>('recommend');
   const [actionSheetStepId, setActionSheetStepId] = useState<string | null>(null);
 
   async function applyMutation(
@@ -171,6 +185,7 @@ export default function CourseResultScreen() {
         body: { sessionId: snapshot.sessionId, targetStepId },
       });
       if (error || !data || data.targetStepId !== targetStepId || !Array.isArray(data.top) || !Array.isArray(data.additional)) throw error ?? new Error('Invalid candidates');
+      setReplacementTab('recommend');
       setReplacementTargetId(targetStepId);
       setReplacementCandidates([...data.top, ...data.additional].slice(0, 15) as ReplacementCandidate[]);
     } catch {
@@ -180,7 +195,7 @@ export default function CourseResultScreen() {
     }
   }
 
-  async function replaceWithCandidate(targetStepId: string, kakaoPlaceId: string) {
+  async function replaceWithCandidate(targetStepId: string, kakaoPlaceId: string, pickedName?: string) {
     if (!snapshot) return;
     setEditing(true);
     setEditError('');
@@ -190,7 +205,7 @@ export default function CourseResultScreen() {
         requestId: createRecommendationRequestId(),
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
-        replacement: { stepId: targetStepId, kakaoPlaceId },
+        replacement: { stepId: targetStepId, kakaoPlaceId, ...(pickedName ? { pickedName } : {}) },
         lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map(toLockedStep),
         excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.map((step) => step.currentKakaoPlaceId)])],
       };
@@ -271,6 +286,15 @@ export default function CourseResultScreen() {
     setReplacementTargetId(null);
     setReplacementCandidates([]);
   }
+
+  // 직접 검색 탭에서 고른 장소는 브리지로 돌아온다. 열려 있는 교체 대상 스텝에
+  // pickedName과 함께 교체 요청을 보낸다(서버가 후보 풀에 병합).
+  useEffect(() => {
+    const unsub = subscribePickedPlace((place) => {
+      if (replacementTargetId) void replaceWithCandidate(replacementTargetId, place.kakaoPlaceId, place.name);
+    });
+    return unsub;
+  }, [replacementTargetId]);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -449,26 +473,72 @@ export default function CourseResultScreen() {
               </TouchableOpacity>
             </View>
             {editError !== '' && <Text style={s.editError}>{editError}</Text>}
-            <Text style={s.replacementNotice}>{t('modeFlow.courseResult.replacementNotice')}</Text>
-            {replacementCandidates.length === 0 ? (
-              <Text style={s.replacementEmpty}>{t('modeFlow.courseResult.replacementEmpty')}</Text>
-            ) : (
-              <ScrollView style={s.replacementList} showsVerticalScrollIndicator={false}>
-                {replacementCandidates.map((candidate, index) => (
-                  <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
-                    <View style={s.replacementCopy}>
-                      {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
-                      <Text style={s.replacementName}>{candidate.name}</Text>
-                      <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                      <View style={s.externalActions}>
-                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverMapUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
-                        <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+            <View style={s.tabRow}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: replacementTab === 'recommend' }}
+                testID="course-replacement-tab-recommend"
+                onPress={() => setReplacementTab('recommend')}
+                style={[s.tabBtn, replacementTab === 'recommend' && s.tabBtnOn]}
+              >
+                <Text style={[s.tabText, replacementTab === 'recommend' && s.tabTextOn]}>{t('modeFlow.courseResult.recommendTab')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: replacementTab === 'search' }}
+                testID="course-replacement-tab-search"
+                onPress={() => setReplacementTab('search')}
+                style={[s.tabBtn, replacementTab === 'search' && s.tabBtnOn]}
+              >
+                <Text style={[s.tabText, replacementTab === 'search' && s.tabTextOn]}>{t('modeFlow.courseResult.searchTab')}</Text>
+              </TouchableOpacity>
+            </View>
+            {replacementTab === 'recommend' ? (
+              <>
+                <Text style={s.replacementNotice}>{t('modeFlow.courseResult.replacementNotice')}</Text>
+                {replacementCandidates.length === 0 ? (
+                  <Text style={s.replacementEmpty}>{t('modeFlow.courseResult.replacementEmpty')}</Text>
+                ) : (
+                  <ScrollView style={s.replacementList} showsVerticalScrollIndicator={false}>
+                    {replacementCandidates.map((candidate, index) => (
+                      <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
+                        <View style={s.replacementCopy}>
+                          {index < 3 && <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>}
+                          <Text style={s.replacementName}>{candidate.name}</Text>
+                          <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
+                          <View style={s.externalActions}>
+                            <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverMapUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
+                            <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+                          </View>
+                        </View>
+                        <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                       </View>
-                    </View>
-                    <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
+                    ))}
+                  </ScrollView>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={s.searchHint}>{t('modeFlow.courseResult.searchHint')}</Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  testID="course-replacement-search-cta"
+                  disabled={editing}
+                  onPress={() => {
+                    if (!replacementTargetId) return;
+                    const center = snapshot.request.location; // latitude/longitude 보유
+                    const targetStep = snapshot.steps.find((step) => step.stepId === replacementTargetId);
+                    const targetCategoryCode = targetStep ? KAKAO_CATEGORY_CODE[targetStep.category] : undefined;
+                    router.push({ pathname: '/mode-flow/place-search', params: {
+                      x: String(center.longitude), y: String(center.latitude),
+                      ...(targetCategoryCode ? { categoryCode: targetCategoryCode } : {}),
+                    } } as any);
+                  }}
+                  style={s.searchCta}
+                >
+                  <Text style={s.searchCtaText}>{t('modeFlow.courseResult.searchCta')}</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </View>
@@ -588,6 +658,14 @@ const s = StyleSheet.create({
   replacementCloseButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   replacementTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
   replacementNotice: { color: C.textMuted, fontSize: 11 },
+  tabRow: { flexDirection: 'row', backgroundColor: C.gray, borderRadius: 12, padding: 3, gap: 3 },
+  tabBtn: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
+  tabBtnOn: { backgroundColor: C.white },
+  tabText: { fontSize: 12, fontWeight: '800', color: C.textSub },
+  tabTextOn: { color: C.pinkDeep },
+  searchCta: { minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  searchCtaText: { color: C.pinkDeep, fontSize: 13, fontWeight: '800' },
+  searchHint: { color: C.textMuted, fontSize: 12, textAlign: 'center', marginTop: 8 },
   replacementEmpty: { color: C.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 12 },
   replacementRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 },
   replacementCopy: { flex: 1, gap: 2 },
