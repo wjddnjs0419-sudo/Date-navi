@@ -16,6 +16,14 @@ export const RECOMMENDATION_ERROR_METADATA: Record<RecommendationErrorCode, Omit
     retryable: false,
     requiresConditionEdit: true,
   },
+  STEP_PIN_UNAVAILABLE: {
+    messages: {
+      ko: '지정한 장소를 확인하지 못했어요. 다른 장소를 골라 주세요.',
+      en: "We couldn't verify the place you picked. Please choose another place.",
+    },
+    retryable: false,
+    requiresConditionEdit: true,
+  },
   AI_TIMEOUT: { messages: { ko: '추천을 정리하는 데 시간이 오래 걸려요. 다시 시도해 주세요.', en: 'Recommendation generation took too long. Please try again.' }, retryable: true, requiresConditionEdit: false },
   AI_INVALID_RESPONSE: { messages: { ko: '추천 결과를 확인하지 못했어요. 다시 시도해 주세요.', en: 'We could not validate the recommendation. Please try again.' }, retryable: true, requiresConditionEdit: false },
   COURSE_VALIDATION_FAILED: { messages: { ko: '코스 조건을 모두 만족하는 결과를 만들지 못했어요. 조건을 조정해 주세요.', en: 'We could not build a course that satisfies every condition. Try adjusting the conditions.' }, retryable: false, requiresConditionEdit: true },
@@ -25,7 +33,7 @@ export const RECOMMENDATION_ERROR_METADATA: Record<RecommendationErrorCode, Omit
 };
 
 export const recommendationErrorSchema = z.object({
-  code: z.enum(['LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED', 'INSUFFICIENT_CANDIDATES', 'STEP_INTENT_UNSATISFIED', 'AI_TIMEOUT', 'AI_INVALID_RESPONSE', 'COURSE_VALIDATION_FAILED', 'AUTH_EXPIRED', 'NETWORK_ERROR', 'UNKNOWN']),
+  code: z.enum(['LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED', 'INSUFFICIENT_CANDIDATES', 'STEP_INTENT_UNSATISFIED', 'STEP_PIN_UNAVAILABLE', 'AI_TIMEOUT', 'AI_INVALID_RESPONSE', 'COURSE_VALIDATION_FAILED', 'AUTH_EXPIRED', 'NETWORK_ERROR', 'UNKNOWN']),
   messages: z.object({ ko: z.string().min(1), en: z.string().min(1) }),
   retryable: z.boolean(),
   requiresConditionEdit: z.boolean(),

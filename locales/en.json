@@ -1047,6 +1047,7 @@
       "courseErrors": {
         "INSUFFICIENT_CANDIDATES": "We couldn't find enough matching places nearby. Try broadening the area, steps, or walking limit.",
         "STEP_INTENT_UNSATISFIED": "We couldn't find nearby places matching that specific request. Try relaxing it or widening the area.",
+        "STEP_PIN_UNAVAILABLE": "We couldn't verify the place you picked. Please choose another place.",
         "PLACE_SEARCH_TIMEOUT": "Place search took too long. Please try again shortly.",
         "PLACE_SEARCH_RATE_LIMITED": "Place search is busy. Please try again shortly.",
         "AUTH_EXPIRED": "Your sign-in expired. Sign in again and retry.",

@@ -211,4 +211,12 @@ describe('Recommendation errors', () => {
       expect(typeof error.requiresConditionEdit).toBe('boolean');
     }
   });
+
+  it('exposes a STEP_PIN_UNAVAILABLE error requiring a condition edit', () => {
+    const error = createRecommendationError('STEP_PIN_UNAVAILABLE');
+    expect(error.messages.ko).not.toHaveLength(0);
+    expect(error.messages.en).not.toHaveLength(0);
+    expect(error.retryable).toBe(false);
+    expect(error.requiresConditionEdit).toBe(true);
+  });
 });
