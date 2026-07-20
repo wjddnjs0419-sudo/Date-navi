@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-07-20 세션 BB — 수동 장소 지정 Phase 2 (입력 시점 스텝별 장소 핀)
+
+> 요청: `phase 2 진행`. 브랜치 `feat/manual-place-pick`의 Phase 0·1(교체 시트 직접 검색) 위에, 코스 입력 화면에서 각 스텝을 카카오 장소로 직접 지정(핀)하는 기능. 계획 `docs/superpowers/plans/2026-07-20-manual-place-pick-phase2.md`(승인).
+
+### 확정 결정 (AskUserQuestion)
+- **전량 지정 시 AI(Haiku) 건너뛰기** → 생성 22원→0원. (카드 문구는 어차피 결정론 `buildCompatibilityCard`라 품질 손실 없음 — AI는 candidateId만 선택.)
+- **지정이 카테고리를 이김** → 핀 스텝은 카테고리·required-intent 게이트 우회.
+
+### 구현 (TDD, 8 커밋)
+- **계약/드래프트**: `CourseStepInput.pinnedKakaoPlaceId/pinnedName`(스키마 교차검증: id 있으면 name 필수). `CourseDraftStep.pin` + `setStepPin`/`clearStepPin` 리듀서 + `buildStructuredCourseInput` 매핑(핀이면 label=장소명).
+- **서버**: 파이프라인이 per-step 핀도 이름 재검색해 후보 풀 병합(Phase 1 replacement 블록 일반화). 핸들러 = 핀 실재 게이트(없으면 신규 422 `STEP_PIN_UNAVAILABLE`), 카테고리/intent 게이트에서 핀 스텝 제외, **전량 핀→AI 스킵**(forced selection 직접 조립), **부분 핀→AI 선택 후 핀 스텝 candidateId 강제 덮어씀**. `buildCandidateOnlyCourse`/`buildDeterministicCandidateCourse` 핀 인식(kakaoPlaceId로 self-resolve, 카테고리 우회). 프롬프트 핀 고정 표기(`pinned/pinnedCandidateId`), 버전 v4→**v5-pinned-steps**.
+- **UI**: `CourseStepEditor`에 [카테고리|직접 지정] 세그먼트 + 핀 행(장소명·주소 중립텍스트 + 지우기). Phase 1 place-search 화면·`place-pick-bridge` 재사용(course.tsx가 활성 타깃 스텝으로 라우팅). i18n ko/en `course.steps.pin.*`. ss-score 92, design-review 98(AI-generic 텔 없음).
+
+### 종합 리뷰(서브에이전트) 반영
+- **CRITICAL·보안 우회 없음 확인**: 핀은 자기 스텝의 카테고리 게이트만 우회, **제외/부적합(unfit) 필터는 그대로 적용**(핀이 병합 후 `eligiblePlaces` 필터를 거침).
+- **IMPORTANT #1 수정**: 유효한 핀이 후보 40개 상한 랭킹 절단에서 잘려 `STEP_PIN_UNAVAILABLE`로 오판되던 문제 → 랭킹에 **pin recall**(카테고리 recall처럼 절단 전 강제 포함) 추가.
+- **MINOR #3 수정**: 카테고리 탭 전환 순간 숨은 핀이 서버에 그대로 적용되던 UI/제출 불일치 → 탭 전환 시 핀 제거.
+- **IMPORTANT #2(브리지 크로스파이어) = 오탐**: 리뷰는 push 내비 가정. 실제 `handleGenerate`는 `router.replace`라 course.tsx가 언마운트→구독 해제, course-result와 동시 마운트 안 됨. 코드 무변경.
+- **MINOR #4·#5 수용**: 전량 핀도 `selectionSource:'ai'` 보고(기존 replacement 경로와 동일 관행, analytics만). 두 스텝 같은 핀→`COURSE_VALIDATION_FAILED`(안전 거부, UI가 막는 게 이상적).
+
+### 검증
+- `npx jest`: **101 suites / 823 tests 전부 통과**(신규 pinned-step 핸들러 4 + 랭킹 보호 1 + 스키마/드래프트/에디터/프롬프트). `npm run validate`(tsc) 클린. 워킹트리 클린.
+- **미배포**: `recommend-date` 재배포 필요(프롬프트 v5·핀 forcing·파이프라인·랭킹). `generate-ai` **무변경**(action 불변, 프롬프트 조립만). **DB 마이그레이션 없음**(요청 스키마 nullable 확장). 브랜치 `feat/manual-place-pick` 미머지.
+- **실기기 미확인**(JS+Edge 변경): 입력 세그먼트·핀 지정·전량 핀 0원 생성·부분 핀 AI 병합·핀 실재 실패 안내.
+
+---
+
 ## 2026-07-19 세션 AZ — Step Intent Phase 2·3 (AI 파서 fallback + 부정어 + 미지원/충돌 + 감지 칩 + 완화 UI)
 
 > 요청: `/goal phase2-4까지`. Phase 1(결정론 규칙 파서) 위에 AI fallback·부정어·충돌/미지원 감지·감지 칩·완화 UI를 쌓는다. Phase 4(가격/외부증거)는 데이터 소스 부재로 연기.
