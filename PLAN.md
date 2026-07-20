@@ -584,7 +584,6 @@ course.tsx / feeling.tsx
 
 ## 완료된 항목
 
-- [Done] 추천 검색 원문 우선화 + 단일 anchor 코스 반복 방지 — raw/cleaned query 우선, keyword-first place-search 배포, primary query 랭킹 가중치, 동일 anchor steps 반복 trim (2026-07-09)
 - [Done] 코스 steps ordered anchors + 동선 최적화 — 복합 입력 anchor 순서 추출, Haversine route compactness 후보 정렬, origin meta 반환, place-search 재배포 (2026-07-09)
 - [Done] AI 추천 재설계 실행 Phase 1 — shared Zod 계약·typed error·ko/en 직렬화/검증 테스트 추가, 기존 런타임 미연결 유지 (2026-07-14)
 - [Done] AI 추천 재설계 실행 Phase 2 — candidate/Kakao/request/session ID end-to-end 보존, 구 카드 dual-read, 6개 AI 저장 경로 dual-write, nullable DB migration 적용 (2026-07-14)
@@ -594,3 +593,4 @@ course.tsx / feeling.tsx
 - [Done] MVP 단일 모드 전환("코스로 정리해줘"만 노출, feeling/next_meet UI 숨김+복원 가능) + 마음 전하기 코드 삭제 + 홈 코스 카드 커플 이미지·정렬 개선(RN aspectRatio 무시 버그 회피) — 상세 내역은 `RESULT.md` 세션 AT 참조 (2026-07-18)
 - [Done] soft message 제거 + 알림 통합 — 카드 보낼 때 가던 `new_card`+`soft_message` 2개 알림을 문구 포함 "데이트 제안" 알림 1개로 통합(목업 3안+A). `trg_notify_card` DROP·`notify_on_soft_message` 재작성(카드+문구 payload)·`send-push` v3 프로덕션 배포, 알림함 모달 재구성(복사 삭제, "제안 보러가기"→반응 화면), push 라우팅 TDD, i18n 정리. 카드 생성만으론 무알림(보낼 때만). tsc·733테스트 통과, 실기기 확인 대기. 상세 `RESULT.md` 세션 AW 참조 (2026-07-19)
 - [Done] AI 추천 Step Intent Phase 1 (결정론 수직슬라이스) — 자유텍스트("삼겹살"/"samgyupsal")를 규칙 파서로 step별 canonical 카카오 검색 의도로 변환, 검색→evidence→랭킹→선택검증→폴백→교체 전파. required(무조건) 강제(422 STEP_INTENT_UNSATISFIED)+선택검증+폴백 필터, preferred 소프트 우대. step-intent 사전+파서 신설, 검색플랜 step_intent 쿼리+raw explicit 제거+progressive expansion, step_intent 캐시 제외(보안), 프롬프트 v4 resolvedStepIntents. AI 파서 없음(Phase 2). 767테스트·tsc 통과, **미배포**(승인 후 별도). 브랜치 `feat/step-intent-phase1`. 애드덤 `docs/AI_RECOMMENDATION_V4_STEP_INTENT_RECONCILIATION.md`, 상세 `RESULT.md` 세션 AY (2026-07-19)
+- [Done] 수동 장소 지정 Phase 2 — 코스 입력 스텝별 카카오 장소 핀(브랜치 `feat/manual-place-pick`). 계약 `CourseStepInput.pinnedKakaoPlaceId/pinnedName`, 파이프라인 per-step 재검색 병합, 핸들러 forcing(전량핀→AI 스킵 0원/부분핀→AI 병합/카테고리·intent 게이트 우회/신규 422 STEP_PIN_UNAVAILABLE), 랭킹 pin recall, 프롬프트 v5. UI = 스텝 에디터 Option B(`[AI 추천\|내가 직접]` 토글 + 카테고리 공존, "Let AI decide" 칩 제거). `recommend-date` 배포 완료, `generate-ai`·DB 무변경. 824테스트·tsc 통과. **미머지·실기기 미확인**. 상세 `RESULT.md` 세션 BB (2026-07-20)

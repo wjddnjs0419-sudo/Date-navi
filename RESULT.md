@@ -26,8 +26,13 @@
 
 ### 검증
 - `npx jest`: **101 suites / 823 tests 전부 통과**(신규 pinned-step 핸들러 4 + 랭킹 보호 1 + 스키마/드래프트/에디터/프롬프트). `npm run validate`(tsc) 클린. 워킹트리 클린.
-- **미배포**: `recommend-date` 재배포 필요(프롬프트 v5·핀 forcing·파이프라인·랭킹). `generate-ai` **무변경**(action 불변, 프롬프트 조립만). **DB 마이그레이션 없음**(요청 스키마 nullable 확장). 브랜치 `feat/manual-place-pick` 미머지.
+- **배포 완료**: `recommend-date` 재배포(프롬프트 v5·핀 forcing·파이프라인·랭킹, project wqjguifsmtblgrhdfnji). `generate-ai` **무변경**. **DB 마이그레이션 없음**. 스모크 OPTIONS 204/무인증 401.
 - **실기기 미확인**(JS+Edge 변경): 입력 세그먼트·핀 지정·전량 핀 0원 생성·부분 핀 AI 병합·핀 실재 실패 안내.
+
+### 후속 (같은 세션, 사용자 피드백)
+- **버그 수정**: 위치(draft.location) 미설정 시 "장소 검색" 진입이 조용히 no-op → 버튼이 죽은 것처럼 보임. `requestPick`에 안내 알림(`course.steps.pin.locationFirst*`) 추가. **place-search edge는 좌표 or 위치명 필수**라 위치 먼저 선택 유도. (JS만, Edge 무변경.)
+- **스텝 에디터 Option B 재설계**(사용자 목업 검토 후 확정, artifact로 A/B 비교 제시): 탭 `[카테고리|직접지정]` → **`[AI 추천|내가 직접]` 토글 상단**, 카테고리 칩은 **두 모드 모두 표시(공존)**. 카테고리는 **선택 사항**(선택 칩 재탭 시 해제=ai_decide). **"Let AI decide" 칩 제거**(AI 추천 토글과 중복, 사용자 지적). 카테고리 선택은 핀 유지, **AI 추천 전환 시에만 핀 제거**. 스텝별 독립(1단계 AI/2단계 직접 혼합=부분 핀). **서버 무변경**(이미 카테고리+핀 공존·ai_decide 처리) → Edge 재배포 불필요.
+- 검증: **101 suites / 824 tests** 통과, tsc 클린. 브랜치 `feat/manual-place-pick` 미머지.
 
 ---
 
