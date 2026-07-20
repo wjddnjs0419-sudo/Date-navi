@@ -12,6 +12,7 @@ import { resolveOnboardingDestination } from '../lib/onboarding-routing';
 import * as Notifications from 'expo-notifications';
 import { registerPushToken, buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
+import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -116,6 +117,7 @@ export default function RootLayout() {
     <I18nProvider>
       <RecommendationSessionProvider>
         <StatusBar style="dark" />
+        <ScreenshotNavigator />
         <Stack screenOptions={{ headerShown: false }}>
           {/* 최상위 상태 화면들은 router.replace로 전환된다. 스와이프 제스처로
               서로 넘나들면(로그아웃 후 홈이 다시 보이는 등) 안 되므로 비활성화한다.

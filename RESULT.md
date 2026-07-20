@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-07-21 세션 BC — 전 화면 자동 스크린샷 + 한/영 유저 플로우 맵
+
+> 요청: 앱 모든 페이지·모달을 내가(직접 X) 캡처 → 유저 플로우 맵으로. 이어서 영어판, 최종 한/영 단일 토글본.
+
+### 스크린샷 dev 모드 (전부 `EXPO_PUBLIC_SCREENSHOT=1` 플래그로 격리 — 평소/프로덕션 무영향)
+- **단일 seam**: 모든 화면이 `lib/supabase.ts`의 supabase 하나만 import → `lib/screenshot/mock-supabase.ts`(체이너블 목업 클라)+`fixtures.ts`(커플연결/카드/추억/알림 + 추천세션 rpc payload)로 **인증 게이트 + 데이터 화면 동시 해결**. TDD 8테스트.
+- **구동**: `components/screenshot/screenshot-navigator.tsx`가 로컬 HTTP 제어서버(`scripts/shot-control-server.py`) 폴링 → `router.replace`. `LANG:en/ko` 명령으로 언어 전환. `app/shot.tsx`=모달/GeneratingView 하네스. `scripts/screenshot-all.sh` 순회 캡처.
+- **왜 이 방식**: openurl은 iOS 확인창 매번, System Events 클릭은 접근성 권한 없어 불가(-25204) → HTTP 폴링으로 우회. dev-client 콜드런치 메뉴/첫 확인창만 1회 수동 탭, 이후 완전 자동.
+
+### 결과
+- **37 라이브 화면** 캡처(로그인 포함). MVP 미사용 제외: **모드 선택 화면**(탭이 코스입력 직행), feeling·bucketlist·result.
+- **course-result/place-detail/generating**: 런타임 세션 필요 → `recommendation-session-fixture` 구조의 rpc payload 시드 + URL 파라미터로 정상 렌더.
+- **한/영 단일 `docs/screenshots/flow-map.html`**: 우상단 토글로 스크린샷·라벨·설명 전부 전환. 자체완결(claude.ai 무관·오프라인·영구). 9단계 플로우. 원본 PNG는 `.gitignore`(재캡처 가능), html만 커밋.
+- 한계(정직): 장소명·주소는 한글 고정(Kakao Local API), 일부 카드 콘텐츠도 목업 한글.
+
+### 검증
+- `npm run validate`(tsc) 클린. 신규 mock 8 + 기존 = 전체 통과. 도구는 유지(플래그 off 기본). 브랜치 `feat/manual-place-pick`.
+- 상세: 메모리 [[screenshot-mode-tooling]].
+
 ## 2026-07-20 세션 BB — 수동 장소 지정 Phase 2 (입력 시점 스텝별 장소 핀)
 
 > 요청: `phase 2 진행`. 브랜치 `feat/manual-place-pick`의 Phase 0·1(교체 시트 직접 검색) 위에, 코스 입력 화면에서 각 스텝을 카카오 장소로 직접 지정(핀)하는 기능. 계획 `docs/superpowers/plans/2026-07-20-manual-place-pick-phase2.md`(승인).
