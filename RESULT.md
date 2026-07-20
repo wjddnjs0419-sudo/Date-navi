@@ -33,6 +33,32 @@
 
 ---
 
+## 2026-07-20 세션 BA — Step Intent Phase 2·3 배포 + Phase 4 종결 + 비용 실측
+
+> 요청: `/goal phase2-4까지`. Phase 2·3는 세션 AZ에서 로컬 구현·커밋 완료 상태였고 남은 블로커는 edge function 배포 승인 + Phase 4 처리. 브레인스토밍으로 스코프 확정 후 배포·검증·문서화.
+
+### 결정 (AskUserQuestion)
+- **Phase 4**(가격/외부증거): 카카오 무료 티어 데이터 부재 → **연기**, 문서화만. 재개 선행조건 = 유료 API/크롤링.
+- **AI 파서**: additionalRequest 있고 규칙 미검출/저신뢰일 때만 호출(사전 히트·자유텍스트 없음 = AI 0).
+- **UI**: 감지 칩 + 완화 UI 둘 다(이미 구현됨).
+
+### 배포 (프로덕션, 승인 후)
+- `generate-ai` → **v18** ACTIVE (`parse_step_intents` action + `parse-step-intents-schema.ts` 포함).
+- `recommend-date` → **v14** ACTIVE (step-intent-resolve/threading 전체 shared 모듈).
+- 프로젝트 Date-Navi(`wqjguifsmtblgrhdfnji`, Seoul).
+
+### 비용 실측 (ai_recommendation_logs, 최근 30일, Haiku 4.5 $1/$5)
+- recommend_date_select: 입력 평균 **15,152토큰**(최대 18,232)·출력 **44토큰** → **≈ $0.0154 (22원)/생성**.
+- 비용 지배 = 입력(후보 리스트 전 필드 직렬화). 출력은 candidateId만이라 미미.
+- `parse_step_intents` fallback 발생 시 +~$0.002(3원). 교체 시트 = AI 0원.
+- 절감 여지: 프롬프트 후보 상한/scoreBreakdown 등 불필요 필드 제거 시 입력 절반↓.
+
+### 검증
+- `npx jest`: **97 suites / 792 tests 전부 통과**(Phase 2 AI 파서·resolve·threading 포함). `npm run validate`(tsc) 클린. 워킹트리 클린(전부 커밋).
+- **모니터링 권고**: `parse_step_intents` 호출률(AI 비용)·step_intent 쿼리로 인한 카카오 캐시 히트율.
+
+---
+
 ## 2026-07-19 세션 AY — AI 추천 Step Intent Phase 1 (결정론 수직슬라이스)
 
 > 요청: V4 Step Intent 스펙 검토 → 현재 코드와 충돌 대조 → 조율 애드덤 작성 → Phase 1 구현. "삼겹살 먹고 싶어"/"I want samgyupsal" 같은 구체 자유텍스트를 규칙 파서로 step별 canonical 카카오 검색 의도로 변환해 검색→evidence→랭킹→선택검증→폴백→교체까지 전파. **AI 파서 없음(Phase 2)**.
