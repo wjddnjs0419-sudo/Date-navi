@@ -30,6 +30,22 @@ import {
 } from './recommendation-course-selection.ts';
 import { placeMatchesStepIntent } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
+import type { PlaceCandidate } from './recommendation-ranking.ts';
+
+// 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
+// AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
+function forcePinnedCandidateIds(
+  steps: readonly { stepId: string; candidateId: string }[],
+  courseSteps: RecommendationRequest['courseSteps'],
+  candidates: readonly PlaceCandidate[],
+): { stepId: string; candidateId: string }[] {
+  return steps.map((step) => {
+    const courseStep = courseSteps.find((entry) => entry.id === step.stepId);
+    if (!courseStep?.pinnedKakaoPlaceId) return step;
+    const forced = candidates.find((candidate) => candidate.kakaoPlaceId === courseStep.pinnedKakaoPlaceId);
+    return forced ? { stepId: step.stepId, candidateId: forced.candidateId } : step;
+  });
+}
 
 export type RecommendDateRequest = {
   method: string;
@@ -170,14 +186,26 @@ export async function handleRecommendDate(
   if (search.searchMetadata.allSearchesFailed && search.searchMetadata.timeoutCount > 0) {
     return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
   }
+  const pinnedStepIds = new Set(
+    serverRequest.courseSteps.filter((step) => step.pinnedKakaoPlaceId).map((step) => step.id),
+  );
+  // 입력 시점 지정 장소: 파이프라인이 이름 재검색으로 병합한 뒤에도 후보 풀에 없으면 실재 검증 실패.
+  for (const step of serverRequest.courseSteps) {
+    if (step.pinnedKakaoPlaceId
+      && !search.candidates.some((candidate) => candidate.kakaoPlaceId === step.pinnedKakaoPlaceId)) {
+      return errorResult(422, 'STEP_PIN_UNAVAILABLE');
+    }
+  }
+  // 핀 스텝은 카테고리를 이기므로(pin wins) 카테고리 충족 게이트에서 제외한다.
   const hasEveryRequiredCategory = serverRequest.courseSteps.every((step) => (
-    search.candidates.some((candidate) => candidateMatchesCategory(candidate, step.category))
+    pinnedStepIds.has(step.id)
+    || search.candidates.some((candidate) => candidateMatchesCategory(candidate, step.category))
   ));
   if (search.candidates.length === 0 || !hasEveryRequiredCategory) {
     return errorResult(422, 'INSUFFICIENT_CANDIDATES');
   }
   const requiredStepIntents = resolved.stepIntents
-    .filter((intent) => intent.strength === 'required');
+    .filter((intent) => intent.strength === 'required' && !pinnedStepIds.has(intent.stepId));
   // 폴백(buildDeterministicCandidateCourse)은 categoryEligible ∩ placeMatchesStepIntent로 후보를
   // 고르므로, 게이트도 카테고리를 함께 검사해야 이름만 매칭되는 비-카테고리 장소가 게이트를 통과하고
   // 폴백에서 INSUFFICIENT_CANDIDATES로 어긋나는 일을 막는다.
@@ -231,6 +259,21 @@ export async function handleRecommendDate(
         generatedAt,
       });
     }
+    if (!built && pinnedStepIds.size === serverRequest.courseSteps.length) {
+      // 전량 지정: AI 호출 없이 지정 장소로 결정론 조립(생성 비용 0). 문구는 결정론이라 품질 동일.
+      built = buildCandidateOnlyCourse({
+        request: intentAwareRequest,
+        candidates: search.candidates,
+        selection: {
+          steps: forcePinnedCandidateIds(
+            serverRequest.courseSteps.map((step) => ({ stepId: step.id, candidateId: '' })),
+            serverRequest.courseSteps,
+            search.candidates,
+          ),
+        },
+        generatedAt,
+      });
+    }
     if (!built) {
       let downstream: unknown;
       try {
@@ -254,10 +297,14 @@ export async function handleRecommendDate(
           selectionReason = 'ai_malformed';
         } else {
           try {
+            // 부분 지정: 핀 스텝은 AI 선택을 무시하고 지정 후보로 강제(pin wins).
+            const selection = pinnedStepIds.size > 0
+              ? { steps: forcePinnedCandidateIds(parsedSelection.data.steps, serverRequest.courseSteps, search.candidates) }
+              : parsedSelection.data;
             built = buildCandidateOnlyCourse({
               request: serverRequest,
               candidates: search.candidates,
-              selection: parsedSelection.data,
+              selection,
               generatedAt,
             });
             if (serverRequest.maxWalkingMinutes !== undefined

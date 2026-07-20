@@ -194,6 +194,13 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
       // facts instead of requiring it to reappear in this call's candidate pool.
       if (selectedStep.candidateId !== lock.candidateId) throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
       candidate = candidateFromLock(lock);
+    } else if (requestedStep.pinnedKakaoPlaceId) {
+      // 사용자가 입력 시점에 직접 지정한 장소: 지정이 카테고리·intent를 이긴다(pin wins). 서버가 이미
+      // 이름 재검색으로 후보 풀에 병합·실재 검증했으므로 kakaoPlaceId 일치만 확인한다.
+      candidate = byCandidateId.get(selectedStep.candidateId);
+      if (!candidate || candidate.kakaoPlaceId !== requestedStep.pinnedKakaoPlaceId) {
+        throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+      }
     } else {
       candidate = byCandidateId.get(selectedStep.candidateId);
       if (!candidate || !candidateMatchesCategory(candidate, requestedStep.category)) {
@@ -263,6 +270,12 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
       // Same rationale as buildCandidateOnlyCourse: don't require the locked place to reappear
       // in this call's fresh candidate pool, pin it from its own carried facts instead.
       return [candidateFromLock(lock)];
+    }
+    if (step.pinnedKakaoPlaceId) {
+      // 입력 시점 지정 장소는 결정론 폴백에서도 그대로 강제(카테고리 무시).
+      const pinned = input.candidates.find((candidate) => candidate.kakaoPlaceId === step.pinnedKakaoPlaceId);
+      if (!pinned) throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
+      return [pinned];
     }
     const categoryEligible = input.candidates
       .filter((candidate) => candidateMatchesCategory(candidate, step.category));
