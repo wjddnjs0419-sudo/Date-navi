@@ -4,6 +4,7 @@ import {
   executeKakaoSearchPlan,
   fetchKakaoSearchPage,
   KAKAO_SEARCH_LIMITS,
+  mergeKakaoSearchEvidence,
   type KakaoFetch,
   type KakaoSearchMetadata,
   type KakaoSearchQuery,
@@ -48,8 +49,22 @@ export async function searchAndRankRecommendation(
       dependencies.fetcher,
     );
   const search = await executeKakaoSearchPlan(plan, searchPage);
+  let places = search.places;
+  // 수동 지정 장소: 일반 검색 풀에 없으면 pickedName으로 키워드 재검색해 매칭 doc을 병합.
+  if (request.replacement?.pickedName
+      && !places.some((p) => p.kakaoPlaceId === request.replacement!.kakaoPlaceId)) {
+    const extra = await searchPage({
+      queryId: 'picked-place',
+      source: 'keyword',
+      queryText: request.replacement.pickedName,
+      page: 1,
+    });
+    const matched = mergeKakaoSearchEvidence([extra])
+      .filter((p) => p.kakaoPlaceId === request.replacement!.kakaoPlaceId);
+    if (matched.length > 0) places = [...places, ...matched];
+  }
   return {
-    ...rankPlaceCandidates(search.places, request, { limit: KAKAO_SEARCH_LIMITS.maxUniqueCandidates }),
+    ...rankPlaceCandidates(places, request, { limit: KAKAO_SEARCH_LIMITS.maxUniqueCandidates }),
     searchMetadata: search.metadata,
   };
 }
