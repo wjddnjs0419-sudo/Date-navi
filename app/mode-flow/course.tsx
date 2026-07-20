@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -103,7 +104,12 @@ export default function CourseScreen() {
   }, [pinTargetStepId]);
 
   function requestPick(stepId: string) {
-    if (!draft.location) return;
+    if (!draft.location) {
+      // 장소 검색은 주변 좌표 bias가 필요하므로 만나는 위치를 먼저 골라야 한다.
+      // 조용히 무시하면 버튼이 죽은 것처럼 보이므로 이유를 안내한다.
+      Alert.alert(t('course.steps.pin.locationFirstTitle'), t('course.steps.pin.locationFirstBody'));
+      return;
+    }
     setPinTargetStepId(stepId);
     router.push({
       pathname: '/mode-flow/place-search',

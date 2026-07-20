@@ -522,7 +522,9 @@
         "categoryTab": "Category",
         "pinTab": "Pick a place",
         "searchEntry": "Search and pick a place",
-        "clear": "Clear"
+        "clear": "Clear",
+        "locationFirstTitle": "Choose the meeting location first",
+        "locationFirstBody": "Pick a location under \"Where are you meeting?\" below, and you can search for places nearby."
       }
     },
     "walking": {
