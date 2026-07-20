@@ -20,7 +20,13 @@ export const courseStepInputSchema = z.object({
   id: boundedText(80),
   category: boundedText(80),
   label: boundedText(120),
-}).strict();
+  pinnedKakaoPlaceId: boundedText(120).optional(),
+  pinnedName: boundedText(120).optional(),
+}).strict().superRefine((step, ctx) => {
+  if (step.pinnedKakaoPlaceId && !step.pinnedName) {
+    ctx.addIssue({ code: 'custom', path: ['pinnedName'], message: 'pinnedName is required when a step is pinned.' });
+  }
+});
 
 const uniqueStrings = (maxLength: number) => z.array(boundedText(maxLength)).superRefine((values, ctx) => {
   if (new Set(values).size !== values.length) {

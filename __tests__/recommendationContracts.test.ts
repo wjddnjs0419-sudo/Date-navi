@@ -64,6 +64,36 @@ describe('RecommendationRequest contracts', () => {
     expect(parsed.success).toBe(true);
   });
 
+  it('accepts a course step pinned to a searched place', () => {
+    const parsed = recommendationRequestSchema.safeParse({
+      requestId: 'request-001',
+      mode: 'course',
+      language: 'ko',
+      location,
+      courseSteps: [
+        { id: 'meal', category: 'restaurant', label: '블루보틀 성수', pinnedKakaoPlaceId: 'k1', pinnedName: '블루보틀 성수' },
+        courseSteps[1],
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects a pinned step that has an id but no name', () => {
+    const parsed = recommendationRequestSchema.safeParse({
+      requestId: 'request-001',
+      mode: 'course',
+      language: 'ko',
+      location,
+      courseSteps: [
+        { id: 'meal', category: 'restaurant', label: '저녁 식사', pinnedKakaoPlaceId: 'k1' },
+        courseSteps[1],
+      ],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it('rejects a course request with fewer than two steps', () => {
     const result = recommendationRequestSchema.safeParse({
       requestId: 'request-001',

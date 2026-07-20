@@ -24,6 +24,10 @@ export type CourseStepInput = {
   id: string;
   category: string;
   label: string;
+  /** User-picked place for this step. When set, the step is pinned and its category is ignored. */
+  pinnedKakaoPlaceId?: string;
+  /** Search seed the server re-searches to server-verify the pinned place. Required when pinnedKakaoPlaceId is set. */
+  pinnedName?: string;
 };
 
 export type HardConstraints = {
