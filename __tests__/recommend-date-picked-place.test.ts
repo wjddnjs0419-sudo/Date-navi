@@ -72,6 +72,45 @@ describe('searchAndRankRecommendation — 수동 지정 장소 병합', () => {
     expect(result.candidates.some((candidate) => candidate.kakaoPlaceId === 'picked-1')).toBe(true);
   });
 
+  it('courseSteps의 pinnedName들을 각각 재검색해 후보 풀에 병합한다', async () => {
+    const executedQueries: string[] = [];
+    const request: RecommendationRequest = {
+      ...baseRequest(),
+      courseSteps: [
+        { id: 'step-0', category: 'meal', label: '블루보틀 성수', pinnedKakaoPlaceId: 'picked-1', pinnedName: PICKED_NAME },
+        { id: 'step-1', category: 'cafe', label: '카페' },
+      ],
+    };
+
+    const result = await searchAndRankRecommendation(request, {
+      kakaoRestApiKey: 'x',
+      fetcher: makeFetcher(executedQueries),
+    });
+
+    expect(executedQueries).toContain(PICKED_NAME);
+    expect(result.candidates.some((candidate) => candidate.kakaoPlaceId === 'picked-1')).toBe(true);
+  });
+
+  it('이미 풀에 있는 핀은 재검색하지 않는다', async () => {
+    const executedQueries: string[] = [];
+    const alreadyPresentFetcher: KakaoFetch = jest.fn(async (input: string | URL | Request) => {
+      const query = new URL(String(input)).searchParams.get('query') ?? '';
+      executedQueries.push(query);
+      return response(200, { documents: [document('picked-1'), ...Array.from({ length: 11 }, (_, i) => document(`p-${query}-${i}`))] });
+    }) as KakaoFetch;
+    const request: RecommendationRequest = {
+      ...baseRequest(),
+      courseSteps: [
+        { id: 'step-0', category: 'meal', label: 'x', pinnedKakaoPlaceId: 'picked-1', pinnedName: PICKED_NAME },
+        { id: 'step-1', category: 'cafe', label: '카페' },
+      ],
+    };
+
+    await searchAndRankRecommendation(request, { kakaoRestApiKey: 'x', fetcher: alreadyPresentFetcher });
+
+    expect(executedQueries).not.toContain(PICKED_NAME);
+  });
+
   it('replacement가 없으면 지정 장소 재검색을 하지 않는다', async () => {
     const executedQueries: string[] = [];
 

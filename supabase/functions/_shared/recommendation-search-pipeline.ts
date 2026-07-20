@@ -50,17 +50,27 @@ export async function searchAndRankRecommendation(
     );
   const search = await executeKakaoSearchPlan(plan, searchPage);
   let places = search.places;
-  // 수동 지정 장소: 일반 검색 풀에 없으면 pickedName으로 키워드 재검색해 매칭 doc을 병합.
-  if (request.replacement?.pickedName
-      && !places.some((p) => p.kakaoPlaceId === request.replacement!.kakaoPlaceId)) {
+  // 수동 지정 장소(교체 replacement + 입력 시점 per-step 핀): 일반 검색 풀에 없으면
+  // 지정 이름으로 키워드 재검색해 매칭 doc을 병합. client 좌표 불신, kakaoPlaceId로만 매칭.
+  const picks: { kakaoPlaceId: string; name: string }[] = [];
+  if (request.replacement?.pickedName) {
+    picks.push({ kakaoPlaceId: request.replacement.kakaoPlaceId, name: request.replacement.pickedName });
+  }
+  for (const step of request.courseSteps) {
+    if (step.pinnedKakaoPlaceId && step.pinnedName) {
+      picks.push({ kakaoPlaceId: step.pinnedKakaoPlaceId, name: step.pinnedName });
+    }
+  }
+  for (const pick of picks) {
+    if (places.some((p) => p.kakaoPlaceId === pick.kakaoPlaceId)) continue;
     const extra = await searchPage({
       queryId: 'picked-place',
       source: 'keyword',
-      queryText: request.replacement.pickedName,
+      queryText: pick.name,
       page: 1,
     });
     const matched = mergeKakaoSearchEvidence([extra])
-      .filter((p) => p.kakaoPlaceId === request.replacement!.kakaoPlaceId);
+      .filter((p) => p.kakaoPlaceId === pick.kakaoPlaceId);
     if (matched.length > 0) places = [...places, ...matched];
   }
   return {
