@@ -91,15 +91,16 @@ export default function AnniversaryScreen() {
           </SoftCard>
         )}
 
-        <TouchableOpacity style={s.skipBtn} onPress={handleSkip}>
-          <Text style={s.skipText}>{t('onboarding.anniversary.skipCta')}</Text>
-        </TouchableOpacity>
-
         <View style={s.spacer} />
 
-        <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
-          {loading ? t('common.saving') : t('common.next')}
-        </BigButton>
+        <View style={s.footer}>
+          <TouchableOpacity style={s.skipBtn} onPress={handleSkip}>
+            <Text style={s.skipText}>{t('onboarding.anniversary.skipCta')}</Text>
+          </TouchableOpacity>
+          <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
+            {loading ? t('common.saving') : t('common.next')}
+          </BigButton>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -114,14 +115,15 @@ const s = StyleSheet.create({
   subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
   dateRow: { marginTop: 24 },
   daysCard: {
-    marginTop: 20,
+    marginTop: 24,
     backgroundColor: C.cream,
     borderColor: '#F2DDB0',
   },
   daysRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   daysText: { fontSize: 12, color: C.creamFg, fontWeight: '600' },
   daysHint: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: 8 },
-  skipBtn: { alignItems: 'center', marginTop: 16 },
+  footer: { gap: 12 },
+  skipBtn: { alignItems: 'center', paddingVertical: 8 },
   skipText: { fontSize: 12, color: C.textMuted },
-  spacer: { flex: 1 },
+  spacer: { flex: 1, minHeight: 16 },
 });

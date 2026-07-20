@@ -153,7 +153,7 @@ export default function PreferencesScreen() {
                 selected={avoid}
                 onToggle={(id) => toggle(avoid, setAvoid, id)}
               />
-              <InfoNote>
+              <InfoNote style={s.infoNote}>
                 {t('onboarding.preferences.avoidInfoNote')}
               </InfoNote>
             </>
@@ -260,6 +260,7 @@ const s = StyleSheet.create({
   scroll: { flex: 1, marginTop: 24 },
   scrollContent: { paddingBottom: 20 },
   hint: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16 },
+  infoNote: { marginTop: 24 },
   singleList: { gap: 8 },
   singleBtn: {
     borderRadius: 16,

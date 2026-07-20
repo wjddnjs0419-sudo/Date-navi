@@ -240,8 +240,9 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
-  input: { fontSize: 14, color: C.text, lineHeight: 22 },
-  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. lineHeight는 multiline 전용.
+  input: { fontSize: 14, color: C.text, paddingVertical: 0 },
+  inputMultiline: { minHeight: 72, lineHeight: 22, textAlignVertical: 'top' },
   budgetRow: { flexDirection: 'row', gap: 8 },
   chipBtn: {
     borderRadius: 14,
