@@ -82,7 +82,7 @@ export type RecommendationRequest = HardConstraints & SoftPreferences & {
   parsedPreferences?: ParsedPreferenceInput;
   lockedSteps?: LockedCourseStepInput[];
   /** A user-selected, server-verified replacement candidate for exactly one unlocked step. */
-  replacement?: { stepId: string; kakaoPlaceId: string };
+  replacement?: { stepId: string; kakaoPlaceId: string; pickedName?: string };
 };
 
 export type RelaxedConstraint = {

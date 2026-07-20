@@ -51,6 +51,19 @@ describe('RecommendationRequest contracts', () => {
     expect(restored).toEqual(request);
   });
 
+  it('accepts an optional pickedName on replacement', () => {
+    const parsed = recommendationRequestSchema.safeParse({
+      requestId: 'request-001',
+      mode: 'course',
+      language: 'ko',
+      location,
+      courseSteps,
+      replacement: { stepId: 'meal', kakaoPlaceId: 'k1', pickedName: '블루보틀 성수' },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
   it('rejects a course request with fewer than two steps', () => {
     const result = recommendationRequestSchema.safeParse({
       requestId: 'request-001',

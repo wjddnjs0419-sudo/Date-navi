@@ -91,6 +91,7 @@ export const recommendationRequestSchema = hardConstraintsSchema
     replacement: z.object({
       stepId: boundedText(80),
       kakaoPlaceId: boundedText(120),
+      pickedName: boundedText(120).optional(),
     }).strict().optional(),
   })
   .strict()
