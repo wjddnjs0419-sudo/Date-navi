@@ -38,9 +38,17 @@ export function getCourseCategoryIcon(category: string): LucideIcon {
   return CATEGORY_ICONS[category as CourseCategory] ?? Sparkles;
 }
 
+export type CoursePin = {
+  kakaoPlaceId: string;
+  name: string;
+  address: string;
+};
+
 export type CourseDraftStep = {
   id: string;
   category: CourseCategory;
+  /** When set, the step is pinned to a user-picked place and its category is ignored server-side. */
+  pin?: CoursePin;
 };
 
 export type CourseDraft = {
@@ -59,6 +67,8 @@ export type CourseDraftAction =
   | { type: 'removeStep'; stepId: string }
   | { type: 'moveStep'; stepId: string; direction: 'up' | 'down' }
   | { type: 'setStepCategory'; stepId: string; category: CourseCategory }
+  | { type: 'setStepPin'; stepId: string; pin: CoursePin }
+  | { type: 'clearStepPin'; stepId: string }
   | { type: 'setWalkingLimit'; minutes: WalkingLimit }
   | { type: 'setBudgetInput'; value: string }
   | { type: 'toggleMood'; mood: CourseMood }
@@ -131,6 +141,22 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
         steps: draft.steps.map((step) => (
           step.id === action.stepId ? { ...step, category: action.category } : step
         )),
+      };
+    case 'setStepPin':
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => (
+          step.id === action.stepId ? { ...step, pin: action.pin } : step
+        )),
+      };
+    case 'clearStepPin':
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => {
+          if (step.id !== action.stepId) return step;
+          const { pin: _pin, ...rest } = step;
+          return rest;
+        }),
       };
     case 'setWalkingLimit':
       return { ...draft, maxWalkingMinutes: action.minutes };
@@ -305,7 +331,8 @@ export function buildStructuredCourseInput(
     courseSteps: draft.steps.map((step) => ({
       id: step.id,
       category: step.category,
-      label: categoryLabels[step.category],
+      label: step.pin ? step.pin.name : categoryLabels[step.category],
+      ...(step.pin ? { pinnedKakaoPlaceId: step.pin.kakaoPlaceId, pinnedName: step.pin.name } : {}),
     })),
     ...(draft.maxWalkingMinutes ? { maxWalkingMinutes: draft.maxWalkingMinutes } : {}),
     ...(parseTotalBudgetKRW(draft.totalBudgetKRWInput) !== undefined

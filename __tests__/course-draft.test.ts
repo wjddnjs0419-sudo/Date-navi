@@ -7,6 +7,7 @@ import {
   parseCoursePreferences,
   validateCourseDraft,
   type CourseCategory,
+  type CourseDraft,
 } from '../lib/course-draft';
 import { buildCourseInput } from '../lib/modeForm';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
@@ -165,6 +166,34 @@ describe('structured course draft', () => {
       { code: 'additional_request_too_long' },
       { code: 'exclusion_conflict', categories: ['cafe'] },
     ]));
+  });
+
+  it('pins a step to a picked place and clears it, leaving other steps untouched', () => {
+    let draft = createInitialCourseDraft(idFactory('step-a', 'step-b'));
+    const pin = { kakaoPlaceId: 'k1', name: '블루보틀 성수', address: '서울 성동구 아차산로 7' };
+    draft = courseDraftReducer(draft, { type: 'setStepPin', stepId: 'step-a', pin });
+
+    expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'meal', pin });
+    expect(draft.steps[1]).toEqual({ id: 'step-b', category: 'cafe' });
+
+    draft = courseDraftReducer(draft, { type: 'clearStepPin', stepId: 'step-a' });
+    expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'meal' });
+  });
+
+  it('maps a pinned step to pinnedKakaoPlaceId/pinnedName with the place name as label', () => {
+    let draft: CourseDraft = { ...createInitialCourseDraft(idFactory('step-a', 'step-b')), location };
+    draft = courseDraftReducer(draft, {
+      type: 'setStepPin',
+      stepId: 'step-a',
+      pin: { kakaoPlaceId: 'k1', name: '블루보틀 성수', address: '서울 성동구 아차산로 7' },
+    });
+
+    const structured = buildStructuredCourseInput(draft, categoryLabels);
+
+    expect(structured.courseSteps).toEqual([
+      { id: 'step-a', category: 'meal', label: '블루보틀 성수', pinnedKakaoPlaceId: 'k1', pinnedName: '블루보틀 성수' },
+      { id: 'step-b', category: 'cafe', label: '카페' },
+    ]);
   });
 
   it('accepts blank optional text and maps a valid draft to Phase 1 structured fields', () => {
