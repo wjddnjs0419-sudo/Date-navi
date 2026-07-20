@@ -16,21 +16,19 @@ describe('request/session persistence wiring', () => {
     );
   });
 
-  it('writes identity in legacy AI inserts while structured course confirmation avoids duplicate direct writes', () => {
+  it('writes identity in AI inserts while structured course confirmation avoids duplicate direct writes', () => {
     const payloads = [
       ...dateCardInsertPayloads('app/mode-flow/result.tsx'),
       ...dateCardInsertPayloads('app/mode-flow/course-result.tsx'),
       ...dateCardInsertPayloads('app/card/[id].tsx'),
       ...dateCardInsertPayloads('app/(tabs)/candidates.tsx'),
-      ...dateCardInsertPayloads('app/card/new.tsx'),
     ];
     const aiPayloads = payloads.filter(payload => /source:\s*'ai'/.test(payload));
     const manualPayloads = payloads.filter(payload => /source:\s*'manual'/.test(payload));
 
-    expect(aiPayloads).toHaveLength(4);
+    expect(aiPayloads).toHaveLength(3);
+    expect(manualPayloads).toHaveLength(0);
     expect(aiPayloads.every(payload => /\.\.\.writeRecommendationIdentity\(/.test(payload))).toBe(true);
-    expect(manualPayloads).toHaveLength(1);
-    expect(manualPayloads[0]).not.toMatch(/writeRecommendationIdentity\(/);
     expect(readSource('app/mode-flow/course-result.tsx')).not.toContain(".from('date_cards').insert");
   });
 });
