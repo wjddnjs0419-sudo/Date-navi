@@ -517,6 +517,12 @@
         "culture": "Culture",
         "walk": "Walk",
         "ai_decide": "Let AI decide"
+      },
+      "pin": {
+        "categoryTab": "Category",
+        "pinTab": "Pick a place",
+        "searchEntry": "Search and pick a place",
+        "clear": "Clear"
       }
     },
     "walking": {

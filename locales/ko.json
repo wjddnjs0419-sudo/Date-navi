@@ -517,6 +517,12 @@
         "culture": "문화",
         "walk": "산책",
         "ai_decide": "AI가 결정"
+      },
+      "pin": {
+        "categoryTab": "카테고리",
+        "pinTab": "직접 지정",
+        "searchEntry": "장소 검색해서 지정하기",
+        "clear": "지우기"
       }
     },
     "walking": {

@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useRef } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -33,6 +33,7 @@ import { buildRecommendationRequest } from '../../lib/recommend-date';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { buildStructuredGeneratingParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
+import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 
 const DURATION_MAX_HOURS = 24;
 
@@ -85,6 +86,30 @@ export default function CourseScreen() {
     [draft.additionalRequest],
   );
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
+
+  const [pinTargetStepId, setPinTargetStepId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = subscribePickedPlace((place) => {
+      if (!pinTargetStepId) return;
+      dispatch({
+        type: 'setStepPin',
+        stepId: pinTargetStepId,
+        pin: { kakaoPlaceId: place.kakaoPlaceId, name: place.name, address: place.address },
+      });
+      setPinTargetStepId(null);
+    });
+    return unsub;
+  }, [pinTargetStepId]);
+
+  function requestPick(stepId: string) {
+    if (!draft.location) return;
+    setPinTargetStepId(stepId);
+    router.push({
+      pathname: '/mode-flow/place-search',
+      params: { x: String(draft.location.longitude), y: String(draft.location.latitude) },
+    } as any);
+  }
 
   function addStep() {
     dispatch({
@@ -140,6 +165,7 @@ export default function CourseScreen() {
                 total={draft.steps.length}
                 categoryLabels={categoryLabels}
                 dispatch={dispatch}
+                onRequestPick={requestPick}
                 t={t}
               />
             ))}
