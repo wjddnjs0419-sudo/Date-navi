@@ -172,6 +172,23 @@ export function rankPlaceCandidates(
     selected.push(recalled);
     selectedIds.add(recalled.kakaoPlaceId);
   }
+  // 입력 시점 지정 장소(핀)는 카테고리를 이기므로 저점수일 때 카테고리 recall이 보호하지 못한다.
+  // 일반 score fill(절단) 이전에 강제 포함해 유효한 핀이 후보 상한에서 잘려 STEP_PIN_UNAVAILABLE로
+  // 오판되는 것을 막는다. 핀은 최대 4개라 상한을 넘기지 않는다.
+  const pinnedPlaceIds = new Set(
+    request.courseSteps
+      .map((step) => step.pinnedKakaoPlaceId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  );
+  if (pinnedPlaceIds.size > 0) {
+    for (const place of ranked) {
+      if (selected.length >= limit) break;
+      if (pinnedPlaceIds.has(place.kakaoPlaceId) && !selectedIds.has(place.kakaoPlaceId)) {
+        selected.push(place);
+        selectedIds.add(place.kakaoPlaceId);
+      }
+    }
+  }
   for (const place of ranked) {
     if (selected.length >= limit) break;
     if (!selectedIds.has(place.kakaoPlaceId)) {

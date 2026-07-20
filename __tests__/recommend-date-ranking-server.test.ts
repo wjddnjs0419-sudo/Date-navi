@@ -106,6 +106,24 @@ describe('recommend-date deterministic ranking', () => {
     expect(ranked.recallByCategory).toMatchObject({ meal: 1, cafe: 2 });
   });
 
+  it('입력 시점 지정 장소는 카테고리 불일치·저점수여도 랭킹 절단에서 보호된다', () => {
+    // pinned place는 어느 스텝 카테고리와도 안 맞아(CT1) 저점수라 카테고리 recall이 못 지킨다.
+    const pinned = place('pinned-x', 'CT1', 127.9);
+    const meals = Array.from({ length: 5 }, (_, index) => place(`meal-${index}`, 'FD6', 127.001 + index / 10000));
+    const cafes = Array.from({ length: 5 }, (_, index) => place(`cafe-${index}`, 'CE7', 127.001 + index / 10000));
+    const pinnedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'step-0', category: 'meal', label: '지정', pinnedKakaoPlaceId: 'pinned-x', pinnedName: 'Place pinned-x' },
+        { id: 'step-1', category: 'cafe', label: 'cafe' },
+      ],
+    };
+
+    const ranked = rankPlaceCandidates([pinned, ...meals, ...cafes], pinnedRequest, { limit: 3 });
+
+    expect(ranked.candidates.some((candidate) => candidate.kakaoPlaceId === 'pinned-x')).toBe(true);
+  });
+
   it('removes hard-excluded categories and place IDs before recall without inventing unsupported scores', () => {
     const input = {
       ...request(),

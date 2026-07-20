@@ -102,6 +102,16 @@ describe('CourseStepEditor 직접 지정 세그먼트', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
   });
 
+  it('핀 상태에서 카테고리 탭을 누르는 순간 핀을 지운다(UI=제출 상태 일치)', () => {
+    const dispatch = jest.fn();
+    const renderer = render(
+      { id: 'step-1', category: 'meal', pin: { kakaoPlaceId: 'k1', name: '블루보틀', address: '서울' } },
+      { dispatch },
+    );
+    act(() => { byTestID(renderer, 'course-step-tab-category')!.props.onPress(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'clearStepPin', stepId: 'step-1' });
+  });
+
   it('핀 상태에서 카테고리 탭으로 돌아가 칩을 고르면 핀을 지우고 카테고리를 설정한다(상호배타)', () => {
     const dispatch = jest.fn();
     const renderer = render(

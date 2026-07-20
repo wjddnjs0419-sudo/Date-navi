@@ -61,6 +61,12 @@ export function CourseStepEditor({
 }) {
   const [mode, setMode] = useState<'category' | 'pin'>(step.pin ? 'pin' : 'category');
 
+  function switchToCategory() {
+    // 카테고리 탭으로 전환하면 숨겨진 핀이 서버에서 그대로 적용되지 않도록 즉시 제거한다(UI=제출 상태 일치).
+    if (step.pin) dispatch({ type: 'clearStepPin', stepId: step.id });
+    setMode('category');
+  }
+
   function selectCategory(category: CourseCategory) {
     if (step.pin) dispatch({ type: 'clearStepPin', stepId: step.id });
     dispatch({ type: 'setStepCategory', stepId: step.id, category });
@@ -101,7 +107,7 @@ export function CourseStepEditor({
           accessibilityState={{ selected: mode === 'category' }}
           accessibilityLabel={t('course.steps.pin.categoryTab')}
           activeOpacity={0.72}
-          onPress={() => setMode('category')}
+          onPress={switchToCategory}
           style={[styles.segmentBtn, mode === 'category' && styles.segmentBtnOn]}
           testID="course-step-tab-category"
         >
