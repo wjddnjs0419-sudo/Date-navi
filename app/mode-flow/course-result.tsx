@@ -83,6 +83,13 @@ export default function CourseResultScreen() {
     payload: Record<string, unknown>,
   ) {
     if (!snapshot) return;
+    // 커플 미연결(솔로) 상태에서는 코스를 카드로 확정/저장할 수 없다.
+    // 서버 RPC가 couple_id null을 constraint_violation으로 막으므로,
+    // 불친절한 저장 실패 대신 커플 연결을 안내한다.
+    if (action === 'confirm' && !snapshot.coupleId) {
+      Alert.alert(t('common.coupleRequired'));
+      return;
+    }
     setEditing(true);
     setEditError('');
     try {
@@ -272,6 +279,10 @@ export default function CourseResultScreen() {
 
   async function handleSave() {
     if (!snapshot) return;
+    if (!snapshot.coupleId) {
+      Alert.alert(t('common.coupleRequired'));
+      return;
+    }
     setSaving(true);
     setErrorMsg('');
     try {

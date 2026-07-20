@@ -81,7 +81,7 @@ export default function CoupleConnectScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [savingRelationshipDate, setSavingRelationshipDate] = useState(false);
-  const [backBlockedVisible, setBackBlockedVisible] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   const displayCode = formatInviteCode(couple?.code) || 'DN-????';
   const canJoin = !!inviteCodeBody(inputCode) && !busy;
@@ -96,6 +96,13 @@ export default function CoupleConnectScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('no user');
       setUserId(user.id);
+
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('onboarding_completed')
+        .eq('user_id', user.id)
+        .maybeSingle<{ onboarding_completed: boolean | null }>();
+      setOnboardingCompleted(!!prefs?.onboarding_completed);
 
       const { data: profile } = await supabase
         .from('date_planner_profiles')
@@ -166,6 +173,20 @@ export default function CoupleConnectScreen() {
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/(auth)' as any);
+  }
+
+  function handleBack() {
+    // 미연결 상태로 이탈하면 대기 코드를 지워 매 부팅마다 이 화면으로
+    // 재라우팅되는 루프를 막는다.
+    if (status !== 'linked') {
+      void AsyncStorage.removeItem(PENDING_INVITE_CODE_KEY);
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    // 딥링크 콜드부트 등 백스택이 없을 때의 폴백.
+    router.replace((onboardingCompleted ? '/(tabs)' : '/onboarding/couple-choice') as any);
   }
 
   async function createCode() {
@@ -387,7 +408,7 @@ export default function CoupleConnectScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <BackBar onPress={status === 'linked' ? undefined : () => setBackBlockedVisible(true)} />
+        <BackBar onPress={handleBack} />
 
         <View style={s.headingBlock}>
           <Text style={s.heading}>{heading}</Text>
@@ -500,17 +521,6 @@ export default function CoupleConnectScreen() {
           onChange={setDraftRelationshipDate}
         />
       </PickerSheet>
-
-      <PickerSheet
-        visible={backBlockedVisible}
-        title={t.backBlockedTitle}
-        onCancel={() => setBackBlockedVisible(false)}
-        onConfirm={() => { setBackBlockedVisible(false); handleLogout(); }}
-        confirmLabel={strings.settings.logout}
-        centered
-      >
-        <Text style={s.backBlockedBody}>{t.backBlockedBody}</Text>
-      </PickerSheet>
     </SafeAreaView>
   );
 }
@@ -558,5 +568,4 @@ const s = StyleSheet.create({
   footerText: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 22 },
   logoutLink: { alignItems: 'center', marginTop: 20 },
   logoutLinkText: { fontSize: 12, color: C.textFaint, textDecorationLine: 'underline' },
-  backBlockedBody: { fontSize: 13, color: C.textSub, lineHeight: 20, textAlign: 'center' },
 });

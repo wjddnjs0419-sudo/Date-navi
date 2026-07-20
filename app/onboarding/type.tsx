@@ -42,7 +42,7 @@ export default function TypeScreen() {
     } finally {
       setLoading(false);
     }
-    router.push('/onboarding/couple-connect' as any);
+    router.push('/onboarding/couple-choice' as any);
   }
 
   return (

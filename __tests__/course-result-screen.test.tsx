@@ -325,6 +325,22 @@ describe('course result screen', () => {
     expect(payload).toMatchObject({ stepId: 'step-meal', candidateId: 'candidate_007', kakaoPlaceId: 'k-new' });
   });
 
+  it('솔로(coupleId 없음)가 확정을 누르면 서버 mutate 대신 커플 연결 안내를 띄운다', async () => {
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockMutateRecommendationSession.mockResolvedValue(buildSnapshot({ coupleId: null, status: 'confirmed' }));
+    (globalThis as any).__mockSnapshot = buildSnapshot({ coupleId: null });
+    let instance!: TestRendererInstance;
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    const confirmBtn = instance.root.findByProps({ testID: 'course-confirm' });
+    await act(async () => { confirmBtn.props.onPress(); });
+
+    expect(mockMutateRecommendationSession).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith('common.coupleRequired');
+    alertSpy.mockRestore();
+  });
+
   it('keeps the footer action labels short enough to fit on one line', () => {
     const ko = JSON.parse(require('node:fs').readFileSync(
       require('node:path').join(__dirname, '../locales/ko.json'), 'utf8',

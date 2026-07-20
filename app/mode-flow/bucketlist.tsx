@@ -33,7 +33,7 @@ export default function BucketlistScreen() {
         .maybeSingle();
 
       if (!profile?.couple_id) {
-        Alert.alert(t('modeFlow.bucketlist.coupleRequired'));
+        Alert.alert(t('common.coupleRequired'));
         return;
       }
 

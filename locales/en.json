@@ -21,7 +21,8 @@
     "seeAll": "See all",
     "delete": "Delete",
     "edit": "Edit",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "coupleRequired": "Connect with your partner to use this. You can connect from Settings or Home."
   },
   "tabs": {
     "home": "Home",
@@ -1285,6 +1286,14 @@
         "shy": "Sharing opinions feels a little hard",
         "flexible": "It depends each time"
       }
+    },
+    "coupleChoice": {
+      "title": "Connect with your partner?",
+      "subtitle": "Connecting now tailors recommendations to both your tastes. You can also do it later.",
+      "nowTitle": "Connect now",
+      "nowDesc": "Share a code and start together right away",
+      "laterTitle": "Maybe later",
+      "laterDesc": "I'll look around on my own first"
     },
     "anniversary": {
       "heading": "When did you two\nstart dating?",

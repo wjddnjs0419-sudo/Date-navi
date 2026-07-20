@@ -101,7 +101,7 @@ export default function ReviewScreen() {
 
   async function handleSave() {
     if (!rating) { Alert.alert('', c.noRatingError); return; }
-    if (!myUserId || !coupleId) { Alert.alert('', c.missingCoupleError); return; }
+    if (!myUserId || !coupleId) { Alert.alert('', s.common.coupleRequired); return; }
     if (saving) return;
     setSaving(true);
     try {

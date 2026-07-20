@@ -48,7 +48,7 @@ export default function NewCardScreen() {
         .single();
 
       if (!profile?.couple_id) {
-        Alert.alert(t('card.new.needCoupleAlert'));
+        Alert.alert(t('common.coupleRequired'));
         return;
       }
 

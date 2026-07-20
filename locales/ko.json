@@ -21,7 +21,8 @@
     "seeAll": "전체 보기",
     "delete": "삭제",
     "edit": "수정",
-    "moreActions": "더보기"
+    "moreActions": "더보기",
+    "coupleRequired": "커플과 연결하면 사용할 수 있어요. 설정이나 홈에서 연결해보세요."
   },
   "tabs": {
     "home": "홈",
@@ -1285,6 +1286,14 @@
         "shy": "의견을 말하기가 조금 어려워요",
         "flexible": "그때그때 달라요"
       }
+    },
+    "coupleChoice": {
+      "title": "연인과 연결할까요?",
+      "subtitle": "지금 연결하면 서로의 취향으로 추천이 더 잘 맞아요. 나중에 해도 괜찮아요.",
+      "nowTitle": "지금 연결하기",
+      "nowDesc": "코드를 공유하고 바로 함께 시작해요",
+      "laterTitle": "나중에 할게요",
+      "laterDesc": "혼자 먼저 둘러볼래요"
     },
     "anniversary": {
       "heading": "사귀기 시작한 날을\n알려주세요",

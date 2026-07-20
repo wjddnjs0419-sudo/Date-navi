@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
+import { resolveOnboardingDestination } from '../lib/onboarding-routing';
 import * as Notifications from 'expo-notifications';
 import { registerPushToken, buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
@@ -43,21 +44,19 @@ async function getDestination(session: Session | null): Promise<string> {
       .maybeSingle()
     : { data: null };
 
-  if (!isCoupleRowLinked(coupleRow)) {
-    const pendingCode = await getPendingInviteCode();
-    return pendingCode
-      ? `/onboarding/couple-connect?code=${encodeURIComponent(pendingCode)}`
-      : '/onboarding/couple-connect';
-  }
-
   const { data: prefs } = await supabase
     .from('user_preferences')
     .select('onboarding_completed')
     .eq('user_id', session.user.id)
     .maybeSingle();
 
-  if (!prefs?.onboarding_completed) return '/onboarding/preferences';
-  return '/(tabs)';
+  return resolveOnboardingDestination({
+    hasSession: true,
+    displayName: profile.display_name,
+    linked: isCoupleRowLinked(coupleRow),
+    pendingCode: await getPendingInviteCode(),
+    onboardingCompleted: !!prefs?.onboarding_completed,
+  });
 }
 
 export default function RootLayout() {

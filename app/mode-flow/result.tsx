@@ -53,7 +53,7 @@ export default function ResultScreen() {
     if (!user) return null;
     const { data: profile } = await supabase
       .from('date_planner_profiles').select('couple_id').eq('user_id', user.id).maybeSingle();
-    if (!profile?.couple_id) { Alert.alert(t('modeFlow.result.coupleRequired')); return null; }
+    if (!profile?.couple_id) { Alert.alert(t('common.coupleRequired')); return null; }
 
     const card = cards[i];
     const cardId = Math.random().toString(36).slice(2) + Date.now().toString(36);
