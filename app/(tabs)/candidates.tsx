@@ -308,14 +308,6 @@ export default function CandidatesScreen() {
               <Text style={s.pageTitle}>{t('candidates.pageTitle')}</Text>
               <Text style={s.countText}>{t('candidates.countText', { count: cards.length })}</Text>
             </View>
-            <TouchableOpacity
-              style={s.addBtn}
-              onPress={() => router.push('/card/new' as any)}
-              activeOpacity={0.8}
-            >
-              <Plus size={14} color={C.pinkDeep} />
-              <Text style={s.addBtnText}>{t('candidates.addManual')}</Text>
-            </TouchableOpacity>
           </View>
 
           {/* 필터 */}
@@ -582,12 +574,6 @@ const s = StyleSheet.create({
   bottomSpacer: { height: 100 },
   pageTitle: { fontSize: 24, fontWeight: '800', color: C.text },
   countText: { fontSize: 12, color: C.textMuted, marginTop: 2 },
-  addBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: C.pinkLight, borderWidth: 1, borderColor: C.pinkBorder,
-  },
-  addBtnText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
   emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
   emptyIcon: {
     width: 120, height: 120, borderRadius: 60,
