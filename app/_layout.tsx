@@ -117,10 +117,13 @@ export default function RootLayout() {
       <RecommendationSessionProvider>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
+          {/* 최상위 상태 화면들은 router.replace로 전환된다. 스와이프 제스처로
+              서로 넘나들면(로그아웃 후 홈이 다시 보이는 등) 안 되므로 비활성화한다.
+              상세 화면(settings/mode-flow 등)은 스와이프-뒤로가기를 유지한다. */}
+          <Stack.Screen name="index" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="settings" />
           <Stack.Screen name="mode-flow" />
           <Stack.Screen name="share" />
