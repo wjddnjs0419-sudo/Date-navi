@@ -64,8 +64,10 @@ RPC/마이그레이션 변경 없음 — replace/add/confirm은 이미 attestati
 - 응답/attestation 정합 검증(카드 step = course step, 좌표·거리)은 **그대로 유지**.
 
 ### 5.2 핸들러 (`supabase/functions/_shared/recommend-date-handler.ts`)
-- 입력-시점 다중 핀 지원: per-step 핀이 있으면 그 스텝은 AI 선택 대신 지정 장소 사용.
-- 강제 장소 검증 완화: "카테고리 검색 결과 포함" 대신 **서버가 해당 kakaoPlaceId를 카카오로 재조회/재검증**해 실재·좌표 확인 후 배치.
+- **확정 사실**: 카카오는 place id **단건 조회 엔드포인트가 없다**. 현행 강제 교체는 지정 `kakaoPlaceId`가 핸들러의 `search.candidates`(지역·카테고리 검색 풀)에 있어야만 통과([handler:214-218](../../../supabase/functions/_shared/recommend-date-handler.ts#L214-L218)). 사용자가 임의로 고른 장소는 풀에 없으면 422.
+- **해결(주입 방식)**: `replacement`에 사용자가 고른 장소의 `name`(+category)을 함께 실어 보낸다. 핸들러가 그 **이름을 해당 스텝 좌표 근처에서 카카오 키워드로 재검색**해 동일 place를 찾고(=실재·좌표 서버 재검증), `search.candidates`에 주입한 뒤 강제 배치. client가 준 좌표는 신뢰하지 않는다(위조 방지).
+- 재검색으로도 안 잡히면 422 → UX에서 "이 장소는 지정 불가" 안내.
+- 입력-시점 다중 핀(Phase 2)도 같은 주입 메커니즘 재사용.
 - 문구(desc/summary/why/i18n)는 계속 AI가 채움.
 
 ## 6. Phase 계획 (배포 순서)
@@ -78,9 +80,9 @@ RPC/마이그레이션 변경 없음 — replace/add/confirm은 이미 attestati
 - **Phase 1 — 화면 ② 검색 UI + 화면 ③ 교체 확장:** 서버 replace 흐름 재사용, 핸들러 완화 포함. 사용자 가치 가장 빨리 전달.
 - **Phase 2 — 화면 ① 입력 핀:** 스키마 per-step 핀 + 핸들러 다중 핀. 화면 ② 재사용.
 
-## 7. 열린 리스크
+## 7. 리스크 (해소됨)
 
-- **카카오 place id 단건 재조회 가능 여부.** 핸들러가 지정 장소를 id로 재검증하려면 카카오가 id 기반 조회를 지원해야 한다. 미지원 시: 화면 ② 검색 결과 객체(name+coords)를 서버가 이름+좌표로 재검색해 대조하는 방식으로 폴백. → **Phase 1 계획/TDD 첫 단계에서 확정.**
+- ~~카카오 place id 단건 재조회~~ → **미지원 확정.** 5.2의 "이름+좌표 재검색 후 candidates 주입" 방식으로 확정. Phase 1 계획 첫 태스크가 이 재검색이 실제로 해당 place를 surface하는지 검증(스파이크).
 - 비용: 지정 장소도 문구 생성을 위해 generate-ai를 태우면 1회 ≈22원(현행 코스와 동일). 순수 지정만이면 절감 여지 — Phase 2에서 재검토.
 
 ## 8. 테스트 전략 (TDD)
