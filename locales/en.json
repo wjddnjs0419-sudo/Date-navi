@@ -1166,7 +1166,8 @@
       "placeholder": "Search by name",
       "empty": "No results",
       "error": "Search failed. Please try again",
-      "pick": "Select"
+      "pick": "Select",
+      "back": "Back"
     }
   },
   "legal": {

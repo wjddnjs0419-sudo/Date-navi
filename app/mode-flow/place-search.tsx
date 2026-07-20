@@ -102,6 +102,7 @@ export default function PlaceSearchScreen() {
       <View style={s.header}>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel={t('modeFlow.placeSearch.back')}
           onPress={() => router.back()}
           style={s.backButton}
         >
