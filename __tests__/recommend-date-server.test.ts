@@ -143,7 +143,7 @@ describe('recommend-date server prompt', () => {
   });
 
   it('uses a prompt version separate from the legacy client prompt version', () => {
-    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v4-step-intent');
+    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v5-pinned-steps');
   });
 
   it('step intent가 있으면 resolvedStepIntents 블록과 매칭 후보 id를 포함한다', () => {
@@ -161,6 +161,26 @@ describe('recommend-date server prompt', () => {
     expect(prompt).toContain('"resolvedStepIntents"');
     expect(prompt).toContain('삼겹살');
     expect(prompt).toContain(porkCandidate.candidateId);
+  });
+
+  it('핀 스텝은 고정으로 표기하고 선택하지 말라고 지시한다', () => {
+    const mealCandidate = candidate('meal-candidate', 'pinned-meal', 'CE7', 127.0374);
+    const cafeCandidate = candidate('cafe-candidate', 'cafe-place', 'CE7', 127.0380);
+    const prompt = buildRecommendationPrompt(
+      {
+        ...request(),
+        courseSteps: [
+          { id: 'step-meal', category: 'meal', label: '블루보틀', pinnedKakaoPlaceId: 'pinned-meal', pinnedName: '블루보틀' },
+          { id: 'step-cafe', category: 'cafe', label: '카페' },
+        ],
+      },
+      [mealCandidate, cafeCandidate],
+    );
+
+    // 핀 스텝은 pinned 표기 + 강제 candidateId, AI는 비핀 스텝만 고른다.
+    expect(prompt).toContain('"pinned": true');
+    expect(prompt).toContain('meal-candidate');
+    expect(prompt).toMatch(/pinned steps are fixed/i);
   });
 
   it('requires the exact candidate-only JSON shape, step count/order, locks, exclusions, and walking heuristic', () => {

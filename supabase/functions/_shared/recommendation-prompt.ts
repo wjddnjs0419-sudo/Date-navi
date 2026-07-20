@@ -4,7 +4,7 @@ import { mergeServerPreferences } from './recommendation-intent.ts';
 import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
 
-export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v4-step-intent';
+export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v5-pinned-steps';
 export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v1';
 
 export function buildRecommendationPrompt(
@@ -30,12 +30,19 @@ export function buildRecommendationPrompt(
       kind: request.location.kind,
       ...(request.location.address ? { address: request.location.address } : {}),
     },
-    orderedCourseSteps: request.courseSteps.map((step, index) => ({
-      order: index + 1,
-      stepId: step.id,
-      category: step.category,
-      label: step.label,
-    })),
+    orderedCourseSteps: request.courseSteps.map((step, index) => {
+      const pinnedCandidateId = step.pinnedKakaoPlaceId
+        ? candidates.find((candidate) => candidate.kakaoPlaceId === step.pinnedKakaoPlaceId)?.candidateId
+        : undefined;
+      return {
+        order: index + 1,
+        stepId: step.id,
+        category: step.category,
+        label: step.label,
+        // 입력 시점 지정 장소: AI는 이 스텝을 고르지 않고 pinnedCandidateId를 그대로 유지한다.
+        ...(pinnedCandidateId ? { pinned: true, pinnedCandidateId } : {}),
+      };
+    }),
     maxWalkingMinutes: request.maxWalkingMinutes ?? null,
     twoPersonTotalBudgetKRW: request.totalBudgetKRW ?? null,
     moods: request.moods ?? request.selectedMoodTags ?? [],
@@ -84,6 +91,7 @@ export function buildRecommendationPrompt(
     'Every candidateId and stable Kakao place ID must be unique in the selected course.',
     'Each candidate must match its requested category; ai_decide may use any verified candidate.',
     'Preserve every locked stepId/candidateId/Kakao place ID tuple exactly.',
+    'pinned steps are fixed: return their pinnedCandidateId unchanged and never reuse that candidate for another step.',
     'Never select excluded categories or excluded Kakao place IDs.',
     'Prefer adjacent candidates within maxWalkingMinutes using the provisional 80 meters/minute straight-line heuristic when requested.',
     'The budget is application-condition metadata only and is not verified candidate evidence.',
