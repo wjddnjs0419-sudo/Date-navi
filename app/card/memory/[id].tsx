@@ -7,8 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { Heart, RotateCcw } from 'lucide-react-native';
-import { C } from '../../../constants/colors';
-import { G } from '../../../constants/theme';
+import { C, SP, R, G } from '../../../constants/theme';
 import { BackBar, Badge, MoreMenu } from '../../../components/ui';
 import { useI18n } from '../../../lib/i18n';
 
@@ -274,54 +273,54 @@ export default function MemoryDetailScreen() {
 const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  bottomSpacer: { height: 24 },
+  bottomSpacer: { height: SP.xxl },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxl },
   banner: {
-    width: '100%', aspectRatio: 4 / 3, borderRadius: 22, marginBottom: 16, overflow: 'hidden',
+    width: '100%', aspectRatio: 4 / 3, borderRadius: R.card, marginBottom: SP.lg, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center', backgroundColor: C.pinkMid,
   },
   bannerWrap: {
-    width: '100%', borderRadius: 22, marginBottom: 16, overflow: 'hidden',
+    width: '100%', borderRadius: R.card, marginBottom: SP.lg, overflow: 'hidden',
   },
   bannerPhoto: { width: '100%', height: '100%' },
   iconWrap: {
-    width: 56, height: 56, borderRadius: 16,
+    width: 56, height: 56, borderRadius: R.lg,
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: 10, lineHeight: 29 },
-  summary: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 6 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: C.text, marginTop: 24, marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: SP.sm + 2, lineHeight: 29 },
+  summary: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.xs + 2 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: C.text, marginTop: SP.xxl, marginBottom: SP.xs },
   empty: { fontSize: 13, color: C.textSub },
 
   commentRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.borderLight,
+    flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm + 2,
+    paddingVertical: SP.md, borderBottomWidth: 1, borderBottomColor: C.borderLight,
   },
   avatar: { width: 32, height: 32, borderRadius: 16 },
   avatarFallback: { backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
-  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.xs + 2, flexWrap: 'wrap' },
   commentName: { fontSize: 12, fontWeight: '700', color: C.text },
   commentDate: { fontSize: 11, color: C.textMuted },
   againTag: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: C.pinkLight, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2,
+    backgroundColor: C.pinkLight, borderRadius: R.sm, paddingHorizontal: SP.xs + 3, paddingVertical: 2,
   },
   againText: { fontSize: 10, fontWeight: '600', color: C.pinkDeep },
   commentText: { fontSize: 13, color: C.text, lineHeight: 19, marginTop: 3 },
 
   inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 8,
-    paddingHorizontal: 16, paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    flexDirection: 'row', alignItems: 'flex-end', gap: SP.sm,
+    paddingHorizontal: SP.lg, paddingTop: SP.md - 2, paddingBottom: Platform.OS === 'ios' ? SP.xxl : SP.md,
     borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white,
   },
   input: {
     flex: 1, maxHeight: 90, fontSize: 13, color: C.text,
-    backgroundColor: C.bg, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: C.bg, borderRadius: R.md, borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: SP.md + 2, paddingVertical: SP.sm + 2,
   },
-  sendBtn: { backgroundColor: C.pink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 11 },
+  sendBtn: { backgroundColor: C.pink, borderRadius: R.md, paddingHorizontal: SP.lg, paddingVertical: SP.sm + 3 },
   sendBtnDisabled: { backgroundColor: C.disabledBg },
   sendBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
 });
