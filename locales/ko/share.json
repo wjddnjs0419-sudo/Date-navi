@@ -1,0 +1,62 @@
+{
+  "share": {
+    "cardTitleFallback": "선택한 데이트 후보",
+    "cardDescFallback": "멀리 가지 않고 편하게 쉬는 데이트",
+    "reaction": {
+      "partnerFallback": "상대방",
+      "senderSent": "{{name}}이 보냈어요",
+      "justNow": "방금 전",
+      "heading": "이 데이트 어때요?",
+      "chooseReaction": "마음에 드는 반응을 골라주세요",
+      "noteLabel": "한마디 (선택)",
+      "notePlaceholder": "예: 이거 좋은데 이번 주말보단 다음 주가 좋을 것 같아.",
+      "submitCta": "반응 남기기",
+      "options": {
+        "full": "완전 끌려",
+        "good": "좋아",
+        "niceFeel": "느낌은 좋아",
+        "closer": "가까우면 좋아",
+        "burdenToday": "오늘은 조금 부담돼",
+        "nextTime": "다음에 하고 싶어",
+        "ifMoneyComes": "돈 들어오면 하자",
+        "notFarWalk": "오래 걷지 않으면 좋아"
+      }
+    },
+    "mutual": {
+      "heading": "둘 다 괜찮아한 후보예요",
+      "subText": "완전히 같지 않아도 괜찮아요. 조건을 맞추면 좋은 후보를 모아봤어요.",
+      "emptyText": "아직 서로 반응한 후보가 없어요",
+      "cardTitleFallback": "데이트 후보",
+      "myReactionLabel": "내 반응",
+      "partnerReactionLabel": "상대 반응",
+      "confirmCta": "이번 데이트로 정하기",
+      "seeMoreCta": "비슷한 후보 더 보기",
+      "sectionLabels": {
+        "mutual": "둘 다 끌린 후보",
+        "conditional": "조건만 맞추면 좋은 후보",
+        "deferred": "오늘은 부담되지만 다음에 좋은 후보"
+      },
+      "notes": {
+        "mutual": "둘 다 좋아하는 후보예요. 이번 데이트로 정해볼까요?",
+        "conditional": "서로의 조건을 맞추면 좋아 보여요.",
+        "deferred": "다음에 다시 꺼내볼게요."
+      }
+    },
+    "send": {
+      "defaultMessage": "이거 우리 같이 가보면 어때? 😊",
+      "heading": "이 후보를 상대에게\n보내볼까요?",
+      "subText": "이 후보와 함께 보낼 한마디가 상대의 제안 알림에 담겨요.",
+      "tagsFallback": [
+        "이동 적음",
+        "돈 적게 듦",
+        "피곤한 날"
+      ],
+      "sectionLabel": "함께 보낼 한마디",
+      "messagePlaceholder": "한마디를 입력하세요",
+      "suggestCta": "한마디 추천받기",
+      "sendCta": "상대에게 보내기",
+      "editCta": "수정하기",
+      "sentMessage": "마음을 전했어요"
+    }
+  }
+}

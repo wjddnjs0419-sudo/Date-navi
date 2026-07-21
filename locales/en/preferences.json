@@ -1,0 +1,54 @@
+{
+  "preferences": {
+    "stepTitles": [
+      "What kind of date sounds good?",
+      "What would you rather avoid?",
+      "Are you long-distance?",
+      "When it comes to planning dates..."
+    ],
+    "stepSubs": [
+      "You can choose more than one",
+      "A little honesty helps the suggestions",
+      "Tell us what your usual setup looks like",
+      "Pick the one that feels closest"
+    ],
+    "preferredOptions": [
+      "Restaurants",
+      "Cafes",
+      "Walks",
+      "Home dates",
+      "Culture / Exhibitions",
+      "Activities"
+    ],
+    "avoidOptions": [
+      "Long travel",
+      "Big spending",
+      "Crowded places",
+      "Long walks",
+      "Complicated reservations"
+    ],
+    "longDistanceOptions": [
+      {
+        "value": true,
+        "label": "Yes, we are long-distance"
+      },
+      {
+        "value": false,
+        "label": "No, we live in the same area"
+      }
+    ],
+    "planningStyles": [
+      "Usually the planner",
+      "We decide together",
+      "I can choose, but planning is hard",
+      "I struggle to express my opinion",
+      "It depends on the day"
+    ],
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Done",
+    "back": "←",
+    "saving": "Saving...",
+    "alertSaveError": "Could not save your preferences. Please try again."
+  }
+}

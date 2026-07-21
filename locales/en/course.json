@@ -1,0 +1,93 @@
+{
+  "course": {
+    "unselected": "Not selected",
+    "modeLabel": "Make it a plan",
+    "steps": {
+      "label": "Course steps",
+      "hint": "Arrange two to four steps in the order you want.",
+      "add": "Add step",
+      "stepLabel": "Step {{number}}",
+      "categories": {
+        "meal": "Meal",
+        "cafe": "Cafe",
+        "drinks": "Drinks",
+        "activity": "Activity",
+        "culture": "Culture",
+        "walk": "Walk",
+        "ai_decide": "Let AI decide"
+      },
+      "pin": {
+        "aiTab": "AI picks",
+        "pickTab": "I pick",
+        "searchEntry": "Search and pick a place",
+        "clear": "Clear",
+        "locationFirstTitle": "Choose the meeting location first",
+        "locationFirstBody": "Pick a location under \"Where are you meeting?\" below, and you can search for places nearby."
+      }
+    },
+    "walking": {
+      "label": "Maximum walk between places (optional)",
+      "options": {
+        "five": "5 min",
+        "ten": "10 min",
+        "twenty": "20 min",
+        "any": "Any"
+      }
+    },
+    "budget": {
+      "label": "Total budget for two (KRW, optional)",
+      "amount": "KRW {{amount}}",
+      "hint": "Enter the total amount for both people, up to KRW 100,000."
+    },
+    "moods": {
+      "label": "Preferred moods (select any)",
+      "options": {
+        "comfortable": "Comfortable",
+        "lively": "Lively",
+        "romantic": "Romantic",
+        "quiet": "Quiet",
+        "novel": "Different"
+      }
+    },
+    "duration": {
+      "label": "Total time (optional)",
+      "hoursLabel": "{{count}} hours"
+    },
+    "additional": {
+      "label": "Additional request (optional)",
+      "placeholder": "e.g. Suggest a cafe with a great atmosphere for a date",
+      "maxLength": "{{count}}/500 characters"
+    },
+    "preview": {
+      "title": "Conditions found in your text",
+      "excluded": "Exclude {{category}}",
+      "quiet": "Quiet places preferred",
+      "photo": "Photo-friendly preferred",
+      "indoor": "Indoor only"
+    },
+    "validation": {
+      "location_required": "Select where your date should start.",
+      "step_count_invalid": "Build a course with two to four steps.",
+      "duplicate_step_ids": "Two course steps have the same identifier. Please reopen this screen.",
+      "invalid_step_category": "One of the course steps is not supported.",
+      "budget_invalid": "The total budget for two must be a number from KRW 1 to 10,000,000.",
+      "additional_request_too_long": "Keep the additional request to 500 characters or fewer.",
+      "exclusion_conflict": "Your selected steps conflict with an exclusion: {{categories}}. Edit the text or the steps."
+    },
+    "accessibility": {
+      "addStep": "Add a course step",
+      "moveStepUp": "Move this step up",
+      "moveStepDown": "Move this step down",
+      "removeStep": "Remove this step",
+      "category": "Select {{category}} for step {{number}}",
+      "walking": "Select a maximum walk of {{option}}",
+      "mood": "Select the {{mood}} mood",
+      "budget": "Enter the total budget for two in Korean won",
+      "duration": "Select total time",
+      "additionalRequest": "Enter an additional request",
+      "generate": "Build the date course"
+    },
+    "generateButton": "Build a course",
+    "back": "←"
+  }
+}

@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-21 세션 BE — UI 전면 교체 Phase 0 (공용 기반, 병렬 준비)
+
+> 요청: UI 전면 교체를 **여러 세션 병렬**로 돌릴 계획 수립 → 이번 세션은 Phase 0(공용 기반)까지. 브레인스토밍 → spec → 플랜 → subagent 주도 TDD 실행.
+
+### 설계·계획 (승인)
+- spec `docs/superpowers/specs/2026-07-21-ui-renew-parallel-design.md`: **A안(기반 직렬 → 화면 병렬)**. 목업 50 ↔ 라우트 1:1 매핑, 6클러스터(auth/onboarding/tabs/course/card/share-account) worktree 병렬, i18n 조각분할로 충돌 제거. 결정: **"색깔금지" 하드룰 폐기(목업 100% 따름)**.
+- 플랜 `docs/superpowers/plans/2026-07-21-ui-renew-phase0.md`: TDD 12태스크. StepActionSheet는 단독소비자라 클러스터4 귀속으로 확정.
+
+### Phase 0 구현 (브랜치 `ui/phase0`, 11커밋, subagent 주도)
+- **토큰**: `catMeal #FD8956`·`catCafe #6B9FDB`·`catWalk #5DBD5F`(목업 실측).
+- **i18n 조각분할**(핵심): `locales/ko.json`·`en.json` 단일 → `locales/{ko,en}/<ns>.json` 28조각 + 정적 배럴 `locales/index.ts`. 로더·직접 import 8파일 배선 교체, byte-equivalence 검증. → **Phase 1 병렬 세션이 자기 조각만 편집 = 충돌 0**. 배럴은 Phase 0 후 편집 금지.
+- **신규 공용 컴포넌트**: `Illustration`(8 asset 이름 렌더), `Wordmark`(투명 PNG 추출 `assets/brand/wordmark.png`, sm24/lg44), `CoursePin/StepPin/CourseMapPreview`(`components/course-map.tsx`), `DdayBadge`·`MetaChipRow`·`PlanListRow`(ui.tsx 추가).
+- **공용 모달 리스타일**(props 불변, 다중소비자): `SuccessModal`(마스코트+CTA)·`pickers`(X닫기+전폭확정)·`GeneratingView`(세로 코스맵+세그먼트 진행). 각 계약테스트로 시그니처 고정.
+- **문서·룰**: Design.md·메모리 [[design-no-emoji-no-color-badge]] 개정(룰 폐기). `STYLESEED.md` lock 신설(single-accent `+categorical`, 웜 layered shadow 캡0.2) — 카테고리 핀·클레이 그림자 게이트 오탐 방지.
+
+### 검증
+- 전체 **112 suites / 850 tests 통과**, `npm run validate`(tsc) 클린, 워킹트리 클린.
+- StyleSeed 게이트: course-map.tsx ss-score 89(lock 적용 후 카테고리·그림자 감점 소멸). 시각 게이트(ss-verify)는 화면 조립되는 Phase 1/2에서 실효.
+- **미결(Phase 2 사용자 결정)**: SuccessModal 목업=버튼닫힘 vs 현행=자동닫힘 1.1초 상호작용 모델 차이(현재 둘 다 동작). GeneratingView 목업 부제/팁카드는 i18n 이유로 생략(Phase 1 course가 키 추가 가능).
+
+### 다음 (Phase 1 병렬)
+- **기준선 = `ui/phase0` 병합 후 main 커밋**(현재 tip `7fb3be2`). 병합은 사용자 승인 대기.
+- 클러스터별 작업 패킷 6개 생성 → 각 worktree 세션 배포. spec §8 형식.
+
 ## 2026-07-21 세션 BD — UI 전면 교체 착수 준비 (목업 감사 + 일러스트 asset 생성)
 
 > 요청: 앱 UI 전격 교체. GPT로 만든 목업 50화면 수령(`UI RENEW/`) → 각 화면에 넣을 asset 추출. **이번 세션은 준비만, 코드 UI 교체는 다음 세션.**

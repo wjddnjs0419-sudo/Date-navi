@@ -1,0 +1,105 @@
+{
+  "candidates": {
+    "title": "우리 후보 💌",
+    "tabs": [
+      {
+        "key": "all",
+        "label": "전체"
+      },
+      {
+        "key": "both",
+        "label": "둘 다 끌림 🔥"
+      },
+      {
+        "key": "conditional",
+        "label": "조건부 😊"
+      },
+      {
+        "key": "next",
+        "label": "다음에 ⏰"
+      }
+    ],
+    "modeLabels": {
+      "pick_for_me": "앱이 골라줘",
+      "feeling_only": "느낌만 말할게",
+      "make_course": "코스로 정리해줘",
+      "soft_message": "부드럽게 말해줘",
+      "light_date": "가볍게",
+      "special_date": "특별하게",
+      "next_time": "다음 만남",
+      "low_risk": "실패 확률 낮게"
+    },
+    "reactionLabels": {
+      "love": {
+        "emoji": "🔥",
+        "label": "완전 끌려"
+      },
+      "like": {
+        "emoji": "😊",
+        "label": "느낌은 좋아"
+      },
+      "burden": {
+        "emoji": "😅",
+        "label": "오늘은 부담돼"
+      },
+      "next_time": {
+        "emoji": "⏰",
+        "label": "다음에"
+      }
+    },
+    "emptyTitle": "아직 후보가 없어요.",
+    "emptySubtitle": "데이트 모드에서 카드를 만들어보세요!",
+    "emptyTabSubtitle": "해당하는 후보가 없어요.",
+    "goMode": "데이트 모드 시작하기 →",
+    "loading": "후보를 불러오는 중...",
+    "error": "후보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.",
+    "tapHint": "탭해서 반응하기 →",
+    "pageTitle": "우리 후보",
+    "countText": "총 {{count}}개의 후보",
+    "addManual": "직접 추가",
+    "filterAll": "전체",
+    "filterBoth": "둘 다 끌림",
+    "filterConditional": "조건부로 좋음",
+    "filterNextTime": "다음에 하기",
+    "filterBucket": "다음에 만나면",
+    "proposalTitle": "상대가 보낸 데이트 제안 {{count}}개",
+    "proposalSub": "\"{{title}}\" · 지금 확인하기 →",
+    "emptyStateTitle": "아직 데이트 후보가 없어요",
+    "emptyStateSub": "오늘 끌리는 느낌만 알려주시면\n앱이 첫 후보를 만들어드릴게요.",
+    "thisDateBadge": "이번 데이트",
+    "candidateBadge": "후보",
+    "me": "나",
+    "partner": "상대",
+    "noReaction": "반응 없음",
+    "fabAddFeeling": "느낌 남기기",
+    "fabAddCourse": "코스 만들기",
+    "bucketEmptyTitle": "버킷리스트가 비어있어요",
+    "bucketEmptySub": "다음에 만나면 하고 싶은 것들을\n자유롭게 저장해보세요.",
+    "bucketAddIdea": "아이디어 추가하기",
+    "bucketHeaderCount": "다음 만남에 하고 싶은 것들 ({{count}})",
+    "bucketAddSmall": "추가",
+    "bucketMyReactionLabel": "내 반응",
+    "bucketRxLove": "❤️ 끌려",
+    "bucketRxNext": "🕐 다음에",
+    "bucketPartnerReaction": "상대 반응: {{label}}",
+    "confirmBothLove": "둘 다 설레네요! 만남 확정하기",
+    "confirmSingle": "만남 확정하고 코스 만들기",
+    "confirmAlertTitle": "만남 확정!",
+    "confirmAlertMessage": "버킷리스트 아이디어로 데이트 후보 3개를 만들었어요.",
+    "confirmAlertError": "카드 생성 중 문제가 발생했어요. 다시 시도해주세요.",
+    "deleteAlertTitle": "후보 삭제",
+    "deleteAlertMessage": "이 후보를 삭제할까요? 되돌릴 수 없어요.",
+    "deleteAlertError": "삭제 중 문제가 발생했어요.",
+    "rxLabel": {
+      "love": "완전 끌려",
+      "like": "좋아",
+      "burden": "부담돼",
+      "next_time": "다음에"
+    },
+    "conditionLabels": {
+      "change_place": "📍 장소만 바꾸면",
+      "closer": "🚶 가까우면",
+      "indoor": "🏠 실내면"
+    }
+  }
+}

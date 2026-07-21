@@ -1,0 +1,23 @@
+{
+  "common": {
+    "back": "←",
+    "next": "다음",
+    "done": "완료",
+    "save": "저장하기",
+    "skip": "건너뛰기",
+    "loading": "불러오는 중입니다.",
+    "retry": "다시 시도하기",
+    "error": "오류",
+    "notice": "알림",
+    "ok": "확인",
+    "cancel": "취소",
+    "settingsOpen": "설정 열기",
+    "saving": "저장 중...",
+    "saved": "저장했어요!",
+    "seeAll": "전체 보기",
+    "delete": "삭제",
+    "edit": "수정",
+    "moreActions": "더보기",
+    "coupleRequired": "커플과 연결하면 사용할 수 있어요. 설정이나 홈에서 연결해보세요."
+  }
+}

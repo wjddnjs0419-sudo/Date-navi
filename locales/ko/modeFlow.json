@@ -1,0 +1,178 @@
+{
+  "modeFlow": {
+    "option": {
+      "energy": {
+        "low": "피곤해",
+        "medium": "보통",
+        "high": "쌩쌩해"
+      },
+      "distance": {
+        "near": "가까이",
+        "any": "상관없음"
+      },
+      "duration": {
+        "oneHour": "1시간",
+        "twoThreeHours": "2~3시간",
+        "halfDay": "반나절",
+        "fullDay": "하루"
+      },
+      "mood": {
+        "comfortable": "편안하게",
+        "fun": "활기차게",
+        "romantic": "로맨틱하게",
+        "quiet": "조용하게",
+        "new": "새롭게"
+      }
+    },
+    "feeling": {
+      "heading": "오늘 끌리는 느낌만\n알려주세요",
+      "sub": "대충 말해도 괜찮아요. 분위기를 데이트 카드로 정리해드릴게요.",
+      "placeholder": "예: 오늘은 조용히 대화하면서 분위기 있는 데가 좋아.",
+      "freeTextHint": "일식, 삼겹살, 방탈출처럼 키워드 위주로 적으면 더 정확해요.",
+      "mood": "분위기",
+      "duration": "시간 (선택)",
+      "generate": "데이트 후보 만들기"
+    },
+    "generating": {
+      "courseSteps": [
+        "취향과 분위기 확인 중",
+        "장소 동선 짜는 중",
+        "실패 확률 낮은 코스 찾는 중"
+      ],
+      "defaultSteps": [
+        "오늘 컨디션 확인 중",
+        "예산과 이동 부담 줄이는 중",
+        "최적의 데이트 코스 찾는 중"
+      ],
+      "courseHeading": "둘에게 맞는 코스를\n짜는 중이에요",
+      "defaultHeading": "둘에게 맞는 후보를\n고르는 중이에요",
+      "courseError": "코스를 만드는 중 문제가 생겼어요.",
+      "courseExpired": "요청 정보가 만료됐어요. 조건을 다시 확인하고 시도해주세요.",
+      "courseErrors": {
+        "INSUFFICIENT_CANDIDATES": "주변에서 조건에 맞는 장소를 충분히 찾지 못했어요. 위치·코스·도보 조건을 조금 넓혀주세요.",
+        "STEP_INTENT_UNSATISFIED": "요청한 조건에 딱 맞는 장소를 근처에서 찾지 못했어요. 조건을 조금 완화하거나 지역을 넓혀주세요.",
+        "STEP_PIN_UNAVAILABLE": "지정한 장소를 확인하지 못했어요. 다른 장소를 골라주세요.",
+        "PLACE_SEARCH_TIMEOUT": "장소 검색이 지연됐어요. 잠시 후 다시 시도해주세요.",
+        "PLACE_SEARCH_RATE_LIMITED": "장소 검색 요청이 많아요. 잠시 후 다시 시도해주세요.",
+        "AUTH_EXPIRED": "로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.",
+        "AI_TIMEOUT": "추천 생성이 지연됐어요. 다시 시도해주세요.",
+        "AI_INVALID_RESPONSE": "추천 결과를 검증하지 못했어요. 다시 시도해주세요.",
+        "COURSE_VALIDATION_FAILED": "선택한 조건을 함께 만족하는 코스를 만들지 못했어요. 조건을 조금 조정해주세요.",
+        "LOCATION_REQUIRED": "출발 위치를 다시 선택해주세요.",
+        "INVALID_INPUT": "입력한 조건을 다시 확인해주세요.",
+        "NETWORK_ERROR": "네트워크 연결을 확인한 뒤 다시 시도해주세요.",
+        "UNKNOWN": "코스를 만드는 중 문제가 생겼어요."
+      },
+      "courseFailureStages": {
+        "course_build": "선택한 조건으로 서로 다른 장소를 조합하지 못했어요. 지역이나 코스 항목을 조금 조정해주세요.",
+        "response_schema": "만든 코스 형식을 확인하지 못했어요. 다시 시도해주세요.",
+        "request_response_validation": "선택한 조건과 코스 결과가 맞지 않아요. 조건을 조금 조정해주세요.",
+        "stage_attestation": "코스 결과를 안전하게 저장하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요."
+      },
+      "courseEdit": "조건 다시 편집하기",
+      "defaultError": "추천을 만드는 중 문제가 생겼어요.",
+      "errorTitle": "잠깐 문제가 생겼어요",
+      "errorSuffix": "다시 한 번 시도해볼게요.",
+      "relaxation": {
+        "title": "이 조건에 딱 맞는 곳을 못 찾았어요",
+        "body": "‘{{conditions}}’ 조건을 지금 지역에서 만족하는 곳이 없어요. 조건을 완화하면 비슷한 곳으로 다시 찾아볼게요.",
+        "relaxButton": "조건 완화하고 다시 찾기",
+        "editButton": "조건 직접 수정"
+      }
+    },
+    "result": {
+      "coupleRequired": "연인과 연결 후 사용해주세요.",
+      "sendErrorTitle": "오류",
+      "sendError": "보내기 중 문제가 생겼어요.",
+      "saveError": "저장 중 오류가 발생했어요.",
+      "errorTitle": "잠깐 문제가 생겼어요",
+      "errorSub": "추천을 만드는 중 문제가 생겼어요.\n다시 한 번 시도해볼게요.",
+      "retry": "다시 시도하기",
+      "aiBadge": "AI 추천",
+      "nowBadge": "방금 전",
+      "heading": "오늘은 이런 데이트가\n잘 맞아 보여요",
+      "sub": "저장하면 우리 후보에서 반응·코멘트를 남길 수 있어요.",
+      "bestBadge": "가장 잘 맞아요",
+      "time": "시간",
+      "budget": "예산",
+      "movement": "이동",
+      "walk": "도보",
+      "send": "상대에게 보내기",
+      "save": "저장",
+      "goCandidates": "후보 목록으로 보기 →",
+      "retryRecommend": "다시 추천받기"
+    },
+    "courseResult": {
+      "coupleRequired": "연인과 연결 후 사용해주세요.",
+      "sendErrorTitle": "오류",
+      "sendError": "보내기 중 문제가 생겼어요.",
+      "saveError": "저장 중 오류가 발생했어요.",
+      "errorTitle": "잠깐 문제가 생겼어요",
+      "loadError": "저장된 코스를 불러오지 못했어요. 링크가 올바른지 확인하거나 다시 시도해주세요.",
+      "loading": "저장된 코스를 불러오는 중이에요.",
+      "back": "뒤로 가기",
+      "retry": "다시 시도하기",
+      "badge": "AI 코스",
+      "heading": "이런 코스는 어때요?",
+      "sub": "조건을 눌러 확인하고, 각 장소를 눌러 조정해보세요.",
+      "stepIntents": {
+        "title": "요청 반영",
+        "excludedSuffix": "제외",
+        "unsupported": "‘{{term}}’은(는) 이 코스 구성에 반영하지 못했어요"
+      },
+      "conditions": "적용한 조건 보기",
+      "editError": "코스 변경을 저장하지 못했어요. 다시 시도해주세요.",
+      "confirm": "코스 확정",
+      "regenerate": "잠금 외 재추천",
+      "confirmFirst": "먼저 이 코스를 확정해주세요.",
+      "replace": "이 단계 교체",
+      "lock": "이 장소 잠그기",
+      "unlock": "잠금 해제",
+      "viewDetails": "장소 상세·외부 확인",
+      "detailNotice": "후기와 운영 정보는 외부 서비스에서 직접 확인해주세요. Date Navi는 외부 후기 내용을 저장하거나 검증하지 않아요.",
+      "replacementTitle": "교체 후보",
+      "replacementNotice": "상위 3개를 먼저 보여드려요. 외부 후기·지도는 해당 서비스에서 직접 확인해주세요.",
+      "replacementClose": "닫기",
+      "replacementEmpty": "교체 가능한 다른 후보가 없어요.",
+      "recommendTab": "추천 후보",
+      "searchTab": "직접 검색",
+      "searchCta": "장소 검색하기",
+      "searchHint": "원하는 가게를 직접 찾아 이 단계에 넣어요",
+      "topPick": "추천",
+      "naverReviews": "네이버 지도로 보기",
+      "kakaoMap": "카카오맵 열기",
+      "pick": "선택",
+      "delete": "삭제",
+      "deleteMin": "2단계 이상 필요",
+      "add": "장소 추가",
+      "additionalStep": "추가 장소",
+      "send": "상대에게 보내기",
+      "save": "저장",
+      "savedMessage": "코스를 저장했어요!"
+    },
+    "bucketlist": {
+      "empty": "아이디어를 입력해주세요",
+      "loginRequired": "로그인이 필요해요",
+      "coupleRequired": "커플 연결 후 사용할 수 있어요",
+      "savedTitle": "저장했어요!",
+      "savedBody": "우리 후보 탭의 \"다음에 만나면\" 에서 확인할 수 있어요.",
+      "saveError": "저장 중 오류가 발생했어요. 다시 시도해주세요.",
+      "modeLabel": "다음에 만나면",
+      "title": "다음에 만나면\n뭐 하고 싶어요?",
+      "sub": "장소, 활동, 느낌 모두 괜찮아요.\n떠오르는 아이디어를 자유롭게 써주세요.",
+      "label": "아이디어",
+      "placeholder": "예) 드라이브하면서 야경 보고 싶어, 오션뷰 카페 가보고 싶어...",
+      "tipTitle": "💡 이렇게 써봐요",
+      "tipText": "· 오션뷰 카페에서 브런치 먹기\n· 드라이브하면서 야경 보기\n· 테마파크 하루 종일 놀기\n· 두 사람만의 캠핑",
+      "save": "버킷리스트에 저장하기"
+    },
+    "placeSearch": {
+      "title": "장소 검색",
+      "placeholder": "가게 이름으로 검색",
+      "empty": "검색 결과가 없어요",
+      "error": "검색에 실패했어요. 다시 시도해 주세요",
+      "pick": "선택",
+      "back": "뒤로"
+    }
+  }
+}

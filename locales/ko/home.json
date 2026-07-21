@@ -1,0 +1,31 @@
+{
+  "home": {
+    "dateHeader": "{{weekday}}, {{month}}월 {{day}}일",
+    "weekdaysFull": [
+      "일요일",
+      "월요일",
+      "화요일",
+      "수요일",
+      "목요일",
+      "금요일",
+      "토요일"
+    ],
+    "greeting": "오늘은 어떻게\n정해볼까요?",
+    "subtitle": "완벽한 계획 말고, 끌리는 느낌만 골라도 괜찮아요.",
+    "connectBanner": "연인과 연결하면 함께 정할 수 있어요",
+    "todayHelp": "오늘 필요한 도움",
+    "startCta": "시작하기",
+    "upcomingTitle": "다가오는 데이트",
+    "dateUnset": "날짜 미정",
+    "mutualTitle": "둘 다 끌린 후보",
+    "partnerReactionsTitle": "상대가 남긴 반응",
+    "partnerReactionPrefix": "{{name}}가 ",
+    "partnerReactionSuffix": "를 남겼어요",
+    "createCta": "데이트 후보 만들기",
+    "loadError": "정보를 불러오지 못했어요. 다시 시도해주세요.",
+    "accessibility": {
+      "notifications": "알림",
+      "settings": "설정"
+    }
+  }
+}

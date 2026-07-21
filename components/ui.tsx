@@ -1,13 +1,14 @@
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
-  AccessibilityInfo, Easing, Modal,
-  type ViewStyle, type TextStyle, type StyleProp,
+  AccessibilityInfo, Easing, Modal, Image,
+  type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { C } from '../constants/theme';
+import { C, SP, R } from '../constants/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Illustration } from './illustration';
 import type { GeoCoords } from '../lib/ai';
 import type { CourseStep } from '../lib/course';
 import { useI18n } from '../lib/i18n';
@@ -294,6 +295,116 @@ export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?:
 const badgeS = StyleSheet.create({
   base: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
   label: { fontSize: 10, fontWeight: '600', letterSpacing: 0.2 },
+});
+
+// ─── DdayBadge ────────────────────────────────────────────────────────────────
+// "다가오는 데이트" 리스트 행 우측에 붙는 D-day 표시. 진한 핑크 텍스트의 옅은 핑크 알약.
+export function DdayBadge({ days }: { days: number }) {
+  const label = days > 0 ? `D-${days}` : days === 0 ? 'D-DAY' : `D+${Math.abs(days)}`;
+  return (
+    <View style={ddayS.base}>
+      <Text style={ddayS.label}>{label}</Text>
+    </View>
+  );
+}
+const ddayS = StyleSheet.create({
+  base: {
+    backgroundColor: C.pinkLight,
+    borderRadius: R.badge,
+    paddingHorizontal: SP.sm,
+    paddingVertical: SP.xs / 2,
+    alignSelf: 'flex-start',
+  },
+  label: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
+});
+
+// ─── PlanListRow ──────────────────────────────────────────────────────────────
+// "다가오는 데이트" 리스트 행. 홈/전체 계획 화면이 공유한다.
+export function PlanListRow({
+  title, dateLabel, days, imageSource, onPress,
+}: {
+  title: string;
+  dateLabel: string;
+  days: number;
+  imageSource?: ImageSourcePropType;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
+      {imageSource
+        ? <Image source={imageSource} style={planRowS.thumb} />
+        : <View style={planRowS.thumbPlaceholder} />}
+      <View style={planRowS.body}>
+        <Text style={planRowS.title} numberOfLines={1}>{title}</Text>
+        <View style={planRowS.dateRow}>
+          <Calendar size={13} color={C.textSub} strokeWidth={2} />
+          <Text style={planRowS.date}>{dateLabel}</Text>
+        </View>
+      </View>
+      <View style={planRowS.right}>
+        <DdayBadge days={days} />
+        <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+const planRowS = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.md,
+    paddingVertical: SP.md,
+  },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: R.sm,
+  },
+  thumbPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: R.sm,
+    backgroundColor: C.pinkLight,
+  },
+  body: { flex: 1, minWidth: 0 },
+  title: { fontSize: 15, fontWeight: '700', color: C.text },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: 4 },
+  date: { fontSize: 12, color: C.textSub },
+  right: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, flexShrink: 0 },
+});
+
+// ─── MetaChipRow ──────────────────────────────────────────────────────────────
+// 코스 카드 하단의 요약 정보(지역·소요시간·이동거리) 아웃라인 칩 행.
+const META_ICONS = { map: MapPin, clock: Clock, walk: Footprints } as const;
+export function MetaChipRow({ items }: { items: { icon: 'map' | 'clock' | 'walk'; label: string }[] }) {
+  return (
+    <View style={metaChipS.row}>
+      {items.map((item, i) => {
+        const Icon = META_ICONS[item.icon];
+        return (
+          <View key={i} style={metaChipS.chip}>
+            <Icon size={13} color={C.textSub} strokeWidth={2} />
+            <Text style={metaChipS.label}>{item.label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+const metaChipS = StyleSheet.create({
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.xs,
+    borderRadius: R.xl,
+    paddingHorizontal: SP.md,
+    paddingVertical: SP.xs,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.white,
+  },
+  label: { fontSize: 12, color: C.textSub, fontWeight: '500' },
 });
 
 // ─── BackBar ─────────────────────────────────────────────────────────────────
@@ -586,11 +697,10 @@ const noteS = StyleSheet.create({
 });
 
 // ─── GeneratingView ───────────────────────────────────────────────────────────
-// AI 생성 로딩 화면 공통 UI. 아이콘 + 헤딩 + 단계별 체크리스트만 담당하고,
+// AI 생성 로딩 화면 공통 UI. 헤딩 + 코스맵 일러스트 + 단계 진행바만 담당하고,
 // 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
 export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
   const pulseScale = useRef(new Animated.Value(1)).current;
-  const haloOpacity = useRef(new Animated.Value(0.24)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -609,91 +719,57 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
   useEffect(() => {
     if (reduceMotion) {
       pulseScale.setValue(1);
-      haloOpacity.setValue(0.18);
       return;
     }
 
+    // 코스맵 일러스트가 은은하게 숨쉬는 로딩 애니메이션. reduceMotion 이면 정지한다.
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.parallel([
-          Animated.timing(pulseScale, {
-            toValue: 1.08,
-            duration: 360,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(haloOpacity, {
-            toValue: 0.36,
-            duration: 360,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]),
         Animated.timing(pulseScale, {
-          toValue: 0.98,
-          duration: 180,
+          toValue: 1.03,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.parallel([
-          Animated.timing(pulseScale, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(haloOpacity, {
-            toValue: 0.2,
-            duration: 300,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(520),
+        Animated.timing(pulseScale, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     );
 
     pulse.start();
     return () => pulse.stop();
-  }, [haloOpacity, pulseScale, reduceMotion]);
+  }, [pulseScale, reduceMotion]);
 
-  const haloScale = pulseScale.interpolate({
-    inputRange: [0.98, 1.08],
-    outputRange: [1.04, 1.18],
-  });
+  // step/steps 로직 유지: 진행 단계(current)와 현재 단계 라벨(statusLabel)을 파생한다.
+  const total = Math.max(steps.length, 1);
+  const current = Math.min(Math.max(step, 0), total - 1);
+  const statusLabel = steps[current] ?? '';
 
   return (
     <View style={genS.container}>
-      <View style={genS.iconStage}>
-        <Animated.View style={[genS.iconHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
-        <Animated.View style={[genS.iconWrap, { transform: [{ scale: pulseScale }] }]}>
-          <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
-        </Animated.View>
-      </View>
-
       <Text style={genS.heading}>{heading}</Text>
 
-      <View style={genS.stepList}>
-        {steps.map((label, i) => (
-          <View key={label} style={genS.stepRow}>
-            <View style={[
-              genS.stepDot,
-              { backgroundColor: step > i ? C.mintFg : step === i ? C.pink : '#E0D5CB' },
-            ]}>
-              {step > i && <Check size={10} color={C.white} strokeWidth={3} />}
-            </View>
-            <Text style={[
-              genS.stepText,
-              {
-                color: step > i ? C.mintFg : step === i ? C.text : C.textMuted,
-                fontWeight: step === i ? '600' : '500',
-                opacity: step < i ? 0.4 : 1,
-              },
-            ]}>
-              {label}
-            </Text>
-          </View>
-        ))}
+      <Animated.View style={[genS.illustrationWrap, { transform: [{ scale: pulseScale }] }]}>
+        <Illustration name="date-course-map-vertical" width={200} />
+      </Animated.View>
+
+      <View style={genS.progressBlock}>
+        <View style={genS.progressHeader}>
+          <Text style={genS.statusLabel} numberOfLines={1}>{statusLabel}</Text>
+          <Text style={genS.progressCount}>{current + 1} / {total}</Text>
+        </View>
+        <View style={genS.progressTrack}>
+          {steps.map((label, i) => (
+            <View
+              key={`${label}-${i}`}
+              style={[genS.progressSegment, i <= current ? genS.progressSegmentOn : genS.progressSegmentOff]}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -704,43 +780,31 @@ const genS = StyleSheet.create({
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  iconStage: {
-    width: 166,
-    height: 166,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconHalo: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: C.pinkMid,
-  },
-  iconWrap: {
-    width: 140, height: 140, borderRadius: 70,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: C.pink,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
+    paddingHorizontal: SP.xxxl,
   },
   heading: {
     fontSize: 22, fontWeight: '700', color: C.text,
     textAlign: 'center', lineHeight: 29,
-    marginTop: 32, marginBottom: 32,
+    marginBottom: SP.xxl,
   },
-  stepList: { width: '100%', maxWidth: 260, gap: 10 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepDot: {
-    width: 16, height: 16, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center',
+  illustrationWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SP.xxxl,
   },
-  stepText: { fontSize: 13 },
+  progressBlock: { width: '100%', maxWidth: 280, gap: SP.md },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SP.sm,
+  },
+  statusLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: C.text },
+  progressCount: { fontSize: 13, fontWeight: '600', color: C.pink },
+  progressTrack: { flexDirection: 'row', gap: SP.xs },
+  progressSegment: { flex: 1, height: 6, borderRadius: R.badge },
+  progressSegmentOn: { backgroundColor: C.pink },
+  progressSegmentOff: { backgroundColor: C.pinkMid },
 });
 
 // ─── FieldBox ─────────────────────────────────────────────────────────────────
@@ -835,25 +899,18 @@ const moreS = StyleSheet.create({
 });
 
 // ─── SuccessModal ─────────────────────────────────────────────────────────────
-const SUCCESS_MODAL_DURATION_MS = 1100;
-
 export function SuccessModal({
   visible, message, onHide,
 }: { visible: boolean; message: string; onHide: () => void }) {
-  useEffect(() => {
-    if (!visible) return;
-    const timer = setTimeout(onHide, SUCCESS_MODAL_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [visible, onHide]);
-
+  const { t } = useI18n();
+  // 목업대로 버튼 닫힘: '확인'(onHide) 또는 하드웨어 back(onRequestClose)으로만 닫는다. 자동닫힘 없음.
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
       <View style={successS.backdrop}>
         <View style={successS.card}>
-          <View style={successS.iconWrap}>
-            <Check size={28} color={C.white} strokeWidth={3} />
-          </View>
+          <Illustration name="mascot-heart-couple-check" width={148} style={successS.mascot} />
           <Text style={successS.message}>{message}</Text>
+          <BigButton onPress={onHide} style={successS.cta}>{t('common.ok')}</BigButton>
         </View>
       </View>
     </Modal>
@@ -862,18 +919,16 @@ export function SuccessModal({
 const successS = StyleSheet.create({
   backdrop: {
     flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: SP.xxl,
   },
   card: {
-    width: '100%', maxWidth: 280, backgroundColor: C.white,
-    borderRadius: 24, paddingVertical: 32, paddingHorizontal: 24,
-    alignItems: 'center', gap: 14,
+    width: '100%', maxWidth: 320, backgroundColor: C.white,
+    borderRadius: R.hero, paddingTop: SP.xl, paddingBottom: SP.xxl, paddingHorizontal: SP.xxl,
+    alignItems: 'center', gap: SP.md,
   },
-  iconWrap: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center',
-  },
-  message: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
+  mascot: { marginBottom: SP.xs },
+  message: { fontSize: 19, fontWeight: '700', color: C.text, textAlign: 'center', lineHeight: 26 },
+  cta: { marginTop: SP.sm },
 });
 
 // ─── CourseStepList ───────────────────────────────────────────────────────────

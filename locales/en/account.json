@@ -1,0 +1,49 @@
+{
+  "account": {
+    "editProfile": {
+      "heading": "Edit profile",
+      "changePhotoCta": "Change photo",
+      "nicknameLabel": "Nickname",
+      "nicknameHint": "2-12 characters, letters or numbers",
+      "planningLabel": "When planning a date, I usually...",
+      "planningOptions": {
+        "often": "Plan things often",
+        "together": "Decide together",
+        "okPickHardPlan": "I'm fine picking, but planning is hard",
+        "hardToSayOpinion": "It's a bit hard to voice my opinion",
+        "depends": "It depends each time"
+      },
+      "saveCta": "Save changes",
+      "photoPermTitle": "Photo access needed",
+      "photoPermMessage": "Allow photo access in Settings to add a profile photo.",
+      "nicknameRequiredError": "Please enter a nickname.",
+      "saveSuccessTitle": "Saved",
+      "saveSuccessMessage": "Your profile has been updated.",
+      "saveError": "Something went wrong saving it."
+    },
+    "deleteAccount": {
+      "heading": "Are you sure you want to leave?",
+      "subText": "Deleting your account removes all memories and candidates you made together.",
+      "warningTitle": "This information will be lost",
+      "warningItems": [
+        "Shared date records and photos",
+        "Candidates you both liked",
+        "Your couple connection with your partner",
+        "Your nickname and account info"
+      ],
+      "reasonLabel": "Reason for leaving (optional)",
+      "reasons": {
+        "notUsing": "I don't use it much",
+        "lackingFeatures": "It's missing features",
+        "usingOtherApp": "I'm using another app",
+        "privacyConcern": "I'm worried about privacy",
+        "other": "Other"
+      },
+      "agreeText": "I've reviewed everything above and understand that data can't be recovered after deletion.",
+      "deleteCta": "Delete account",
+      "needAgreeCta": "Agreement required",
+      "browseMoreCta": "Let me look around a bit more",
+      "deleteError": "Something went wrong deleting your account. Please try again."
+    }
+  }
+}

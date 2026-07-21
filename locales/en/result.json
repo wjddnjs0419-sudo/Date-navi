@@ -1,0 +1,20 @@
+{
+  "result": {
+    "title": "Date ideas",
+    "loadingTitle": "Making date ideas",
+    "loadingSubtitle": "Just a moment ✨",
+    "errorTitle": "Could not make suggestions",
+    "errorSubtitle": "Please check your network\nand try again later.",
+    "retryButton": "← Go back",
+    "backToMode": "Try again",
+    "saveButton": "💾 Save to our candidates",
+    "saved": "✅ Saved to our candidates!",
+    "goToFirst": "React to the first card →",
+    "goToCandidates": "View all candidates",
+    "cardTitle": "How about\none of these?",
+    "saveNetworkError": "The network is unstable. Please try again.",
+    "saveLoginError": "You need to log in first.",
+    "saveCoupleError": "You can save after connecting with your partner.",
+    "saveGeneralError": "Something went wrong while saving. Please try again."
+  }
+}

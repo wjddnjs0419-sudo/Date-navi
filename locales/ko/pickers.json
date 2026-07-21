@@ -1,0 +1,23 @@
+{
+  "pickers": {
+    "dateFallback": "날짜 선택",
+    "done": "완료",
+    "cancel": "취소",
+    "am": "오전",
+    "pm": "오후",
+    "month": "{{month}}월",
+    "day": "{{day}}일",
+    "hour": "{{hour}}시",
+    "minute": "{{minute}}분",
+    "dateLabel": "{{month}}월 {{day}}일 ({{weekday}})",
+    "weekdays": [
+      "일",
+      "월",
+      "화",
+      "수",
+      "목",
+      "금",
+      "토"
+    ]
+  }
+}

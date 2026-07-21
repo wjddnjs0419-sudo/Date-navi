@@ -1,0 +1,62 @@
+{
+  "share": {
+    "cardTitleFallback": "Selected date candidate",
+    "cardDescFallback": "A relaxed date without going far",
+    "reaction": {
+      "partnerFallback": "your partner",
+      "senderSent": "{{name}} sent this",
+      "justNow": "Just now",
+      "heading": "How about this date?",
+      "chooseReaction": "Pick the reaction that fits best",
+      "noteLabel": "A note (optional)",
+      "notePlaceholder": "e.g. I like this, but next week might work better than this weekend.",
+      "submitCta": "Send reaction",
+      "options": {
+        "full": "Really into it",
+        "good": "Like it",
+        "niceFeel": "Feels good",
+        "closer": "Good if it's closer",
+        "burdenToday": "Feels like a lot today",
+        "nextTime": "Want to next time",
+        "ifMoneyComes": "Let's do it once we have the budget",
+        "notFarWalk": "Good if we don't walk far"
+      }
+    },
+    "mutual": {
+      "heading": "Candidates you both liked",
+      "subText": "They don't have to match perfectly — here are picks that work if conditions align.",
+      "emptyText": "No candidates you've both reacted to yet",
+      "cardTitleFallback": "Date candidate",
+      "myReactionLabel": "My reaction",
+      "partnerReactionLabel": "Partner's reaction",
+      "confirmCta": "Choose this for the date",
+      "seeMoreCta": "See more similar candidates",
+      "sectionLabels": {
+        "mutual": "Candidates you both liked",
+        "conditional": "Good if conditions match",
+        "deferred": "Heavy today, good for next time"
+      },
+      "notes": {
+        "mutual": "You both like this. Want to make it your date?",
+        "conditional": "Looks good if you match each other's conditions.",
+        "deferred": "We'll bring this back up next time."
+      }
+    },
+    "send": {
+      "defaultMessage": "Want to check this out together? 😊",
+      "heading": "Send this candidate\nto your partner?",
+      "subText": "Your note is included in the date proposal your partner receives.",
+      "tagsFallback": [
+        "Low travel",
+        "Low cost",
+        "Good for tired days"
+      ],
+      "sectionLabel": "A note to send along",
+      "messagePlaceholder": "Type a note",
+      "suggestCta": "Suggest a note",
+      "sendCta": "Send to partner",
+      "editCta": "Edit",
+      "sentMessage": "Your message is on its way"
+    }
+  }
+}

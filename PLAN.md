@@ -286,6 +286,11 @@
 
 ## Pending Approval
 
+### [Phase 0 완료·병합 대기] 2026-07-21 세션 BE — UI 전면 교체 공용 기반
+- **브랜치 `ui/phase0`(11커밋, tip `7fb3be2`)**: 토큰(카테고리 핀 3색) + i18n 조각분할(병렬 충돌 제거) + 신규 공용 컴포넌트 8종(Illustration/Wordmark/CoursePin·StepPin·CourseMapPreview/DdayBadge/MetaChipRow/PlanListRow) + 공용 모달 3종 리스타일 + Design.md·STYLESEED.md·메모리. 850 tests/tsc 클린.
+- 설계 `docs/superpowers/specs/2026-07-21-ui-renew-parallel-design.md`, 플랜 `docs/superpowers/plans/2026-07-21-ui-renew-phase0.md`.
+- **다음**: `ui/phase0` → main 병합(사용자 승인) → 병합 커밋을 기준선으로 클러스터 6개 작업 패킷 생성 → 병렬 세션(Phase 1). 미결: SuccessModal 자동닫힘 vs 버튼닫힘, GeneratingView 부제/팁 i18n.
+
 ### [진행 중] 2026-07-21 세션 BD — UI 전면 교체 (asset 준비 완료, 화면 조립 대기)
 - **asset 8장 완성** → `assets/illustrations/` (하트 마스코트 3 + 코스지도 가로·세로 + 홈책지도 + 핀로고 + 공원배경). 스타일: 매트 클레이 파스텔 핑크.
 - 참고 목업 50화면 = `UI RENEW/`(gitignore, 로컬 참고용). 화면별 asset 필요 여부 감사 완료(RESULT 세션 BD).

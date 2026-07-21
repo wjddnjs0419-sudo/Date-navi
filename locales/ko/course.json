@@ -1,0 +1,93 @@
+{
+  "course": {
+    "unselected": "미선택",
+    "modeLabel": "코스로 정리해줘",
+    "steps": {
+      "label": "코스 단계",
+      "hint": "2~4단계까지 순서대로 구성할 수 있어요.",
+      "add": "단계 추가",
+      "stepLabel": "{{number}}단계",
+      "categories": {
+        "meal": "식사",
+        "cafe": "카페",
+        "drinks": "술집",
+        "activity": "액티비티",
+        "culture": "문화",
+        "walk": "산책",
+        "ai_decide": "AI가 결정"
+      },
+      "pin": {
+        "aiTab": "AI 추천",
+        "pickTab": "내가 직접",
+        "searchEntry": "장소 검색해서 지정하기",
+        "clear": "지우기",
+        "locationFirstTitle": "만나는 위치를 먼저 선택해주세요",
+        "locationFirstBody": "아래 '어디서 만나요?'에서 위치를 고르면 그 주변으로 장소를 검색할 수 있어요."
+      }
+    },
+    "walking": {
+      "label": "장소 사이 최대 도보 시간 (선택)",
+      "options": {
+        "five": "5분",
+        "ten": "10분",
+        "twenty": "20분",
+        "any": "무관"
+      }
+    },
+    "budget": {
+      "label": "2인 총예산 (KRW, 선택)",
+      "amount": "{{amount}}원",
+      "hint": "두 사람이 함께 쓸 전체 금액을 입력해주세요. 최대 100,000원"
+    },
+    "moods": {
+      "label": "원하는 분위기 (복수 선택 가능)",
+      "options": {
+        "comfortable": "편안한",
+        "lively": "활기찬",
+        "romantic": "로맨틱한",
+        "quiet": "조용한",
+        "novel": "색다른"
+      }
+    },
+    "duration": {
+      "label": "전체 시간 (선택)",
+      "hoursLabel": "{{count}}시간"
+    },
+    "additional": {
+      "label": "추가 요청 (선택)",
+      "placeholder": "예: 데이트하기 좋은 분위기 좋은 카페로 추천해줘",
+      "maxLength": "{{count}}/500자"
+    },
+    "preview": {
+      "title": "텍스트에서 읽은 조건",
+      "excluded": "{{category}} 제외",
+      "quiet": "조용한 곳 선호",
+      "photo": "사진 찍기 좋은 곳 선호",
+      "indoor": "실내만"
+    },
+    "validation": {
+      "location_required": "데이트를 시작할 위치를 선택해주세요.",
+      "step_count_invalid": "코스는 2~4단계로 구성해주세요.",
+      "duplicate_step_ids": "코스 단계 식별자가 겹쳤어요. 화면을 다시 열어주세요.",
+      "invalid_step_category": "지원하지 않는 코스 단계가 있어요.",
+      "budget_invalid": "2인 총예산은 1원 이상 10,000,000원 이하의 숫자로 입력해주세요.",
+      "additional_request_too_long": "추가 요청은 500자 이하로 입력해주세요.",
+      "exclusion_conflict": "선택한 단계와 제외 요청이 충돌해요: {{categories}}. 텍스트나 단계를 수정해주세요."
+    },
+    "accessibility": {
+      "addStep": "코스 단계 추가",
+      "moveStepUp": "이 단계를 위로 이동",
+      "moveStepDown": "이 단계를 아래로 이동",
+      "removeStep": "이 단계 삭제",
+      "category": "{{number}}단계 카테고리 {{category}} 선택",
+      "walking": "최대 도보 시간 {{option}} 선택",
+      "mood": "분위기 {{mood}} 선택",
+      "budget": "2인 총예산 원화 입력",
+      "duration": "전체 시간 선택",
+      "additionalRequest": "추가 요청 입력",
+      "generate": "데이트 코스 만들기"
+    },
+    "generateButton": "코스 만들기",
+    "back": "←"
+  }
+}

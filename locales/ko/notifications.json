@@ -1,0 +1,24 @@
+{
+  "notifications": {
+    "title": "알림",
+    "unreadSuffix": "개 읽지 않음",
+    "allRead": "모두 확인했어요",
+    "clearAll": "모두 지우기",
+    "emptyTitle": "새 알림이 없어요",
+    "emptyBody": "상대의 반응이나 새 추천이 오면\n여기에서 알려드릴게요.",
+    "groupToday": "오늘",
+    "groupWeek": "이번 주",
+    "groupEarlier": "이전",
+    "reactionTitle": "상대가 반응을 남겼어요",
+    "proposalTitle": "데이트 제안이 도착했어요",
+    "proposalModalTitle": "데이트 제안",
+    "proposalCta": "제안 보러가기",
+    "tapToView": "탭해서 보기",
+    "timeJustNow": "방금",
+    "timeMinutes": "분 전",
+    "timeHours": "시간 전",
+    "timeYesterday": "어제",
+    "timeDays": "일 전",
+    "modalCloseButton": "닫기"
+  }
+}

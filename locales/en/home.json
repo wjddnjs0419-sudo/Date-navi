@@ -1,0 +1,31 @@
+{
+  "home": {
+    "dateHeader": "{{weekday}}, {{month}}/{{day}}",
+    "weekdaysFull": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "greeting": "How should we\ndecide today?",
+    "subtitle": "No need for a perfect plan — just go with what feels right.",
+    "connectBanner": "Connect with your partner to decide together",
+    "todayHelp": "Today's help",
+    "startCta": "Start",
+    "upcomingTitle": "Upcoming dates",
+    "dateUnset": "Date not set",
+    "mutualTitle": "A pick you both liked",
+    "partnerReactionsTitle": "Your partner's reaction",
+    "partnerReactionPrefix": "{{name}} left ",
+    "partnerReactionSuffix": "",
+    "createCta": "Create date options",
+    "loadError": "Couldn't load your info. Please try again.",
+    "accessibility": {
+      "notifications": "Notifications",
+      "settings": "Settings"
+    }
+  }
+}

@@ -1,12 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { ko, en } from '../locales';
 
 function read(rel: string): string {
   return readFileSync(join(process.cwd(), rel), 'utf8');
 }
-
-const ko = JSON.parse(read('locales/ko.json'));
-const en = JSON.parse(read('locales/en.json'));
 
 // 확정된 코스에서 Save를 누르면 저장 확인 모달이 뜬 뒤 홈으로 돌아가야 한다.
 // 기존에는 saved=true로 버튼만 사라져 "Send to partner"만 남아 전송을 강제하는 흐름이었다.

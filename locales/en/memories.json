@@ -1,0 +1,35 @@
+{
+  "memories": {
+    "title": "Memories",
+    "subtitle": "Dates you have already done together",
+    "loading": "Loading memories...",
+    "emptyTitle": "No completed dates yet",
+    "emptySubtitle": "Open a date card and tap\n\"Completed this date\"",
+    "wantAgainYes": "I want to go again",
+    "wantAgainNo": "Once is enough",
+    "modeLabels": {
+      "pick_for_me": "Pick for me",
+      "feeling_only": "Just vibes",
+      "make_course": "Turn it into a plan",
+      "soft_message": "Say it softly",
+      "light_date": "Keep it light",
+      "special_date": "Make it special",
+      "next_time": "Next time",
+      "low_risk": "Low risk"
+    },
+    "pageTitle": "Our memories",
+    "countText": "{{count}} dates together so far",
+    "deleteAlertTitle": "Delete memory",
+    "deleteAlertMessage": "Delete this memory? This can't be undone.",
+    "deleteAlertError": "Something went wrong deleting it.",
+    "deleteAlertForbidden": "You can only delete memories you left.",
+    "emptyStateTitle": "No memories yet",
+    "emptyStateSub": "Confirm a date and leave a review\nand it'll show up here.",
+    "statDaysTogether": "Days together",
+    "statWantAgain": "Want again",
+    "statThisMonth": "This month",
+    "recentBadge": "Recent memory",
+    "wantAgainBadge": "Want to again",
+    "untitled": "Memory"
+  }
+}

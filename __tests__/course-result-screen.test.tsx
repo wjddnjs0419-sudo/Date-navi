@@ -343,10 +343,10 @@ describe('course result screen', () => {
 
   it('keeps the footer action labels short enough to fit on one line', () => {
     const ko = JSON.parse(require('node:fs').readFileSync(
-      require('node:path').join(__dirname, '../locales/ko.json'), 'utf8',
+      require('node:path').join(__dirname, '../locales/ko/modeFlow.json'), 'utf8',
     )).modeFlow.courseResult;
     const en = JSON.parse(require('node:fs').readFileSync(
-      require('node:path').join(__dirname, '../locales/en.json'), 'utf8',
+      require('node:path').join(__dirname, '../locales/en/modeFlow.json'), 'utf8',
     )).modeFlow.courseResult;
 
     expect(ko.regenerate.length).toBeLessThanOrEqual(8);

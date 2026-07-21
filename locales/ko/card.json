@@ -1,0 +1,138 @@
+{
+  "card": {
+    "title": "데이트 후보",
+    "loading": "카드를 불러오는 중...",
+    "missing": "카드를 불러올 수 없어요.",
+    "reactionTitle": "내 반응",
+    "reactionSubtitle": "끌리는 느낌만 골라주세요",
+    "partnerWaiting": "⏳ 상대방 반응을 기다리는 중...",
+    "partnerReaction": "상대방 반응: {{emoji}} {{label}}",
+    "memoryButton": "이 데이트 완료했어요",
+    "memoryDone": "완료한 데이트예요",
+    "saveError": "저장에 실패했어요. 다시 시도해주세요.",
+    "confirmButton": "이번 데이트로 정할까요? →",
+    "reactionLabels": {
+      "love": {
+        "emoji": "🔥",
+        "label": "완전 끌려"
+      },
+      "like": {
+        "emoji": "😊",
+        "label": "느낌은 좋아"
+      },
+      "burden": {
+        "emoji": "😅",
+        "label": "오늘은 부담돼"
+      },
+      "next_time": {
+        "emoji": "⏰",
+        "label": "다음에"
+      }
+    },
+    "modeLabels": {
+      "pick_for_me": "앱이 골라줘",
+      "feeling_only": "느낌만 말할게",
+      "make_course": "코스로 정리해줘",
+      "soft_message": "부드럽게 말해줘",
+      "light_date": "가볍게",
+      "special_date": "특별하게",
+      "next_time": "다음 만남",
+      "low_risk": "실패 확률 낮게"
+    },
+    "conditionTags": {
+      "change_place": {
+        "label": "장소만 바꾸면",
+        "freeText": "비슷한 분위기, 더 가까운 장소로 바꿔서 추천해줘"
+      },
+      "closer": {
+        "label": "가까우면",
+        "freeText": "더 가까운 거리, 이동 10분 이내로 바꿔서 추천해줘"
+      },
+      "indoor": {
+        "label": "실내면",
+        "freeText": "실내 공간으로 바꿔서 추천해줘"
+      }
+    },
+    "regenerateFallbackText": "조건을 바꿔서 추천해줘",
+    "regenerateAlertTitle": "새 후보 생성 완료",
+    "regenerateAlertMessage": "\"{{label}}\" 조건으로 비슷한 데이트 후보 3개를 만들었어요. 우리 후보 탭에서 확인해보세요!",
+    "conditionSectionTitle": "어떤 조건이 맞으면 좋을까요?",
+    "conditionSectionSub": "조건을 선택하면 앱이 맞춤 후보를 새로 찾아드려요",
+    "regenerateWithCondition": "{{label}} 조건으로 다시 찾아줘",
+    "new": {
+      "heading": "아이디어를 후보로\n등록할게요",
+      "subtitle": "제목만 입력해도 바로 후보가 돼요.",
+      "titleLabel": "아이디어 제목 *",
+      "titlePlaceholder": "예: 동네 맛집 포장 + 집 영화",
+      "descLabel": "설명 (선택)",
+      "descPlaceholder": "어떤 느낌인지 간단히 적어주세요",
+      "timeLabel": "예상 시간 (선택)",
+      "noneOption": "선택 안 함",
+      "budgetLabel": "예산 (선택)",
+      "aiToggleTitle": "AI가 카드로 정리해줘",
+      "aiToggleSub": "입력한 내용을 AI가 정제해서 카드로 만들어줘요",
+      "aiSaveCta": "AI로 카드 만들기 ✨",
+      "saveCta": "후보로 추가하기",
+      "needCoupleAlert": "연인과 연결 후 사용해주세요.",
+      "saveError": "후보 추가 중 오류가 발생했어요.",
+      "timeOptions": {
+        "oneToTwo": "1~2시간",
+        "twoToThree": "2~3시간",
+        "halfDay": "반나절",
+        "fullDay": "하루 종일"
+      },
+      "budgetOptions": {
+        "saving": "아끼기",
+        "moderate": "적당히",
+        "special": "특별하게"
+      }
+    },
+    "edit": {
+      "heading": "후보 수정하기",
+      "subtitle": "내용을 바꾼 뒤 저장하면 후보에 반영돼요.",
+      "titleLabel": "제목 *",
+      "titlePlaceholder": "제목",
+      "descLabel": "설명",
+      "descPlaceholder": "어떤 데이트인지 적어주세요",
+      "timeLabel": "예상 시간",
+      "noneOption": "선택 안 함",
+      "existingValueOption": "기존 값 · {{time}}",
+      "budgetLabel": "예산",
+      "budgetPlaceholder": "예: 5만원 내외",
+      "saveCta": "저장하기",
+      "saveError": "수정 중 문제가 발생했어요."
+    },
+    "memory": {
+      "newHeading": "새 추억 남기기",
+      "newSub": "사진과 함께 그날의 기억을 남겨보세요.",
+      "editHeading": "추억 수정하기",
+      "editSub": "내용을 바꾼 뒤 저장하면 추억에 반영돼요.",
+      "addPhotoCta": "📷 사진 추가하기",
+      "titleLabel": "제목",
+      "titlePlaceholder": "예: 한강 피크닉",
+      "reviewLabel": "한 줄 후기",
+      "reviewPlaceholder": "어떤 데이트였나요?",
+      "wantAgainLabel": "다시 하고 싶어요?",
+      "wantAgainYes": "또 가고 싶어요",
+      "wantAgainNo": "한 번이면 충분",
+      "photoPermTitle": "사진 접근 권한 필요",
+      "photoPermMessage": "추억 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.",
+      "openSettingsCta": "설정 열기",
+      "photoUploadError": "사진 업로드 중 문제가 생겼어요.",
+      "photoRequiredError": "사진을 추가해주세요.",
+      "saveError": "수정 중 문제가 발생했어요.",
+      "editForbidden": "본인이 남긴 추억만 수정할 수 있어요.",
+      "detailNotFound": "추억을 찾을 수 없어요.",
+      "commentsSectionLabel": "댓글",
+      "noCommentsText": "아직 댓글이 없어요.",
+      "commentPlaceholder": "댓글을 남겨보세요",
+      "commentPosting": "등록 중",
+      "commentSubmit": "남기기",
+      "commentError": "댓글 등록 중 문제가 생겼어요.",
+      "wantAgainTag": "다시 하고 싶어",
+      "meFallback": "나",
+      "badge": "우리 추억"
+    },
+    "regeneratePromptPrefix": "{{title}} 분위기와 비슷하지만 "
+  }
+}

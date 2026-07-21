@@ -17,9 +17,10 @@ Date Navi는 커플이 "오늘 뭐 하지?"를 함께 정하는 **React Native +
 - **단일 액센트 핑크:** `pink` #F26B7A가 primary 버튼·선택 상태·핵심 강조를 전담한다. 과하게 쓰지 않고 화면당 한두 번만 등장한다.
 - **웜 뉴트럴 베이스:** 배경·텍스트·보더·그림자까지 전부 따뜻한 톤(핑크/크림/브라운)으로 통일. 차가운 회색은 보조(`coolGray`)로만 제한적으로 쓴다.
 - **부드러운 형태 언어:** 직각이 거의 없다. 카드 22px, 버튼 18px, hero 24px — 모든 인터랙티브 요소가 둥글다.
-- **톤 패밀리로 분류:** 태그·뱃지·카테고리는 pink / mint / lavender / cream / gray 5개 톤 패밀리(각각 `bg`+`fg` 쌍)로 구분한다. 원색 색깔 뱃지가 아니라 옅은 파스텔 배경 + 진한 동색 텍스트.
+- **톤 패밀리로 분류:** 상태용 태그·뱃지는 pink / mint / lavender / cream / gray 5개 톤 패밀리(각각 `bg`+`fg` 쌍, 옅은 파스텔 배경 + 진한 동색 텍스트)로 구분한다.
+- **컬러 카테고리 핀 + 일러스트(2026-07-21 신규):** 코스 카테고리는 원색 채운 핀으로 식별한다 — 식사=`catMeal` #FD8956(주황)·카페=`catCafe` #6B9FDB(파랑)·산책=`catWalk` #5DBD5F(초록). 온보딩·홈·확정 등에는 클레이 파스텔 일러스트(`assets/illustrations/`)와 워드마크(`assets/brand/wordmark.png`)를 쓴다.
 - **얕은 단일 그림자:** 카드에 웜 브라운 그림자 1단(opacity 0.1, radius 7)만. 레이어드 다단 그림자 없음.
-- **아이콘 + 텍스트, 이모지 금지:** 시각 표현은 lucide 라인 아이콘으로. 신규 UI에 이모지·원색 색깔 뱃지 금지, 기존 컴포넌트·스타일 재사용이 규칙이다.
+- **목업이 진실:** `UI RENEW/` 목업 50화면이 디자인의 절대 진실이고 각 화면은 목업에 1:1 대응한다. (과거의 "이모지·원색 색깔 뱃지 전면 금지" 블랭킷 룰은 **폐기** — 목업이 쓰는 컬러 핀·일러스트·워드마크는 의도된 것. 일반 상태 뱃지는 여전히 톤 패밀리 파스텔, 문구 이모지는 목업이 요구할 때만.)
 
 ## Colors
 
@@ -69,6 +70,16 @@ Date Navi는 커플이 "오늘 뭐 하지?"를 함께 정하는 **React Native +
 | gray | `gray` #F2EBE3 | `grayFg` #6B5247 | 실내·가까운 이동 |
 
 태그 문자열 → 아이콘·색 매핑 규칙은 [lib/tagStyle.ts](lib/tagStyle.ts)에 있다.
+
+### 카테고리 핀 색 (코스 스텝, 2026-07-21 신규)
+목업의 코스 카테고리 식별용 **원색 채운 핀**. 톤 패밀리(파스텔)와 달리 채도 높은 단색.
+| 토큰 | 값 | 카테고리 |
+|---|---|---|
+| `catMeal` | #FD8956 | 식사(주황) |
+| `catCafe` | #6B9FDB | 카페(파랑) |
+| `catWalk` | #5DBD5F | 산책(초록) |
+
+핀·아이콘 렌더는 [components/course-map.tsx](components/course-map.tsx)의 `CoursePin`/`StepPin`/`CourseMapPreview`가 담당한다.
 
 ## Typography
 
@@ -129,12 +140,20 @@ Date Navi는 커플이 "오늘 뭐 하지?"를 함께 정하는 **React Native +
 ### 그 외 프리미티브
 `Chip` · `OptionCardPicker` · `BackBar` · `ProgressDots` · `ListGroup`/`ListRow`(설정형 리스트) · `SectionLabel` · `LocationField`/`PlaceRow`(위치·장소) · `InfoNote` · `GeneratingView`(AI 생성 로딩) · `FieldBox` · `MoreMenu` · `SuccessModal` · `CourseStepList`.
 
+### 2026-07-21 신규 프리미티브 (UI 전면 교체 Phase 0)
+목업 대응용 공용 컴포넌트. 신규 화면은 재구현 말고 이걸 쓴다.
+- `Illustration`([components/illustration.tsx](components/illustration.tsx)) — `assets/illustrations/` 8장을 이름으로 렌더(intrinsic aspectRatio + 명시 height 옵션).
+- `Wordmark`([components/brand.tsx](components/brand.tsx)) — "Date·navi" 로고(투명 PNG, `size` sm=24/lg=44).
+- `CoursePin`/`StepPin`/`CourseMapPreview`([components/course-map.tsx](components/course-map.tsx)) — 컬러 카테고리 핀 + 3스텝 점선 트레일 미리보기.
+- `DdayBadge`·`MetaChipRow`·`PlanListRow`([components/ui.tsx](components/ui.tsx)) — D-day 핑크 뱃지 / 아웃라인 메타칩 행 / 다가오는 데이트 리스트 행.
+
 ## 규칙 (신규 UI)
 
-- **이모지·원색 색깔 뱃지 금지.** 시각 표현은 lucide 라인 아이콘 + 톤 패밀리 파스텔 배경으로.
+- **목업 1:1 대조.** 화면 만들 때 `UI RENEW/`의 대응 목업 PNG를 먼저 열어 레이아웃·색·요소를 맞춘다. 목업이 진실.
 - **하드코딩 금지.** 색은 `C.*`, 간격은 `SP.*`, 반경은 `R.*`를 쓴다. 매직 숫자·헥스 문자열 금지.
-- **기존 컴포넌트 재사용.** 새로 만들기 전에 [components/ui.tsx](components/ui.tsx)에 같은 역할이 있는지 먼저 본다.
-- **i18n 동기화.** 화면 문구는 `locales/ko.json`·`locales/en.json`을 같은 작업에서 함께 갱신한다.
+- **기존 컴포넌트 재사용.** 새로 만들기 전에 [components/ui.tsx](components/ui.tsx)·[components/course-map.tsx](components/course-map.tsx)·[components/illustration.tsx](components/illustration.tsx)·[components/brand.tsx](components/brand.tsx)에 같은 역할이 있는지 먼저 본다.
+- **컬러 핀·일러스트 허용, 상태 뱃지는 톤 패밀리.** 코스 카테고리는 컬러 핀, 상태 표시는 파스텔 톤 패밀리. 문구 이모지는 목업이 요구할 때만.
+- **i18n 동기화.** 화면 문구는 소유 네임스페이스의 `locales/ko/<ns>.json`·`locales/en/<ns>.json` 조각을 같은 작업에서 함께 갱신한다(2026-07-21 조각 분할 후).
 
 ---
 

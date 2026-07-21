@@ -1,0 +1,20 @@
+{
+  "result": {
+    "title": "데이트 후보",
+    "loadingTitle": "후보를 만들고 있어요",
+    "loadingSubtitle": "잠깐만 기다려줘 ✨",
+    "errorTitle": "후보를 불러오지 못했어요",
+    "errorSubtitle": "네트워크를 확인하거나\n잠시 후 다시 시도해주세요.",
+    "retryButton": "← 다시 선택하기",
+    "backToMode": "다시 선택하기",
+    "saveButton": "💾 우리 후보에 저장하기",
+    "saved": "✅ 우리 후보에 저장됐어요!",
+    "goToFirst": "첫 번째 카드에 반응하기 →",
+    "goToCandidates": "우리 후보 전체 보기",
+    "cardTitle": "이런 데이트는\n어때요?",
+    "saveNetworkError": "네트워크가 불안정해요. 다시 시도해주세요.",
+    "saveLoginError": "로그인이 필요해요.",
+    "saveCoupleError": "커플 연결 후 저장할 수 있어요.",
+    "saveGeneralError": "저장 중 오류가 발생했어요. 다시 시도해주세요."
+  }
+}
