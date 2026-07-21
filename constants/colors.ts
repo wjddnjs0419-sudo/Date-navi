@@ -34,4 +34,7 @@ export const C = {
   coolGray: '#6B7280',
   coolGrayLight: '#9CA3AF',
   disabledBg: '#EFE7DF',
+  catMeal: '#FD8956',
+  catCafe: '#6B9FDB',
+  catWalk: '#5DBD5F',
 } as const;
