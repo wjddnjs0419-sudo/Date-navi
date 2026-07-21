@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, Easing, Modal, Image,
   type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C, SP, R } from '../constants/theme';
@@ -697,11 +697,10 @@ const noteS = StyleSheet.create({
 });
 
 // ─── GeneratingView ───────────────────────────────────────────────────────────
-// AI 생성 로딩 화면 공통 UI. 아이콘 + 헤딩 + 단계별 체크리스트만 담당하고,
+// AI 생성 로딩 화면 공통 UI. 헤딩 + 코스맵 일러스트 + 단계 진행바만 담당하고,
 // 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
 export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
   const pulseScale = useRef(new Animated.Value(1)).current;
-  const haloOpacity = useRef(new Animated.Value(0.24)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -720,91 +719,57 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
   useEffect(() => {
     if (reduceMotion) {
       pulseScale.setValue(1);
-      haloOpacity.setValue(0.18);
       return;
     }
 
+    // 코스맵 일러스트가 은은하게 숨쉬는 로딩 애니메이션. reduceMotion 이면 정지한다.
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.parallel([
-          Animated.timing(pulseScale, {
-            toValue: 1.08,
-            duration: 360,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(haloOpacity, {
-            toValue: 0.36,
-            duration: 360,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]),
         Animated.timing(pulseScale, {
-          toValue: 0.98,
-          duration: 180,
+          toValue: 1.03,
+          duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.parallel([
-          Animated.timing(pulseScale, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(haloOpacity, {
-            toValue: 0.2,
-            duration: 300,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(520),
+        Animated.timing(pulseScale, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     );
 
     pulse.start();
     return () => pulse.stop();
-  }, [haloOpacity, pulseScale, reduceMotion]);
+  }, [pulseScale, reduceMotion]);
 
-  const haloScale = pulseScale.interpolate({
-    inputRange: [0.98, 1.08],
-    outputRange: [1.04, 1.18],
-  });
+  // step/steps 로직 유지: 진행 단계(current)와 현재 단계 라벨(statusLabel)을 파생한다.
+  const total = Math.max(steps.length, 1);
+  const current = Math.min(Math.max(step, 0), total - 1);
+  const statusLabel = steps[current] ?? '';
 
   return (
     <View style={genS.container}>
-      <View style={genS.iconStage}>
-        <Animated.View style={[genS.iconHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
-        <Animated.View style={[genS.iconWrap, { transform: [{ scale: pulseScale }] }]}>
-          <Sparkles size={56} strokeWidth={1.5} color={C.pink} />
-        </Animated.View>
-      </View>
-
       <Text style={genS.heading}>{heading}</Text>
 
-      <View style={genS.stepList}>
-        {steps.map((label, i) => (
-          <View key={label} style={genS.stepRow}>
-            <View style={[
-              genS.stepDot,
-              { backgroundColor: step > i ? C.mintFg : step === i ? C.pink : '#E0D5CB' },
-            ]}>
-              {step > i && <Check size={10} color={C.white} strokeWidth={3} />}
-            </View>
-            <Text style={[
-              genS.stepText,
-              {
-                color: step > i ? C.mintFg : step === i ? C.text : C.textMuted,
-                fontWeight: step === i ? '600' : '500',
-                opacity: step < i ? 0.4 : 1,
-              },
-            ]}>
-              {label}
-            </Text>
-          </View>
-        ))}
+      <Animated.View style={[genS.illustrationWrap, { transform: [{ scale: pulseScale }] }]}>
+        <Illustration name="date-course-map-vertical" width={200} />
+      </Animated.View>
+
+      <View style={genS.progressBlock}>
+        <View style={genS.progressHeader}>
+          <Text style={genS.statusLabel} numberOfLines={1}>{statusLabel}</Text>
+          <Text style={genS.progressCount}>{current + 1} / {total}</Text>
+        </View>
+        <View style={genS.progressTrack}>
+          {steps.map((label, i) => (
+            <View
+              key={`${label}-${i}`}
+              style={[genS.progressSegment, i <= current ? genS.progressSegmentOn : genS.progressSegmentOff]}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -815,43 +780,31 @@ const genS = StyleSheet.create({
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  iconStage: {
-    width: 166,
-    height: 166,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconHalo: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: C.pinkMid,
-  },
-  iconWrap: {
-    width: 140, height: 140, borderRadius: 70,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: C.pink,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
+    paddingHorizontal: SP.xxxl,
   },
   heading: {
     fontSize: 22, fontWeight: '700', color: C.text,
     textAlign: 'center', lineHeight: 29,
-    marginTop: 32, marginBottom: 32,
+    marginBottom: SP.xxl,
   },
-  stepList: { width: '100%', maxWidth: 260, gap: 10 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepDot: {
-    width: 16, height: 16, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center',
+  illustrationWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SP.xxxl,
   },
-  stepText: { fontSize: 13 },
+  progressBlock: { width: '100%', maxWidth: 280, gap: SP.md },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SP.sm,
+  },
+  statusLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: C.text },
+  progressCount: { fontSize: 13, fontWeight: '600', color: C.pink },
+  progressTrack: { flexDirection: 'row', gap: SP.xs },
+  progressSegment: { flex: 1, height: 6, borderRadius: R.badge },
+  progressSegmentOn: { backgroundColor: C.pink },
+  progressSegmentOff: { backgroundColor: C.pinkMid },
 });
 
 // ─── FieldBox ─────────────────────────────────────────────────────────────────
