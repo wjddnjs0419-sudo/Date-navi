@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C, SP, R } from '../constants/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Illustration } from './illustration';
 import type { GeoCoords } from '../lib/ai';
 import type { CourseStep } from '../lib/course';
 import { useI18n } from '../lib/i18n';
@@ -950,6 +951,7 @@ const SUCCESS_MODAL_DURATION_MS = 1100;
 export function SuccessModal({
   visible, message, onHide,
 }: { visible: boolean; message: string; onHide: () => void }) {
+  const { t } = useI18n();
   useEffect(() => {
     if (!visible) return;
     const timer = setTimeout(onHide, SUCCESS_MODAL_DURATION_MS);
@@ -960,10 +962,9 @@ export function SuccessModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
       <View style={successS.backdrop}>
         <View style={successS.card}>
-          <View style={successS.iconWrap}>
-            <Check size={28} color={C.white} strokeWidth={3} />
-          </View>
+          <Illustration name="mascot-heart-couple-check" width={148} style={successS.mascot} />
           <Text style={successS.message}>{message}</Text>
+          <BigButton onPress={onHide} style={successS.cta}>{t('common.ok')}</BigButton>
         </View>
       </View>
     </Modal>
@@ -972,18 +973,16 @@ export function SuccessModal({
 const successS = StyleSheet.create({
   backdrop: {
     flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: SP.xxl,
   },
   card: {
-    width: '100%', maxWidth: 280, backgroundColor: C.white,
-    borderRadius: 24, paddingVertical: 32, paddingHorizontal: 24,
-    alignItems: 'center', gap: 14,
+    width: '100%', maxWidth: 320, backgroundColor: C.white,
+    borderRadius: R.hero, paddingTop: SP.xl, paddingBottom: SP.xxl, paddingHorizontal: SP.xxl,
+    alignItems: 'center', gap: SP.md,
   },
-  iconWrap: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center',
-  },
-  message: { fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'center' },
+  mascot: { marginBottom: SP.xs },
+  message: { fontSize: 19, fontWeight: '700', color: C.text, textAlign: 'center', lineHeight: 26 },
+  cta: { marginTop: SP.sm },
 });
 
 // ─── CourseStepList ───────────────────────────────────────────────────────────
