@@ -6,9 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Check } from 'lucide-react-native';
+import { Check, TriangleAlert } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
@@ -46,9 +46,11 @@ export default function DeleteAccountScreen() {
     <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <View style={s.headingWrap}>
-          <Text style={s.heading}>{t('account.deleteAccount.heading')}</Text>
-          <Text style={s.subText}>{t('account.deleteAccount.subText')}</Text>
+        <Text style={[T.h1, s.headingSpacing]}>{t('account.deleteAccount.heading')}</Text>
+
+        <View style={s.cautionBox}>
+          <TriangleAlert size={18} strokeWidth={2} color={C.pinkDeep} />
+          <Text style={s.cautionText}>{t('account.deleteAccount.subText')}</Text>
         </View>
 
         <View style={s.warningBox}>
@@ -89,6 +91,7 @@ export default function DeleteAccountScreen() {
         </View>
 
         <TouchableOpacity
+          testID="delete-agree-row"
           style={s.agreeRow}
           onPress={() => setAgreed(v => !v)}
           activeOpacity={0.7}
@@ -120,22 +123,32 @@ export default function DeleteAccountScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  headingWrap: { marginTop: 16 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  reasonSection: { marginTop: 24 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
+  headingSpacing: { marginTop: SP.lg },
+  reasonSection: { marginTop: SP.xxl },
   reasonText: { fontSize: 14 },
   bottomSpacer: { height: 120 },
-  warningBox: {
-    marginTop: 20,
-    borderRadius: 18,
-    padding: 16,
+  cautionBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SP.sm,
+    marginTop: SP.lg,
+    borderRadius: R.btn,
+    padding: SP.lg,
     backgroundColor: C.pinkLight,
     borderWidth: 1,
     borderColor: C.pinkBorder,
   },
-  warningTitle: { fontSize: 13, fontWeight: '700', color: C.pinkDeep, marginBottom: 8 },
+  cautionText: { flex: 1, fontSize: 13, color: C.pinkDeep, fontWeight: '600', lineHeight: 19 },
+  warningBox: {
+    marginTop: SP.md,
+    borderRadius: R.btn,
+    padding: SP.lg,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  warningTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: SP.sm },
   warningItem: { fontSize: 12, color: C.grayFg, lineHeight: 22 },
   checkCircle: {
     width: 20, height: 20, borderRadius: 10,
@@ -147,11 +160,11 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: C.border,
   },
   agreeRow: {
-    marginTop: 20,
+    marginTop: SP.xxl,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    paddingHorizontal: 4,
+    gap: SP.md,
+    paddingHorizontal: SP.xs,
   },
   checkbox: {
     width: 20, height: 20, borderRadius: 6,
@@ -165,12 +178,12 @@ const s = StyleSheet.create({
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
-    gap: 4,
+    gap: SP.xs,
   },
-  cancelBtn: { alignItems: 'center', paddingVertical: 10 },
+  cancelBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
   cancelBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
 });

@@ -6,11 +6,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Heart } from 'lucide-react-native';
+import { Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton } from '../../components/ui';
+import { G, SP, R, T } from '../../constants/theme';
+import { BackBar, BigButton, CourseStepList, MetaChipRow, OptionCardPicker, SectionLabel, SoftCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 
 const REACTION_OPTIONS: { id: string; type: string }[] = [
   { id: 'full', type: 'love' },
@@ -23,16 +24,24 @@ const REACTION_OPTIONS: { id: string; type: string }[] = [
   { id: 'notFarWalk', type: 'like' },
 ];
 
+type ReactionCard = {
+  title: string;
+  summary: string;
+  estimated_time?: string;
+  estimated_budget?: string;
+  steps?: CourseStep[];
+};
+
 export default function ReactionScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const router = useRouter();
   const { t } = useI18n();
 
-  const [selectedIdx, setSelectedIdx] = useState(3);
+  const [selectedId, setSelectedId] = useState(REACTION_OPTIONS[3].id);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [partnerName, setPartnerName] = useState(t('share.reaction.partnerFallback'));
-  const [card, setCard] = useState<{ title: string; summary: string } | null>(null);
+  const [card, setCard] = useState<ReactionCard | null>(null);
   const [sentMessage, setSentMessage] = useState('');
 
   useEffect(() => {
@@ -62,7 +71,7 @@ export default function ReactionScreen() {
       if (cardId) {
         const { data: cardRow } = await supabase
           .from('date_cards')
-          .select('title, summary')
+          .select('title, summary, estimated_time, estimated_budget, steps')
           .eq('id', cardId)
           .maybeSingle();
         if (cardRow) setCard(cardRow);
@@ -90,7 +99,7 @@ export default function ReactionScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const reactionType = REACTION_OPTIONS[selectedIdx]?.type ?? 'like';
+      const reactionType = REACTION_OPTIONS.find((opt) => opt.id === selectedId)?.type ?? 'like';
       await supabase
         .from('reactions')
         .upsert(
@@ -119,46 +128,50 @@ export default function ReactionScreen() {
           </View>
         </View>
 
-        <Text style={[s.heading, s.headingSpacing]}>{t('share.reaction.heading')}</Text>
+        <Text style={[T.h1, s.headingSpacing]}>{t('share.reaction.heading')}</Text>
 
-        <View style={s.cardBox}>
-          <View style={s.cardBanner}>
-            <View style={s.cardIconWrap}>
-              <Heart size={22} strokeWidth={1.5} color={C.pinkDeep} />
+        <SoftCard style={s.cardBox}>
+          <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
+          <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
+
+          <View style={s.stepsWrap}>
+            <CourseStepList steps={resolveDisplaySteps(card ?? {})} summary={card?.summary} />
+          </View>
+
+          {(!!card?.estimated_time || !!card?.estimated_budget) && (
+            <View style={s.metaRow}>
+              {!!card?.estimated_time && (
+                <MetaChipRow items={[{ icon: 'clock', label: card.estimated_time }]} />
+              )}
+              {!!card?.estimated_budget && (
+                <View style={s.budgetChip}>
+                  <Wallet size={13} color={C.textSub} strokeWidth={2} />
+                  <Text style={s.budgetChipText}>{card.estimated_budget}</Text>
+                </View>
+              )}
             </View>
-          </View>
-          <View style={s.cardBody}>
-            <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
-            <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
-            {!!sentMessage && (
-              <View style={s.noteBox}>
-                <Text style={s.noteText}>"{sentMessage}"</Text>
-              </View>
-            )}
-          </View>
+          )}
+
+          {!!sentMessage && (
+            <View style={s.noteBubble}>
+              <Text style={s.noteBubbleText}>{sentMessage}</Text>
+            </View>
+          )}
+        </SoftCard>
+
+        <View style={s.sectionBlock}>
+          <SectionLabel>{t('share.reaction.chooseReaction')}</SectionLabel>
+          <OptionCardPicker
+            columns={2}
+            largeTouchTarget
+            value={selectedId}
+            onChange={setSelectedId}
+            options={REACTION_OPTIONS.map((opt) => ({ value: opt.id, label: t(`share.reaction.options.${opt.id}`) }))}
+          />
         </View>
 
         <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>{t('share.reaction.chooseReaction')}</Text>
-          <View style={s.reactionGrid}>
-            {REACTION_OPTIONS.map((opt, i) => {
-              const sel = i === selectedIdx;
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  style={[s.reactionBtn, sel && s.reactionBtnOn]}
-                  onPress={() => setSelectedIdx(i)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[s.reactionBtnText, sel && s.reactionBtnTextOn]}>{t(`share.reaction.options.${opt.id}`)}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>{t('share.reaction.noteLabel')}</Text>
+          <SectionLabel>{t('share.reaction.noteLabel')}</SectionLabel>
           <View style={s.noteInputBox}>
             <TextInput
               style={s.noteInput}
@@ -184,8 +197,8 @@ export default function ReactionScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  senderRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  senderRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
   senderAvatar: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: C.pinkLight,
@@ -194,51 +207,29 @@ const s = StyleSheet.create({
   senderAvatarText: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
   senderName: { fontSize: 13, fontWeight: '600', color: C.text },
   senderTime: { fontSize: 11, color: C.textLight, marginTop: 1 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingSpacing: { marginTop: 16 },
-  cardBody: { padding: 16 },
-  sectionBlock: { marginTop: 20 },
+  headingSpacing: { marginTop: SP.lg },
+  sectionBlock: { marginTop: SP.xl },
   bottomSpacer: { height: 120 },
   cardBox: {
-    marginTop: 16,
-    borderRadius: 22,
-    overflow: 'hidden',
-    backgroundColor: C.white,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  cardBanner: {
-    height: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.pinkMid,
-  },
-  cardIconWrap: {
-    width: 48, height: 48, borderRadius: 14,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
+    marginTop: SP.lg,
   },
   cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  cardDesc: { fontSize: 12, color: C.textSub, marginTop: 4 },
-  noteBox: { marginTop: 12, borderRadius: 12, padding: 12, backgroundColor: C.cream },
-  noteText: { fontSize: 12, color: C.grayFg, lineHeight: 18 },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
-  reactionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  reactionBtn: {
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: C.white,
-    borderWidth: 1.5,
-    borderColor: C.border,
+  cardDesc: { fontSize: 12, color: C.textSub, marginTop: SP.xs },
+  stepsWrap: { marginTop: SP.md },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
+  budgetChip: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  budgetChipText: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  noteBubble: {
+    marginTop: SP.md,
+    borderRadius: R.btn,
+    padding: SP.md,
+    backgroundColor: C.pinkLight,
   },
-  reactionBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  reactionBtnText: { fontSize: 12, color: C.inkSoft, fontWeight: '500' },
-  reactionBtnTextOn: { color: C.pinkDeep, fontWeight: '600' },
+  noteBubbleText: { fontSize: 12, color: C.pinkDeep, lineHeight: 18 },
   noteInputBox: {
     backgroundColor: C.white,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: R.btn,
+    padding: SP.lg,
     borderWidth: 1,
     borderColor: C.border,
     minHeight: 70,
@@ -247,9 +238,9 @@ const s = StyleSheet.create({
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
   },
 });

@@ -51,6 +51,8 @@
         "돈 적게 듦",
         "피곤한 날"
       ],
+      "shareChannelsLabel": "공유 방법 선택",
+      "nativeShareCta": "다른 앱으로 공유하기",
       "sectionLabel": "함께 보낼 한마디",
       "messagePlaceholder": "한마디를 입력하세요",
       "suggestCta": "한마디 추천받기",
