@@ -1,0 +1,31 @@
+{
+  "review": {
+    "heading": "오늘 데이트 어땠어요?",
+    "sub": "가볍게 남기면 다음 추천이 더 잘 맞아요.",
+    "ratingLabel": "전반적으로 어땠나요?",
+    "ratings": [
+      {
+        "key": "love",
+        "label": "다시 하고 싶어"
+      },
+      {
+        "key": "good",
+        "label": "좋았어"
+      },
+      {
+        "key": "ok",
+        "label": "무난했어"
+      },
+      {
+        "key": "change",
+        "label": "다음엔 조금 바꾸고 싶어"
+      }
+    ],
+    "reviewLabel": "한 줄 후기",
+    "reviewPlaceholder": "오늘 데이트 한 마디로 남기기",
+    "saveButton": "추억으로 저장",
+    "noRatingError": "전반적인 평가를 선택해주세요.",
+    "saveError": "저장에 실패했어요. 다시 시도해주세요.",
+    "missingCoupleError": "커플 정보를 불러올 수 없어요."
+  }
+}

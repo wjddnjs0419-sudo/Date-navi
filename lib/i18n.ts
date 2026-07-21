@@ -3,8 +3,7 @@ import { getLocales } from 'expo-localization';
 import i18n, { type TFunction } from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
 import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import en from '../locales/en.json';
-import ko from '../locales/ko.json';
+import { ko, en } from '../locales';
 
 export type AppLanguage = 'ko' | 'en';
 

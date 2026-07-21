@@ -1,0 +1,154 @@
+{
+  "feeling": {
+    "modeTitles": {
+      "pick_for_me": "Let me pick for you",
+      "feeling_only": "Just tell me the vibe",
+      "light_date": "Keep it light",
+      "low_risk": "Keep it low-risk",
+      "special_date": "A special date",
+      "next_time": "Plan for next time",
+      "make_course": "Turn it into a course",
+      "soft_message": "Say it softly"
+    },
+    "steps": [
+      {
+        "key": "energy",
+        "question": "How is your energy\ntoday?",
+        "options": [
+          {
+            "label": "Tired",
+            "emoji": "😴",
+            "value": "low"
+          },
+          {
+            "label": "Okay",
+            "emoji": "😊",
+            "value": "medium"
+          },
+          {
+            "label": "Full of energy",
+            "emoji": "🎉",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "budget",
+        "question": "What budget\nare you thinking about?",
+        "options": [
+          {
+            "label": "Keep it cheap",
+            "emoji": "💰",
+            "value": "low"
+          },
+          {
+            "label": "Moderate",
+            "emoji": "💳",
+            "value": "medium"
+          },
+          {
+            "label": "Make it special",
+            "emoji": "✨",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "distance",
+        "question": "How far are\nyou okay going?",
+        "options": [
+          {
+            "label": "Nearby",
+            "emoji": "🏠",
+            "value": "near"
+          },
+          {
+            "label": "Any distance",
+            "emoji": "🚗",
+            "value": "any"
+          },
+          {
+            "label": "Far is okay",
+            "emoji": "🚂",
+            "value": "far"
+          }
+        ]
+      },
+      {
+        "key": "mood",
+        "question": "What kind of vibe\ndo you want?",
+        "options": [
+          {
+            "label": "Comfortable",
+            "emoji": "🛋️",
+            "value": "comfortable"
+          },
+          {
+            "label": "Fun",
+            "emoji": "🎡",
+            "value": "fun"
+          },
+          {
+            "label": "Romantic",
+            "emoji": "🌹",
+            "value": "romantic"
+          }
+        ]
+      },
+      {
+        "key": "duration",
+        "question": "How much time\ncan you spend?",
+        "options": [
+          {
+            "label": "1 hour",
+            "emoji": "⏰",
+            "value": "1h"
+          },
+          {
+            "label": "2-3 hours",
+            "emoji": "⏱️",
+            "value": "2-3h"
+          },
+          {
+            "label": "Half day",
+            "emoji": "🌤️",
+            "value": "half_day"
+          },
+          {
+            "label": "All day",
+            "emoji": "☀️",
+            "value": "full_day"
+          }
+        ]
+      }
+    ],
+    "finalStep": "Final step",
+    "avoidQuestion": "Anything you want to avoid?\n(optional)",
+    "avoidOptions": [
+      {
+        "label": "Long walks",
+        "value": "long_walk"
+      },
+      {
+        "label": "Crowded places",
+        "value": "crowded"
+      },
+      {
+        "label": "Outdoor activities",
+        "value": "outdoor"
+      },
+      {
+        "label": "Expensive places",
+        "value": "expensive"
+      },
+      {
+        "label": "Complicated reservations",
+        "value": "reservation"
+      }
+    ],
+    "additionalLabel": "Anything else to add? (optional)",
+    "additionalPlaceholder": "For example: somewhere nice for photos would be great",
+    "generateButton": "✨ Make date ideas",
+    "back": "←"
+  }
+}

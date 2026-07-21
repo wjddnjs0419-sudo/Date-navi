@@ -1,0 +1,49 @@
+{
+  "account": {
+    "editProfile": {
+      "heading": "프로필 수정",
+      "changePhotoCta": "사진 변경하기",
+      "nicknameLabel": "닉네임",
+      "nicknameHint": "한글, 영문, 숫자 2~12자",
+      "planningLabel": "나는 데이트 계획할 때 보통...",
+      "planningOptions": {
+        "often": "자주 계획하는 편이에요",
+        "together": "같이 정하는 편이에요",
+        "okPickHardPlan": "고르는 건 괜찮지만 계획은 어려워요",
+        "hardToSayOpinion": "의견을 말하기가 조금 어려워요",
+        "depends": "그때그때 달라요"
+      },
+      "saveCta": "변경사항 저장",
+      "photoPermTitle": "사진 접근 권한 필요",
+      "photoPermMessage": "프로필 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.",
+      "nicknameRequiredError": "닉네임을 입력해주세요.",
+      "saveSuccessTitle": "저장 완료",
+      "saveSuccessMessage": "프로필이 업데이트됐어요.",
+      "saveError": "저장 중 문제가 생겼어요."
+    },
+    "deleteAccount": {
+      "heading": "정말 떠나시는 건가요?",
+      "subText": "탈퇴하면 둘이 함께 만든 추억과 후보가 모두 사라져요.",
+      "warningTitle": "탈퇴하면 이런 정보가 사라져요",
+      "warningItems": [
+        "함께한 데이트 기록과 사진",
+        "둘 다 끌린 후보 목록",
+        "상대방과의 커플 연결",
+        "닉네임과 계정 정보"
+      ],
+      "reasonLabel": "떠나는 이유 (선택)",
+      "reasons": {
+        "notUsing": "잘 사용하지 않아요",
+        "lackingFeatures": "기능이 부족해요",
+        "usingOtherApp": "다른 앱을 사용하고 있어요",
+        "privacyConcern": "개인정보가 걱정돼요",
+        "other": "기타"
+      },
+      "agreeText": "위 내용을 모두 확인했고, 탈퇴 후에는 데이터를 복구할 수 없다는 것에 동의합니다.",
+      "deleteCta": "탈퇴하기",
+      "needAgreeCta": "동의가 필요해요",
+      "browseMoreCta": "조금 더 둘러볼게요",
+      "deleteError": "탈퇴 처리 중 문제가 생겼어요. 다시 시도해주세요."
+    }
+  }
+}

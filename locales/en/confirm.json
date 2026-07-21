@@ -1,0 +1,33 @@
+{
+  "confirm": {
+    "heading": "Make this the date?",
+    "sub": "You can always change the date or time later.",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "placeLabel": "Place note",
+    "itemsLabel": "Things to prepare",
+    "datePlaceholder": "e.g. May 26 (Tue)",
+    "timePlaceholder": "e.g. 7pm",
+    "placePlaceholder": "e.g. Hongdae restaurant",
+    "itemsPlaceholder": "e.g. Umbrella, camera",
+    "saveButton": "Save as this date",
+    "keepButton": "Keep it as a candidate",
+    "saveError": "Could not save. Please try again.",
+    "errorTitle": "Error",
+    "cancelPlanTitle": "Cancel plan",
+    "cancelPlanMessage": "Cancel this date plan? The card will be deleted completely.",
+    "close": "Close",
+    "cancelPlanAction": "Cancel plan",
+    "cancelPlanError": "Something went wrong while canceling.",
+    "upcomingTitle": "Upcoming date",
+    "dateTimeUnset": "Date/time not set",
+    "unset": "Not set",
+    "reviewDone": "We went on this date · How was it?",
+    "editPlan": "Edit plan",
+    "cancelPlan": "Cancel plan",
+    "saving": "Saving...",
+    "confirmedMessage": "Your date is confirmed",
+    "savedMessage": "Your changes are saved",
+    "back": "Back"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "confirm": {
+    "heading": "이번 데이트로 정할까요?",
+    "sub": "날짜와 시간은 나중에 바꿔도 괜찮아요.",
+    "dateLabel": "날짜 정하기",
+    "timeLabel": "시간 정하기",
+    "placeLabel": "장소 메모",
+    "itemsLabel": "준비할 것",
+    "datePlaceholder": "예: 5월 26일 (화)",
+    "timePlaceholder": "예: 저녁 7시",
+    "placePlaceholder": "예: 홍대 맛집",
+    "itemsPlaceholder": "예: 우산, 카메라",
+    "saveButton": "이번 데이트로 저장",
+    "keepButton": "아직 후보로 둘게요",
+    "saveError": "저장에 실패했어요. 다시 시도해주세요.",
+    "errorTitle": "오류",
+    "cancelPlanTitle": "계획 취소",
+    "cancelPlanMessage": "이 데이트 계획을 취소할까요? 카드가 완전히 삭제돼요.",
+    "close": "닫기",
+    "cancelPlanAction": "계획 취소",
+    "cancelPlanError": "취소 중 문제가 발생했어요.",
+    "upcomingTitle": "다가오는 데이트",
+    "dateTimeUnset": "날짜·시간 미정",
+    "unset": "미정",
+    "reviewDone": "데이트 다녀왔어요 · 어땠어요?",
+    "editPlan": "계획 수정하기",
+    "cancelPlan": "계획 취소하기",
+    "saving": "저장 중...",
+    "confirmedMessage": "데이트가 확정됐어요",
+    "savedMessage": "변경사항이 저장됐어요",
+    "back": "돌아가기"
+  }
+}

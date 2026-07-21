@@ -1,0 +1,154 @@
+{
+  "feeling": {
+    "modeTitles": {
+      "pick_for_me": "앱이 골라줄게요",
+      "feeling_only": "느낌만 알려줘요",
+      "light_date": "가볍게 해봐요",
+      "low_risk": "실패 없는 데이트",
+      "special_date": "특별한 데이트",
+      "next_time": "다음 만남 준비",
+      "make_course": "코스로 정리해줘",
+      "soft_message": "마음 전하기"
+    },
+    "steps": [
+      {
+        "key": "energy",
+        "question": "오늘 컨디션은\n어때?",
+        "options": [
+          {
+            "label": "피곤해",
+            "emoji": "😴",
+            "value": "low"
+          },
+          {
+            "label": "보통이야",
+            "emoji": "😊",
+            "value": "medium"
+          },
+          {
+            "label": "에너지 넘쳐",
+            "emoji": "🎉",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "budget",
+        "question": "예산은 어느 정도\n생각하고 있어?",
+        "options": [
+          {
+            "label": "아끼고 싶어",
+            "emoji": "💰",
+            "value": "low"
+          },
+          {
+            "label": "적당히",
+            "emoji": "💳",
+            "value": "medium"
+          },
+          {
+            "label": "특별하게",
+            "emoji": "✨",
+            "value": "high"
+          }
+        ]
+      },
+      {
+        "key": "distance",
+        "question": "얼마나 멀리\n가도 돼?",
+        "options": [
+          {
+            "label": "가까운 곳",
+            "emoji": "🏠",
+            "value": "near"
+          },
+          {
+            "label": "상관없어",
+            "emoji": "🚗",
+            "value": "any"
+          },
+          {
+            "label": "멀리도 가능",
+            "emoji": "🚂",
+            "value": "far"
+          }
+        ]
+      },
+      {
+        "key": "mood",
+        "question": "어떤 분위기가\n끌려?",
+        "options": [
+          {
+            "label": "편하게",
+            "emoji": "🛋️",
+            "value": "comfortable"
+          },
+          {
+            "label": "재밌게",
+            "emoji": "🎡",
+            "value": "fun"
+          },
+          {
+            "label": "로맨틱하게",
+            "emoji": "🌹",
+            "value": "romantic"
+          }
+        ]
+      },
+      {
+        "key": "duration",
+        "question": "얼마나 시간\n낼 수 있어?",
+        "options": [
+          {
+            "label": "1시간",
+            "emoji": "⏰",
+            "value": "1h"
+          },
+          {
+            "label": "2~3시간",
+            "emoji": "⏱️",
+            "value": "2-3h"
+          },
+          {
+            "label": "반나절",
+            "emoji": "🌤️",
+            "value": "half_day"
+          },
+          {
+            "label": "하루종일",
+            "emoji": "☀️",
+            "value": "full_day"
+          }
+        ]
+      }
+    ],
+    "finalStep": "마지막 단계",
+    "avoidQuestion": "피하고 싶은 게\n있어? (선택)",
+    "avoidOptions": [
+      {
+        "label": "오래 걷기",
+        "value": "long_walk"
+      },
+      {
+        "label": "사람 많은 곳",
+        "value": "crowded"
+      },
+      {
+        "label": "야외 활동",
+        "value": "outdoor"
+      },
+      {
+        "label": "비싼 곳",
+        "value": "expensive"
+      },
+      {
+        "label": "복잡한 예약",
+        "value": "reservation"
+      }
+    ],
+    "additionalLabel": "추가로 하고 싶은 말 (선택)",
+    "additionalPlaceholder": "예: 사진 찍기 좋은 곳이면 좋겠어",
+    "generateButton": "✨ 데이트 후보 만들기",
+    "back": "←"
+  }
+}

@@ -14,8 +14,7 @@ import {
 import { C } from '../constants/colors';
 import { BigButton } from './ui';
 import { useI18n, type AppLanguage } from '../lib/i18n';
-import en from '../locales/en.json';
-import ko from '../locales/ko.json';
+import { ko, en } from '../locales';
 
 export type PickerOption = { label: string; value: string };
 

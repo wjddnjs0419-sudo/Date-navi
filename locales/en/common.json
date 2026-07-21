@@ -1,0 +1,23 @@
+{
+  "common": {
+    "back": "←",
+    "next": "Next",
+    "done": "Done",
+    "save": "Save",
+    "skip": "Skip",
+    "loading": "Loading...",
+    "retry": "Try again",
+    "error": "Error",
+    "notice": "Notice",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "settingsOpen": "Open Settings",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "seeAll": "See all",
+    "delete": "Delete",
+    "edit": "Edit",
+    "moreActions": "More actions",
+    "coupleRequired": "Connect with your partner to use this. You can connect from Settings or Home."
+  }
+}

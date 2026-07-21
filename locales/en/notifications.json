@@ -1,0 +1,24 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "unreadSuffix": " unread",
+    "allRead": "All caught up",
+    "clearAll": "Clear all",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "We'll let you know here when your\npartner reacts or new picks arrive.",
+    "groupToday": "Today",
+    "groupWeek": "This week",
+    "groupEarlier": "Earlier",
+    "reactionTitle": "Your partner reacted",
+    "proposalTitle": "A date proposal arrived",
+    "proposalModalTitle": "Date proposal",
+    "proposalCta": "View proposal",
+    "tapToView": "Tap to view",
+    "timeJustNow": "just now",
+    "timeMinutes": "m ago",
+    "timeHours": "h ago",
+    "timeYesterday": "yesterday",
+    "timeDays": "d ago",
+    "modalCloseButton": "Close"
+  }
+}

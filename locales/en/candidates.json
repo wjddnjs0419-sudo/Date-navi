@@ -1,0 +1,105 @@
+{
+  "candidates": {
+    "title": "Our candidates 💌",
+    "tabs": [
+      {
+        "key": "all",
+        "label": "All"
+      },
+      {
+        "key": "both",
+        "label": "Both like it 🔥"
+      },
+      {
+        "key": "conditional",
+        "label": "Conditional 😊"
+      },
+      {
+        "key": "next",
+        "label": "Next time ⏰"
+      }
+    ],
+    "modeLabels": {
+      "pick_for_me": "Pick for me",
+      "feeling_only": "Just vibes",
+      "make_course": "Turn it into a plan",
+      "soft_message": "Say it softly",
+      "light_date": "Keep it light",
+      "special_date": "Make it special",
+      "next_time": "Next time",
+      "low_risk": "Low risk"
+    },
+    "reactionLabels": {
+      "love": {
+        "emoji": "🔥",
+        "label": "Really into it"
+      },
+      "like": {
+        "emoji": "😊",
+        "label": "Looks good"
+      },
+      "burden": {
+        "emoji": "😅",
+        "label": "Feels heavy today"
+      },
+      "next_time": {
+        "emoji": "⏰",
+        "label": "Next time"
+      }
+    },
+    "emptyTitle": "No candidates yet.",
+    "emptySubtitle": "Create a few cards in Date Mode.",
+    "emptyTabSubtitle": "No candidates match this tab.",
+    "goMode": "Start Date Mode →",
+    "loading": "Loading candidates...",
+    "error": "Could not load candidates. Please try again later.",
+    "tapHint": "Tap to react →",
+    "pageTitle": "Our candidates",
+    "countText": "{{count}} candidates total",
+    "addManual": "Add manually",
+    "filterAll": "All",
+    "filterBoth": "Both liked",
+    "filterConditional": "Conditional",
+    "filterNextTime": "Next time",
+    "filterBucket": "Next meetup",
+    "proposalTitle": "{{count}} date proposals from your partner",
+    "proposalSub": "\"{{title}}\" · Check it now →",
+    "emptyStateTitle": "No date candidates yet",
+    "emptyStateSub": "Just tell us today's mood\nand we'll make your first candidates.",
+    "thisDateBadge": "This date",
+    "candidateBadge": "Candidate",
+    "me": "Me",
+    "partner": "Partner",
+    "noReaction": "No reaction",
+    "fabAddFeeling": "Share a mood",
+    "fabAddCourse": "Create a course",
+    "bucketEmptyTitle": "Your bucket list is empty",
+    "bucketEmptySub": "Freely save things you'd like to do\nnext time you meet.",
+    "bucketAddIdea": "Add an idea",
+    "bucketHeaderCount": "Things to do next time ({{count}})",
+    "bucketAddSmall": "Add",
+    "bucketMyReactionLabel": "My reaction",
+    "bucketRxLove": "❤️ Into it",
+    "bucketRxNext": "🕐 Next time",
+    "bucketPartnerReaction": "Partner's reaction: {{label}}",
+    "confirmBothLove": "You're both excited! Confirm the meetup",
+    "confirmSingle": "Confirm the meetup and build a course",
+    "confirmAlertTitle": "Meetup confirmed!",
+    "confirmAlertMessage": "Created 3 date candidates from your bucket list idea.",
+    "confirmAlertError": "Something went wrong creating cards. Please try again.",
+    "deleteAlertTitle": "Delete candidate",
+    "deleteAlertMessage": "Delete this candidate? This can't be undone.",
+    "deleteAlertError": "Something went wrong deleting it.",
+    "rxLabel": {
+      "love": "Really into it",
+      "like": "Like it",
+      "burden": "Feels like a lot",
+      "next_time": "Next time"
+    },
+    "conditionLabels": {
+      "change_place": "📍 If we change the place",
+      "closer": "🚶 If it's closer",
+      "indoor": "🏠 If it's indoors"
+    }
+  }
+}

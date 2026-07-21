@@ -74,8 +74,8 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
 
   describe('i18n 동시 갱신', () => {
     it('ko/en 양쪽에 candidates.fabAddCourse 키가 존재한다', () => {
-      const ko = JSON.parse(read('locales/ko.json'));
-      const en = JSON.parse(read('locales/en.json'));
+      const ko = JSON.parse(read('locales/ko/candidates.json'));
+      const en = JSON.parse(read('locales/en/candidates.json'));
       expect(typeof ko.candidates.fabAddCourse).toBe('string');
       expect(typeof en.candidates.fabAddCourse).toBe('string');
       expect(ko.candidates.fabAddCourse.length).toBeGreaterThan(0);
@@ -106,8 +106,8 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
     });
 
     it('ko/en에서 tabs.softMessage와 softMessage 섹션이 제거됐다', () => {
-      const ko = JSON.parse(read('locales/ko.json'));
-      const en = JSON.parse(read('locales/en.json'));
+      const ko = JSON.parse(read('locales/ko/tabs.json'));
+      const en = JSON.parse(read('locales/en/tabs.json'));
       expect(ko.tabs.softMessage).toBeUndefined();
       expect(en.tabs.softMessage).toBeUndefined();
       expect(ko.softMessage).toBeUndefined();

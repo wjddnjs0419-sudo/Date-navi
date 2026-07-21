@@ -1,0 +1,99 @@
+{
+  "onboarding": {
+    "nickname": {
+      "empty": "Please enter a nickname.",
+      "noUser": "Could not find your login information.",
+      "saveError": "Something went wrong while saving.",
+      "title": "What should we call you?",
+      "sub": "You can change your nickname anytime.",
+      "label": "Nickname",
+      "placeholder": "Enter a nickname",
+      "hint": "Use Korean, English, or numbers within 12 characters.",
+      "saving": "Saving...",
+      "next": "Next"
+    },
+    "photo": {
+      "initial": "Me",
+      "pickTitle": "Choose photo",
+      "pickBody": "Gallery photo selection will be added soon.",
+      "title": "Choose a\nprofile photo",
+      "sub": "You can skip this for now.",
+      "change": "Change photo",
+      "hint": "Your partner will be able to see this photo too.",
+      "next": "Next"
+    },
+    "type": {
+      "title": "How do you usually\nplan dates?",
+      "sub": "This is just a hint to make your first recommendations fit better.",
+      "start": "Get started",
+      "options": {
+        "planner": "I usually plan often",
+        "together": "We usually decide together",
+        "chooser": "I can choose, but planning is hard",
+        "shy": "Sharing opinions feels a little hard",
+        "flexible": "It depends each time"
+      }
+    },
+    "coupleChoice": {
+      "title": "Connect with your partner?",
+      "subtitle": "Connecting now tailors recommendations to both your tastes. You can also do it later.",
+      "nowTitle": "Connect now",
+      "nowDesc": "Share a code and start together right away",
+      "laterTitle": "Maybe later",
+      "laterDesc": "I'll look around on my own first"
+    },
+    "anniversary": {
+      "heading": "When did you two\nstart dating?",
+      "subtitle": "Used for anniversary reminders and organizing memories.",
+      "daysCountText": "{{days}} days together today",
+      "daysHint": "We'll gently remind you on days like 100, 200, or your anniversary.",
+      "skipCta": "I'll add it later"
+    },
+    "connected": {
+      "heading": "Now you can\ndecide together",
+      "subtitle": "It doesn't have to be a perfect plan.\nJust share what you're drawn to.",
+      "ctaText": "See our preferences"
+    },
+    "preferences": {
+      "stepTitles": {
+        "1": "What kind of date do you like more?",
+        "2": "What do you want out of dates these days?",
+        "3": "These feel a bit like a lot",
+        "4": "Are you a long-distance couple?"
+      },
+      "preferredOptions": {
+        "restaurant": "Restaurants",
+        "cafe": "Cafes",
+        "walk": "Walks",
+        "home": "Staying in",
+        "culture": "Exhibits / culture",
+        "activity": "Activities"
+      },
+      "avoidOptions": {
+        "far": "Long travel",
+        "expensive": "Big spending",
+        "crowded": "Crowded places",
+        "long_walk": "Long walks",
+        "complex_reservation": "Complicated reservations",
+        "late_night": "Late nights"
+      },
+      "moodOptions": {
+        "rest": "Relaxing",
+        "laugh": "Lots of laughs",
+        "quiet": "Quiet conversation",
+        "new": "New experiences",
+        "photo": "Taking photos",
+        "special": "A special day"
+      },
+      "longDistanceOptions": {
+        "yes": "Yes, we're often apart",
+        "no": "No, we meet often",
+        "sometimes": "It depends"
+      },
+      "multiSelectHint": "It's fine to pick more than one",
+      "avoidInfoNote": "This isn't shared with your partner directly. It just helps us recommend more comfortably.",
+      "finishCta": "See your first picks",
+      "saveError": "Something went wrong saving."
+    }
+  }
+}

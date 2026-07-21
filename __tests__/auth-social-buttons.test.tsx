@@ -85,8 +85,8 @@ describe('auth social buttons follow official brand guidelines', () => {
   });
 
   it('uses Google-approved wording that never abbreviates the brand to 구글', () => {
-    const ko = JSON.parse(readFileSync(join(__dirname, '../locales/ko.json'), 'utf8')).auth;
-    const en = JSON.parse(readFileSync(join(__dirname, '../locales/en.json'), 'utf8')).auth;
+    const ko = JSON.parse(readFileSync(join(__dirname, '../locales/ko/auth.json'), 'utf8')).auth;
+    const en = JSON.parse(readFileSync(join(__dirname, '../locales/en/auth.json'), 'utf8')).auth;
 
     expect(ko.googleStart).toBe('Google 계정으로 로그인');
     expect(ko.googleStart).not.toContain('구글');

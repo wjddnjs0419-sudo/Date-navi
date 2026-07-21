@@ -1,0 +1,72 @@
+{
+  "mode": {
+    "title": "How can I\nhelp today?",
+    "modes": [
+      {
+        "id": "pick_for_me",
+        "emoji": "🎲",
+        "label": "Pick for me",
+        "desc": "Answer a few prompts and get three date ideas"
+      },
+      {
+        "id": "feeling_only",
+        "emoji": "🌸",
+        "label": "Just the vibe",
+        "desc": "Choose the mood you want. That is enough."
+      },
+      {
+        "id": "make_course",
+        "emoji": "🗺️",
+        "label": "Make it a plan",
+        "desc": "Turn a rough idea into a simple course"
+      },
+      {
+        "id": "soft_message",
+        "emoji": "💬",
+        "label": "Say it gently",
+        "desc": "Turn a hard-to-say feeling into a kinder message"
+      },
+      {
+        "id": "light_date",
+        "emoji": "🧸",
+        "label": "Keep it easy",
+        "desc": "Low-effort dates for tired days"
+      },
+      {
+        "id": "special_date",
+        "emoji": "🌟",
+        "label": "Make it special",
+        "desc": "Something a little more memorable"
+      },
+      {
+        "id": "next_time",
+        "emoji": "📅",
+        "label": "Next time",
+        "desc": "Save ideas for the next time you meet"
+      },
+      {
+        "id": "low_risk",
+        "emoji": "🛡️",
+        "label": "Low risk",
+        "desc": "Comfortable picks that are hard to mess up"
+      }
+    ],
+    "tabHeading": "How should the app\nhelp you today?",
+    "tabSubtitle": "Things change every time — just pick the help you need right now.",
+    "tabStartCta": "Start this mode",
+    "tabModes": {
+      "feeling": {
+        "title": "I'll just say the vibe",
+        "desc": "It's fine to just share the mood you want."
+      },
+      "make_course": {
+        "title": "Organize it into a course",
+        "desc": "Turn a rough idea into time, budget, and things to bring."
+      },
+      "next_meet": {
+        "title": "Next time we meet",
+        "desc": "A bucket list for long-distance couples' next meetup."
+      }
+    }
+  }
+}

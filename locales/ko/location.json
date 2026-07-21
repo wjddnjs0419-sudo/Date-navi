@@ -1,0 +1,20 @@
+{
+  "location": {
+    "gpsActive": "내 위치 사용 중",
+    "permissionTitle": "위치 권한이 꺼져 있어요",
+    "permissionBody": "내 위치를 사용하려면 설정에서 위치 권한을 켜주세요.",
+    "fetchError": "위치를 가져오지 못했어요",
+    "fetchErrorBody": "잠시 후 다시 시도하거나 직접 입력해주세요.",
+    "label": "어디서 만나요? (선택)",
+    "requiredLabel": "어디서 만나요? (필수)",
+    "placeholder": "예: 성수동, 홍대입구역",
+    "hint": "동네를 알려주면 실제 장소·맛집으로 추천해드려요.",
+    "autocompleteHint": "두 글자 이상 입력하고 검색 중심을 선택해주세요.",
+    "searchAccessibility": "만날 위치 검색",
+    "currentAccessibility": "현재 위치 사용",
+    "suggestionAccessibility": "{{name}} 위치 선택",
+    "recentTitle": "최근 선택한 위치",
+    "searchError": "위치를 검색하지 못했어요. 잠시 후 다시 시도해주세요.",
+    "map": "지도 →"
+  }
+}

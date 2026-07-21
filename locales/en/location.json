@@ -1,0 +1,20 @@
+{
+  "location": {
+    "gpsActive": "Using my location",
+    "permissionTitle": "Location permission is off",
+    "permissionBody": "Turn on location permission in Settings to use your current location.",
+    "fetchError": "Could not get your location",
+    "fetchErrorBody": "Try again in a moment or enter a neighborhood manually.",
+    "label": "Where are you meeting? (Optional)",
+    "requiredLabel": "Where are you meeting? (Required)",
+    "placeholder": "Ex: Seongsu-dong, Hongdae Station",
+    "hint": "Add a neighborhood and we can suggest real nearby places.",
+    "autocompleteHint": "Enter at least two characters, then choose the search center.",
+    "searchAccessibility": "Search meeting location",
+    "currentAccessibility": "Use current location",
+    "suggestionAccessibility": "Select {{name}} as the location",
+    "recentTitle": "Recently selected",
+    "searchError": "We could not search locations. Please try again in a moment.",
+    "map": "Map →"
+  }
+}

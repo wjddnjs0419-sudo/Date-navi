@@ -1,0 +1,178 @@
+{
+  "modeFlow": {
+    "option": {
+      "energy": {
+        "low": "Tired",
+        "medium": "Okay",
+        "high": "Energized"
+      },
+      "distance": {
+        "near": "Nearby",
+        "any": "Flexible"
+      },
+      "duration": {
+        "oneHour": "1 hour",
+        "twoThreeHours": "2-3 hours",
+        "halfDay": "Half day",
+        "fullDay": "Full day"
+      },
+      "mood": {
+        "comfortable": "Comfortable",
+        "fun": "Lively",
+        "romantic": "Romantic",
+        "quiet": "Quiet",
+        "new": "Something new"
+      }
+    },
+    "feeling": {
+      "heading": "Just tell us the vibe\nyou want today",
+      "sub": "A rough feeling is enough. We'll turn the mood into date cards.",
+      "placeholder": "Ex: I want somewhere quiet with good conversation today.",
+      "freeTextHint": "Keywords work best — try things like \"Japanese food\", \"BBQ\", \"escape room\".",
+      "mood": "Mood",
+      "duration": "Time (optional)",
+      "generate": "Create date ideas"
+    },
+    "generating": {
+      "courseSteps": [
+        "Checking your tastes and mood",
+        "Planning the route",
+        "Finding a low-risk course"
+      ],
+      "defaultSteps": [
+        "Checking today's energy",
+        "Balancing budget and travel",
+        "Finding the best date ideas"
+      ],
+      "courseHeading": "Planning a course\nthat fits both of you",
+      "defaultHeading": "Choosing ideas\nthat fit both of you",
+      "courseError": "Something went wrong while creating the course.",
+      "courseExpired": "This request has expired. Please review your conditions and try again.",
+      "courseErrors": {
+        "INSUFFICIENT_CANDIDATES": "We couldn't find enough matching places nearby. Try broadening the area, steps, or walking limit.",
+        "STEP_INTENT_UNSATISFIED": "We couldn't find nearby places matching that specific request. Try relaxing it or widening the area.",
+        "STEP_PIN_UNAVAILABLE": "We couldn't verify the place you picked. Please choose another place.",
+        "PLACE_SEARCH_TIMEOUT": "Place search took too long. Please try again shortly.",
+        "PLACE_SEARCH_RATE_LIMITED": "Place search is busy. Please try again shortly.",
+        "AUTH_EXPIRED": "Your sign-in expired. Sign in again and retry.",
+        "AI_TIMEOUT": "Recommendation generation took too long. Please try again.",
+        "AI_INVALID_RESPONSE": "We couldn't validate the recommendation. Please retry.",
+        "COURSE_VALIDATION_FAILED": "We couldn't make one course that satisfies those conditions together. Try adjusting them.",
+        "LOCATION_REQUIRED": "Select the starting location again.",
+        "INVALID_INPUT": "Check the conditions you entered.",
+        "NETWORK_ERROR": "Check your network connection and try again.",
+        "UNKNOWN": "Something went wrong while creating the course."
+      },
+      "courseFailureStages": {
+        "course_build": "We could not assemble distinct places for these conditions. Try adjusting the area or course steps.",
+        "response_schema": "We could not verify the generated course format. Please try again.",
+        "request_response_validation": "The generated course does not match the selected conditions. Try adjusting them.",
+        "stage_attestation": "We had trouble safely saving the generated course. Please try again shortly."
+      },
+      "courseEdit": "Edit course preferences",
+      "defaultError": "Something went wrong while creating recommendations.",
+      "errorTitle": "Something went wrong",
+      "errorSuffix": "We'll try again.",
+      "relaxation": {
+        "title": "No exact match for that condition",
+        "body": "We couldn't find a place that meets your ‘{{conditions}}’ condition nearby. Relax it and we'll look for similar spots.",
+        "relaxButton": "Relax the condition and search again",
+        "editButton": "Edit conditions myself"
+      }
+    },
+    "result": {
+      "coupleRequired": "Connect with your partner first.",
+      "sendErrorTitle": "Error",
+      "sendError": "Something went wrong while sending.",
+      "saveError": "Something went wrong while saving.",
+      "errorTitle": "Something went wrong",
+      "errorSub": "Something went wrong while creating recommendations.\nWe'll try again.",
+      "retry": "Try again",
+      "aiBadge": "AI pick",
+      "nowBadge": "Just now",
+      "heading": "These date ideas\nlook right for today",
+      "sub": "Save them to react and comment from Our Ideas.",
+      "bestBadge": "Best fit",
+      "time": "Time",
+      "budget": "Budget",
+      "movement": "Travel",
+      "walk": "Walk",
+      "send": "Send to partner",
+      "save": "Save",
+      "goCandidates": "View idea list →",
+      "retryRecommend": "Recommend again"
+    },
+    "courseResult": {
+      "coupleRequired": "Connect with your partner first.",
+      "sendErrorTitle": "Error",
+      "sendError": "Something went wrong while sending.",
+      "saveError": "Something went wrong while saving.",
+      "errorTitle": "Something went wrong",
+      "loadError": "We couldn't load this saved course. Check the link or try again.",
+      "loading": "Loading your saved course…",
+      "back": "Go back",
+      "retry": "Try again",
+      "badge": "AI course",
+      "heading": "How about this course?",
+      "sub": "Tap the conditions to review them, and tap a place to adjust it.",
+      "stepIntents": {
+        "title": "Your request",
+        "excludedSuffix": "excluded",
+        "unsupported": "‘{{term}}’ couldn't be applied to this course"
+      },
+      "conditions": "View applied conditions",
+      "editError": "We couldn't save this course change. Please try again.",
+      "confirm": "Confirm",
+      "regenerate": "Regenerate",
+      "confirmFirst": "Confirm this course before sharing it.",
+      "replace": "Replace this step",
+      "lock": "Lock this place",
+      "unlock": "Unlock",
+      "viewDetails": "Place details & external checks",
+      "detailNotice": "Check reviews and operating information directly with the external service. Date Navi does not store or verify third-party review content.",
+      "replacementTitle": "Replacement options",
+      "replacementNotice": "The top three appear first. Check reviews and maps directly with the external service.",
+      "replacementClose": "Close",
+      "replacementEmpty": "No other replacement options are available.",
+      "recommendTab": "Suggestions",
+      "searchTab": "Search",
+      "searchCta": "Search a place",
+      "searchHint": "Find a specific place for this step",
+      "topPick": "TOP PICK",
+      "naverReviews": "View on Naver Map",
+      "kakaoMap": "Open Kakao Map",
+      "pick": "Choose",
+      "delete": "Delete",
+      "deleteMin": "At least two steps",
+      "add": "Add place",
+      "additionalStep": "Additional place",
+      "send": "Send to partner",
+      "save": "Save",
+      "savedMessage": "Course saved!"
+    },
+    "bucketlist": {
+      "empty": "Enter an idea first",
+      "loginRequired": "Please log in first",
+      "coupleRequired": "Connect with your partner first.",
+      "savedTitle": "Saved!",
+      "savedBody": "You can find it under \"Next time\" in Our Ideas.",
+      "saveError": "Something went wrong while saving. Please try again.",
+      "modeLabel": "Next time",
+      "title": "What do you want to do\nnext time you meet?",
+      "sub": "Places, activities, or vibes all work.\nWrite any idea that comes to mind.",
+      "label": "Idea",
+      "placeholder": "Ex) Night drive, ocean-view cafe, a relaxed weekend trip...",
+      "tipTitle": "💡 Try ideas like these",
+      "tipText": "· Brunch at an ocean-view cafe\n· Go for a night drive\n· Spend the day at a theme park\n· A small camping trip just for us",
+      "save": "Save to bucket list"
+    },
+    "placeSearch": {
+      "title": "Search places",
+      "placeholder": "Search by name",
+      "empty": "No results",
+      "error": "Search failed. Please try again",
+      "pick": "Select",
+      "back": "Back"
+    }
+  }
+}

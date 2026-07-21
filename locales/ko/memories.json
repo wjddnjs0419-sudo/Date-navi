@@ -1,0 +1,35 @@
+{
+  "memories": {
+    "title": "추억",
+    "subtitle": "완료한 데이트를 모아봤어요",
+    "loading": "추억을 불러오는 중...",
+    "emptyTitle": "아직 완료한 데이트가 없어요",
+    "emptySubtitle": "데이트 후보 카드에서\n\"이 데이트 완료했어요\"를 눌러보세요",
+    "wantAgainYes": "또 가고 싶어요",
+    "wantAgainNo": "한 번이면 충분",
+    "modeLabels": {
+      "pick_for_me": "앱이 골라줘",
+      "feeling_only": "느낌만 말할게",
+      "make_course": "코스로 정리해줘",
+      "soft_message": "부드럽게 말해줘",
+      "light_date": "가볍게",
+      "special_date": "특별하게",
+      "next_time": "다음 만남",
+      "low_risk": "실패 확률 낮게"
+    },
+    "pageTitle": "우리 추억",
+    "countText": "지금까지 함께한 데이트 {{count}}개",
+    "deleteAlertTitle": "추억 삭제",
+    "deleteAlertMessage": "이 추억을 삭제할까요? 되돌릴 수 없어요.",
+    "deleteAlertError": "삭제 중 문제가 발생했어요.",
+    "deleteAlertForbidden": "본인이 남긴 추억만 삭제할 수 있어요.",
+    "emptyStateTitle": "아직 추억이 없어요",
+    "emptyStateSub": "데이트를 확정하고 후기를 남기면\n여기에 쌓여요.",
+    "statDaysTogether": "함께한 날",
+    "statWantAgain": "다시 하고싶어",
+    "statThisMonth": "이번 달",
+    "recentBadge": "최근 추억",
+    "wantAgainBadge": "다시 하고 싶어",
+    "untitled": "추억"
+  }
+}

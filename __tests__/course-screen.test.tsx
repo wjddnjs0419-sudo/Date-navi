@@ -91,8 +91,8 @@ describe('structured course screen', () => {
   });
 
   it('keeps every course string and accessibility label in ko/en parity', () => {
-    const ko = JSON.parse(readFileSync(join(__dirname, '../locales/ko.json'), 'utf8')).course;
-    const en = JSON.parse(readFileSync(join(__dirname, '../locales/en.json'), 'utf8')).course;
+    const ko = JSON.parse(readFileSync(join(__dirname, '../locales/ko/course.json'), 'utf8')).course;
+    const en = JSON.parse(readFileSync(join(__dirname, '../locales/en/course.json'), 'utf8')).course;
 
     expect(nestedKeys(ko).sort()).toEqual(nestedKeys(en).sort());
     expect(nestedKeys(ko)).toEqual(expect.arrayContaining([

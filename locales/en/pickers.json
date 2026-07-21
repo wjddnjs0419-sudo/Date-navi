@@ -1,0 +1,23 @@
+{
+  "pickers": {
+    "dateFallback": "Select date",
+    "done": "Done",
+    "cancel": "Cancel",
+    "am": "AM",
+    "pm": "PM",
+    "month": "{{month}}",
+    "day": "{{day}}",
+    "hour": "{{hour}}",
+    "minute": "{{minute}} min",
+    "dateLabel": "{{month}}/{{day}} ({{weekday}})",
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "onboarding": {
+    "nickname": {
+      "empty": "닉네임을 입력해주세요.",
+      "noUser": "로그인 정보를 찾을 수 없어요.",
+      "saveError": "저장 중 오류가 발생했어요.",
+      "title": "어떻게 불러드릴까요?",
+      "sub": "닉네임은 언제든 바꿀 수 있어요.",
+      "label": "닉네임",
+      "placeholder": "닉네임을 입력해주세요",
+      "hint": "한글·영문·숫자 12자 이내로 입력해주세요.",
+      "saving": "저장 중...",
+      "next": "다음"
+    },
+    "photo": {
+      "initial": "나",
+      "pickTitle": "사진 선택",
+      "pickBody": "갤러리에서 사진을 선택하는 기능은 곧 추가될 예정이에요.",
+      "title": "프로필 사진을\n골라주세요",
+      "sub": "지금 건너뛰어도 괜찮아요.",
+      "change": "사진 변경하기",
+      "hint": "연인에게도 이 사진이 보여요.",
+      "next": "다음"
+    },
+    "type": {
+      "title": "데이트 계획,\n보통 어떻게 하세요?",
+      "sub": "유형을 정하는 게 아니라, 첫 추천을 더 잘 맞추기 위한 힌트예요.",
+      "start": "시작하기",
+      "options": {
+        "planner": "자주 계획하는 편이에요",
+        "together": "같이 정하는 편이에요",
+        "chooser": "고르는 건 괜찮지만 계획은 어려워요",
+        "shy": "의견을 말하기가 조금 어려워요",
+        "flexible": "그때그때 달라요"
+      }
+    },
+    "coupleChoice": {
+      "title": "연인과 연결할까요?",
+      "subtitle": "지금 연결하면 서로의 취향으로 추천이 더 잘 맞아요. 나중에 해도 괜찮아요.",
+      "nowTitle": "지금 연결하기",
+      "nowDesc": "코드를 공유하고 바로 함께 시작해요",
+      "laterTitle": "나중에 할게요",
+      "laterDesc": "혼자 먼저 둘러볼래요"
+    },
+    "anniversary": {
+      "heading": "사귀기 시작한 날을\n알려주세요",
+      "subtitle": "기념일 알림과 추억 정리에 사용돼요.",
+      "daysCountText": "오늘로 {{days}}일째",
+      "daysHint": "100일·200일·1주년 같은 날에 살짝 알려드릴게요.",
+      "skipCta": "나중에 입력할게요"
+    },
+    "connected": {
+      "heading": "이제 둘이 함께\n정할 수 있어요",
+      "subtitle": "완벽한 계획이 아니어도 괜찮아요.\n끌리는 마음만 남겨주세요.",
+      "ctaText": "우리 취향 알아보기"
+    },
+    "preferences": {
+      "stepTitles": {
+        "1": "데이트할 때 더 끌리는 건?",
+        "2": "요즘 데이트에서 원하는 건?",
+        "3": "이런 건 조금 부담스러워요",
+        "4": "장거리 커플인가요?"
+      },
+      "preferredOptions": {
+        "restaurant": "맛집",
+        "cafe": "카페",
+        "walk": "산책",
+        "home": "집데이트",
+        "culture": "전시 / 문화",
+        "activity": "액티비티"
+      },
+      "avoidOptions": {
+        "far": "먼 이동",
+        "expensive": "큰 지출",
+        "crowded": "사람 많은 곳",
+        "long_walk": "오래 걷기",
+        "complex_reservation": "예약 복잡한 곳",
+        "late_night": "늦은 시간"
+      },
+      "moodOptions": {
+        "rest": "편하게 쉬기",
+        "laugh": "많이 웃기",
+        "quiet": "조용히 대화",
+        "new": "새로운 경험",
+        "photo": "사진 남기기",
+        "special": "특별한 하루"
+      },
+      "longDistanceOptions": {
+        "yes": "네, 자주 떨어져 있어요",
+        "no": "아니요, 자주 만나요",
+        "sometimes": "상황에 따라 달라요"
+      },
+      "multiSelectHint": "여러 개 골라도 괜찮아요",
+      "avoidInfoNote": "상대에게 바로 공유되는 정보가 아니에요. 추천을 더 편하게 만들기 위한 정보예요.",
+      "finishCta": "첫 추천 받아보기",
+      "saveError": "저장 중 오류가 발생했어요."
+    }
+  }
+}

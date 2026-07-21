@@ -1,0 +1,12 @@
+{
+  "nickname": {
+    "title": "What should we call you?",
+    "subtitle": "Choose the nickname your partner will see.",
+    "placeholder": "Nickname",
+    "next": "Next",
+    "saving": "Saving...",
+    "alertEmpty": "Please enter a nickname.",
+    "alertNoUser": "Could not find your login session.",
+    "alertError": "Something went wrong."
+  }
+}
