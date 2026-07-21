@@ -35,7 +35,7 @@ function SuccessMascot() {
 
   return (
     <Animated.View style={[anim.wrap, { opacity, transform: [{ scale }] }]}>
-      <Illustration name="mascot-heart-couple-check" width={200} />
+      <Illustration name="mascot-heart-couple-check" width={260} />
     </Animated.View>
   );
 }
@@ -44,22 +44,24 @@ export default function CoupleConnectedScreen() {
   const router = useRouter();
   const { t } = useI18n();
   return (
-    <SafeAreaView style={s.safe}>
+    <View style={s.root}>
       <Illustration name="bg-park" style={s.bgPark} />
-      <View style={s.container}>
-        <View style={s.content}>
-          <SuccessMascot />
-          <Text style={s.heading}>{t('onboarding.connected.heading')}</Text>
-          <Text style={s.sub}>{t('onboarding.connected.subtitle')}</Text>
-        </View>
+      <SafeAreaView style={s.safe}>
+        <View style={s.container}>
+          <View style={s.content}>
+            <SuccessMascot />
+            <Text style={s.heading}>{t('onboarding.connected.heading')}</Text>
+            <Text style={s.sub}>{t('onboarding.connected.subtitle')}</Text>
+          </View>
 
-        <View style={s.footer}>
-          <BigButton onPress={() => router.replace('/onboarding/preferences' as any)}>
-            {t('onboarding.connected.ctaText')}
-          </BigButton>
+          <View style={s.footer}>
+            <BigButton onPress={() => router.replace('/onboarding/preferences' as any)}>
+              {t('onboarding.connected.ctaText')}
+            </BigButton>
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -68,8 +70,11 @@ const anim = StyleSheet.create({
 });
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgSplash },
+  root: { flex: 1, backgroundColor: C.bgSplash },
+  safe: { flex: 1 },
   bgPark: {
+    // root(SafeAreaView 밖)에 그려서 홈 인디케이터 영역까지 완전히 붙게 한다 —
+    // SafeAreaView 안에 있으면 bottom:0이 세이프에어리어 안쪽에서 끊겨 틈이 생긴다.
     position: 'absolute',
     left: 0,
     right: 0,
