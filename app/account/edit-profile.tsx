@@ -294,7 +294,7 @@ const s = StyleSheet.create({
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 55,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(40,30,25,0.4)',
     alignItems: 'center', justifyContent: 'center',
   },
   avatarCamera: {
