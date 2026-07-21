@@ -45,7 +45,7 @@ export default function CoupleConnectedScreen() {
   const { t } = useI18n();
   return (
     <View style={s.root}>
-      <Illustration name="bg-park" style={s.bgPark} />
+      <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
       <SafeAreaView style={s.safe}>
         <View style={s.container}>
           <View style={s.content}>
@@ -75,11 +75,12 @@ const s = StyleSheet.create({
   bgPark: {
     // root(SafeAreaView 밖)에 그려서 홈 인디케이터 영역까지 완전히 붙게 한다 —
     // SafeAreaView 안에 있으면 bottom:0이 세이프에어리어 안쪽에서 끊겨 틈이 생긴다.
+    // height를 고정하고 resizeMode="cover"를 써서 aspectRatio 계산에 기대지 않고
+    // 무조건 이 박스를 꽉 채운다 — 그래야 버튼 아래 진짜 화면 끝까지 빈틈이 안 생긴다.
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    width: '100%',
   },
   container: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center' },

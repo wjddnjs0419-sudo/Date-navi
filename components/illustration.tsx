@@ -1,4 +1,4 @@
-import { Image, type StyleProp, type ImageStyle } from 'react-native';
+import { Image, type StyleProp, type ImageStyle, type ImageResizeMode } from 'react-native';
 
 const SOURCES = {
   'date-course-map-horizontal': require('../assets/illustrations/date-course-map-horizontal.png'),
@@ -14,12 +14,13 @@ const SOURCES = {
 export type IllustrationName = keyof typeof SOURCES;
 
 export function Illustration({
-  name, width, height, style,
+  name, width, height, style, resizeMode = 'contain',
 }: {
   name: IllustrationName;
   width?: number;
   height?: number;
   style?: StyleProp<ImageStyle>;
+  resizeMode?: ImageResizeMode;
 }) {
   const source = SOURCES[name];
   const meta = Image.resolveAssetSource(source);
@@ -33,7 +34,7 @@ export function Illustration({
       source={source}
       accessible
       accessibilityRole="image"
-      resizeMode="contain"
+      resizeMode={resizeMode}
       style={[sizeStyle, style]}
     />
   );

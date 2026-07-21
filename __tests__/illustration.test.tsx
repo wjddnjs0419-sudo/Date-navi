@@ -23,4 +23,13 @@ describe('Illustration', () => {
     const flat = Array.isArray(img.props.style) ? Object.assign({}, ...img.props.style) : img.props.style;
     expect(flat.height).toBe(120);
   });
+
+  it('defaults resizeMode to contain but allows overriding to cover for full-bleed backgrounds', () => {
+    let tree!: ReturnType<typeof create>;
+    act(() => { tree = create(<Illustration name="bg-park" />); });
+    expect(tree.root.findByType(Image).props.resizeMode).toBe('contain');
+
+    act(() => { tree = create(<Illustration name="bg-park" resizeMode="cover" />); });
+    expect(tree.root.findByType(Image).props.resizeMode).toBe('cover');
+  });
 });
