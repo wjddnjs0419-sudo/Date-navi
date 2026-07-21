@@ -13,16 +13,13 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
       expect(source).not.toContain('/mode-flow/feeling');
     });
 
-    it('활성 모드 목록(ENABLED_DATE_MODE_IDS)만 렌더한다', () => {
-      expect(source).toContain('ENABLED_DATE_MODE_IDS');
+    it('새 코스 CTA는 활성 모드(make_course) 라우트로 연결한다', () => {
+      expect(source).toContain('DATE_MODE_ROUTES.make_course');
     });
 
-    it('모드 카드가 1개면 페이지 dots를 숨긴다', () => {
-      expect(source).toMatch(/MODES\.length > 1 &&[\s\S]{0,200}s\.dots/);
-    });
-
-    it('모드 카드가 1개면 전체보기 링크를 숨긴다', () => {
-      expect(source).toMatch(/MODES\.length > 1 &&[\s\S]{0,300}\/\(tabs\)\/mode/);
+    it('비활성 모드(next_meet)로 직접 라우팅하지 않는다', () => {
+      expect(source).not.toContain('DATE_MODE_ROUTES.next_meet');
+      expect(source).not.toContain('/mode-flow/bucketlist');
     });
   });
 
@@ -112,25 +109,6 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
       expect(en.tabs.softMessage).toBeUndefined();
       expect(ko.softMessage).toBeUndefined();
       expect(en.softMessage).toBeUndefined();
-    });
-  });
-
-  describe('홈 단일 모드 카드 (커플 이미지 + 정렬)', () => {
-    const source = read('app/(tabs)/index.tsx');
-
-    it('커플 이미지 에셋을 사용한다', () => {
-      expect(source).toContain("require('../../assets/images/couple-card.jpg')");
-    });
-
-    it('단일 모드면 가로 스크롤 대신 좌우 여백이 동일한 전폭 카드를 렌더한다', () => {
-      expect(source).toMatch(/MODES\.length > 1 \?/);
-      expect(source).toContain('singleModeCard');
-    });
-
-    it('이미지 높이는 aspectRatio가 아니라 화면 폭 기반 명시적 숫자로 계산한다 (RN aspectRatio 무시 버그 회피)', () => {
-      expect(source).not.toContain('aspectRatio:');
-      expect(source).toMatch(/SINGLE_MODE_IMAGE_HEIGHT\s*=\s*Math\.round\(\(SCREEN_W - 40\) \/ SINGLE_MODE_IMAGE_RATIO\)/);
-      expect(source).toContain('height: SINGLE_MODE_IMAGE_HEIGHT');
     });
   });
 });

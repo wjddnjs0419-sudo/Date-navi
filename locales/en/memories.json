@@ -1,7 +1,7 @@
 {
   "memories": {
     "title": "Memories",
-    "subtitle": "Dates you have already done together",
+    "subtitle": "Your moments together are adding up",
     "loading": "Loading memories...",
     "emptyTitle": "No completed dates yet",
     "emptySubtitle": "Open a date card and tap\n\"Completed this date\"",
@@ -29,7 +29,11 @@
     "statWantAgain": "Want again",
     "statThisMonth": "This month",
     "recentBadge": "Recent memory",
+    "todayBadge": "Today's memory",
     "wantAgainBadge": "Want to again",
+    "bannerTitle": "Capture more special moments",
+    "bannerSub": "Record memories with photos and notes",
+    "recordCta": "Add a memory",
     "untitled": "Memory"
   }
 }

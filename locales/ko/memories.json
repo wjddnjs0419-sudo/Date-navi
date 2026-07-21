@@ -1,7 +1,7 @@
 {
   "memories": {
     "title": "추억",
-    "subtitle": "완료한 데이트를 모아봤어요",
+    "subtitle": "함께한 순간들이 쌓여가고 있어요",
     "loading": "추억을 불러오는 중...",
     "emptyTitle": "아직 완료한 데이트가 없어요",
     "emptySubtitle": "데이트 후보 카드에서\n\"이 데이트 완료했어요\"를 눌러보세요",
@@ -29,7 +29,11 @@
     "statWantAgain": "다시 하고싶어",
     "statThisMonth": "이번 달",
     "recentBadge": "최근 추억",
+    "todayBadge": "오늘의 추억",
     "wantAgainBadge": "다시 하고 싶어",
+    "bannerTitle": "특별한 순간을 더 남겨보세요",
+    "bannerSub": "사진과 메모로 추억을 기록해요",
+    "recordCta": "추억 남기기",
     "untitled": "추억"
   }
 }

@@ -16,6 +16,6 @@ describe('i18n split barrel', () => {
   });
   it('preserves a known deep key', () => {
     expect(typeof (ko as any).auth).toBe('object');
-    expect(typeof (ko as any).home.greeting).toBe('string');
+    expect(typeof (ko as any).home.greetingLine1).toBe('string');
   });
 });
