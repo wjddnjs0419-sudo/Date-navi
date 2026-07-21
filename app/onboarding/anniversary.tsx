@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots, SoftCard } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { DateWheelPicker, parseIsoDate } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
 
@@ -83,11 +84,14 @@ export default function AnniversaryScreen() {
 
         {days >= 0 && (
           <SoftCard style={s.daysCard}>
-            <View style={s.daysRow}>
-              <Heart size={14} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
-              <Text style={s.daysText}>{t('onboarding.anniversary.daysCountText', { days })}</Text>
+            <Illustration name="mascot-heart-single" width={64} style={s.daysMascot} />
+            <View style={s.daysBody}>
+              <View style={s.daysRow}>
+                <Heart size={14} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
+                <Text style={s.daysText}>{t('onboarding.anniversary.daysCountText', { days })}</Text>
+              </View>
+              <Text style={s.daysHint}>{t('onboarding.anniversary.daysHint')}</Text>
             </View>
-            <Text style={s.daysHint}>{t('onboarding.anniversary.daysHint')}</Text>
           </SoftCard>
         )}
 
@@ -116,12 +120,17 @@ const s = StyleSheet.create({
   dateRow: { marginTop: 24 },
   daysCard: {
     marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: C.cream,
     borderColor: '#F2DDB0',
   },
+  daysMascot: { flexShrink: 0 },
+  daysBody: { flex: 1 },
   daysRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  daysText: { fontSize: 12, color: C.creamFg, fontWeight: '600' },
-  daysHint: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: 8 },
+  daysText: { fontSize: 13, color: C.creamFg, fontWeight: '700' },
+  daysHint: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: 6 },
   footer: { gap: 12 },
   skipBtn: { alignItems: 'center', paddingVertical: 8 },
   skipText: { fontSize: 12, color: C.textMuted },

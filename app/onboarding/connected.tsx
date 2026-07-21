@@ -1,57 +1,42 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Heart } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { SP } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { useI18n } from '../../lib/i18n';
 
-function ConnectAnimation() {
-  const { t } = useI18n();
-  const leftX = useRef(new Animated.Value(-120)).current;
-  const rightX = useRef(new Animated.Value(120)).current;
-  const heartScale = useRef(new Animated.Value(0)).current;
-  const heartOpacity = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
+// 연결 성공 화면. 커플 체크 마스코트 일러스트가 살짝 커지며 나타난다.
+// useNativeDriver:false — 테스트 환경(react-test-renderer)의 NativeAnimated 크래시 회피.
+function SuccessMascot() {
+  const scale = useRef(new Animated.Value(0.7)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.spring(leftX, { toValue: -34, useNativeDriver: true, tension: 60, friction: 9 }),
-        Animated.spring(rightX, { toValue: 34, useNativeDriver: true, tension: 60, friction: 9 }),
-      ]),
-      Animated.parallel([
-        Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, tension: 60, friction: 7 }),
-        Animated.timing(heartOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]),
-    ]).start(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulse, { toValue: 1.06, duration: 700, useNativeDriver: true }),
-          Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        ]),
-      ).start();
-    });
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((on) => { if (mounted) setReduceMotion(on); });
+    return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (reduceMotion) {
+      scale.setValue(1);
+      opacity.setValue(1);
+      return;
+    }
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, useNativeDriver: false, tension: 60, friction: 7 }),
+      Animated.timing(opacity, { toValue: 1, duration: 320, useNativeDriver: false }),
+    ]).start();
+  }, [scale, opacity, reduceMotion]);
+
   return (
-    <View style={anim.container}>
-      <Animated.View style={[
-        anim.heartBg,
-        { opacity: heartOpacity, transform: [{ scale: Animated.multiply(heartScale, pulse) }] },
-      ]}>
-        <Heart size={220} color={C.pink} fill={C.pink} strokeWidth={0} />
-      </Animated.View>
-
-      <Animated.View style={[anim.avatar, { transform: [{ translateX: leftX }] }]}>
-        <Text style={anim.avatarInitial}>{t('card.memory.meFallback')}</Text>
-      </Animated.View>
-
-      <Animated.View style={[anim.avatar, anim.avatarB, { transform: [{ translateX: rightX }] }]}>
-        <Text style={anim.avatarInitial}>💕</Text>
-      </Animated.View>
-    </View>
+    <Animated.View style={[anim.wrap, { opacity, transform: [{ scale }] }]}>
+      <Illustration name="mascot-heart-couple-check" width={200} />
+    </Animated.View>
   );
 }
 
@@ -60,13 +45,12 @@ export default function CoupleConnectedScreen() {
   const { t } = useI18n();
   return (
     <SafeAreaView style={s.safe}>
+      <Illustration name="bg-park" style={s.bgPark} />
       <View style={s.container}>
         <View style={s.content}>
-          <ConnectAnimation />
+          <SuccessMascot />
           <Text style={s.heading}>{t('onboarding.connected.heading')}</Text>
-          <Text style={s.sub}>
-            {t('onboarding.connected.subtitle')}
-          </Text>
+          <Text style={s.sub}>{t('onboarding.connected.subtitle')}</Text>
         </View>
 
         <View style={s.footer}>
@@ -80,40 +64,18 @@ export default function CoupleConnectedScreen() {
 }
 
 const anim = StyleSheet.create({
-  container: {
-    width: 280,
-    height: 240,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heartBg: {
-    position: 'absolute',
-  },
-  avatar: {
-    position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: C.pinkLight,
-    borderWidth: 4,
-    borderColor: C.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: C.pinkDeep,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 6,
-    zIndex: 10,
-  },
-  avatarB: {
-    backgroundColor: '#FFE0B2',
-  },
-  avatarInitial: { fontSize: 32, fontWeight: '700', color: C.pinkDeep },
+  wrap: { alignItems: 'center', justifyContent: 'center', marginBottom: SP.xl },
 });
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgSplash },
+  bgPark: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+  },
   container: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, textAlign: 'center', marginTop: 8 },
