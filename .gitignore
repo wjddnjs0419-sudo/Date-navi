@@ -50,3 +50,7 @@ supabase/migrations_backup_*/
 
 # 스크린샷 원본(재캡처 가능) — flow-map.html만 추적
 docs/screenshots/**/*.png
+docs/screenshots/**/*.zip
+
+# UI 전면 교체 참고 목업(GPT 생성, 24M) — 로컬 참고용, 리포 제외
+UI RENEW/

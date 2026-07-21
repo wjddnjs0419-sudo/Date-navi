@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-21 세션 BD — UI 전면 교체 착수 준비 (목업 감사 + 일러스트 asset 생성)
+
+> 요청: 앱 UI 전격 교체. GPT로 만든 목업 50화면 수령(`UI RENEW/`) → 각 화면에 넣을 asset 추출. **이번 세션은 준비만, 코드 UI 교체는 다음 세션.**
+
+### 목업 감사 (50화면 전수 확인)
+- 5개 폴더 50 PNG 분류. **실제 일러스트 asset 필요 = ~13화면**, 나머지 35+는 코드 + iOS 시스템 이모지(📅🕐📍🛍️📷)로 재현.
+- 핵심: 일러스트가 **재사용 패밀리로 뭉침** — 하트 마스코트 1종이 온보딩·연결·확정 다 돌려쓰고, 코스지도 1종이 login·생성·결과 다 돌려씀. → 50화면인데 실제 asset 8장이면 커버.
+
+### asset 생성 (Higgsfield `nano_banana_pro`, 2크레딧/장, 사용자 결제)
+- 스타일 기준 확정: **매트 클레이 질감 + 파스텔 핑크 2톤 + 볼터치**(광택 플라스틱 X). 목업이 화면마다 제각각이라 오히려 새 세트로 통일.
+- 텍스트는 이미지에 **안 구움**(i18n) — 라벨/워드마크는 코드로.
+- 결과 8장 → `assets/illustrations/` kebab-case:
+  - `date-course-map-horizontal`(login) · `date-course-map-vertical`(generating) · `home-map-book`(home) · `brand-pin-logo`(splash)
+  - `mascot-heart-single`(온보딩) · `mascot-heart-couple`(확정) · `mascot-heart-couple-check`(연결성공) · `bg-park`(온보딩 하단)
+- 폐기: 광택 v1 커플하트, 세계지도 v1 핀로고(→ 동네지도 v2로 교체).
+
+### 정리·커밋
+- `UI RENEW/`(24M 목업) + `docs/screenshots/*.zip` → `.gitignore` (로컬 참고용, 리포 제외).
+- `Design.md`(Airbnb 템플릿 → Date Navi 디자인 언어 재작성)는 **별도 커밋**으로 분리.
+
+### 다음 세션
+- login부터 UI 조립. 순서: 브레인스토밍(범위·우선순위) → 디자인 토큰 검증 → 공통 컴포넌트 → login → 나머지 화면.
+- 구현이므로 TDD + StyleSeed 게이트 적용.
+
 ## 2026-07-21 세션 BC — 전 화면 자동 스크린샷 + 한/영 유저 플로우 맵
 
 > 요청: 앱 모든 페이지·모달을 내가(직접 X) 캡처 → 유저 플로우 맵으로. 이어서 영어판, 최종 한/영 단일 토글본.
