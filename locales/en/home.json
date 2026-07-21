@@ -10,18 +10,26 @@
       "Friday",
       "Saturday"
     ],
-    "greeting": "How should we\ndecide today?",
-    "subtitle": "No need for a perfect plan — just go with what feels right.",
-    "connectBanner": "Connect with your partner to decide together",
-    "todayHelp": "Today's help",
-    "startCta": "Start",
+    "greetingLine1": "How should we",
+    "greetingLine2": "decide today?",
+    "subtitle": "No need for a perfect plan —\ntime together is enough.",
+    "newCourseTitle": "Plan a new date course",
+    "newCourseDesc": "Pick your style and preferences,\nand we'll suggest the perfect course.",
+    "aiBadge": "AI pick",
+    "coursePreview": {
+      "meal": "Meal",
+      "cafe": "Cafe",
+      "walk": "Walk"
+    },
+    "courseMeta": {
+      "area": "Around Seongsu",
+      "duration": "About 3 hrs",
+      "walk": "Within 10-min walk"
+    },
+    "courseStartCta": "Start building a course",
     "upcomingTitle": "Upcoming dates",
-    "dateUnset": "Date not set",
-    "mutualTitle": "A pick you both liked",
-    "partnerReactionsTitle": "Your partner's reaction",
-    "partnerReactionPrefix": "{{name}} left ",
-    "partnerReactionSuffix": "",
-    "createCta": "Create date options",
+    "prefTitle": "Tell us what you two love",
+    "prefSub": "It makes our picks more accurate!",
     "loadError": "Couldn't load your info. Please try again.",
     "accessibility": {
       "notifications": "Notifications",

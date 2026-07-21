@@ -5,10 +5,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Camera, Heart, Clock, Wallet, ChevronRight } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { Badge, Chip, SwipeableCard } from '../../components/ui';
+import { Camera, Heart, Calendar, ChevronRight } from 'lucide-react-native';
+import { C, SP, R, G } from '../../constants/theme';
+import { Badge, Chip, BigButton, SwipeableCard } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
+import { getCardStyle } from '../../lib/tagStyle';
 import { useI18n } from '../../lib/i18n';
 import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { resolveMemoryScope } from '../../lib/memories';
@@ -140,18 +141,34 @@ export default function MemoriesScreen() {
   }
 
   const wantAgainCount = items.filter(i => i.want_again).length;
+  const thisMonthCount = items.filter(i => {
+    const d = new Date(i.created_at);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  const stats = [
+    { label: t('memories.statDaysTogether'), value: relationshipDays !== null ? String(relationshipDays) : '—' },
+    { label: t('memories.statWantAgain'), value: String(wantAgainCount) },
+    { label: t('memories.statThisMonth'), value: String(thisMonthCount) },
+  ];
 
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
         {/* 헤더 */}
         <View style={s.header}>
-          <View>
+          <View style={s.flex1}>
             <Text style={s.pageTitle}>{t('memories.pageTitle')}</Text>
-            <Text style={s.countText}>{t('memories.countText', { count: items.length })}</Text>
+            <Text style={s.subtitle}>{t('memories.subtitle')}</Text>
           </View>
-          <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/card/memory/new')} activeOpacity={0.8}>
-            <Camera size={17} color={C.textSub} />
+          <TouchableOpacity
+            style={s.iconBtn}
+            onPress={() => router.push('/card/memory/new')}
+            activeOpacity={0.8}
+            accessibilityLabel={t('memories.recordCta')}
+          >
+            <Camera size={18} color={C.textSub} />
           </TouchableOpacity>
         </View>
 
@@ -166,6 +183,9 @@ export default function MemoriesScreen() {
             </View>
             <Text style={s.emptyTitle}>{t('memories.emptyStateTitle')}</Text>
             <Text style={s.emptySub}>{t('memories.emptyStateSub')}</Text>
+            <BigButton onPress={() => router.push('/card/memory/new')} style={s.emptyCta}>
+              {t('memories.recordCta')}
+            </BigButton>
           </View>
         ) : (
           <FlatList
@@ -174,112 +194,83 @@ export default function MemoriesScreen() {
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              <View>
-                {/* 통계 */}
-                <View style={s.statsRow}>
-                  {[
-                    { label: t('memories.statDaysTogether'), value: relationshipDays !== null ? String(relationshipDays) : '—' },
-                    { label: t('memories.statWantAgain'), value: String(wantAgainCount) },
-                    { label: t('memories.statThisMonth'), value: String(items.filter(i => {
-                      const d = new Date(i.created_at);
-                      const now = new Date();
-                      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                    }).length) },
-                  ].map((st) => (
+              <View style={s.statsCard}>
+                <View style={s.statsHeartTile}>
+                  <Heart size={22} color={C.pinkDeep} fill={C.pinkDeep} />
+                </View>
+                <View style={s.statsCols}>
+                  {stats.map((st) => (
                     <View key={st.label} style={s.statBox}>
                       <Text style={s.statValue}>{st.value}</Text>
                       <Text style={s.statLabel}>{st.label}</Text>
                     </View>
                   ))}
                 </View>
-                {/* "최근 추억" 섹션 레이블 */}
-                <View style={s.sectionLabelRow}>
-                  <Badge tone="pink">{t('memories.recentBadge')}</Badge>
-                </View>
+                <Illustration name="mascot-heart-couple" width={48} style={s.statsMascot} />
               </View>
             }
-            renderItem={({ item, index }) => (
-              <SwipeableCard
-                onPress={() => router.push({ pathname: '/card/memory/[id]', params: { id: item.id } } as any)}
-                onEdit={() => router.push({ pathname: '/card/memory/edit/[id]', params: { id: item.id } } as any)}
-                onDelete={() => confirmDeleteMemory(item.id)}
+            ListFooterComponent={
+              <TouchableOpacity
+                style={s.banner}
+                onPress={() => router.push('/card/memory/new')}
+                activeOpacity={0.9}
               >
-              <View style={[s.card, index === 0 && s.featuredCard]}>
-                {index === 0 ? (
-                  /* 최근 추억 — 큰 카드 */
-                  <>
-                    <View style={s.featuredBanner}>
-                      {item.photo_url && (
-                        <Image source={{ uri: item.photo_url }} style={s.featuredPhoto} resizeMode="cover" />
-                      )}
-                      {!item.photo_url && (
-                        <View style={[s.featuredIcon, s.bgPinkLight]}>
-                          <Heart size={28} strokeWidth={1.5} color={C.pinkDeep} />
-                        </View>
-                      )}
-                      {item.want_again && (
-                        <View style={s.wantAgainBadge}>
-                          <Heart size={11} color={C.pinkDeep} fill={C.pinkDeep} />
-                          <Text style={s.wantAgainText}>{t('memories.wantAgainBadge')}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={s.featuredBody}>
-                      <Text style={s.featuredDate}>{formatDate(item.created_at)}</Text>
-                      <Text style={s.cardTitle}>{item.card_title}</Text>
-                      {item.review ? (
-                        <Text style={s.reviewText}>"{item.review}"</Text>
-                      ) : null}
-                      {(item.card_time || item.card_budget) ? (
-                        <View style={s.metaRow}>
-                          {item.card_time ? (
-                            <View style={s.metaItem}>
-                              <Clock size={11} color={C.textSub} />
-                              <Text style={s.metaText}>{item.card_time}</Text>
-                            </View>
-                          ) : null}
-                          {item.card_budget ? (
-                            <View style={s.metaItem}>
-                              <Wallet size={11} color={C.textSub} />
-                              <Text style={s.metaText}>{item.card_budget}</Text>
-                            </View>
-                          ) : null}
-                        </View>
-                      ) : null}
-                      {item.card_tags.length > 0 ? (
-                        <View style={s.chipRow}>
-                          {item.card_tags.slice(0, 3).map((tag) => (
-                            <Chip key={tag} tone="gray">{tag}</Chip>
-                          ))}
-                        </View>
-                      ) : null}
-                    </View>
-                  </>
-                ) : (
-                  /* 나머지 추억 — 행 카드 */
-                  <View style={s.rowCard}>
+                <View style={s.bannerText}>
+                  <Text style={s.bannerTitle}>{t('memories.bannerTitle')}</Text>
+                  <Text style={s.bannerSub}>{t('memories.bannerSub')}</Text>
+                </View>
+                <View style={s.bannerCta}>
+                  <Text style={s.bannerCtaText}>{t('memories.recordCta')}</Text>
+                </View>
+              </TouchableOpacity>
+            }
+            renderItem={({ item, index }) => {
+              const { Icon, bg, fg } = getCardStyle(item.card_tags);
+              return (
+                <SwipeableCard
+                  onPress={() => router.push({ pathname: '/card/memory/[id]', params: { id: item.id } } as any)}
+                  onEdit={() => router.push({ pathname: '/card/memory/edit/[id]', params: { id: item.id } } as any)}
+                  onDelete={() => confirmDeleteMemory(item.id)}
+                >
+                  <View style={s.card}>
                     {item.photo_url ? (
-                      <Image source={{ uri: item.photo_url }} style={s.rowIcon} resizeMode="cover" />
+                      <Image source={{ uri: item.photo_url }} style={s.thumb} resizeMode="cover" />
                     ) : (
-                      <View style={[s.rowIcon, index % 2 === 0 ? s.bgPinkLight : s.bgMint]}>
-                        <Heart size={26} strokeWidth={1.5} color={index % 2 === 0 ? C.pinkDeep : C.mintFg} />
+                      <View style={[s.thumb, s.thumbTile, { backgroundColor: bg }]}>
+                        <Icon size={30} strokeWidth={1.7} color={fg} />
                       </View>
                     )}
-                    <View style={s.rowContent}>
-                      <View style={s.rowTitleRow}>
-                        <Text style={s.rowTitle}>{item.card_title}</Text>
-                        {item.want_again && (
-                          <Heart size={13} color={C.pinkDeep} fill={C.pinkDeep} />
-                        )}
+                    <View style={s.cardBody}>
+                      {index === 0 && (
+                        <View style={s.todayBadgeRow}>
+                          <Badge tone="pink">{t('memories.todayBadge')}</Badge>
+                        </View>
+                      )}
+                      <Text style={s.cardTitle} numberOfLines={1}>{item.card_title}</Text>
+                      <View style={s.dateRow}>
+                        <Calendar size={12} color={C.textSub} strokeWidth={2} />
+                        <Text style={s.dateText}>{formatDate(item.created_at)}</Text>
                       </View>
-                      <Text style={s.rowDate}>{formatDate(item.created_at)}</Text>
+                      {!!item.review && (
+                        <Text style={s.reviewText} numberOfLines={2}>“{item.review}”</Text>
+                      )}
+                      {item.card_tags.length > 0 && (
+                        <View style={s.chipRow}>
+                          {item.card_tags.slice(0, 3).map((tag) => (
+                            <Chip key={tag} tone="gray">{`#${tag}`}</Chip>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                    <ChevronRight size={16} color={C.textFaint} />
+                    <View style={s.heartWrap}>
+                      {item.want_again
+                        ? <Heart size={18} color={C.pinkDeep} fill={C.pinkDeep} />
+                        : <ChevronRight size={18} color={C.textFaint} strokeWidth={2} />}
+                    </View>
                   </View>
-                )}
-              </View>
-              </SwipeableCard>
-            )}
+                </SwipeableCard>
+              );
+            }}
           />
         )}
       </View>
@@ -290,101 +281,98 @@ export default function MemoriesScreen() {
 const s = StyleSheet.create({
   flex1: { flex: 1 },
   bgLavender: { backgroundColor: C.lavender },
-  bgPinkLight: { backgroundColor: C.pinkLight },
-  bgMint: { backgroundColor: C.mint },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: SP.xl,
+    paddingTop: SP.lg,
+    paddingBottom: SP.sm,
+    gap: SP.md,
   },
   pageTitle: { fontSize: 24, fontWeight: '800', color: C.text },
-  countText: { fontSize: 12, color: C.textMuted, marginTop: 2 },
+  subtitle: { fontSize: 13, color: C.textSub, marginTop: SP.xs },
   iconBtn: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: C.border,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: C.white,
-    borderRadius: 16,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  statValue: { fontSize: 18, fontWeight: '800', color: C.pinkDeep },
-  statLabel: { fontSize: 10, color: C.textSub, marginTop: 2 },
-  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
+
+  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: SP.xxl },
   emptyIcon: {
     width: 120, height: 120, borderRadius: 60,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl,
   },
   emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
-  list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, gap: 12 },
-  card: {
-    backgroundColor: C.white,
-    borderRadius: 24,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  featuredCard: {},
-  featuredBanner: {
-    height: 160,
-    backgroundColor: C.pinkMid,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  featuredPhoto: StyleSheet.absoluteFillObject,
-  featuredIcon: {
-    width: 64, height: 64, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  wantAgainBadge: {
+  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: SP.md },
+  emptyCta: { marginTop: SP.xxl },
+
+  list: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: 40, gap: SP.md },
+
+  statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: SP.md,
+    backgroundColor: C.pinkLight,
+    borderRadius: R.card,
+    paddingVertical: SP.lg,
+    paddingHorizontal: SP.lg,
+    marginBottom: SP.lg,
   },
-  wantAgainText: { fontSize: 10, color: C.pinkDeep, fontWeight: '600' },
-  sectionLabelRow: { marginBottom: 10 },
-  featuredBody: { padding: 16 },
-  featuredDate: { fontSize: 11, color: C.textMuted },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: C.text, marginTop: 4 },
-  reviewText: { fontSize: 13, color: C.grayFg, lineHeight: 20, marginTop: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 11, color: C.textSub },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  rowCard: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  rowTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  rowIcon: { width: 88, height: 80, alignItems: 'center', justifyContent: 'center', borderRadius: 0, marginLeft: -14, marginTop: -14, marginBottom: -14, marginRight: 14 },
-  rowContent: { flex: 1 },
-  rowTitle: { fontSize: 13, fontWeight: '700', color: C.text },
-  rowDate: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+  statsHeartTile: {
+    width: 48, height: 48, borderRadius: R.sm,
+    backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
+  },
+  statsCols: { flex: 1, flexDirection: 'row' },
+  statBox: { flex: 1 },
+  statValue: { fontSize: 20, fontWeight: '800', color: C.text },
+  statLabel: { fontSize: 10, color: C.textSub, marginTop: 2 },
+  statsMascot: { marginLeft: SP.xs },
+
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.md,
+    backgroundColor: C.white,
+    borderRadius: R.card,
+    padding: SP.md,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+  thumb: { width: 92, height: 92, borderRadius: R.sm },
+  thumbTile: { alignItems: 'center', justifyContent: 'center' },
+  cardBody: { flex: 1, minWidth: 0 },
+  todayBadgeRow: { flexDirection: 'row', marginBottom: SP.xs },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: SP.xs },
+  dateText: { fontSize: 12, color: C.textSub },
+  reviewText: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: SP.sm },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
+  heartWrap: { alignSelf: 'flex-start', paddingTop: SP.xs },
+
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.md,
+    backgroundColor: C.pinkLight,
+    borderRadius: R.card,
+    paddingVertical: SP.lg,
+    paddingHorizontal: SP.lg,
+    marginTop: SP.xs,
+  },
+  bannerText: { flex: 1 },
+  bannerTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
+  bannerSub: { fontSize: 12, color: C.textSub, marginTop: 2 },
+  bannerCta: {
+    backgroundColor: C.pink,
+    borderRadius: R.btn,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
+  },
+  bannerCtaText: { fontSize: 13, fontWeight: '700', color: C.white },
 });

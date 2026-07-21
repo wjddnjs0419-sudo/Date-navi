@@ -6,10 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Plus, Heart, Plane, Check } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { SoftCard, Chip, Badge, SwipeableCard } from '../../components/ui';
+import { Plus, Heart, Plane, Check, Sparkles } from 'lucide-react-native';
+import { C, SP, R, G } from '../../constants/theme';
+import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
@@ -44,12 +43,6 @@ export default function CandidatesScreen() {
     change_place: t('candidates.conditionLabels.change_place'),
     closer: t('candidates.conditionLabels.closer'),
     indoor: t('candidates.conditionLabels.indoor'),
-  };
-  const RX_LABEL: Record<ReactionType, string> = {
-    love: t('candidates.rxLabel.love'),
-    like: t('candidates.rxLabel.like'),
-    burden: t('candidates.rxLabel.burden'),
-    next_time: t('candidates.rxLabel.next_time'),
   };
   const FILTER_LABEL: Record<FilterTab, string> = {
     all: t('candidates.filterAll'),
@@ -294,6 +287,25 @@ export default function CandidatesScreen() {
     return 'all';
   }
 
+  // 카드의 실제 나/상대 반응을 하나의 친근한 상태 문구로 요약한다. (목업의 "서로 좋아요를 눌렀어요!")
+  function reactionStatus(c: CardWithReactions): { key: string; icon: 'spark' | 'heart'; color: string } {
+    const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
+    const me = c.myReaction, ptnr = c.partnerReaction;
+    if (me === 'next_time' || ptnr === 'next_time') return { key: 'statusNextTime', icon: 'heart', color: C.lavenderFg };
+    if (pos(me) && pos(ptnr)) return { key: 'statusMutual', icon: 'spark', color: C.pinkDeep };
+    if ((pos(me) && ptnr === 'burden') || (me === 'burden' && pos(ptnr))) return { key: 'statusConditional', icon: 'heart', color: C.creamFg };
+    if (pos(me)) return { key: 'statusMineOnly', icon: 'heart', color: C.pinkDeep };
+    if (pos(ptnr)) return { key: 'statusPartnerOnly', icon: 'heart', color: C.pinkDeep };
+    return { key: 'statusNone', icon: 'heart', color: C.textMuted };
+  }
+
+  // 필터 칩 옆 개수. all/bucket 외에는 classify 결과로 센다.
+  function filterCount(f: FilterTab): number {
+    if (f === 'all') return cards.length;
+    if (f === 'bucket') return bucketItems.length;
+    return cards.filter(c => classify(c) === f).length;
+  }
+
   const filtered = activeFilter === 'all'
     ? cards
     : cards.filter(c => classify(c) === activeFilter);
@@ -304,10 +316,18 @@ export default function CandidatesScreen() {
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           {/* 헤더 */}
           <View style={s.headerRow}>
-            <View>
+            <View style={s.flex1}>
               <Text style={s.pageTitle}>{t('candidates.pageTitle')}</Text>
               <Text style={s.countText}>{t('candidates.countText', { count: cards.length })}</Text>
             </View>
+            <TouchableOpacity
+              style={s.addPill}
+              onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}
+              activeOpacity={0.85}
+            >
+              <Plus size={16} color={C.pinkDeep} strokeWidth={2.4} />
+              <Text style={s.addPillText}>{t('candidates.fabAddCourse')}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* 필터 */}
@@ -324,7 +344,7 @@ export default function CandidatesScreen() {
                 tone={f === 'bucket' ? 'lavender' : 'pink'}
                 onPress={() => handleFilterChange(f)}
               >
-                {FILTER_LABEL[f]}
+                {`${FILTER_LABEL[f]}  ${filterCount(f)}`}
               </Chip>
             ))}
           </ScrollView>
@@ -372,6 +392,11 @@ export default function CandidatesScreen() {
                 <View style={s.cardList}>
                   {filtered.map((card) => {
                     const { Icon: IconComponent, bg, fg } = getCardStyle(card.tags);
+                    const bothLove = card.myReaction === 'love' && card.partnerReaction === 'love';
+                    const status = reactionStatus(card);
+                    const StatusIcon = status.icon === 'spark' ? Sparkles : Heart;
+                    const conditions = [card.myConditionTag, card.partnerConditionTag]
+                      .filter((c): c is ConditionTag => c != null);
                     return (
                       <SwipeableCard
                         key={card.id}
@@ -382,7 +407,7 @@ export default function CandidatesScreen() {
                       <SoftCard>
                         <View style={s.cardRow}>
                           <View style={[s.cardIcon, { backgroundColor: bg }]}>
-                            <IconComponent size={22} strokeWidth={1.8} color={fg} />
+                            <IconComponent size={24} strokeWidth={1.8} color={fg} />
                           </View>
                           <View style={s.flex1}>
                             <View style={s.cardTitleRow}>
@@ -391,34 +416,42 @@ export default function CandidatesScreen() {
                                 {card.source === 'manual' && (
                                   <Badge tone="lavender">{t('candidates.addManual')}</Badge>
                                 )}
-                                <Badge tone={card.myReaction === 'love' && card.partnerReaction === 'love' ? 'pink' : 'gray'}>
-                                  {card.myReaction === 'love' && card.partnerReaction === 'love' ? t('candidates.thisDateBadge') : t('candidates.candidateBadge')}
+                                <Badge tone={bothLove ? 'pink' : 'gray'}>
+                                  {bothLove ? t('candidates.thisDateBadge') : t('candidates.candidateBadge')}
                                 </Badge>
                               </View>
                             </View>
                             <View style={s.chips}>
-                              {(card.tags ?? []).slice(0, 2).map((tag, tagIndex) => (
+                              {(card.tags ?? []).slice(0, 3).map((tag, tagIndex) => (
                                 <Chip key={`${card.id}-${tag}-${tagIndex}`} tone="gray">{tag}</Chip>
                               ))}
                             </View>
                           </View>
                         </View>
-                        <View style={s.rxRow}>
-                          <View style={s.rxBox}>
-                            <Text style={s.rxLabel}>{t('candidates.me')}</Text>
-                            <Text style={s.rxValue}>{card.myReaction ? RX_LABEL[card.myReaction] : t('candidates.noReaction')}</Text>
-                            {card.myConditionTag && (
-                              <Text style={s.rxCondition}>{CONDITION_LABEL[card.myConditionTag]}</Text>
-                            )}
+
+                        {!!card.summary && (
+                          <Text style={s.cardSummary} numberOfLines={2}>{card.summary}</Text>
+                        )}
+
+                        {!!card.estimated_time && (
+                          <View style={s.metaWrap}>
+                            <MetaChipRow items={[{ icon: 'clock', label: card.estimated_time }]} />
                           </View>
-                          <View style={s.rxBox}>
-                            <Text style={s.rxLabel}>{t('candidates.partner')}</Text>
-                            <Text style={s.rxValue}>{card.partnerReaction ? RX_LABEL[card.partnerReaction] : t('candidates.noReaction')}</Text>
-                            {card.partnerConditionTag && (
-                              <Text style={s.rxCondition}>{CONDITION_LABEL[card.partnerConditionTag]}</Text>
-                            )}
-                          </View>
+                        )}
+
+                        <View style={s.cardDivider} />
+
+                        <View style={s.statusRow}>
+                          <StatusIcon size={15} strokeWidth={2} color={status.color} />
+                          <Text style={[s.statusText, { color: status.color }]}>
+                            {t(`candidates.${status.key}`)}
+                          </Text>
                         </View>
+                        {conditions.length > 0 && (
+                          <Text style={s.conditionLine}>
+                            {conditions.map(c => CONDITION_LABEL[c]).join('  ·  ')}
+                          </Text>
+                        )}
                       </SoftCard>
                       </SwipeableCard>
                     );
@@ -431,16 +464,24 @@ export default function CandidatesScreen() {
           <View style={s.bottomSpacer} />
         </ScrollView>
 
-        {/* FAB */}
-        {activeFilter !== 'bucket' && (
-          <TouchableOpacity
-            style={s.fab}
-            onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}
-            activeOpacity={0.85}
-          >
-            <Plus size={16} color={C.white} />
-            <Text style={s.fabText}>{t('candidates.fabAddCourse')}</Text>
-          </TouchableOpacity>
+        {/* 하단 고정 코스 확정 배너 — '둘 다 끌림' 필터로 이동해 확정 후보를 모아 본다. */}
+        {activeFilter !== 'bucket' && !loading && cards.length > 0 && (
+          <View style={s.confirmBanner}>
+            <View style={s.confirmBannerIcon}>
+              <Heart size={20} color={C.white} fill={C.white} strokeWidth={0} />
+            </View>
+            <View style={s.flex1}>
+              <Text style={s.confirmBannerTitle}>{t('candidates.confirmBannerTitle')}</Text>
+              <Text style={s.confirmBannerSub} numberOfLines={1}>{t('candidates.confirmBannerSub')}</Text>
+            </View>
+            <TouchableOpacity
+              style={s.confirmBannerCta}
+              onPress={() => handleFilterChange('both')}
+              activeOpacity={0.85}
+            >
+              <Text style={s.confirmBannerCtaText}>{t('candidates.confirmBannerCta')}</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -592,20 +633,41 @@ const s = StyleSheet.create({
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   badgeRow: { flexDirection: 'row', gap: 4 },
   cardIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text, flex: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
-  rxRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  rxBox: { flex: 1, borderRadius: 10, padding: 8, backgroundColor: C.bg },
-  rxLabel: { fontSize: 10, color: C.textMuted },
-  rxValue: { fontSize: 11, color: C.text, fontWeight: '600', marginTop: 2 },
-  rxCondition: { fontSize: 10, color: C.lavenderFg, marginTop: 3, fontWeight: '500' },
-  fab: {
-    position: 'absolute', right: 20, bottom: 90,
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingLeft: 16, paddingRight: 20, paddingVertical: 12,
-    borderRadius: 30, backgroundColor: C.pink,
+  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, flex: 1, lineHeight: 20 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
+  cardSummary: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: SP.md },
+  metaWrap: { marginTop: SP.md },
+  cardDivider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.md },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
+  statusText: { fontSize: 13, fontWeight: '600', flex: 1 },
+  conditionLine: { fontSize: 11, color: C.lavenderFg, fontWeight: '500', marginTop: SP.xs, marginLeft: SP.xl + SP.xs },
+  addPill: {
+    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    paddingLeft: SP.md, paddingRight: SP.lg, paddingVertical: SP.sm,
+    borderRadius: R.xl, backgroundColor: C.pinkLight,
+    borderWidth: 1, borderColor: C.pinkBorder,
   },
-  fabText: { fontSize: 13, fontWeight: '600', color: C.white },
+  addPillText: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
+  confirmBanner: {
+    position: 'absolute', left: SP.xl, right: SP.xl, bottom: SP.xl,
+    flexDirection: 'row', alignItems: 'center', gap: SP.md,
+    paddingVertical: SP.md, paddingHorizontal: SP.md,
+    borderRadius: R.card, backgroundColor: C.pinkLight,
+    borderWidth: 1, borderColor: C.pinkBorder,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14, shadowRadius: 10, elevation: 4,
+  },
+  confirmBannerIcon: {
+    width: 40, height: 40, borderRadius: R.md,
+    backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  confirmBannerTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
+  confirmBannerSub: { fontSize: 11, color: C.textSub, marginTop: 2 },
+  confirmBannerCta: {
+    backgroundColor: C.pink, borderRadius: R.btn,
+    paddingHorizontal: SP.md, paddingVertical: SP.sm, flexShrink: 0,
+  },
+  confirmBannerCtaText: { fontSize: 13, fontWeight: '700', color: C.white },
   proposalBanner: {
     flexDirection: 'row', alignItems: 'center',
     marginTop: 16, padding: 14, borderRadius: 16,

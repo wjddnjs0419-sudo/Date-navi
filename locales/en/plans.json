@@ -1,10 +1,12 @@
 {
   "plans": {
     "heading": "Date plans",
-    "subtitle": "Here are your confirmed dates. Leave a review after you go.",
+    "subtitle": "Here are your confirmed dates.",
+    "monthLabel": "{{month}}/{{year}}",
     "emptyTitle": "No confirmed dates yet",
     "emptySub": "Pick a candidate you like and confirm it\nwith \"Choose this for the date.\"",
     "noDateTimePlace": "Date and place haven't been set yet.",
-    "reviewCta": "Date's done · How was it?"
+    "reviewCta": "Date's done · How was it?",
+    "makeCta": "Plan a new date"
   }
 }

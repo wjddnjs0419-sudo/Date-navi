@@ -1,14 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { CalendarHeart, Clock, MapPin, Check } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { BackBar, SoftCard, Chip } from '../../components/ui';
+import { CalendarHeart } from 'lucide-react-native';
+import { C, SP, R, G } from '../../constants/theme';
+import { BackBar, SoftCard, PlanListRow, BigButton, SectionLabel } from '../../components/ui';
+import { formatDateLabel } from '../../components/pickers';
+import { DATE_MODE_ROUTES } from '../../lib/dateModes';
 import { useI18n } from '../../lib/i18n';
 
 type PlanCard = {
@@ -20,9 +21,35 @@ type PlanCard = {
   confirmed_place: string | null;
 };
 
+// PHASE0-BACKMERGE: confirmed_date(ISO) 로부터 D-day 를 계산하는 순수 헬퍼.
+// 공유 컴포넌트(DdayBadge)에 넘길 days 값을 만든다. 홈 화면과 동일 규약.
+function daysUntilIso(iso: string | null, now: number = Date.now()): number {
+  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return 0;
+  const target = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  return Math.round((target - today.getTime()) / 86400000);
+}
+
+// PHASE0-BACKMERGE: 확정 데이트를 월(YYYY-MM) 단위로 묶어 목업의 타임라인을 재현한다.
+// 날짜 미정(confirmed_date=null) 카드는 마지막 "미정" 그룹으로 모은다.
+function groupByMonth(plans: PlanCard[]): { key: string; year: number; month: number; items: PlanCard[] }[] {
+  const groups: { key: string; year: number; month: number; items: PlanCard[] }[] = [];
+  for (const p of plans) {
+    const m = p.confirmed_date?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const year = m ? Number(m[1]) : 0;
+    const month = m ? Number(m[2]) : 0;
+    const key = m ? `${m[1]}-${m[2]}` : 'undated';
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.items.push(p);
+    else groups.push({ key, year, month, items: [p] });
+  }
+  return groups;
+}
+
 export default function PlansScreen() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [plans, setPlans] = useState<PlanCard[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,8 +84,10 @@ export default function PlansScreen() {
     }, []),
   );
 
+  const groups = useMemo(() => groupByMonth(plans), [plans]);
+
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
 
@@ -71,98 +100,81 @@ export default function PlansScreen() {
           <ActivityIndicator color={C.pink} style={s.loader} />
         ) : plans.length === 0 ? (
           <View style={s.emptyWrap}>
-            <View style={[s.emptyIcon, s.emptyIconBg]}>
+            <View style={s.emptyIcon}>
               <CalendarHeart size={44} strokeWidth={1.5} color={C.pinkDeep} />
             </View>
             <Text style={s.emptyTitle}>{t('plans.emptyTitle')}</Text>
             <Text style={s.emptySub}>{t('plans.emptySub')}</Text>
           </View>
         ) : (
-          <View style={s.planList}>
-            {plans.map((p) => (
-              <SoftCard key={p.id} onPress={() => router.push(`/card/${p.id}` as any)}>
-                <Text style={s.cardTitle}>{p.title}</Text>
-
-                <View style={s.metaList}>
-                  {p.confirmed_date && (
-                    <View style={s.metaRow}>
-                      <CalendarHeart size={14} color={C.pinkDeep} />
-                      <Text style={s.metaText}>{p.confirmed_date}</Text>
-                    </View>
-                  )}
-                  {p.confirmed_time && (
-                    <View style={s.metaRow}>
-                      <Clock size={14} color={C.pinkDeep} />
-                      <Text style={s.metaText}>{p.confirmed_time}</Text>
-                    </View>
-                  )}
-                  {p.confirmed_place && (
-                    <View style={s.metaRow}>
-                      <MapPin size={14} color={C.pinkDeep} />
-                      <Text style={s.metaText}>{p.confirmed_place}</Text>
-                    </View>
-                  )}
-                  {!p.confirmed_date && !p.confirmed_time && !p.confirmed_place && (
-                    <Text style={s.metaEmpty}>{t('plans.noDateTimePlace')}</Text>
-                  )}
-                </View>
-
-                {p.tags.length > 0 && (
-                  <View style={s.chips}>
-                    {p.tags.slice(0, 3).map((tag) => (
-                      <Chip key={tag} tone="gray">{tag}</Chip>
-                    ))}
-                  </View>
+          <View style={s.timeline}>
+            {groups.map((group) => (
+              <View key={group.key} style={s.group}>
+                {group.key !== 'undated' && (
+                  <SectionLabel>
+                    {t('plans.monthLabel', { month: group.month, year: group.year })}
+                  </SectionLabel>
                 )}
-
-                <TouchableOpacity
-                  style={s.doneBtn}
-                  onPress={() => router.push({ pathname: '/card/review', params: { id: p.id } })}
-                  activeOpacity={0.85}
-                >
-                  <Check size={14} color={C.white} strokeWidth={2.5} />
-                  <Text style={s.doneBtnText}>{t('plans.reviewCta')}</Text>
-                </TouchableOpacity>
-              </SoftCard>
+                <SoftCard style={s.groupCard}>
+                  {group.items.map((p, i) => {
+                    const dateLabel = [
+                      p.confirmed_date ? formatDateLabel(p.confirmed_date, '', language) : '',
+                      p.confirmed_time ?? '',
+                    ].filter(Boolean).join(' ');
+                    return (
+                      <View key={p.id}>
+                        {i > 0 && <View style={s.rowDivider} />}
+                        <PlanListRow
+                          title={p.title}
+                          dateLabel={dateLabel || t('plans.noDateTimePlace')}
+                          days={daysUntilIso(p.confirmed_date)}
+                          onPress={() => router.push(`/card/${p.id}` as any)}
+                        />
+                      </View>
+                    );
+                  })}
+                </SoftCard>
+              </View>
             ))}
           </View>
         )}
-
-        <View style={s.bottomSpacer} />
       </ScrollView>
+
+      <View style={s.footer}>
+        <BigButton onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}>
+          {t('plans.makeCta')}
+        </BigButton>
+      </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
-  headingBlock: { marginTop: 16, marginBottom: 20 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl },
+  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  sub: { marginTop: SP.sm, fontSize: 13, color: C.textSub, lineHeight: 19 },
   loader: { marginTop: 60 },
-  planList: { gap: 12, marginTop: 8 },
-  bottomSpacer: { height: 40 },
 
-  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
+  timeline: { gap: SP.xl },
+  group: { gap: SP.sm },
+  groupCard: { paddingVertical: SP.xs, paddingHorizontal: SP.lg },
+  rowDivider: { height: 1, backgroundColor: C.borderLight },
+
+  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: SP.xxl },
   emptyIcon: {
-    width: 120, height: 120, borderRadius: 60,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+    width: 120, height: 120, borderRadius: 60, backgroundColor: C.pinkLight,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl,
   },
-  emptyIconBg: { backgroundColor: C.pinkLight },
   emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
+  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: SP.md },
 
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-  metaList: { gap: 6, marginTop: 10 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { fontSize: 13, color: C.text, fontWeight: '500' },
-  metaEmpty: { fontSize: 12, color: C.textMuted },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 12 },
-  doneBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    marginTop: 16, backgroundColor: C.pink,
-    borderRadius: 14, paddingVertical: 12,
+  footer: {
+    paddingHorizontal: SP.xl,
+    paddingTop: SP.md,
+    paddingBottom: SP.md,
+    borderTopWidth: 1,
+    borderTopColor: C.borderLight,
+    backgroundColor: C.bg,
   },
-  doneBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
 });
