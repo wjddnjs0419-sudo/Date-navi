@@ -286,9 +286,10 @@
 
 ## Pending Approval
 
-### [Phase 2 거의 완료] 2026-07-21 세션 BF — UI 전면 교체 6클러스터 main 통합 + 정리
-- Phase 0(`5a3faee`) → Phase 1 클러스터 6개(auth/onboarding/tabs/course/card/share-account) 전부 순차 병합. `PHASE0-BACKMERGE` 승격(D-day 헬퍼·wallet 칩) 완료. `ss-verify` 시각 게이트 완료(발견 1건 수정: 닉네임 온보딩 빈 여백에 마스코트 추가). tsc 클린, 137 suites/929 tests.
-- **남음(spec §7)**: 실기기 확인(사용자, Xcode Release Run)만 남음.
+### [정정 필요 — UI 전면 교체 목업 불일치 다수] 2026-07-22 세션 BG
+- 세션 BF의 "ss-verify 통과" 보고는 8화면만 훑은 부실 검증이었음. 목업 50장 vs 라이브 정밀 비교(서브에이전트 5개) 결과 **PASS 사실상 0건** — candidates·plans·memories 필터/정렬/D-day/진행률/사진 누락, course-result·place_search·review 구조 자체가 다름, 카드 옆 미니 일러스트 5화면 공통 누락 등. 상세는 `RESULT.md` 세션 BG 참조.
+- asset 배경 불투명 버그(전체 7/8장) 수정 완료, 로그인 화면은 목업 1:1 근접 확정.
+- **남음**: 목업 구조 갭 재작업 우선순위 결정(사용자 협의 예정) — 핵심 플로우 4화면(홈·candidates·plans·course-result) 유력 후보. `share/mutual` 텍스트 겹침 버그 원인 미확정(실기기 확인 필요). 실기기 확인(사용자, Xcode Release Run).
 
 ### [Done] 2026-07-21 세션 BD — UI 전면 교체 asset 준비. `assets/illustrations/` 8장(매트 클레이 파스텔 핑크). 화면 조립은 세션 BE(Phase 0)~BF(Phase 1 6클러스터 병합)에서 완료 → 위 [Phase 2 진행 중] 항목 참조.
 

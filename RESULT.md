@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-07-22 세션 BG — asset 배경 버그 + 목업 정밀 감사 (세션 BF의 ss-verify가 부실했음을 정정)
+
+> 사용자 지적: "장난해? asset들 다 배경 사각형으로 남고" — 세션 BF에서 8화면만 훑고 "ss-verify 통과"라 보고한 게 틀렸음. 정밀 재조사 요청.
+
+### Asset 배경 불투명 버그 (근본원인 확인)
+- 일러스트 asset 전체(8장 중 7장, `bg-park` 제외)가 **알파채널 없는 완전 불투명 PNG**였음 — RGBA 태그와 무관하게 코너 alpha=255. 카드로 안 감싼 자리(닉네임 마스코트 등)에서 사각형 노출.
+- Higgsfield `remove_background`로 7장 처리 → 4장(마스코트 3종·브랜드로고)은 깨끗하게 성공. **`date-course-map-horizontal`(로그인)은 AI가 도시 일러스트 13.3%를 얼룩덜룩 지워버려 실패** — 원본 복원 후, 사용자가 직접 준비한 진짜 알파 PNG로 최종 교체(커밋 `b4f23e2`→`38a1ff8`).
+- 로그인 히어로는 추가로 `CONTENT_WIDTH`(패딩 안쪽)에 갇혀 목업처럼 화면 전체폭으로 안 퍼지던 것도 발견 → `SCREEN_WIDTH`로 확장, TDD(커밋 `5c1c89c`). 목업 1:1 근접 확인.
+
+### 목업 50장 vs 라이브 화면 정밀 비교 (서브에이전트 5개 병렬, 폴더별)
+- iOS 시뮬레이터에서 라이브 화면 37개 재캡처(`scripts/screenshot-all.sh` + 수동 보강) 후 `UI RENEW/` 원본 목업과 1:1 대조.
+- **결과: 사실상 PASS 0건.** 확정된 실제 문제 카테고리:
+  - **구조/기능 통째 누락**: candidates·plans·memories 필터/정렬탭 전무, D-day 카운트다운 없이 전부 "D-DAY" 고정, 진행률(%)바·파트너 아바타 없음, course-result 사진·소요시간·타임라인 없음, place_search 결과 리스트 자체가 안 뜸, review 별점 없음(4개 옵션, 목업은 5개+AI요약카드).
+  - **반복 패턴**: 카드 옆 하트 낙서 아이콘·우상단 미니 일러스트가 card_confirm·memory_new·memory_edit·couple_connect_manage·connected 5화면에서 공통 누락. pink여야 할 아이콘 배경이 cream으로 바뀐 곳 다수.
+  - **매핑 자체가 다른 화면**: mutual_confirmed·share_send·share_reaction·step_action_sheet·couple_connect_manage 등은 목업과 라이브가 플로우상 다른 단계/상태.
+  - **캡처 불가 화면**: enter_code·enter_code_error(네이티브 Alert로 대체, 인라인 에러 UI 없음)·candidate_detail·notifications(토글 설정) 등은 코드 리뷰로만 확인, 실렌더 미검증.
+- 원인 스코프가 화면당 재작업 수준이라 **이번 세션엔 착수 안 함** — 사용자에게 우선순위 질문, "확정 버그부터"로 응답받음(구조 갭 재작업은 별도 세션).
+
+### 확정 버그 조사
+- **plans "날짜 미표시" — 버그 아님으로 정정**: 홈 화면도 동일한 `daysUntilIso`/fallback 로직이라 `confirmed_date` 없으면 둘 다 fallback 문구만 보여줌(홈="다가오는 데이트", plans="날짜·장소는 아직 정하지 않았어요"). 스크린샷 픽스처(`date_cards`)에 애초에 `confirmed_date`가 없어서 둘 다 정상 동작. 애초 감사 서브에이전트의 오독.
+- **share/mutual 텍스트 겹침 — 재현되나 원인 미확정**: 같은 화면 3회 재캡처(8초 대기 포함) 모두 동일하게 재현되어 타이밍 아티팩트는 배제. `transform` 계열 스타일 전무, 유니코드 클린, footer 여백 계산상 겹칠 이유 없음 — 코드 리뷰로 원인 특정 실패. **고치지 않고 보고만 함**(원인 모르고 패딩 숫자만 바꾸는 건 지양). 실기기 Xcode 뷰 디버거 확인 필요.
+
+### 검증
+- tsc 클린, 137 suites/930 tests. 커밋: `b4f23e2`(배경제거 7장) → `38a1ff8`(로그인 최종 asset) → `5c1c89c`(로그인 전체폭 레이아웃).
+
+### 다음 세션
+- 목업 구조 갭 재작업 우선순위 결정 필요(핵심 플로우 4화면 vs 반복 패턴 5화면 vs 전체 순회).
+- share/mutual 텍스트 겹침 실기기 재현 확인.
+
 ## 2026-07-21 세션 BF — UI 전면 교체 Phase 1 완료 + Phase 2 통합 착수
 
 > 사용자 보고: "phase 1 완료"(클러스터 6·share-account 작업 종료). 상태 확인 → 게이트 → 병합 순으로 Phase 2 §7 절차 수행.
