@@ -9,14 +9,23 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { C } from '../../constants/colors';
+import { Heart, Star, CircleCheck, RotateCcw, Camera } from 'lucide-react-native';
+import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
 
-const RATING_ICONS: Record<string, string> = {
-  love: '❤️',
-  good: '⭐',
-  ok: '✅',
-  change: '🔄',
+const RATING_ICONS: Record<string, typeof Heart> = {
+  love: Heart,
+  good: Star,
+  ok: CircleCheck,
+  change: RotateCcw,
+};
+
+// 목업(07_card_memory_new)의 red/gold/green/blue 구분을 lock의 파스텔 톤 패밀리로 재현한다.
+const RATING_TONES: Record<string, { fg: string; bg: string }> = {
+  love: { fg: C.danger, bg: C.pinkLight },
+  good: { fg: C.creamFg, bg: C.cream },
+  ok: { fg: C.mintFg, bg: C.mint },
+  change: { fg: C.lavenderFg, bg: C.lavender },
 };
 
 export default function ReviewScreen() {
@@ -151,17 +160,19 @@ export default function ReviewScreen() {
           <View style={styles.ratingGrid}>
             {c.ratings.map((item: { key: keyof typeof RATING_ICONS; label: string }) => {
               const sel = rating === item.key;
+              const Icon = RATING_ICONS[item.key];
+              const tone = RATING_TONES[item.key];
               return (
                 <TouchableOpacity
                   key={item.key}
-                  style={[styles.ratingCard, sel && styles.ratingCardSel]}
+                  style={[styles.ratingCard, sel && { backgroundColor: tone.bg, borderColor: tone.fg, borderWidth: 1.5 }]}
                   onPress={() => setRating(item.key)}
                   activeOpacity={0.75}
                 >
-                  <View style={[styles.ratingIconWrap, sel && styles.ratingIconWrapSel]}>
-                    <Text style={styles.ratingIcon}>{RATING_ICONS[item.key]}</Text>
+                  <View style={[styles.ratingIconWrap, sel && { backgroundColor: C.white }]}>
+                    <Icon size={18} color={sel ? tone.fg : C.textSub} strokeWidth={2} />
                   </View>
-                  <Text style={[styles.ratingLabel, sel && styles.ratingLabelSel]}>{item.label}</Text>
+                  <Text style={[styles.ratingLabel, sel && { color: tone.fg, fontWeight: '600' }]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -190,7 +201,10 @@ export default function ReviewScreen() {
             ) : photoUrl ? (
               <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
             ) : (
-              <Text style={styles.photoText}>{s.card.memory.addPhotoCta}</Text>
+              <View style={styles.photoTextWrap}>
+                <Camera size={18} color={C.pinkDeep} strokeWidth={2} />
+                <Text style={styles.photoText}>{s.card.memory.addPhotoCta}</Text>
+              </View>
             )}
           </TouchableOpacity>
 
@@ -207,46 +221,42 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
 
-  headingBlock: { marginTop: 16, marginBottom: 20 },
+  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
 
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 },
-  sectionLabelSpaced: { marginTop: 20 },
+  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.md },
+  sectionLabelSpaced: { marginTop: SP.xl },
 
-  ratingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  ratingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
   ratingCard: {
     width: '47%',
     backgroundColor: C.white,
-    borderRadius: 16,
+    borderRadius: R.lg,
     borderWidth: 1,
     borderColor: C.border,
-    padding: 14,
-    gap: 8,
+    padding: SP.md + 2,
+    gap: SP.sm,
   },
-  ratingCardSel: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder, borderWidth: 1.5 },
   ratingIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: R.sm,
     backgroundColor: C.cream,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ratingIconWrapSel: { backgroundColor: C.white },
-  ratingIcon: { fontSize: 16 },
   ratingLabel: { fontSize: 13, color: C.textSub, fontWeight: '500' },
-  ratingLabelSel: { color: C.pinkDeep, fontWeight: '600' },
 
   reviewInput: {
     backgroundColor: C.white,
-    borderRadius: 18,
+    borderRadius: R.btn,
     borderWidth: 1,
     borderColor: C.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md + 2,
     fontSize: 14,
     color: C.text,
     minHeight: 70,
@@ -254,9 +264,9 @@ const styles = StyleSheet.create({
   },
 
   photoPlaceholder: {
-    marginTop: 14,
+    marginTop: SP.md + 2,
     height: 140,
-    borderRadius: 16,
+    borderRadius: R.lg,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: C.pinkBorder,
@@ -265,6 +275,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photoPreview: { width: '100%', height: '100%' },
-  photoText: { fontSize: 13, color: C.textMuted },
-  saveBtn: { marginTop: 24 },
+  photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
+  saveBtn: { marginTop: SP.xxl },
 });

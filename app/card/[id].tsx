@@ -7,17 +7,19 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { C } from '../../constants/colors';
+import { Clock, Wallet, MessageCircle, Heart, Share2, MapPin, Footprints, House } from 'lucide-react-native';
+import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { isDateModeEnabled } from '../../lib/dateModes';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
-import { PlaceRow, CourseStepList, MoreMenu } from '../../components/ui';
+import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, SoftCard, Chip } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity, writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
@@ -46,21 +48,89 @@ type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
-  { type: 'love', color: '#FF4F6D', bg: '#FFF0F3' },
-  { type: 'like', color: '#FF8C42', bg: '#FFF5EE' },
-  { type: 'burden', color: '#6B7280', bg: '#F3F4F6' },
-  { type: 'next_time', color: '#8B5CF6', bg: '#F5F3FF' },
+  { type: 'love', color: C.danger, bg: C.pinkLight },
+  { type: 'like', color: C.creamFg, bg: C.cream },
+  { type: 'burden', color: C.coolGray, bg: C.gray },
+  { type: 'next_time', color: C.lavenderFg, bg: C.lavender },
 ];
+
+const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
+  change_place: MapPin,
+  closer: Footprints,
+  indoor: House,
+};
+
+// 목업(08_candidate_detail)의 상단 카드 — 장소 + 하트 퀵반응 + 파트너 반응 + 확정 CTA.
+// 로직은 화면 본체(handleReact/router.push)를 그대로 위임받아 쓴다.
+export function CandidateHeroCard({
+  placeName, placeAddress, placeUrl,
+  myLove, onToggleLove,
+  partnerReactionLabel,
+  onConfirm,
+}: {
+  placeName?: string | null;
+  placeAddress?: string | null;
+  placeUrl?: string | null;
+  myLove: boolean;
+  onToggleLove: () => void;
+  partnerReactionLabel?: string | null;
+  onConfirm: () => void;
+}) {
+  const { strings: s } = useI18n();
+  return (
+    <View style={heroS.wrap}>
+      <SoftCard style={heroS.card}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={s.card.reactionLabels.love.label}
+          onPress={onToggleLove}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={heroS.loveBtn}
+          activeOpacity={0.75}
+        >
+          <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
+        </TouchableOpacity>
+        {!!placeName && (
+          <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
+        )}
+      </SoftCard>
+
+      <View style={heroS.partnerBubble}>
+        <Text style={heroS.partnerText}>{partnerReactionLabel ?? s.card.partnerWaiting}</Text>
+      </View>
+
+      <BigButton accessibilityLabel={s.card.confirmButton} onPress={onConfirm}>
+        {s.card.confirmButton}
+      </BigButton>
+    </View>
+  );
+}
+const heroS = StyleSheet.create({
+  wrap: { gap: SP.md, marginBottom: SP.xl },
+  card: { position: 'relative' },
+  loveBtn: {
+    position: 'absolute', top: SP.sm, right: SP.sm, zIndex: 1,
+    width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+  },
+  placeRow: { paddingRight: SP.xxxl },
+  partnerBubble: {
+    backgroundColor: C.pinkLight,
+    borderRadius: R.lg,
+    paddingVertical: SP.md,
+    paddingHorizontal: SP.lg,
+  },
+  partnerText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep, textAlign: 'center' },
+});
 
 export default function CardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { strings: s, t, language } = useI18n();
   const alertTitle = s.common.error;
-  const CONDITION_TAGS: { tag: ConditionTag; label: string; emoji: string; freeText: string }[] = [
-    { tag: 'change_place', label: t('card.conditionTags.change_place.label'), emoji: '📍', freeText: t('card.conditionTags.change_place.freeText') },
-    { tag: 'closer', label: t('card.conditionTags.closer.label'), emoji: '🚶', freeText: t('card.conditionTags.closer.freeText') },
-    { tag: 'indoor', label: t('card.conditionTags.indoor.label'), emoji: '🏠', freeText: t('card.conditionTags.indoor.freeText') },
+  const CONDITION_TAGS: { tag: ConditionTag; label: string; freeText: string }[] = [
+    { tag: 'change_place', label: t('card.conditionTags.change_place.label'), freeText: t('card.conditionTags.change_place.freeText') },
+    { tag: 'closer', label: t('card.conditionTags.closer.label'), freeText: t('card.conditionTags.closer.freeText') },
+    { tag: 'indoor', label: t('card.conditionTags.indoor.label'), freeText: t('card.conditionTags.indoor.freeText') },
   ];
 
   const [card, setCard] = useState<CardDetail | null>(null);
@@ -218,30 +288,47 @@ export default function CardDetailScreen() {
     ]);
   }
 
+  async function handleShare() {
+    if (!card) return;
+    try {
+      await Share.share({ message: `${card.title}\n${card.summary}` });
+    } catch {
+      // 공유 시트 취소/실패는 무해하므로 별도 처리하지 않는다.
+    }
+  }
+
   const partnerInfo = partnerReaction
     ? REACTIONS.find(r => r.type === partnerReaction)
+    : null;
+  const partnerReactionLabel = partnerInfo
+    ? s.card.partnerReaction(s.card.reactionLabels[partnerReaction!].label, s.card.reactionLabels[partnerReaction!].emoji)
     : null;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
+        <BackBar />
+        <View style={styles.headerActions}>
           <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={styles.backText}>{s.common.back}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{s.card.title}</Text>
-        <MoreMenu
-          testID="card-more-menu"
-          onEdit={() => router.push(`/card/edit/${id}` as any)}
-          onDelete={confirmDelete}
-        />
+            accessibilityRole="button"
+            accessibilityLabel={s.common.share}
+            onPress={handleShare}
+            style={styles.iconBtn}
+            activeOpacity={0.7}
+          >
+            <Share2 size={20} color={C.textSub} strokeWidth={2} />
+          </TouchableOpacity>
+          <MoreMenu
+            testID="card-more-menu"
+            onEdit={() => router.push(`/card/edit/${id}` as any)}
+            onDelete={confirmDelete}
+          />
+        </View>
       </View>
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#FF4F6D" />
+          <ActivityIndicator size="large" color={C.pink} />
         </View>
       ) : !card ? (
         <View style={styles.loadingWrap}>
@@ -249,11 +336,19 @@ export default function CardDetailScreen() {
         </View>
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-          <View style={styles.modeBadge}>
-            <Text style={styles.modeText}>{s.card.modeLabels[card.mode] ?? card.mode}</Text>
-          </View>
+          <Badge tone="pink">{s.card.modeLabels[card.mode] ?? card.mode}</Badge>
+          <Text style={[T.h1, styles.title]}>{card.title}</Text>
 
-          <Text style={styles.title}>{card.title}</Text>
+          <CandidateHeroCard
+            placeName={card.place_name}
+            placeAddress={card.place_address}
+            placeUrl={card.map_url}
+            myLove={myReaction === 'love'}
+            onToggleLove={() => handleReact('love')}
+            partnerReactionLabel={partnerReactionLabel}
+            onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
+          />
+
           {card.mode === 'make_course' ? (
             <View style={styles.stepsWrap}>
               <CourseStepList steps={resolveDisplaySteps(card)} summary={card.summary} />
@@ -262,22 +357,18 @@ export default function CardDetailScreen() {
             <Text style={styles.summary}>{card.summary}</Text>
           )}
 
-          {!!card.place_name && (
-            <PlaceRow name={card.place_name} address={card.place_address ?? undefined} url={card.map_url ?? undefined} style={styles.placeRowSpacing} />
-          )}
-
           {(!!card.estimated_time || !!card.estimated_budget) && (
             <View style={styles.metaRow}>
               {!!card.estimated_time && (
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaIcon}>⏱</Text>
+                  <Clock size={14} color={C.textSub} strokeWidth={2} />
                   <Text style={styles.metaText}>{card.estimated_time}</Text>
                 </View>
               )}
               {!!card.estimated_time && !!card.estimated_budget && <View style={styles.metaDivider} />}
               {!!card.estimated_budget && (
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaIcon}>💰</Text>
+                  <Wallet size={14} color={C.textSub} strokeWidth={2} />
                   <Text style={styles.metaText}>{card.estimated_budget}</Text>
                 </View>
               )}
@@ -286,14 +377,13 @@ export default function CardDetailScreen() {
 
           <View style={styles.tagRow}>
             {(card.tags ?? []).map((tag, i) => (
-              <View key={i} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
+              <Chip key={i} tone="gray">{tag}</Chip>
             ))}
           </View>
 
           <View style={styles.whyBox}>
-            <Text style={styles.whyText}>💬 {card.why_recommended}</Text>
+            <MessageCircle size={15} color={C.pinkDeep} strokeWidth={2} style={styles.whyIcon} />
+            <Text style={styles.whyText}>{card.why_recommended}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -309,7 +399,7 @@ export default function CardDetailScreen() {
                   key={r.type}
                   style={[
                     styles.reactionBtn,
-                    { backgroundColor: selected ? r.bg : '#F7F7F7' },
+                    { backgroundColor: selected ? r.bg : C.gray },
                     selected && styles.reactionBtnSelected,
                     selected && { borderColor: r.color },
                   ]}
@@ -334,6 +424,7 @@ export default function CardDetailScreen() {
               <View style={styles.conditionGrid}>
                 {CONDITION_TAGS.map(c => {
                   const selected = myConditionTag === c.tag;
+                  const Icon = CONDITION_ICONS[c.tag];
                   return (
                     <TouchableOpacity
                       key={c.tag}
@@ -342,7 +433,7 @@ export default function CardDetailScreen() {
                       disabled={saving}
                       activeOpacity={0.75}
                     >
-                      <Text style={styles.conditionEmoji}>{c.emoji}</Text>
+                      <Icon size={14} color={selected ? C.inkSoft : C.textSub} strokeWidth={2} />
                       <Text style={[styles.conditionLabel, selected && styles.conditionLabelSelected]}>
                         {c.label}
                       </Text>
@@ -359,10 +450,9 @@ export default function CardDetailScreen() {
                   activeOpacity={0.85}
                 >
                   {generatingAlt ? (
-                    <ActivityIndicator size="small" color="#6B7280" />
+                    <ActivityIndicator size="small" color={C.coolGrayLight} />
                   ) : (
                     <Text style={styles.altBtnText}>
-                      {CONDITION_TAGS.find(c => c.tag === myConditionTag)?.emoji}{' '}
                       {t('card.regenerateWithCondition', { label: CONDITION_TAGS.find(c => c.tag === myConditionTag)?.label })}
                     </Text>
                   )}
@@ -370,30 +460,6 @@ export default function CardDetailScreen() {
               )}
             </View>
           )}
-
-          {partnerInfo && (
-            <View style={[styles.partnerBadge, { backgroundColor: partnerInfo.bg }]}>
-              <Text style={styles.partnerText}>
-                {s.card.partnerReaction(s.card.reactionLabels[partnerReaction!].label, s.card.reactionLabels[partnerReaction!].emoji)}
-              </Text>
-            </View>
-          )}
-
-          {!partnerReaction && (
-            <View style={styles.partnerWaiting}>
-              <Text style={styles.partnerWaitingText}>{s.card.partnerWaiting}</Text>
-            </View>
-          )}
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => router.push({ pathname: '/card/confirm', params: { id } })}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.confirmBtnText}>{s.card.confirmButton}</Text>
-          </TouchableOpacity>
 
           {memoryDone ? (
             <View style={styles.memoryDoneBadge}>
@@ -420,137 +486,100 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: SP.xl,
+    paddingTop: SP.md,
+    paddingBottom: SP.sm,
   },
-  backText: { fontSize: 24, color: '#333' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: C.ink },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  missingText: { color: '#999' },
+  missingText: { color: C.textLight },
 
   scroll: { flex: 1 },
-  content: { padding: 24, paddingBottom: 60 },
+  content: { padding: SP.xxl, paddingBottom: SP.xxxl * 2 },
 
-  modeBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFF0F3',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
-    marginBottom: 14,
+  title: { marginTop: SP.sm, marginBottom: SP.lg },
+  summary: { fontSize: 15, color: C.textSub, lineHeight: 22, marginBottom: SP.lg },
+  stepsWrap: { marginBottom: SP.lg },
+
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.lg },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  metaText: { fontSize: 14, color: C.textSub, fontWeight: '500' },
+  metaDivider: { width: 1, height: 14, backgroundColor: C.border, marginHorizontal: SP.md },
+
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm, marginBottom: SP.lg },
+
+  whyBox: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm,
+    backgroundColor: C.pinkLight, borderRadius: R.lg, padding: SP.lg, marginBottom: SP.sm,
   },
-  modeText: { fontSize: 12, color: C.danger, fontWeight: '600' },
+  whyIcon: { marginTop: 2 },
+  whyText: { flex: 1, fontSize: 14, color: C.pinkDeep, lineHeight: 21 },
 
-  title: { fontSize: 24, fontWeight: '700', color: C.ink, marginBottom: 8, lineHeight: 32 },
-  summary: { fontSize: 15, color: '#555', lineHeight: 22, marginBottom: 16 },
-  stepsWrap: { marginBottom: 16 },
-  placeRowSpacing: { marginTop: 4, marginBottom: 20 },
+  divider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.xxl },
 
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaIcon: { fontSize: 14 },
-  metaText: { fontSize: 14, color: '#555', fontWeight: '500' },
-  metaDivider: { width: 1, height: 14, backgroundColor: '#DDD', marginHorizontal: 12 },
-
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-  tag: { backgroundColor: '#F0F0F0', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-  tagText: { fontSize: 13, color: '#555', fontWeight: '500' },
-
-  whyBox: { backgroundColor: '#FFF0F3', borderRadius: 12, padding: 14, marginBottom: 8 },
-  whyText: { fontSize: 14, color: C.danger, lineHeight: 21 },
-
-  divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 24 },
-
-  reactionTitle: { fontSize: 18, fontWeight: '700', color: C.ink, marginBottom: 4 },
-  reactionSub: { fontSize: 13, color: '#999', marginBottom: 18 },
+  reactionTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: SP.xs },
+  reactionSub: { fontSize: 13, color: C.textMuted, marginBottom: SP.lg },
 
   reactionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
+    gap: SP.sm,
+    marginBottom: SP.xl,
   },
   reactionBtn: {
     width: '47%',
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: R.lg,
+    paddingVertical: SP.lg,
     alignItems: 'center',
-    gap: 6,
+    gap: SP.xs,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   reactionBtnSelected: { borderWidth: 2 },
   reactionEmoji: { fontSize: 28 },
-  reactionLabel: { fontSize: 14, color: '#555', fontWeight: '500' },
+  reactionLabel: { fontSize: 14, color: C.textSub, fontWeight: '500' },
   reactionLabelSelected: { fontWeight: '700' },
 
   conditionBox: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: C.gray,
+    borderRadius: R.lg,
+    padding: SP.lg,
+    marginBottom: SP.lg,
   },
-  conditionTitle: { fontSize: 15, fontWeight: '700', color: C.ink, marginBottom: 4 },
-  conditionSub: { fontSize: 12, color: C.coolGrayLight, marginBottom: 14 },
-  conditionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  conditionTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.xs },
+  conditionSub: { fontSize: 12, color: C.coolGrayLight, marginBottom: SP.md },
+  conditionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm, marginBottom: SP.md },
   conditionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: '#EFEFEF', borderWidth: 1.5, borderColor: 'transparent',
+    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    paddingHorizontal: SP.md, paddingVertical: SP.sm, borderRadius: R.xl,
+    backgroundColor: C.white, borderWidth: 1.5, borderColor: 'transparent',
   },
-  conditionBtnSelected: { backgroundColor: '#EEF2FF', borderColor: C.coolGray },
-  conditionEmoji: { fontSize: 14 },
-  conditionLabel: { fontSize: 13, fontWeight: '500', color: '#555' },
-  conditionLabelSelected: { color: '#374151', fontWeight: '700' },
+  conditionBtnSelected: { backgroundColor: C.lavender, borderColor: C.coolGray },
+  conditionLabel: { fontSize: 13, fontWeight: '500', color: C.textSub },
+  conditionLabelSelected: { color: C.inkSoft, fontWeight: '700' },
   altBtn: {
-    backgroundColor: C.ink, borderRadius: 14,
-    paddingVertical: 13, alignItems: 'center',
+    backgroundColor: C.ink, borderRadius: R.btn,
+    paddingVertical: SP.md, alignItems: 'center',
   },
   altBtnBusy: { opacity: 0.6 },
   altBtnText: { fontSize: 13, fontWeight: '700', color: C.white },
-  partnerBadge: {
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  partnerText: { fontSize: 14, fontWeight: '600', color: '#333' },
 
-  partnerWaiting: {
-    backgroundColor: '#F7F7F7',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  partnerWaitingText: { fontSize: 14, color: '#999' },
-
-  confirmBtn: {
-    backgroundColor: '#FFF0F3',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: C.pinkBorder,
-    marginBottom: 10,
-  },
-  confirmBtnText: { fontSize: 15, fontWeight: '600', color: C.pinkDeep },
   memoryBtn: {
     backgroundColor: C.ink,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: R.btn,
+    paddingVertical: SP.lg,
     alignItems: 'center',
   },
   memoryBtnText: { fontSize: 15, fontWeight: '700', color: C.white },
   memoryDoneBadge: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: C.mint,
+    borderRadius: R.btn,
+    paddingVertical: SP.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: C.mintFg,
   },
-  memoryDoneText: { fontSize: 15, fontWeight: '600', color: '#16A34A' },
-
+  memoryDoneText: { fontSize: 15, fontWeight: '600', color: C.mintFg },
 });

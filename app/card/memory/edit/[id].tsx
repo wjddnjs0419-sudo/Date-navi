@@ -8,8 +8,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../../lib/supabase';
-import { C } from '../../../../constants/colors';
-import { G } from '../../../../constants/theme';
+import { Camera, Heart } from 'lucide-react-native';
+import { C, SP, R, G } from '../../../../constants/theme';
 import { BackBar, BigButton } from '../../../../components/ui';
 import { useI18n } from '../../../../lib/i18n';
 
@@ -153,7 +153,10 @@ export default function EditMemoryScreen() {
           ) : photoUrl ? (
             <Image source={{ uri: photoUrl }} style={s.photoPreview} />
           ) : (
-            <Text style={s.photoText}>{strings.card.memory.addPhotoCta}</Text>
+            <View style={s.photoTextWrap}>
+              <Camera size={18} color={C.pinkDeep} strokeWidth={2} />
+              <Text style={s.photoText}>{strings.card.memory.addPhotoCta}</Text>
+            </View>
           )}
         </TouchableOpacity>
 
@@ -197,6 +200,7 @@ export default function EditMemoryScreen() {
                 onPress={() => setWantAgain(item.value)}
                 activeOpacity={0.75}
               >
+                <Heart size={16} color={on ? C.pinkDeep : C.textLight} strokeWidth={2} fill={on ? C.pinkLight : 'none'} />
                 <Text style={[s.wantText, on && s.wantTextOn]}>{item.label}</Text>
               </TouchableOpacity>
             );
@@ -217,18 +221,18 @@ export default function EditMemoryScreen() {
 
 const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xxxl + SP.sm },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingTop: { marginTop: 16 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
+  headingTop: { marginTop: SP.lg },
+  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
+  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: SP.xl, marginBottom: SP.sm },
   inputWrap: {
     backgroundColor: C.white,
-    borderRadius: 16,
+    borderRadius: R.lg,
     borderWidth: 1,
     borderColor: C.border,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
   },
   // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. lineHeight는 multiline 전용.
   input: { fontSize: 14, color: C.text, paddingVertical: 0 },
@@ -236,9 +240,9 @@ const s = StyleSheet.create({
   footerSpacer: { height: 120 },
 
   photoPlaceholder: {
-    marginTop: 14,
+    marginTop: SP.md + 2,
     height: 160,
-    borderRadius: 16,
+    borderRadius: R.lg,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: C.pinkBorder,
@@ -247,15 +251,19 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   photoPreview: { width: '100%', height: '100%' },
-  photoText: { fontSize: 13, color: C.textMuted },
+  photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
 
-  wantAgainRow: { flexDirection: 'row', gap: 10 },
+  wantAgainRow: { flexDirection: 'row', gap: SP.sm },
   wantBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
+    flexDirection: 'row',
+    gap: SP.xs,
+    paddingVertical: SP.lg - 2,
+    borderRadius: R.md,
     backgroundColor: C.white,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: C.border,
   },
@@ -266,9 +274,9 @@ const s = StyleSheet.create({
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
   },
 });

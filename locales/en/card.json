@@ -99,6 +99,7 @@
       "existingValueOption": "Current value · {{time}}",
       "budgetLabel": "Budget",
       "budgetPlaceholder": "e.g. around $40",
+      "stepsReferenceLabel": "Course steps (reference)",
       "saveCta": "Save",
       "saveError": "Something went wrong updating it."
     },
@@ -107,7 +108,7 @@
       "newSub": "Save the day's memory along with a photo.",
       "editHeading": "Edit memory",
       "editSub": "Save your changes to update the memory.",
-      "addPhotoCta": "📷 Add a photo",
+      "addPhotoCta": "Add a photo",
       "titleLabel": "Title",
       "titlePlaceholder": "e.g. Picnic by the river",
       "reviewLabel": "One-line review",

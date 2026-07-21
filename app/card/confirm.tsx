@@ -7,8 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { Check } from 'lucide-react-native';
-import { C } from '../../constants/colors';
+import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from 'lucide-react-native';
+import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton, Chip, SoftCard, SuccessModal } from '../../components/ui';
 import {
   DateWheelPicker,
@@ -26,14 +26,24 @@ type CardSummary = {
   tags: string[];
 };
 
-const ROW_ICONS = ['📅', '🕐', '📍', '🛍️'];
+const ROW_ICONS = [Calendar, Clock, MapPin, ShoppingBag] as const;
 
 function CardMetaRow({ card }: { card: CardSummary }) {
   return (
     <View style={styles.metaRow}>
-      {!!card.estimated_time && <Text style={styles.metaText}>⏱ {card.estimated_time}</Text>}
+      {!!card.estimated_time && (
+        <View style={styles.metaItem}>
+          <Clock size={13} color={C.grayFg} strokeWidth={2} />
+          <Text style={styles.metaText}>{card.estimated_time}</Text>
+        </View>
+      )}
       {!!card.estimated_time && !!card.estimated_budget && <Text style={styles.metaSep}>·</Text>}
-      {!!card.estimated_budget && <Text style={styles.metaText}>💰 {card.estimated_budget}</Text>}
+      {!!card.estimated_budget && (
+        <View style={styles.metaItem}>
+          <Wallet size={13} color={C.grayFg} strokeWidth={2} />
+          <Text style={styles.metaText}>{card.estimated_budget}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -189,7 +199,7 @@ export default function ConfirmScreen() {
               <View style={styles.detailRows}>
                 {detailRows.map((row) => (
                   <View key={row.label} style={styles.detailRow}>
-                    <Text style={styles.detailIcon}>{row.icon}</Text>
+                    <row.icon size={15} color={C.pinkDeep} strokeWidth={2} style={styles.detailIcon} />
                     <Text style={styles.detailLabel}>{row.label}</Text>
                     <Text style={[styles.detailValue, !row.value && styles.detailValueEmpty]} numberOfLines={1}>
                       {row.value || c.unset}
@@ -246,7 +256,7 @@ export default function ConfirmScreen() {
           <View style={styles.rowList}>
             <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openDatePicker}>
               <View style={styles.rowIconWrap}>
-                <Text style={styles.rowIconText}>{ROW_ICONS[0]}</Text>
+                <Calendar size={16} color={C.pinkDeep} strokeWidth={2} />
               </View>
               <View style={styles.flex1}>
                 <Text style={styles.rowLabel}>{c.dateLabel}</Text>
@@ -254,11 +264,12 @@ export default function ConfirmScreen() {
                   {date ? formatDateLabel(date, undefined, language) : c.datePlaceholder}
                 </Text>
               </View>
+              <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openTimePicker}>
               <View style={styles.rowIconWrap}>
-                <Text style={styles.rowIconText}>{ROW_ICONS[1]}</Text>
+                <Clock size={16} color={C.pinkDeep} strokeWidth={2} />
               </View>
               <View style={styles.flex1}>
                 <Text style={styles.rowLabel}>{c.timeLabel}</Text>
@@ -266,12 +277,13 @@ export default function ConfirmScreen() {
                   {time || c.timePlaceholder}
                 </Text>
               </View>
+              <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
             </TouchableOpacity>
 
             {textRows.map((row) => (
               <View key={row.label} style={styles.row}>
                 <View style={styles.rowIconWrap}>
-                  <Text style={styles.rowIconText}>{row.icon}</Text>
+                  <row.icon size={16} color={C.pinkDeep} strokeWidth={2} />
                 </View>
                 <View style={styles.flex1}>
                   <Text style={styles.rowLabel}>{row.label}</Text>
@@ -322,57 +334,57 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
 
-  headingBlock: { marginTop: 16, marginBottom: 20 },
+  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
 
-  cardPreview: { marginBottom: 20, backgroundColor: C.white },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  cardPreview: { marginBottom: SP.xl, backgroundColor: C.white },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.sm },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
   metaText: { fontSize: 12, color: C.grayFg },
-  metaSep: { marginHorizontal: 8, color: C.textFaint },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  metaSep: { marginHorizontal: SP.sm, color: C.textFaint },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
 
-  rowList: { gap: 10, marginBottom: 28 },
+  rowList: { gap: SP.sm, marginBottom: SP.xxl + SP.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: C.white,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: R.btn,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.lg,
     borderWidth: 1,
     borderColor: C.border,
-    gap: 12,
+    gap: SP.md,
   },
   rowIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: R.sm,
     backgroundColor: C.cream,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
-  rowIconText: { fontSize: 16 },
-  rowLabel: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginBottom: 4 },
+  rowLabel: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginBottom: SP.xs },
   rowInput: { fontSize: 14, color: C.text, paddingVertical: 0 },
   pickerValue: { fontSize: 14, color: C.text, paddingVertical: 2, fontWeight: '600' },
   pickerValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
-  detailRows: { marginTop: 16, gap: 12, borderTopWidth: 1, borderTopColor: C.borderLight, paddingTop: 16 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  detailIcon: { fontSize: 15, width: 20, textAlign: 'center' },
+  detailRows: { marginTop: SP.lg, gap: SP.md, borderTopWidth: 1, borderTopColor: C.borderLight, paddingTop: SP.lg },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
+  detailIcon: { width: SP.xl },
   detailLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', width: 72 },
   detailValue: { fontSize: 14, color: C.text, fontWeight: '600', flex: 1 },
   detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
-  actions: { gap: 6 },
+  actions: { gap: SP.xs + 2 },
   doneBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: C.pink, borderRadius: 14, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs + 2,
+    backgroundColor: C.pink, borderRadius: R.btn, paddingVertical: SP.lg,
   },
   doneBtnText: { color: C.white, fontSize: 14, fontWeight: '700' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12 },
