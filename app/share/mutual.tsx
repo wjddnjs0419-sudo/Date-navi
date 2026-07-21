@@ -8,10 +8,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Sparkles, Clock, Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, SoftCard } from '../../components/ui';
+import { G, SP, R, T } from '../../constants/theme';
+import { BackBar, BigButton, Chip, CourseStepList, SoftCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
+import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 
 type MutualCard = {
   id: string;
@@ -20,6 +21,7 @@ type MutualCard = {
   estimatedTime: string;
   estimatedBudget: string;
   tags: string[];
+  steps?: CourseStep[];
   myReaction: string;
   partnerReaction: string;
   note: string;
@@ -85,13 +87,13 @@ export default function MutualScreen() {
           const cardIds = [...new Set(reactions.map(r => r.card_id))];
           const { data: cards } = await supabase
             .from('date_cards')
-            .select('id, title, summary, estimated_time, estimated_budget, tags, content_i18n')
+            .select('id, title, summary, estimated_time, estimated_budget, tags, content_i18n, steps')
             .in('id', cardIds);
 
-          const cardMap: Record<string, { title: string; summary: string; estimated_time: string; estimated_budget: string; tags: string[] }> = {};
+          const cardMap: Record<string, { title: string; summary: string; estimated_time: string; estimated_budget: string; tags: string[]; steps?: CourseStep[] }> = {};
           (cards ?? []).forEach(raw => {
             const c = localizeCardContent(raw, language);
-            cardMap[c.id] = { title: c.title, summary: c.summary, estimated_time: c.estimated_time, estimated_budget: c.estimated_budget, tags: c.tags ?? [] };
+            cardMap[c.id] = { title: c.title, summary: c.summary, estimated_time: c.estimated_time, estimated_budget: c.estimated_budget, tags: c.tags ?? [], steps: c.steps };
           });
 
           const grouped: Record<string, typeof reactions> = {};
@@ -123,6 +125,7 @@ export default function MutualScreen() {
               estimatedTime: cardInfo?.estimated_time ?? '',
               estimatedBudget: cardInfo?.estimated_budget ?? '',
               tags: cardInfo?.tags ?? [],
+              steps: cardInfo?.steps,
               myReaction: REACTION_LABEL_MAP[mine.reaction_type] ?? mine.reaction_type,
               partnerReaction: REACTION_LABEL_MAP[partner.reaction_type] ?? partner.reaction_type,
               note: section === 'mutual'
@@ -148,8 +151,8 @@ export default function MutualScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.introWrap}>
-          <Text style={s.heading}>{t('share.mutual.heading')}</Text>
-          <Text style={s.subText}>{t('share.mutual.subText')}</Text>
+          <Text style={T.h1}>{t('share.mutual.heading')}</Text>
+          <Text style={[T.sub, s.subTextSpacing]}>{t('share.mutual.subText')}</Text>
         </View>
 
         {loading ? (
@@ -181,6 +184,12 @@ export default function MutualScreen() {
                     <Text style={s.cardTitle}>{card.title}</Text>
                     {!!card.summary && (
                       <Text style={s.cardSummary} numberOfLines={2}>{card.summary}</Text>
+                    )}
+
+                    {!!card.steps?.length && (
+                      <View style={s.stepsWrap}>
+                        <CourseStepList steps={resolveDisplaySteps(card)} summary={card.summary} />
+                      </View>
                     )}
 
                     {(!!card.estimatedTime || !!card.estimatedBudget) && (
@@ -253,49 +262,49 @@ export default function MutualScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  introWrap: { marginTop: 16 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  introWrap: { marginTop: SP.lg },
+  subTextSpacing: { marginTop: SP.sm },
   loadingWrap: { alignItems: 'center', marginTop: 60 },
-  sectionWrap: { marginTop: 24 },
-  cardGap: { marginTop: 10 },
+  sectionWrap: { marginTop: SP.xl + SP.xs },
+  cardGap: { marginTop: SP.sm + 2 },
   bottomSpacer: { height: 120 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
   sectionDot: { width: 4, height: 16, borderRadius: 2 },
   sectionLabel: { fontSize: 13, fontWeight: '700', color: C.text },
   cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  cardSummary: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: 4 },
-  metaRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  cardSummary: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: SP.xs },
+  stepsWrap: { marginTop: SP.md },
+  metaRow: { flexDirection: 'row', gap: SP.md, marginTop: SP.sm },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
   metaText: { fontSize: 11, fontWeight: '600' },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
-  reactionRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
+  reactionRow: { flexDirection: 'row', gap: SP.sm, marginTop: SP.md },
   reactionBox: {
-    flex: 1, borderRadius: 12, padding: 10,
+    flex: 1, borderRadius: R.md, padding: SP.sm + 2,
     backgroundColor: 'rgba(255,255,255,0.8)',
   },
   reactionBoxLabel: { fontSize: 10, color: C.textMuted },
   reactionBoxValue: { fontSize: 12, fontWeight: '600', color: C.text, marginTop: 2 },
   noteBox: {
-    flexDirection: 'row', gap: 8, marginTop: 12,
-    borderRadius: 12, padding: 12,
+    flexDirection: 'row', gap: SP.sm, marginTop: SP.md,
+    borderRadius: R.md, padding: SP.md,
     backgroundColor: C.white,
     alignItems: 'flex-start',
   },
   noteIcon: { marginTop: 1 },
   noteText: { fontSize: 12, color: C.grayFg, lineHeight: 18, flex: 1 },
-  emptyWrap: { alignItems: 'center', marginTop: 80, gap: 16 },
+  emptyWrap: { alignItems: 'center', marginTop: 80, gap: SP.lg },
   emptyText: { fontSize: 14, color: C.textSub },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
-    gap: 4,
+    gap: SP.xs,
   },
-  textBtn: { alignItems: 'center', paddingVertical: 10 },
+  textBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
   textBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
 });

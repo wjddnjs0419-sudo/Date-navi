@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Heart, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { supabase } from '../../lib/supabase';
 import { buildPushNavigationTarget, type PushNotificationType } from '../../lib/push';
@@ -134,7 +134,7 @@ export default function NotificationsScreen() {
         </View>
 
         <View style={s.titleWrap}>
-          <Text style={s.heading}>{t.title}</Text>
+          <Text style={T.h1}>{t.title}</Text>
           {unreadCount > 0
             ? <Text style={s.count}>{`${unreadCount}${t.unreadSuffix}`}</Text>
             : <Text style={s.count}>{t.allRead}</Text>}
@@ -231,53 +231,52 @@ export default function NotificationsScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clearBtn: { fontSize: 12, color: C.textSub, fontWeight: '500' },
   clearBtnDisabled: { color: C.textLight },
-  titleWrap: { marginTop: 12 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text },
+  titleWrap: { marginTop: SP.md },
   count: { fontSize: 12, color: C.textMuted, marginTop: 2 },
-  groupSection: { marginTop: 24 },
-  itemTextWrap: { flex: 1, paddingRight: 8 },
+  groupSection: { marginTop: SP.xxl },
+  itemTextWrap: { flex: 1, paddingRight: SP.sm },
   bottomSpacer: { height: 40 },
   centerBox: { paddingTop: 80, alignItems: 'center' },
-  emptyBox: { paddingTop: 72, alignItems: 'center', paddingHorizontal: 24 },
+  emptyBox: { paddingTop: 72, alignItems: 'center', paddingHorizontal: SP.xxl },
   emptyIcon: {
     width: 64, height: 64, borderRadius: 32, backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SP.lg,
     borderWidth: 1, borderColor: C.border,
   },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-  emptyBody: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: 6, textAlign: 'center' },
+  emptyBody: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: SP.xs + 2, textAlign: 'center' },
   iconBox: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: R.sm,
     alignItems: 'center', justifyContent: 'center',
   },
   itemTitle: { fontSize: 13, fontWeight: '600', color: C.text },
   itemBody: { fontSize: 12, color: C.textSub, lineHeight: 17, marginTop: 2 },
-  itemTime: { fontSize: 10, color: C.textLight, marginTop: 4 },
+  itemTime: { fontSize: 10, color: C.textLight, marginTop: SP.xs },
   modalBackdrop: {
     flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: SP.xxl,
   },
   modalCard: {
     width: '100%', maxWidth: 360, backgroundColor: C.white,
-    borderRadius: 24, padding: 20,
+    borderRadius: R.hero, padding: SP.xl,
   },
   modalHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modalTitle: { fontSize: 15, fontWeight: '700', color: C.text },
   modalCardChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: C.bg, borderRadius: 14, padding: 12, marginTop: 16,
+    flexDirection: 'row', alignItems: 'center', gap: SP.sm + 2,
+    backgroundColor: C.bg, borderRadius: R.md, padding: SP.md, marginTop: SP.lg,
   },
   modalCardIcon: {
     width: 32, height: 32, borderRadius: 9, backgroundColor: C.pinkLight,
     alignItems: 'center', justifyContent: 'center',
   },
   modalCardTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: C.text },
-  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: 14, fontStyle: 'italic' },
-  modalCopyBtn: { marginTop: 20 },
-  modalCloseBtn: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
+  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: SP.md + 2, fontStyle: 'italic' },
+  modalCopyBtn: { marginTop: SP.xl },
+  modalCloseBtn: { alignItems: 'center', paddingVertical: SP.sm + 2, marginTop: SP.xs },
   modalCloseText: { fontSize: 13, color: C.textSub, fontWeight: '600' },
 });

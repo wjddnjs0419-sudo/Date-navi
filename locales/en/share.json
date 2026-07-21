@@ -51,6 +51,8 @@
         "Low cost",
         "Good for tired days"
       ],
+      "shareChannelsLabel": "Choose how to share",
+      "nativeShareCta": "Share via another app",
       "sectionLabel": "A note to send along",
       "messagePlaceholder": "Type a note",
       "suggestCta": "Suggest a note",

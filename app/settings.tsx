@@ -8,14 +8,15 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as ExpoLocation from 'expo-location';
+import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
 import {
-  User, Users, Bell, Globe, Shield,
-  HelpCircle, FileText, LogOut, Trash2, Camera, Heart, ChevronRight, MapPin,
+  User, Users, Bell, Globe, Shield, Info,
+  HelpCircle, FileText, Trash2, ChevronRight, MapPin,
 } from 'lucide-react-native';
 import { C } from '../constants/colors';
-import { G } from '../constants/theme';
-import { BackBar, ListGroup, ListRow, SectionLabel } from '../components/ui';
+import { G, SP, R, T } from '../constants/theme';
+import { BackBar, BigButton, ListGroup, ListRow, SectionLabel, SoftCard } from '../components/ui';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 import { useRevalidatingLoad } from '../lib/useRevalidatingLoad';
@@ -243,6 +244,7 @@ export default function SettingsScreen() {
     );
   }
 
+  const appVersion = Constants.expoConfig?.version ? `v${Constants.expoConfig.version}` : '';
   const initials = displayName.slice(0, 1) || t.meInitial;
   const dayLabel = daysConnected !== null
     ? t.daysWith(partnerName || t.partnerFallback, daysConnected)
@@ -258,34 +260,27 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar largeTouchTarget />
 
-        {/* 프로필 헤더 */}
-        <TouchableOpacity
-          style={s.avatarBtn}
-          onPress={() => router.push('/account/edit-profile' as any)}
-          activeOpacity={0.8}
-        >
-          <View style={s.avatar}>
-            {photoUrl ? (
-              <Image source={{ uri: photoUrl }} style={s.avatarImage} />
-            ) : (
-              <Text style={s.avatarText}>{initials}</Text>
-            )}
-            <View style={s.avatarCamera}>
-              <Camera size={14} strokeWidth={1.8} color={C.text} />
-            </View>
-          </View>
-        </TouchableOpacity>
+        <Text style={[T.h1, s.pageTitle]}>{t.heading}</Text>
 
-        <View style={s.profileCenter}>
-          <Text style={s.profileName}>{displayName || t.nameEmpty}</Text>
-          {dayLabel && (
-            <TouchableOpacity style={s.dayBadge} activeOpacity={0.8} onPress={openRelationshipPicker}>
-              <Heart size={10} color={C.pinkDeep} fill={C.pinkDeep} strokeWidth={0} />
-              <Text style={s.dayBadgeText}>{dayLabel}</Text>
-              <ChevronRight size={10} color={C.pinkDeep} strokeWidth={2.2} />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* 프로필 헤더 */}
+        <SoftCard style={s.profileCard} onPress={() => router.push('/account/edit-profile' as any)}>
+          <View style={s.profileAvatar}>
+            {photoUrl ? (
+              <Image source={{ uri: photoUrl }} style={s.profileAvatarImage} />
+            ) : (
+              <Text style={s.profileAvatarText}>{initials}</Text>
+            )}
+          </View>
+          <View style={s.profileTextWrap}>
+            <Text style={s.profileName}>{displayName || t.nameEmpty}</Text>
+            {dayLabel && (
+              <TouchableOpacity onPress={openRelationshipPicker} hitSlop={8}>
+                <Text style={s.profileSubtitle}>{dayLabel}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <ChevronRight size={16} color={C.textFaint} strokeWidth={2} />
+        </SoftCard>
 
         {/* 통계 */}
         <View style={s.statsRow}>
@@ -370,30 +365,24 @@ export default function SettingsScreen() {
               label={t.rowPrivacy}
               trailing={<ChevronRight size={14} color={C.textFaint} />}
               onPress={() => router.push('/legal/privacy' as any)}
+            />
+            <ListRow
+              icon={<Info size={16} strokeWidth={1.8} color={C.text} />}
+              label={t.rowAppInfo}
+              value={appVersion}
               divider={false}
             />
           </ListGroup>
         </View>
 
-        {/* 로그아웃 / 탈퇴 */}
         <View style={s.section}>
-          <ListGroup>
-            <ListRow
-              icon={<LogOut size={16} strokeWidth={1.8} color={C.text} />}
-              label={t.logout}
-              onPress={handleLogout}
-            />
-            <ListRow
-              icon={<Trash2 size={16} strokeWidth={1.8} color="#EF4444" />}
-              label={t.deleteTitle}
-              destructive
-              onPress={() => router.push('/account/delete-account' as any)}
-              divider={false}
-            />
-          </ListGroup>
+          <BigButton onPress={handleLogout}>{t.logout}</BigButton>
+          <TouchableOpacity style={s.deleteLink} onPress={() => router.push('/account/delete-account' as any)}>
+            <Trash2 size={13} strokeWidth={1.8} color={C.textFaint} />
+            <Text style={s.deleteLinkText}>{t.deleteTitle}</Text>
+          </TouchableOpacity>
         </View>
 
-        <Text style={s.version}>Date Navi v1.0.0</Text>
         <View style={s.bottomSpacer} />
       </ScrollView>
       <PickerSheet
@@ -415,47 +404,38 @@ export default function SettingsScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
-  avatarBtn: { alignSelf: 'center' },
-  avatar: {
-    width: 100, height: 100, borderRadius: 50,
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
+  pageTitle: { marginBottom: SP.lg },
+  profileCard: { flexDirection: 'row', alignItems: 'center', gap: SP.md },
+  profileAvatar: {
+    width: 48, height: 48, borderRadius: 24,
     backgroundColor: C.pinkMid,
     alignItems: 'center', justifyContent: 'center',
-    position: 'relative',
   },
-  avatarImage: { width: 100, height: 100, borderRadius: 50 },
-  avatarText: { fontSize: 36, fontWeight: '800', color: C.white },
-  avatarCamera: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: C.border,
-  },
-  profileCenter: { alignItems: 'center', marginTop: 12 },
-  profileName: { fontSize: 18, fontWeight: '700', color: C.text },
-  dayBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    marginTop: 6,
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
-    backgroundColor: C.pinkLight,
-  },
-  dayBadgeText: { fontSize: 11, fontWeight: '600', color: C.pinkDeep },
+  profileAvatarImage: { width: 48, height: 48, borderRadius: 24 },
+  profileAvatarText: { fontSize: 17, fontWeight: '800', color: C.white },
+  profileTextWrap: { flex: 1 },
+  profileName: { fontSize: 15, fontWeight: '700', color: C.text },
+  profileSubtitle: { fontSize: 12, color: C.textSub, marginTop: 2 },
   statsRow: {
     flexDirection: 'row',
-    marginTop: 24,
+    marginTop: SP.xxl,
     backgroundColor: C.white,
-    borderRadius: 20,
+    borderRadius: R.xl,
     borderWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
   },
-  statBox: { flex: 1, padding: 16, alignItems: 'center' },
+  statBox: { flex: 1, padding: SP.lg, alignItems: 'center' },
   statBoxDivider: { borderLeftWidth: 1, borderLeftColor: C.border },
   statValue: { fontSize: 18, fontWeight: '800', color: C.pinkDeep },
   statLabel: { fontSize: 11, color: C.textSub, marginTop: 2 },
-  sectionFirst: { marginTop: 28 },
-  section: { marginTop: 20 },
-  version: { textAlign: 'center', fontSize: 11, color: C.textLight, marginTop: 24 },
+  sectionFirst: { marginTop: SP.xxl + SP.xs },
+  section: { marginTop: SP.xl },
+  deleteLink: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs,
+    marginTop: SP.md, paddingVertical: SP.sm,
+  },
+  deleteLinkText: { fontSize: 12, color: C.textFaint, fontWeight: '500' },
   bottomSpacer: { height: 40 },
 });

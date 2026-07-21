@@ -1,6 +1,7 @@
 {
   "settings": {
     "title": "My Account",
+    "heading": "Settings",
     "subtitle": "Manage your nickname, password, and language.",
     "languageTitle": "App language",
     "languageSubtitle": "Choose the language Date Navi should use.",
@@ -52,6 +53,7 @@
     "rowHelp": "Help",
     "rowTerms": "Terms of Service",
     "rowPrivacy": "Privacy Policy",
+    "rowAppInfo": "App info",
     "langPickTitle": "Select language",
     "langPickMessage": "Choose your app language.",
     "cancel": "Cancel",

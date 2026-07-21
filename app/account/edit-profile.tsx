@@ -10,7 +10,7 @@ import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { Camera, Check } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
@@ -189,7 +189,7 @@ export default function EditProfileScreen() {
     <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
-        <Text style={[s.heading, s.headingSpacing]}>{t('account.editProfile.heading')}</Text>
+        <Text style={[T.h1, s.headingSpacing]}>{t('account.editProfile.heading')}</Text>
 
         <View style={s.avatarWrap}>
           <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} disabled={uploadingPhoto}>
@@ -275,13 +275,12 @@ export default function EditProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text },
-  headingSpacing: { marginTop: 16 },
-  avatarWrap: { alignItems: 'center', marginTop: 24 },
-  changePhotoWrap: { marginTop: 12 },
-  nicknameSection: { marginTop: 28 },
-  planningSection: { marginTop: 20 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
+  headingSpacing: { marginTop: SP.lg },
+  avatarWrap: { alignItems: 'center', marginTop: SP.xxl },
+  changePhotoWrap: { marginTop: SP.md },
+  nicknameSection: { marginTop: SP.xxl + SP.xs },
+  planningSection: { marginTop: SP.xl },
   optionText: { fontSize: 14 },
   bottomSpacer: { height: 120 },
   avatar: {
@@ -300,7 +299,7 @@ const s = StyleSheet.create({
   },
   avatarCamera: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 36, height: 36, borderRadius: 18,
+    width: 36, height: 36, borderRadius: R.btn,
     backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: C.border,
@@ -308,7 +307,7 @@ const s = StyleSheet.create({
   changePhotoBtn: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
   nicknameInput: { fontSize: 14, color: C.text, fontWeight: '500', flex: 1 },
   charCount: { fontSize: 11, color: C.textLight },
-  fieldHint: { fontSize: 11, color: C.textMuted, marginTop: 6, paddingHorizontal: 4 },
+  fieldHint: { fontSize: 11, color: C.textMuted, marginTop: SP.xs + 2, paddingHorizontal: SP.xs },
   checkCircle: {
     width: 20, height: 20, borderRadius: 10,
     backgroundColor: C.pink,
@@ -317,9 +316,9 @@ const s = StyleSheet.create({
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
   },
 });

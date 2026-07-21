@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, TextInput,
+  ActivityIndicator, TextInput, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateInviteMessage } from '../../lib/ai';
-import { Heart, Sparkles } from 'lucide-react-native';
+import { Share2, Sparkles, Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, SuccessModal } from '../../components/ui';
+import { G, SP, R, T } from '../../constants/theme';
+import { BackBar, BigButton, Chip, CourseStepList, MetaChipRow, SectionLabel, SoftCard, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
+import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 
-type CardInfo = { id: string; title: string; summary: string; tags: string[] };
+type CardInfo = {
+  id: string;
+  title: string;
+  summary: string;
+  tags: string[];
+  estimated_time?: string;
+  estimated_budget?: string;
+  steps?: CourseStep[];
+};
 
 export default function SendScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
@@ -34,7 +43,7 @@ export default function SendScreen() {
       try {
         const { data } = await supabase
           .from('date_cards')
-          .select('id, title, summary, tags, content_i18n')
+          .select('id, title, summary, tags, content_i18n, estimated_time, estimated_budget, steps')
           .eq('id', cardId)
           .maybeSingle();
         if (data) setCard(localizeCardContent(data, language));
@@ -43,6 +52,12 @@ export default function SendScreen() {
       }
     })();
   }, [cardId]);
+
+  async function handleNativeShare() {
+    const title = card?.title ?? t('share.cardTitleFallback');
+    const summary = card?.summary ?? t('share.cardDescFallback');
+    await Share.share({ title, message: `${title}\n${summary}` });
+  }
 
   async function handleSuggestMessage() {
     setGenerating(true);
@@ -98,33 +113,57 @@ export default function SendScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <BackBar />
         <View style={s.introWrap}>
-          <Text style={s.heading}>{t('share.send.heading')}</Text>
-          <Text style={s.subText}>{t('share.send.subText')}</Text>
+          <Text style={T.h1}>{t('share.send.heading')}</Text>
+          <Text style={[T.sub, s.subTextSpacing]}>{t('share.send.subText')}</Text>
         </View>
 
         {loading ? (
           <ActivityIndicator color={C.pink} style={s.loadingSpinner} />
         ) : (
-          <View style={s.cardBox}>
-            <View style={s.cardBanner}>
-              <View style={s.cardIconWrap}>
-                <Heart size={26} strokeWidth={1.5} color={C.pinkDeep} />
-              </View>
+          <SoftCard style={s.cardBox}>
+            <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
+            <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
+
+            <View style={s.stepsWrap}>
+              <CourseStepList steps={resolveDisplaySteps(card ?? {})} summary={card?.summary} />
             </View>
-            <View style={s.cardBody}>
-              <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
-              <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
-              <View style={s.tagsRow}>
-                {(card?.tags ?? t('share.send.tagsFallback', { returnObjects: true }) as string[]).slice(0, 3).map((tag) => (
-                  <Chip key={tag} tone="gray">{tag}</Chip>
-                ))}
+
+            {(!!card?.estimated_time || !!card?.estimated_budget) && (
+              <View style={s.metaRow}>
+                {!!card?.estimated_time && (
+                  <MetaChipRow items={[{ icon: 'clock', label: card.estimated_time }]} />
+                )}
+                {!!card?.estimated_budget && (
+                  <View style={s.budgetChip}>
+                    <Wallet size={13} color={C.textSub} strokeWidth={2} />
+                    <Text style={s.budgetChipText}>{card.estimated_budget}</Text>
+                  </View>
+                )}
               </View>
+            )}
+
+            <View style={s.tagsRow}>
+              {(card?.tags ?? t('share.send.tagsFallback', { returnObjects: true }) as string[]).slice(0, 3).map((tag) => (
+                <Chip key={tag} tone="gray">{tag}</Chip>
+              ))}
             </View>
-          </View>
+          </SoftCard>
         )}
 
         <View style={s.sectionBlock}>
-          <Text style={s.sectionLabel}>{t('share.send.sectionLabel')}</Text>
+          <SectionLabel>{t('share.send.shareChannelsLabel')}</SectionLabel>
+          <TouchableOpacity
+            style={s.nativeShareBtn}
+            onPress={handleNativeShare}
+            testID="send-native-share"
+          >
+            <Share2 size={16} color={C.text} strokeWidth={2} />
+            <Text style={s.nativeShareBtnText}>{t('share.send.nativeShareCta')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={s.sectionBlock}>
+          <SectionLabel>{t('share.send.sectionLabel')}</SectionLabel>
           <View style={s.messageBox}>
             <TextInput
               style={s.messageInput}
@@ -165,67 +204,69 @@ export default function SendScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  introWrap: { marginTop: 16 },
-  loadingSpinner: { marginTop: 40 },
-  cardBody: { padding: 16 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
-  sectionBlock: { marginTop: 20 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  introWrap: { marginTop: SP.lg },
+  subTextSpacing: { marginTop: SP.sm },
+  loadingSpinner: { marginTop: SP.xxxl + SP.sm },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm - 2, marginTop: SP.md },
+  sectionBlock: { marginTop: SP.xl },
   bottomSpacer: { height: 120 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   cardBox: {
-    marginTop: 20,
-    borderRadius: 22,
-    overflow: 'hidden',
+    marginTop: SP.xl,
+  },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+  cardDesc: { fontSize: 12, color: C.textSub, marginTop: SP.xs },
+  stepsWrap: { marginTop: SP.md },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
+  // PHASE0-BACKMERGE: MetaChipRow의 icon 유니언에 'wallet'(예산) 추가되면 이 커스텀 칩은 제거하고 흡수한다.
+  budgetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.xs,
+  },
+  budgetChipText: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  nativeShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SP.sm,
+    borderRadius: R.btn,
+    paddingVertical: SP.md,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
   },
-  cardBanner: {
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.pinkMid,
-  },
-  cardIconWrap: {
-    width: 56, height: 56, borderRadius: 16,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  cardDesc: { fontSize: 12, color: C.textSub, marginTop: 4 },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 8 },
+  nativeShareBtnText: { fontSize: 13, fontWeight: '600', color: C.text },
   messageBox: {
     backgroundColor: C.white,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: R.btn,
+    padding: SP.lg,
     borderWidth: 1,
     borderColor: C.border,
     minHeight: 80,
   },
   messageInput: { fontSize: 13, color: C.text, lineHeight: 22 },
   suggestBtn: {
-    marginTop: 8,
+    marginTop: SP.sm,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: SP.xs + 2,
+    borderRadius: R.xl,
+    paddingHorizontal: SP.md,
+    paddingVertical: SP.xs + 2,
     backgroundColor: C.lavender,
   },
   suggestBtnText: { fontSize: 12, fontWeight: '600', color: C.lavenderFg },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
-    gap: 4,
+    gap: SP.xs,
   },
-  textBtn: { alignItems: 'center', paddingVertical: 10 },
+  textBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
   textBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
 });
