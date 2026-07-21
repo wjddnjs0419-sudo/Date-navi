@@ -1,0 +1,40 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+// 목업(06_card_confirm)엔 이모지 아이콘이 없다. StyleSeed lock도 lucide 단일 아이콘 패밀리를
+// 요구하므로(STYLESEED.md) 날짜/시간/장소/준비물 행 아이콘을 이모지 대신 lucide로 교체한다.
+function read(rel: string): string {
+  return readFileSync(join(process.cwd(), rel), 'utf8');
+}
+
+describe('card confirm screen icons', () => {
+  const source = read('app/card/confirm.tsx');
+
+  it('no longer renders emoji row icons', () => {
+    expect(source).not.toContain('📅');
+    expect(source).not.toContain('🕐');
+    expect(source).not.toContain('📍');
+    expect(source).not.toContain('🛍️');
+    expect(source).not.toContain('⏱');
+    expect(source).not.toContain('💰');
+  });
+
+  it('imports lucide icons for the row list', () => {
+    expect(source).toMatch(/import \{[^}]*Calendar[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*MapPin[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*ShoppingBag[^}]*\} from 'lucide-react-native'/);
+  });
+
+  it('preserves the confirm save contract (status flip + confirmed fields)', () => {
+    expect(source).toMatch(/async function handleSave\(\)[\s\S]*?status: 'confirmed'/);
+    expect(source).toMatch(/confirmed_date: date\.trim\(\) \|\| null/);
+  });
+
+  it('preserves the cancel-plan delete contract', () => {
+    expect(source).toMatch(/function handleCancelPlan\(\)[\s\S]*?from\('date_cards'\)\.delete\(\)/);
+  });
+
+  it('preserves the success-modal home redirect', () => {
+    expect(source).toMatch(/onHide=\{[\s\S]*?router\.replace\('\/\(tabs\)\/'/);
+  });
+});
