@@ -11,7 +11,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { C } from '../constants/colors';
+import { X } from 'lucide-react-native';
+import { C, SP, R } from '../constants/theme';
 import { BigButton } from './ui';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 import { ko, en } from '../locales';
@@ -225,14 +226,20 @@ export function PickerSheet({
         <Pressable style={sheetS.backdrop} onPress={onCancel} />
         <View style={[sheetS.panel, centered && sheetS.panelCentered]}>
           {!centered && <View style={sheetS.handle} />}
-          <Text style={sheetS.title}>{title}</Text>
-          {children}
-          <View style={sheetS.actions}>
-            <Pressable style={[sheetS.cancelBtn, centered && sheetS.cancelBtnFlex]} onPress={onCancel}>
-              <Text style={sheetS.cancelText}>{t('pickers.cancel')}</Text>
+          <View style={sheetS.header}>
+            <Text style={sheetS.title}>{title}</Text>
+            <Pressable
+              style={sheetS.closeBtn}
+              onPress={onCancel}
+              accessibilityRole="button"
+              accessibilityLabel={t('pickers.cancel')}
+              hitSlop={8}
+            >
+              <X size={20} color={C.textMuted} strokeWidth={2} />
             </Pressable>
-            <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel ?? t('pickers.done')}</BigButton>
           </View>
+          {children}
+          <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel ?? t('pickers.done')}</BigButton>
         </View>
       </View>
     </Modal>
@@ -334,32 +341,30 @@ const pickerS = StyleSheet.create({
     left: 0,
     right: 0,
     height: ITEM_H,
-    borderRadius: 12,
+    borderRadius: R.md,
     backgroundColor: C.pinkLight,
-    borderWidth: 1,
-    borderColor: C.pinkBorder,
   },
   item: {
     height: ITEM_H,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: SP.sm,
   },
   itemText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 22,
     color: C.textMuted,
     fontWeight: '500',
   },
   itemTextSelected: {
-    color: C.pinkDeep,
+    color: C.text,
     fontWeight: '700',
     fontSize: 20,
     lineHeight: 28,
   },
   dateRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: SP.sm,
   },
   yearWheel: { flex: 1.2 },
   shortWheel: { flex: 1 },
@@ -381,16 +386,16 @@ const sheetS = StyleSheet.create({
   },
   panel: {
     backgroundColor: C.bg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 28,
+    borderTopLeftRadius: R.hero,
+    borderTopRightRadius: R.hero,
+    paddingHorizontal: SP.xl,
+    paddingTop: SP.sm,
+    paddingBottom: SP.xxl,
   },
   panelCentered: {
-    borderRadius: 24,
+    borderRadius: R.hero,
     width: '100%',
-    paddingTop: 24,
+    paddingTop: SP.xxl,
   },
   handle: {
     width: 40,
@@ -398,39 +403,29 @@ const sheetS = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: C.border,
     alignSelf: 'center',
-    marginBottom: 18,
+    marginBottom: SP.md,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SP.lg,
   },
   title: {
     fontSize: 17,
     fontWeight: '700',
     color: C.text,
-    textAlign: 'center',
-    marginBottom: 18,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 18,
-  },
-  cancelBtn: {
-    width: 92,
-    borderRadius: 18,
-    alignItems: 'center',
+  closeBtn: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 32,
+    alignItems: 'flex-end',
     justifyContent: 'center',
-    backgroundColor: C.white,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  cancelBtnFlex: {
-    width: undefined,
-    flex: 1,
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: C.textSub,
   },
   doneBtn: {
-    flex: 1,
+    marginTop: SP.xl,
   },
 });
