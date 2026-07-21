@@ -286,16 +286,11 @@
 
 ## Pending Approval
 
-### [Phase 0 완료·병합 대기] 2026-07-21 세션 BE — UI 전면 교체 공용 기반
-- **브랜치 `ui/phase0`(11커밋, 병합 `5a3faee`, 15커밋)**: 토큰(카테고리 핀 3색) + i18n 조각분할(병렬 충돌 제거) + 신규 공용 컴포넌트 8종(Illustration/Wordmark/CoursePin·StepPin·CourseMapPreview/DdayBadge/MetaChipRow/PlanListRow) + 공용 모달 3종 리스타일 + Design.md·STYLESEED.md·메모리. 850 tests/tsc 클린.
-- 설계 `docs/superpowers/specs/2026-07-21-ui-renew-parallel-design.md`, 플랜 `docs/superpowers/plans/2026-07-21-ui-renew-phase0.md`.
-- **다음**: `ui/phase0` → main 병합(사용자 승인) → 병합 커밋을 기준선으로 클러스터 6개 작업 패킷 생성 → 병렬 세션(Phase 1). 미결: SuccessModal 자동닫힘 vs 버튼닫힘, GeneratingView 부제/팁 i18n.
+### [Phase 2 진행 중] 2026-07-21 세션 BF — UI 전면 교체 6클러스터 전부 main 통합
+- Phase 0(`5a3faee`) → Phase 1 클러스터 6개(auth/onboarding/tabs/course/card/share-account) 전부 순차 병합 완료. tsc 클린, 137 suites/923 tests 통과.
+- **남음(spec §7)**: `PHASE0-BACKMERGE` 플래그 3건 승격 검토(D-day 헬퍼 중복 2곳, `MetaChipRow` wallet 아이콘 흡수) · `ss-verify` 시각 게이트 · 실기기 확인(사용자, Xcode Release Run).
 
-### [진행 중] 2026-07-21 세션 BD — UI 전면 교체 (asset 준비 완료, 화면 조립 대기)
-- **asset 8장 완성** → `assets/illustrations/` (하트 마스코트 3 + 코스지도 가로·세로 + 홈책지도 + 핀로고 + 공원배경). 스타일: 매트 클레이 파스텔 핑크.
-- 참고 목업 50화면 = `UI RENEW/`(gitignore, 로컬 참고용). 화면별 asset 필요 여부 감사 완료(RESULT 세션 BD).
-- **다음 세션 착수점**: login 화면부터. 브레인스토밍 → 디자인 토큰(`constants/colors.ts`·`theme.ts`) 목업 대조 검증 → 공통 컴포넌트(`components/ui.tsx`) → login 조립 → 나머지. 구현이므로 TDD + StyleSeed 게이트.
-- 미결: 온보딩 `connected`의 유저 아바타 서클은 코드로 얹기(실사진). 소형 코너지도는 `date-course-map-horizontal` 크롭 재사용.
+### [Done] 2026-07-21 세션 BD — UI 전면 교체 asset 준비. `assets/illustrations/` 8장(매트 클레이 파스텔 핑크). 화면 조립은 세션 BE(Phase 0)~BF(Phase 1 6클러스터 병합)에서 완료 → 위 [Phase 2 진행 중] 항목 참조.
 
 ### [Done] 2026-07-21 세션 BC — 전 화면 스크린샷 dev 모드 + 한/영 유저 플로우 맵. `EXPO_PUBLIC_SCREENSHOT=1` 플래그 격리(목업 supabase+fixtures+HTTP 제어서버 네비게이터+하네스)로 시뮬레이터 37 라이브 화면 자동 캡처. `docs/screenshots/flow-map.html`(한/영 토글 자체완결). MVP 미사용 화면(모드 선택·feeling·bucketlist·result) 제외. tsc 클린. 도구 유지(플래그 off 기본). 재사용법 = 메모리 screenshot-mode-tooling.
 
