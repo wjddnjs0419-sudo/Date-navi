@@ -17,10 +17,19 @@
 - 병합 후 루트에서 재검증: tsc 클린, **137 suites / 923 tests 통과**.
 - 이로써 **UI 전면 교체 6클러스터 전부 main 통합 완료.**
 
-### 남은 것 (Phase 2 §7 잔여 항목)
-- `PHASE0-BACKMERGE` 플래그 3건 발견, 승격 미검토: D-day 계산 헬퍼가 `app/plans/index.tsx`·`app/(tabs)/index.tsx`에 중복, `app/share/send.tsx:221`은 `MetaChipRow` icon 유니언에 `wallet` 추가되면 커스텀 칩 제거 예정.
-- `ss-verify` 시각 게이트(핵심 플로우 스크린샷 점수) 미실행.
-- 실기기 확인(사용자, Xcode Release Run) 대기.
+### `PHASE0-BACKMERGE` 승격 (TDD, 커밋 `a42d59a`)
+- D-day 헬퍼(`app/plans/index.tsx`·`app/(tabs)/index.tsx` 중복) → `lib/time.ts`의 `daysUntilIso`로 승격.
+- `MetaChipRow` icon 유니언에 `wallet` 추가 → `app/share/send.tsx` 커스텀 예산 칩 제거, 시간+예산 한 줄로 통합.
+- tsc 클린, 137 suites/928 tests.
+
+### `ss-verify` 시각 게이트 (iOS 시뮬레이터 실렌더링)
+- `EXPO_PUBLIC_SCREENSHOT=1` + `scripts/shot-control-server.py`로 시뮬레이터(iPhone 17 Pro)에서 핵심 플로우 8화면 실캡처: 로그인·홈·온보딩(닉네임/연결완료)·코스생성·AI탐색중·코스결과·데이트확정·공유보내기. 이번 콜드런치는 수동 탭 없이 자동 진입.
+- **발견 1건, 즉시 수정**: `onboarding/nickname.tsx` 입력창~CTA 사이가 목업(`01_onboarding_nickname.png`) 대비 빈 공백(밸런스 실패) — 목업엔 `mascot-heart-single` 마스코트가 채워져 있었음. TDD로 anniversary/connected와 동일 패턴 흡수, 재렌더로 확인. 커밋 `b329b80`.
+- 나머지 7화면은 포커스·리듬·색 규율(단일 액센트+카테고리 3색) 문제 없음. `share/send.tsx`의 `한마디 추천받기` 라벤더 칩은 STYLESEED.md가 명시 허용하는 톤 패밀리 태그라 위반 아님.
+- tsc 클린, 137 suites/929 tests. 시뮬레이터·제어서버 프로세스 정리 완료.
+
+### 남은 것
+- 실기기 확인(사용자, Xcode Release Run) 대기 — 이걸로 Phase 2 §7 전 항목 완료.
 
 ## 2026-07-21 세션 BE — UI 전면 교체 Phase 0 (공용 기반, 병렬 준비)
 

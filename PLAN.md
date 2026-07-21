@@ -286,9 +286,9 @@
 
 ## Pending Approval
 
-### [Phase 2 진행 중] 2026-07-21 세션 BF — UI 전면 교체 6클러스터 전부 main 통합
-- Phase 0(`5a3faee`) → Phase 1 클러스터 6개(auth/onboarding/tabs/course/card/share-account) 전부 순차 병합 완료. tsc 클린, 137 suites/923 tests 통과.
-- **남음(spec §7)**: `PHASE0-BACKMERGE` 플래그 3건 승격 검토(D-day 헬퍼 중복 2곳, `MetaChipRow` wallet 아이콘 흡수) · `ss-verify` 시각 게이트 · 실기기 확인(사용자, Xcode Release Run).
+### [Phase 2 거의 완료] 2026-07-21 세션 BF — UI 전면 교체 6클러스터 main 통합 + 정리
+- Phase 0(`5a3faee`) → Phase 1 클러스터 6개(auth/onboarding/tabs/course/card/share-account) 전부 순차 병합. `PHASE0-BACKMERGE` 승격(D-day 헬퍼·wallet 칩) 완료. `ss-verify` 시각 게이트 완료(발견 1건 수정: 닉네임 온보딩 빈 여백에 마스코트 추가). tsc 클린, 137 suites/929 tests.
+- **남음(spec §7)**: 실기기 확인(사용자, Xcode Release Run)만 남음.
 
 ### [Done] 2026-07-21 세션 BD — UI 전면 교체 asset 준비. `assets/illustrations/` 8장(매트 클레이 파스텔 핑크). 화면 조립은 세션 BE(Phase 0)~BF(Phase 1 6클러스터 병합)에서 완료 → 위 [Phase 2 진행 중] 항목 참조.
 
