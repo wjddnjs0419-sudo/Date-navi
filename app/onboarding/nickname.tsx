@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { useI18n } from '../../lib/i18n';
 
 export default function NicknameScreen() {
@@ -80,7 +81,9 @@ export default function NicknameScreen() {
             <Text style={s.hint}>{t('onboarding.nickname.hint')}</Text>
           </View>
 
-          <View style={s.spacer} />
+          <View style={s.spacer}>
+            <Illustration name="mascot-heart-single" width={140} />
+          </View>
 
           <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
             {loading ? t('onboarding.nickname.saving') : t('onboarding.nickname.next')}
@@ -113,5 +116,5 @@ const s = StyleSheet.create({
   fieldInput: { fontSize: 16, color: C.text, fontWeight: '500', flex: 1 },
   charCount: { fontSize: 11, color: C.textFaint },
   hint: { fontSize: 11, color: C.textMuted, marginTop: 8, paddingHorizontal: 4 },
-  spacer: { flex: 1 },
+  spacer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

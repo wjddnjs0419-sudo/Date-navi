@@ -115,4 +115,11 @@ describe('onboarding UI 전면 교체 — 목업 델타', () => {
     const mascot = r.root.findAllByProps({ name: 'mascot-heart-couple' });
     expect(mascot.length).toBeGreaterThan(0);
   });
+
+  it('nickname: 입력창과 CTA 사이 빈 여백에 mascot-heart-single 일러스트를 얹는다', () => {
+    const NicknameScreen = require('../app/onboarding/nickname').default as React.ComponentType;
+    const r = render(NicknameScreen);
+    const mascot = r.root.findAllByProps({ name: 'mascot-heart-single' });
+    expect(mascot.length).toBeGreaterThan(0);
+  });
 });
