@@ -27,9 +27,10 @@ type Props = {
   onChange: (location: RecommendationLocation | null) => void;
   search?: (query: string) => Promise<RecommendationLocation[]>;
   required?: boolean;
+  badge?: number;
 };
 
-export function LocationSelector({ value, onChange, search = searchLocations, required = false }: Props) {
+export function LocationSelector({ value, onChange, search = searchLocations, required = false, badge }: Props) {
   const { t } = useI18n();
   const [query, setQuery] = useState(value?.label ?? '');
   const [suggestions, setSuggestions] = useState<RecommendationLocation[]>([]);
@@ -132,7 +133,12 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{t(required ? 'location.requiredLabel' : 'location.label')}</Text>
+      <View style={styles.labelRow}>
+        {badge != null && (
+          <View style={styles.badge}><Text style={styles.badgeText}>{badge}</Text></View>
+        )}
+        <Text style={styles.label}>{t(required ? 'location.requiredLabel' : 'location.label')}</Text>
+      </View>
       <View style={styles.inputWrap}>
         <MapPin size={18} color={C.pink} strokeWidth={2} />
         <TextInput
@@ -203,7 +209,14 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
 
 const styles = StyleSheet.create({
   container: { marginTop: SP.xl },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.sm },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginBottom: SP.sm },
+  badge: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: C.pink,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  badgeText: { fontSize: 13, fontWeight: '800', color: C.white },
+  label: { fontSize: 15, fontWeight: '700', color: C.text },
   inputWrap: {
     minHeight: 52,
     flexDirection: 'row',

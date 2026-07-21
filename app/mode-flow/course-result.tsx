@@ -8,8 +8,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
 import { C } from '../../constants/colors';
+import { SP, R } from '../../constants/theme';
 import { getCourseCategoryIcon } from '../../lib/course-draft';
-import { BackBar, BigButton, Badge, SuccessModal } from '../../components/ui';
+import { BackBar, BigButton, Badge, MetaChipRow, SuccessModal } from '../../components/ui';
+
+// 카테고리별 핀 색(STYLESEED lock의 +categorical 매핑). 없으면 pink.
+const CATEGORY_COLOR: Record<string, string> = {
+  meal: C.catMeal, restaurant: C.catMeal,
+  cafe: C.catCafe,
+  walk: C.catWalk, activity: C.catWalk, attraction: C.catWalk, culture: C.catWalk,
+};
+const categoryColor = (category: string) => CATEGORY_COLOR[category] ?? C.pink;
 import { useI18n } from '../../lib/i18n';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { requestRecommendationResponse } from '../../lib/recommend-date';
@@ -361,6 +370,14 @@ export default function CourseResultScreen() {
           <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
           <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
           <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
+          <MetaChipRow
+            items={[
+              { icon: 'map', label: snapshot.request.location.label },
+              ...(snapshot.request.maxWalkingMinutes
+                ? [{ icon: 'walk' as const, label: t('modeFlow.courseResult.walkChip', { minutes: snapshot.request.maxWalkingMinutes }) }]
+                : []),
+            ]}
+          />
           {(() => {
             const stepIntent = snapshot.response.metadata.stepIntent;
             if (!stepIntent) return null;
@@ -425,10 +442,10 @@ export default function CourseResultScreen() {
                   style={s.timelineCard}
                 >
                   <View style={s.timelineTopRow}>
-                    <View style={s.timelineBadge}>
+                    <View style={[s.timelineBadge, { backgroundColor: categoryColor(step.category) }]}>
                       <Text style={s.timelineBadgeNum}>{step.order}</Text>
                     </View>
-                    <CategoryIcon size={16} color={C.pinkDeep} />
+                    <CategoryIcon size={16} color={categoryColor(step.category)} />
                     {step.locked && <Lock size={13} color={C.textMuted} style={s.timelineLockIcon} />}
                     <View style={s.stepActions}>
                       <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === 0} onPress={() => moveStep(step.stepId, 'up')} style={s.stepAction}>
@@ -440,10 +457,18 @@ export default function CourseResultScreen() {
                     </View>
                   </View>
                   <Text numberOfLines={1} style={s.timelineName}>{step.placeName}</Text>
+                  {step.reason ? <Text numberOfLines={2} style={s.timelineReason}>{step.reason}</Text> : null}
                   <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
-                  <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/mode-flow/place-detail', params: { name: step.placeName, address: step.roadAddress || step.address, mapUrl: step.mapUrl, kakaoPlaceId: step.currentKakaoPlaceId } } as any)} style={s.detailButton}>
-                    <Text style={s.detailButtonText}>{t('modeFlow.courseResult.viewDetails')}</Text>
-                  </TouchableOpacity>
+                  <View style={s.cardActions}>
+                    <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/mode-flow/place-detail', params: { name: step.placeName, address: step.roadAddress || step.address, mapUrl: step.mapUrl, kakaoPlaceId: step.currentKakaoPlaceId } } as any)} style={s.cardActionBtn}>
+                      <Text style={s.cardActionText}>{t('modeFlow.courseResult.detailBtn')}</Text>
+                    </TouchableOpacity>
+                    {snapshot.status !== 'confirmed' && (
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked} onPress={() => void loadReplacementCandidates(step.stepId)} style={[s.cardActionBtn, step.locked && s.cardActionBtnDisabled]}>
+                        <Text style={s.cardActionText}>{t('modeFlow.courseResult.otherPlaceBtn')}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </TouchableOpacity>
                 {index < snapshot.steps.length - 1 && (
                   <View style={s.timelineConnector}>
@@ -611,8 +636,8 @@ const s = StyleSheet.create({
   backButtonText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
   inlineError: { color: C.pinkDeep, fontSize: 12, marginTop: 10 },
   placeRowGap: { marginTop: 12 },
-  headerArea: { paddingHorizontal: 20, gap: 6, marginBottom: 8 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: 6 },
+  headerArea: { paddingHorizontal: SP.xl, gap: SP.sm, marginBottom: SP.sm },
+  heading: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: SP.xs },
   sub: { fontSize: 13, color: C.textSub },
   conditionsToggle: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   conditionsToggleText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
@@ -624,19 +649,22 @@ const s = StyleSheet.create({
   intentChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   intentUnsupported: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
   scrollContent: { paddingBottom: 12 },
-  timeline: { paddingHorizontal: 20 },
-  timelineCard: { backgroundColor: C.white, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: C.border },
+  timeline: { paddingHorizontal: SP.xl, gap: SP.xs },
+  timelineCard: { backgroundColor: C.white, borderRadius: R.xl, padding: SP.lg, borderWidth: 1, borderColor: C.border },
   timelineTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timelineBadge: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: C.pink, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' },
-  timelineBadgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
+  timelineBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  timelineBadgeNum: { fontSize: 12, fontWeight: '800', color: C.white, lineHeight: 14 },
   timelineLockIcon: { marginLeft: -2 },
-  timelineName: { color: C.text, fontSize: 15, fontWeight: '700', marginTop: 8 },
-  timelineAddress: { color: C.textMuted, fontSize: 12, marginTop: 3 },
+  timelineName: { color: C.text, fontSize: 15, fontWeight: '700', marginTop: SP.sm },
+  timelineReason: { color: C.pinkDeep, fontSize: 13, lineHeight: 19, marginTop: SP.xs },
+  timelineAddress: { color: C.textMuted, fontSize: 12, marginTop: SP.xs },
   timelineConnector: { alignItems: 'center', height: 26, justifyContent: 'center' },
   timelineConnectorLine: { width: 1.5, height: 7, backgroundColor: C.border },
   timelineConnectorDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
-  detailButton: { minHeight: 32, justifyContent: 'center', alignSelf: 'flex-start', marginTop: 4 },
-  detailButtonText: { color: C.pinkDeep, fontSize: 11, fontWeight: '700' },
+  cardActions: { flexDirection: 'row', gap: SP.sm, marginTop: SP.md },
+  cardActionBtn: { flex: 1, minHeight: 40, borderRadius: R.md, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  cardActionBtnDisabled: { opacity: 0.4 },
+  cardActionText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
   stepActions: { flexDirection: 'row', marginLeft: 'auto', gap: 4 },
   stepAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   editError: { color: C.pinkDeep, fontSize: 12, textAlign: 'center', marginBottom: 4 },

@@ -129,6 +129,9 @@
       "lock": "이 장소 잠그기",
       "unlock": "잠금 해제",
       "viewDetails": "장소 상세·외부 확인",
+      "detailBtn": "상세 보기",
+      "otherPlaceBtn": "다른 장소 보기",
+      "walkChip": "도보 {{minutes}}분 이내",
       "detailNotice": "후기와 운영 정보는 외부 서비스에서 직접 확인해주세요. Date Navi는 외부 후기 내용을 저장하거나 검증하지 않아요.",
       "replacementTitle": "교체 후보",
       "replacementNotice": "상위 3개를 먼저 보여드려요. 외부 후기·지도는 해당 서비스에서 직접 확인해주세요.",
@@ -168,7 +171,7 @@
     },
     "placeSearch": {
       "title": "장소 검색",
-      "placeholder": "가게 이름으로 검색",
+      "placeholder": "가게 이름, 카테고리, 지역으로 검색",
       "empty": "검색 결과가 없어요",
       "error": "검색에 실패했어요. 다시 시도해 주세요",
       "pick": "선택",

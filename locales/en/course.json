@@ -2,6 +2,8 @@
   "course": {
     "unselected": "Not selected",
     "modeLabel": "Make it a plan",
+    "title": "Plan your date course",
+    "subtitle": "Pick the steps and preferences, and we'll suggest a course that fits.",
     "steps": {
       "label": "Course steps",
       "hint": "Arrange two to four steps in the order you want.",
@@ -87,7 +89,7 @@
       "additionalRequest": "Enter an additional request",
       "generate": "Build the date course"
     },
-    "generateButton": "Build a course",
+    "generateButton": "Get AI course",
     "back": "←"
   }
 }

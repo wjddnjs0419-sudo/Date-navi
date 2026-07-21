@@ -111,14 +111,14 @@ describe('structured course screen', () => {
     ]));
   });
 
-  it('shows only the mode label in the header, not the title or subtitle copy', () => {
+  it('shows the title and subtitle in the header (mockup P0/03), not the bare mode label', () => {
     let renderer!: TestRendererInstance;
     act(() => { renderer = create(<CourseScreen />); });
 
     const texts = renderer.root.findAllByType(Text).map((node) => node.props.children);
-    expect(texts).toContain('course.modeLabel');
-    expect(texts).not.toContain('course.title');
-    expect(texts).not.toContain('course.subtitle');
+    expect(texts).toContain('course.title');
+    expect(texts).toContain('course.subtitle');
+    expect(texts).not.toContain('course.modeLabel');
   });
 
   it('renders two default steps and enforces the two-to-four step controls', () => {

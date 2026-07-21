@@ -69,6 +69,21 @@ function issueMessage(
   return t(`course.validation.${issue.code}`);
 }
 
+// 목업 P0/03 섹션 헤더: 핑크 번호 배지 + 라벨(+힌트). 번호는 화면 내 섹션 순서.
+function SectionTitle({ number, label, hint }: { number: number; label: string; hint?: string }) {
+  return (
+    <View style={styles.sectionTitleRow}>
+      <View style={styles.sectionBadge}>
+        <Text style={styles.sectionBadgeText}>{number}</Text>
+      </View>
+      <View style={styles.sectionTitleCopy}>
+        <Text style={styles.sectionLabel}>{label}</Text>
+        {hint != null && <Text style={styles.hint}>{hint}</Text>}
+      </View>
+    </View>
+  );
+}
+
 export default function CourseScreen() {
   const router = useRouter();
   const { language, t } = useI18n();
@@ -152,16 +167,12 @@ export default function CourseScreen() {
       >
         <BackBar largeTouchTarget />
         <View style={styles.header}>
-          <Text style={styles.modeLabel}>{t('course.modeLabel')}</Text>
+          <Text style={styles.title}>{t('course.title')}</Text>
+          <Text style={styles.subtitle}>{t('course.subtitle')}</Text>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeadingWrap}>
-              <Text style={styles.sectionLabel}>{t('course.steps.label')}</Text>
-              <Text style={styles.hint}>{t('course.steps.hint')}</Text>
-            </View>
-          </View>
+          <SectionTitle number={1} label={t('course.steps.label')} hint={t('course.steps.hint')} />
           <View style={styles.stepList}>
             {draft.steps.map((step, index) => (
               <CourseStepEditor
@@ -192,12 +203,13 @@ export default function CourseScreen() {
 
         <LocationSelector
           required
+          badge={2}
           value={draft.location}
           onChange={(location) => dispatch({ type: 'setLocation', location })}
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('course.walking.label')}</Text>
+          <SectionTitle number={3} label={t('course.walking.label')} />
           <View style={styles.choiceWrap}>
             {WALKING_OPTIONS.map((option) => {
               const selected = draft.maxWalkingMinutes === option.value;
@@ -219,7 +231,7 @@ export default function CourseScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('course.budget.label')}</Text>
+          <SectionTitle number={4} label={t('course.budget.label')} />
           <StepSlider
             min={0}
             max={BUDGET_MAX_KRW}
@@ -234,7 +246,7 @@ export default function CourseScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('course.moods.label')}</Text>
+          <SectionTitle number={5} label={t('course.moods.label')} />
           <View style={styles.choiceWrap}>
             {COURSE_MOODS.map((mood) => {
               const selected = draft.moods.includes(mood);
@@ -258,7 +270,7 @@ export default function CourseScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('course.duration.label')}</Text>
+          <SectionTitle number={6} label={t('course.duration.label')} />
           <StepSlider
             min={0}
             max={DURATION_MAX_HOURS}
@@ -275,7 +287,7 @@ export default function CourseScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('course.additional.label')}</Text>
+          <SectionTitle number={7} label={t('course.additional.label')} />
           <TextInput
             accessibilityLabel={t('course.accessibility.additionalRequest')}
             style={styles.additionalInput}
@@ -338,12 +350,20 @@ export default function CourseScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   content: { paddingHorizontal: SP.xl, paddingTop: SP.sm, paddingBottom: 60 },
-  header: { paddingTop: SP.lg, gap: SP.sm },
-  modeLabel: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
+  header: { paddingTop: SP.lg, gap: SP.sm, alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: '800', color: C.text, textAlign: 'center', lineHeight: 31 },
+  subtitle: { fontSize: 14, color: C.textSub, textAlign: 'center', lineHeight: 20 },
   section: { paddingTop: SP.xxl, gap: SP.sm },
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: SP.sm },
-  sectionHeadingWrap: { flex: 1, gap: SP.xs },
-  sectionLabel: { fontSize: 15, fontWeight: '600', color: C.text, lineHeight: 22 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm },
+  sectionBadge: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: C.pink,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 1,
+  },
+  sectionBadgeText: { fontSize: 13, fontWeight: '800', color: C.white },
+  sectionTitleCopy: { flex: 1, gap: SP.xs },
+  sectionLabel: { fontSize: 15, fontWeight: '700', color: C.text, lineHeight: 22 },
   hint: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
   addButton: {
     minHeight: 44,

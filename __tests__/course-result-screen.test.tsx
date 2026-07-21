@@ -163,6 +163,17 @@ describe('course result screen', () => {
     expect(nameOccurrences.length).toBe(2);
   });
 
+  it('shows a location meta chip and each step reason (mockup P0/04/05)', () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    let instance!: TestRendererInstance;
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    // location label surfaces in the always-visible meta chip row (conditions panel is collapsed)
+    expect(instance.root.findAllByProps({ children: '서울숲' }).length).toBeGreaterThan(0);
+    // each step's recommendation reason is shown on its card
+    expect(instance.root.findAllByProps({ children: 'ok' }).length).toBeGreaterThan(0);
+  });
+
   it('renders a category icon per step', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     let instance!: TestRendererInstance;
