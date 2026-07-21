@@ -1,11 +1,9 @@
-import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { useRef, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { LinearGradient } from 'expo-linear-gradient';
-import { C } from '../constants/colors';
+import { C, SP } from '../constants/theme';
 import { useI18n } from '../lib/i18n';
-
-const logo = require('../assets/logo.png');
+import { Illustration } from '../components/illustration';
 
 export default function Index() {
   const { t } = useI18n();
@@ -31,15 +29,10 @@ export default function Index() {
   }, []);
 
   return (
-    <LinearGradient
-      colors={C.bgGradient}
-      start={C.bgGradientStart}
-      end={C.bgGradientEnd}
-      style={s.container}
-    >
+    <View style={s.container}>
       <View style={s.center}>
         <Animated.View style={{ transform: [{ scale }, { translateY }], opacity }}>
-          <Image source={logo} style={s.logo} />
+          <Illustration name="brand-pin-logo" width={200} />
         </Animated.View>
         <Animated.View style={[s.titleBlock, { opacity }]}>
           <Text style={s.appName}>Date Navi</Text>
@@ -54,24 +47,24 @@ export default function Index() {
         </View>
         <Text style={s.loadingText}>{t('splash.loading')}</Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingBottom: 56,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  titleBlock: { marginTop: 16, alignItems: 'center' },
-  logo: { width: 240, height: 240, resizeMode: 'contain' },
-  appName: { fontSize: 30, fontWeight: '800', color: '#3A2E2E', textAlign: 'center', letterSpacing: -0.6 },
-  tagline: { fontSize: 13, color: '#8A7F76', textAlign: 'center', marginTop: 8 },
+  titleBlock: { marginTop: SP.lg, alignItems: 'center' },
+  appName: { fontSize: 30, fontWeight: '800', color: C.text, textAlign: 'center', letterSpacing: -0.6 },
+  tagline: { fontSize: 13, color: C.textSub, textAlign: 'center', marginTop: SP.sm },
   bottom: { alignItems: 'center', gap: 6 },
   dots: { flexDirection: 'row', gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F26B7A' },
-  loadingText: { fontSize: 11, color: '#A89B92' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.pink },
+  loadingText: { fontSize: 11, color: C.textMuted },
 });
