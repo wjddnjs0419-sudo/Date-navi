@@ -1,217 +1,141 @@
+# Design.md — Date Navi 디자인 언어
+
+> **단일 출처(Source of Truth):** 이 문서는 설명이고, 실제 값은 코드가 진짜다.
+> 색은 [constants/colors.ts](constants/colors.ts), 간격·반경·타이포 스케일은 [constants/theme.ts](constants/theme.ts),
+> 공용 UI 프리미티브는 [components/ui.tsx](components/ui.tsx)에 있다. 새 값이 필요하면 문서가 아니라 이 파일들을 먼저 고친다.
+
 ## Overview
 
-Airbnb is the canonical example of a generous, photography-led consumer marketplace. The base canvas is **pure white** (`{colors.canvas}` — #ffffff) with deep near-black ink (`{colors.ink}` — #222222) for headlines and body, and a single voltage of **Rausch** (`{colors.primary}` — #ff385c) carrying every primary CTA, the search-button orb, the heart save state, and inline brand links. There is no secondary brand color in mainline marketing — the **Luxe purple** (`{colors.luxe}` — #460479) and **Plus magenta** (`{colors.plus}` — #92174d) tokens are sub-brand accents that only appear inside Airbnb Luxe / Plus contexts.
+Date Navi는 커플이 "오늘 뭐 하지?"를 함께 정하는 **React Native + Expo 모바일 앱**이다.
+캔버스는 순백이 아니라 **아주 옅은 웜 핑크**(`bg` #FFF9FC)로, 화면 전체가 부드럽고 따뜻한 인상을 준다.
+액센트는 단 하나 — **살몬 핑크**(`pink` #F26B7A)가 모든 주요 CTA·활성 상태·강조를 담당한다.
+텍스트는 순검정을 피하고 **웜 브라운**(`text` #3A2E2E) 계열을 쓴다. 그림자마저 회색이 아니라 웜 브라운(`shadow` #785046)이라, 앱 전체가 하나의 따뜻한 색 온도로 묶인다.
 
-Type runs **Airbnb Cereal VF** (a custom variable font Airbnb licenses), with **Circular** as the historic in-house fallback and a system stack underneath. Cereal sits at modest weights — display headlines render at 22–28px in weight 500–600, not the heavy 700+ weights that financial or enterprise systems lean on. The hero h1 ("Inspiration for future getaways") on the homepage is just 28px / 700, which would feel small on a typical SaaS page; here it works because the layout leans on photography (city collage, property cards) for visual weight rather than typographic muscle.
+폰트는 **시스템 기본 폰트**(별도 커스텀 폰트 없음), 아이콘은 **lucide-react-native**, 그라데이션은 **expo-linear-gradient**를 쓴다.
 
-The shape language is **soft**. Buttons are 8px radius (`{rounded.sm}`), property cards are ~14px (`{rounded.md}`), the search bar is fully pill-shaped (`{rounded.full}`), wishlist hearts and search orbs are circles (`{rounded.full}`), and category strip rounded corners run at 32px (`{rounded.xl}`). There is essentially no hard corner anywhere except the body grid itself — every interactive element is rounded.
-
-**Key Characteristics:**
-- Single accent color: `{colors.primary}` (#ff385c — "Rausch") carries every primary CTA, the search orb, the heart save state, and the brand wordmark. Used scarcely — most pages are 90% white + ink with one or two Rausch moments.
-- Custom variable type: `Airbnb Cereal VF`. Display weights sit at 500–700, body at 400. Modest weight is intentional — the system trusts photography for visual heft.
-- Three-product top nav: Homes, Experiences, Services — each with a hand-illustrated 32px icon and "NEW" badges (`{component.new-tag}`) on the two newer products. Active tab uses an underline rule (`{component.product-tab-active}`).
-- Pill-shaped global search bar: white surface, fully rounded (`{rounded.full}`), divided by 1px hairlines into Where / When / Who segments, terminated by a circular Rausch search orb (`{component.search-orb}`).
-- Property cards are photo-first: aspect-ratio rectangles with `{rounded.md}` corner clipping, swipeable image carousel, "Guest favorite" floating badge top-left, heart icon top-right, then 4–5 lines of meta beneath.
-- Editorial dropdowns (footer, language picker) are clean text columns over the white canvas — no card surface, no shadow.
-- The design system caps elevation at one shadow tier (`box-shadow: rgba(0,0,0,0.02) 0 0 0 1px, rgba(0,0,0,0.04) 0 2px 6px, rgba(0,0,0,0.1) 0 4px 8px`) — used on hover-floated cards and search/account dropdowns.
-- 8px base spacing system, with major sections at `{spacing.section}` (64px) — generous but not airy enough to feel editorial-magazine; the marketplace density wants more cards per scroll.
+**핵심 특징**
+- **단일 액센트 핑크:** `pink` #F26B7A가 primary 버튼·선택 상태·핵심 강조를 전담한다. 과하게 쓰지 않고 화면당 한두 번만 등장한다.
+- **웜 뉴트럴 베이스:** 배경·텍스트·보더·그림자까지 전부 따뜻한 톤(핑크/크림/브라운)으로 통일. 차가운 회색은 보조(`coolGray`)로만 제한적으로 쓴다.
+- **부드러운 형태 언어:** 직각이 거의 없다. 카드 22px, 버튼 18px, hero 24px — 모든 인터랙티브 요소가 둥글다.
+- **톤 패밀리로 분류:** 태그·뱃지·카테고리는 pink / mint / lavender / cream / gray 5개 톤 패밀리(각각 `bg`+`fg` 쌍)로 구분한다. 원색 색깔 뱃지가 아니라 옅은 파스텔 배경 + 진한 동색 텍스트.
+- **얕은 단일 그림자:** 카드에 웜 브라운 그림자 1단(opacity 0.1, radius 7)만. 레이어드 다단 그림자 없음.
+- **아이콘 + 텍스트, 이모지 금지:** 시각 표현은 lucide 라인 아이콘으로. 신규 UI에 이모지·원색 색깔 뱃지 금지, 기존 컴포넌트·스타일 재사용이 규칙이다.
 
 ## Colors
 
-### Brand & Accent
-- **Rausch** (`{colors.primary}` — #ff385c): The single brand color. Used for primary CTA backgrounds (Reserve, Continue), the search orb, the heart save state on property cards, and inline brand links. The most recognizable color in consumer travel.
-- **Rausch Active** (`{colors.primary-active}` — #e00b41): The press / pointer-down variant — slightly more saturated. Used on `{component.button-primary-active}`.
-- **Rausch Disabled** (`{colors.primary-disabled}` — #ffd1da): A pale tint used on disabled CTAs.
-- **Luxe Purple** (`{colors.luxe}` — #460479): Sub-brand accent for Airbnb Luxe. Only appears inside Luxe-branded surfaces — never in mainline marketing.
-- **Plus Magenta** (`{colors.plus}` — #92174d): Sub-brand accent for Airbnb Plus. Same scoping as Luxe — sub-product only.
+전체 정의는 [constants/colors.ts](constants/colors.ts) 참조. 아래는 역할별 요약.
 
-### Surface
-- **Canvas** (`{colors.canvas}` — #ffffff): The default page floor for every public page. Airbnb does not have a dark mode on the public web.
-- **Surface Soft** (`{colors.surface-soft}` — #f7f7f7): The lightest fill — used on disabled fields, sub-nav hover backgrounds, and the inline search filter band.
-- **Surface Strong** (`{colors.surface-strong}` — #f2f2f2): Slightly heavier fill — circular icon-button surface (e.g., the breadcrumb back-arrow and listing toolbar buttons).
+### 브랜드 & 액센트
+| 토큰 | 값 | 용도 |
+|---|---|---|
+| `pink` | #F26B7A | 단일 브랜드 액센트. primary 버튼 배경, 선택/활성 상태 |
+| `pinkDeep` | #C24B57 | 핑크 배경 위 텍스트/아이콘(secondary 버튼 전경, pink 톤 뱃지 전경) |
+| `pinkLight` | #FFEEF0 | 옅은 핑크 채움. secondary 버튼 배경, pink 톤 뱃지 배경 |
+| `pinkBorder` | #F2A8B0 | 핑크 계열 보더 |
+| `pinkMid` | #FFD3D9 | 중간 핑크 |
+| `danger` | #FF4F6D | 삭제·경고 등 위험 액션 |
 
-### Hairlines & Borders
-- **Hairline** (`{colors.hairline}` — #dddddd): The default 1px border tone — search bar dividers, table separators, footer column splitters, card 1px borders.
-- **Hairline Soft** (`{colors.hairline-soft}` — #ebebeb): A lighter divider used on long-scrolling editorial body separators.
-- **Border Strong** (`{colors.border-strong}` — #c1c1c1): A heavier stroke used on disabled outline buttons and form input outlines after focus.
+### 서피스 & 배경
+| 토큰 | 값 | 용도 |
+|---|---|---|
+| `bg` | #FFF9FC | 기본 페이지 바닥 (옅은 웜 핑크) |
+| `bgSplash` | #FFF1F6 | 스플래시/진입 배경 |
+| `bgGradient` | #FFF1F6 → #FFFFFF | 좌상단→우하단 대각선 그라데이션 |
+| `white` / `cardBg` | #ffffff | 카드·시트 서피스 |
+| `disabledBg` | #EFE7DF | 비활성 버튼 배경 |
 
-### Text
-- **Ink** (`{colors.ink}` — #222222): The dominant text color on light surfaces. Display headlines, body paragraphs, primary nav links, and most inline link text. Never pure black.
-- **Body** (`{colors.body}` — #3f3f3f): A secondary running-text color used inside long-form review and amenity copy where ink would feel too heavy.
-- **Muted** (`{colors.muted}` — #6a6a6a): Sub-titles inside city link blocks ("Cottage rentals", "Villa rentals"), inactive product-tab labels, footer category sub-labels, "View all" links.
-- **Muted Soft** (`{colors.muted-soft}` — #929292): Disabled link text. Used very sparingly.
-- **Star Rating** (`{colors.star-rating}` — #222222): The same ink token — Airbnb's star icon and "4.81" rating numbers all render in ink rather than a yellow/gold color, which is a deliberate brand choice (yellow stars feel cheap in travel context).
-- **On Primary** (`{colors.on-primary}` — #ffffff): White text on Rausch CTAs.
+### 텍스트 (웜 브라운 스케일)
+| 토큰 | 값 | 용도 |
+|---|---|---|
+| `text` | #3A2E2E | 기본 본문·제목 (순검정 아님) |
+| `textSub` | #8A7F76 | 보조 텍스트, text 버튼 전경 |
+| `textMuted` | #A89B92 | 더 약한 보조 |
+| `textLight` | #B8AEA6 | 비활성 텍스트 |
+| `textFaint` | #C8BCB1 | 가장 옅은 힌트 |
+| `ink` / `inkSoft` | #1A1A1A / #4A4A55 | 강한 대비가 필요한 특수 표기 |
 
-### Semantic
-- **Error** (`{colors.primary-error-text}` — #c13515): Inline error text for form validation. Distinct from Rausch — slightly darker, more saturated red.
-- **Error Hover** (`{colors.primary-error-text-hover}` — #b32505): Darkens on link hover.
-- **Legal Link Blue** (`{colors.legal-link}` — #428bff): Inline links inside legal copy (Privacy, Terms). Only used inside the legal sub-band.
+### 보더 & 뉴트럴
+`border` #F2E0DC · `borderLight` #F2E7DC — 웜 톤 1px 헤어라인. 카드·리스트 구분선.
+`coolGray` #6B7280 · `coolGrayLight` #9CA3AF — 차가운 회색은 여기서만, 제한적으로.
 
-### Scrim
-- **Scrim** (`{colors.scrim}` — #000000 at 50% opacity): The global modal backdrop tone — date picker, login dialog, language picker. Stored as the base hex; opacity is applied at render time.
+### 톤 패밀리 (뱃지·태그·카테고리)
+각 패밀리는 **옅은 배경(`*`) + 진한 동색 전경(`*Fg`)** 쌍으로 쓴다.
+| 패밀리 | bg | fg | 대표 의미 |
+|---|---|---|---|
+| pink | `pinkLight` #FFEEF0 | `pinkDeep` #C24B57 | 로맨틱·재미·기본 |
+| mint | `mint` #E3F2EA | `mintFg` #3E8C5F | 야외·안전(실패 확률 낮음) |
+| lavender | `lavender` #F1ECFF | `lavenderFg` #6B5BB8 | 조용·사진 |
+| cream | `cream` #FFF3E0 | `creamFg` #A77738 | 저예산·피곤 |
+| gray | `gray` #F2EBE3 | `grayFg` #6B5247 | 실내·가까운 이동 |
+
+태그 문자열 → 아이콘·색 매핑 규칙은 [lib/tagStyle.ts](lib/tagStyle.ts)에 있다.
 
 ## Typography
 
-### Font Family
-The system runs **Airbnb Cereal VF** for everything — display, body, navigation, captions, microcopy. Fallbacks walk `Circular, -apple-system, system-ui, Roboto, "Helvetica Neue", sans-serif`. **Circular** is the historic in-house typeface still kept as the first non-variable fallback; system stacks back it up.
+**폰트 패밀리:** 시스템 기본 폰트(별도 지정 없음). iOS는 San Francisco, Android는 Roboto가 그대로 렌더된다.
 
-There is no separate display family. The variable font carries the entire scale.
+**공용 프리셋** ([constants/theme.ts](constants/theme.ts)의 `T`)
+- `T.h1` — 22px / 700 / lineHeight 29 / `text` — 화면 제목
+- `T.sub` — 13px / `textSub` / lineHeight 20 — 부제·설명
 
-### Hierarchy
-
-| Token | Size | Weight | Line Height | Letter Spacing | Use |
-|---|---|---|---|---|---|
-| `{typography.rating-display}` | 64px | 700 | 1.1 | -1px | Listing detail rating display ("4.81") |
-| `{typography.display-xl}` | 28px | 700 | 1.43 | 0 | Homepage h1 ("Inspiration for future getaways") |
-| `{typography.display-lg}` | 22px | 500 | 1.18 | -0.44px | Listing detail h1 ("Close to Fethiye Aliyah Bali Beach…") |
-| `{typography.display-md}` | 21px | 700 | 1.43 | 0 | Section heads inside listing detail ("What this place offers") |
-| `{typography.display-sm}` | 20px | 600 | 1.20 | -0.18px | Sub-section titles ("Things to know") |
-| `{typography.title-md}` | 16px | 600 | 1.25 | 0 | City link block titles ("Wilmington", "Athens") |
-| `{typography.title-sm}` | 16px | 500 | 1.25 | 0 | Footer column heads ("Support", "Hosting", "Airbnb") |
-| `{typography.body-md}` | 16px | 400 | 1.5 | 0 | Default running-text inside listing copy |
-| `{typography.body-sm}` | 14px | 400 | 1.43 | 0 | Card meta lines, dates, prices, distance text |
-| `{typography.caption}` | 14px | 500 | 1.29 | 0 | Search field segment labels ("Where", "When", "Who") |
-| `{typography.caption-sm}` | 13px | 400 | 1.23 | 0 | Footer legal line ("© 2026 Airbnb, Inc.") |
-| `{typography.badge}` | 11px | 600 | 1.18 | 0 | "Guest favorite" floating badge text |
-| `{typography.micro-label}` | 12px | 700 | 1.33 | 0 | Card amenity micro-labels ("Inline 6") |
-| `{typography.uppercase-tag}` | 8px | 700 | 1.25 | 0.32px (uppercase) | "NEW" badge on product nav tabs |
-| `{typography.button-md}` | 16px | 500 | 1.25 | 0 | Primary CTA button labels |
-| `{typography.button-sm}` | 14px | 500 | 1.29 | 0 | Pill button labels (category strip) |
-| `{typography.link}` | 14px | 400 | 1.43 | 0 | Inline body links |
-| `{typography.nav-link}` | 16px | 600 | 1.25 | 0 | Top product-nav labels (Homes, Experiences, Services) |
-
-### Principles
-Display weights stay modest. The homepage h1 at 28px / 700 is deliberately small — it tucks under the search bar so photography and the city-link grid carry visual hierarchy. The listing-detail h1 at 22px / 500 is even quieter; the listing photo banner does the work above it.
-
-The single typographically loud moment in the entire system is the **rating display** (`{typography.rating-display}` — 64px / 700) on listing pages. That is the only place the system trusts type alone to carry hierarchy — rating numbers are a peak trust signal, so they get the loudest treatment.
-
-### Note on Font Substitutes
-If Airbnb Cereal VF and Circular are unavailable, **Inter** is the closest open-source substitute. Adjust display headlines down by ~2% in line-height to match Cereal's slightly tighter cap height; otherwise the proportions transfer cleanly.
+**실제 사용 스케일** (코드 빈도 기준)
+- 크기: 13·12·14·11px가 본문·메타 주력. 22px가 제목, 15px가 버튼 라벨, 10px가 뱃지.
+- 굵기: 700(제목·강조) > 600(버튼·라벨) > 500(부제) > 800(특대 강조). 400은 거의 안 쓴다 — 이 앱은 굵기로 위계를 만든다.
 
 ## Layout
 
-### Spacing System
-- **Base unit:** 4px (with 2px micro-step).
-- **Tokens:** `{spacing.xxs}` 2px · `{spacing.xs}` 4px · `{spacing.sm}` 8px · `{spacing.md}` 12px · `{spacing.base}` 16px · `{spacing.lg}` 24px · `{spacing.xl}` 32px · `{spacing.xxl}` 48px · `{spacing.section}` 64px.
-- **Section padding (vertical):** `{spacing.section}` (64px) for major page bands; tighter than typical SaaS marketing (80–96px) because marketplace pages need higher card density per scroll.
-- **Card internal padding:** `{spacing.lg}` (24px) for `{component.host-card}` and `{component.reservation-card}`; `{spacing.base}` (16px) for property-card meta block; `{spacing.sm}` (8px) for caption / date-row gutters.
-- **Gutters:** `{spacing.base}` (16px) between cards in the homepage city grid; `{spacing.lg}` (24px) inside footer column gutters; `{spacing.xs}` (4px) on dense category-strip dividers.
+### 간격 스케일 (`SP`, 4px 기반)
+`xs` 4 · `sm` 8 · `md` 12 · `base(lg)` 16 · `xl` 20 · `xxl` 24 · `xxxl` 32.
+새 스타일은 이 스케일 값을 우선 사용한다.
 
-### Grid & Container
-- **Max content width:** ~1280px centered on the homepage and editorial pages. Listing detail pages cap closer to 1080px to keep the photo banner and reservation rail readable.
-- **City link grid (homepage footer):** 6-column grid at desktop with each cell housing a city name in `{typography.title-md}` and a category sub-label in `{typography.body-sm}` muted.
-- **Listing detail:** 2-column with photo / amenity body on the left (~64% width) and a sticky reservation card (`{component.reservation-card}`) on the right (~32%).
-- **Footer:** 3-column link list (Support / Hosting / Airbnb) at desktop, collapsing to 1-column on mobile.
+### 모서리 반경 (`R`)
+`badge` 6 · `sm` 10 · `md` 14 · `lg` 16 · `btn` 18 · `xl` 20 · `card` 22 · `hero` 24.
+기존 화면에서 실제 쓰이는 값만 담겨 있다. 뱃지=6, 버튼=18, 카드=22가 주력.
 
-### Whitespace Philosophy
-The system gives editorial bands 64px of vertical breathing room but compresses card grids — property and city-link cards sit just 16px apart. The contrast is intentional: the page reads as "open hero, dense marketplace below," reinforcing the marketplace nature without overwhelming the visitor at the fold.
+### 전역 레이아웃 프리셋 (`G`)
+`G.screen`(flex:1 + `bg`) · `G.center`(중앙 정렬) · `G.row`(가로 정렬).
 
 ## Elevation
 
-The system has essentially **one shadow tier** plus the flat baseline.
+그림자는 사실상 **1단 + 플랫**이다. 핵심은 그림자 색이 회색이 아니라 **웜 브라운**(`shadow` #785046)이라는 점.
 
-- **Flat (no shadow):** Body, hero, footer, all editorial bands — 95% of surfaces.
-- **Card hover float:** `box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0` — applied to property cards on pointer hover, the search bar at rest, and the dropdown menus (account menu, language picker, date picker). This is the single shadow definition in the entire system.
-- **Modal scrim:** `{colors.scrim}` rendered at 50% opacity — the global modal backdrop. Used on date pickers, login dialogs, language picker.
-
-There are no progressive elevation tiers — the system either has the one shadow or none. Depth comes from photography, the white-on-white surface separation, and rounded-corner clipping rather than from layered shadows.
+- **플랫:** 대부분의 서피스는 그림자 없음, 옅은 웜 보더로만 구분.
+- **카드 1단** (`SoftCard`): `shadowColor` #785046, offset (0, 4), opacity 0.1, radius 7, elevation 3. 앱의 기본 카드 떠 있음.
+- 모달·시트 등 특수 표면에서만 조금 더 강한 그림자(opacity 0.12~0.3)를 예외적으로 쓴다.
 
 ## Components
 
-### Buttons
+공용 프리미티브는 전부 [components/ui.tsx](components/ui.tsx)에 있다. 신규 화면은 이 컴포넌트를 재사용한다.
 
-**`button-primary`** — Rausch fill, white text, 8px radius, 14×24px padding, 48px height, weight 500. The most common CTA across the system: "Reserve", "Continue", "Search", account-flow primaries.
-
-**`button-primary-active`** — The press state. Background flips to `{colors.primary-active}`. No transform, no shadow change.
-
-**`button-primary-disabled`** — Pale Rausch tint at #ffd1da with white text. Cursor not-allowed.
-
-**`button-secondary`** — White fill with ink text and a 1px ink outline. 8px radius. Used for "Save", "Cancel", and inverse CTAs over Rausch surfaces.
-
-**`button-tertiary-text`** — Plain ink text, no surface, no border. Underlined on hover. Used for "Show more" type links and modal close labels.
-
-**`button-pill-rausch`** — A pill-shaped Rausch CTA used on featured cells (e.g., "Become a host" sub-CTA) — 9999px radius, 10×20px padding, 14px label.
-
-### Search Surface
-
-**`search-bar-pill`** — The signature global search bar. White fill, 9999px radius, 64px height, 1px hairline 1px-shadow border. Internally divided by vertical hairline rules into `{component.search-field-segment}` cells (Where / When / Who). Each segment holds an uppercase caption label above a placeholder line in `{typography.caption}`.
-
-**`search-orb`** — The circular Rausch orb terminating the right edge of the search bar. 48×48px, fully rounded, white magnifying-glass icon centered. The hottest single color moment on the homepage.
-
-### Top Navigation
-
-**`top-nav`** — White surface, 80px height, 1px bottom hairline. The Airbnb wordmark sits flush left, the three product tabs (Homes / Experiences / Services) sit in the dead center, and account utilities (host link, language globe, account menu) sit flush right.
-
-**`product-tab-active`** — Ink label in `{typography.nav-link}`, 32px hand-illustrated icon, 2px ink underline rule beneath the icon-label pair.
-
-**`product-tab-inactive`** — Muted label, illustrated icon, no underline. Becomes active on click.
-
-**`new-tag`** — A tiny rounded-pill badge (`{rounded.full}`) anchored top-right of an icon, carrying the uppercase "NEW" label in `{typography.uppercase-tag}` (8px / 700 with 0.32px tracking, uppercase). Used on Experiences and Services to signal recency.
-
-### Listing Cards
-
-**`property-card`** — A photo-first card. 1:1 aspect-ratio image with `{rounded.md}` corner clipping, image carousel dots overlay, "Guest favorite" floating badge top-left (`{component.guest-favorite-badge}`), and a heart icon top-right (`{component.icon-button-circle}` in default outlined state, Rausch-filled when saved). Beneath the image: 4–5 lines of meta — title (`{typography.title-md}`), distance / dates (`{typography.body-sm}` muted), and price ("$X night") right-aligned.
-
-**`property-card-photo`** — The photo plate itself, separated as a token because some surfaces (wishlist, search results) reuse just the photo without the meta block.
-
-**`experience-card`** — A taller-aspect card (4:5) for experience listings. Same `{rounded.md}` clipping, floating "NEW" badge top-left, heart top-right, and a single-line title beneath.
-
-**`guest-favorite-badge`** — White rounded pill (`{rounded.full}`) at 11px / 600 weight. Sits over the photo with the system's only shadow tier applied for elevation.
-
-### Listing Detail
-
-**`rating-display-card`** — The signature listing-detail moment. A 64px / 700 rating number ("4.81") flanked left and right by tiny laurel-wreath SVG ornaments. Beneath the rating: "Guest favorite" tagline and a row of ink stat columns. The largest typographic weight in the whole system.
-
-**`amenity-row`** — A 1-column list of amenity icons + ink labels in `{typography.body-md}`. 12px row padding, no border between rows; section is closed by a 1px hairline divider above and below.
-
-**`reviews-card`** — A 2-column grid of review excerpts. Each column holds an author row (avatar, name, date) above a 3-line excerpt with "Show more" tertiary link.
-
-**`host-card`** — A white card with `{rounded.md}` rounding and 24px padding holding a host avatar, name, "Superhost" badge, response-rate stat, and a "Contact host" `{component.button-secondary}`.
-
-**`reservation-card`** — The sticky right-rail card on listing detail pages. White surface, `{rounded.md}` rounding, 1px hairline border, 1px shadow tier elevation, 24px padding. Contains: nightly price (`{typography.display-md}` ink), date-range selector, guest-count stepper, "Reserve" primary CTA full-width, and a fee breakdown stack beneath in `{typography.body-sm}`.
-
-### Date Picker
-
-**`date-picker-day`** — A 40×40px circular cell carrying the day number in `{typography.body-sm}`. Default state is transparent fill, ink text.
-
-**`date-picker-day-selected`** — Ink fill, white text, full circle (`{rounded.full}`). Range states between two selected days carry a `{colors.surface-soft}` lozenge background that connects them.
-
-### Forms
-
-**`text-input`** — White surface, 1px hairline outline, `{rounded.sm}` 8px radius, 56px height, 14×12px padding. Stacked label above (in `{typography.caption}` muted), placeholder text in `{typography.body-md}` muted. On focus, the border thickens to 2px ink and the border color flips to `{colors.ink}` — no glow, no ring.
-
-### Footer
-
-**`footer-light`** — White surface (matches the page canvas — Airbnb has no contrast footer), 48×80px padding. Three columns of link blocks (Support / Hosting / Airbnb), separated by generous 24px gutters. Each column heads with a `{typography.title-sm}` ink label and stacks `{component.footer-link}` rows in `{typography.body-sm}` ink.
-
-**`legal-band`** — A bottom strip beneath the footer columns carrying the copyright line, language picker (globe icon + "English (US)" link), currency picker, and social icons (Facebook, X, Instagram). All text in muted `{colors.muted}` at `{typography.caption-sm}`.
-
-## Responsive Behavior
-
-| Name | Width | Key Changes |
+### 버튼 — `BigButton`
+반경 18, 세로 패딩 16, 폭 100%, 라벨 15px/600. `activeOpacity` 0.85.
+| variant | 배경 | 전경 |
 |---|---|---|
-| Mobile | < 744px | Top nav collapses to logo + hamburger; product tabs hide behind a sheet; search bar collapses to a single tappable pill; property cards stack 1-up; city grid 1-column; listing detail collapses reservation card to a sticky bottom bar. |
-| Tablet | 744–1128px | Top nav keeps product tabs but search bar narrows; property cards 2-up; city grid 2–3 column; reservation card stays sticky right-rail at narrower width. |
-| Desktop | 1128–1440px | Full top nav with three product tabs centered; search bar at full pill width with all 3 segments visible; property cards 4-up; city grid 6-column; listing detail 2-column with reservation rail. |
-| Wide | > 1440px | Content width caps at 1440px on listing/search pages and ~1280px on editorial; gutters absorb the rest. |
+| primary | `pink` | `white` |
+| secondary | `pinkLight` | `pinkDeep` |
+| text | transparent | `textSub` |
+| disabled | `disabledBg` | `textLight` |
 
-### Touch Targets
-- Primary CTAs at minimum 48×48px (above WCAG AAA).
-- Search orb is 48×48px circular — the most-tapped element on the page.
-- Heart save button is 32×32px circular — borderline for AAA but compensated by a generous 12px padding inside the photo card.
-- Date-picker day cells are 40×40px circular.
+### 카드 — `SoftCard`
+흰 서피스, 반경 22, 패딩 16, 1px `borderLight`, 웜 브라운 그림자 1단.
+`onPress` 없으면 순수 View(상위 스와이프 탭 방해 방지), 있으면 TouchableOpacity.
 
-### Collapsing Strategy
-- Top product tabs collapse into a hamburger sheet below 744px.
-- Search bar's 3 segments collapse into a single-tap entry that opens a full-screen search overlay on mobile.
-- Property and city-link grids drop column counts cleanly at each breakpoint — never reflow rows; always reduce columns.
-- Reservation card on listing detail switches from sticky right-rail to a sticky bottom bar on mobile, carrying just the "Reserve" CTA + nightly price summary.
+### `SwipeableCard`
+왼쪽으로 밀면 수정(연필)·삭제(X) 액션 노출. 가로 드래그가 세로보다 우세하고 10px 넘을 때만 스와이프로 인식.
 
-## Known Gaps
+### `Badge`
+반경 6, 패딩 6×2, 라벨 10px/600, letterSpacing 0.2. 톤: gray / pink / mint / lavender (각 톤 패밀리의 bg+fg).
 
-- **Hover state colors:** intentionally not documented per the global no-hover policy — Airbnb's actual `:hover` styling for property cards is a subtle elevation lift, but precise extraction is unreliable.
-- **Loading states / skeleton screens:** not visible on the extracted surfaces.
-- **Map view styling:** the search-results map uses Mapbox-tinted tiles with custom Rausch markers; not captured here.
-- **Form input error states:** error text color (`{colors.primary-error-text}`) is documented, but the full input outline + helper-text combination on validation failure was not visible in the captured surfaces.
-- **Sub-brand palettes:** Luxe (`{colors.luxe}`) and Plus (`{colors.plus}`) are documented as tokens, but their full sub-system (typography overrides, surface treatment) lives on separate sub-domains and is not captured here.
+### 그 외 프리미티브
+`Chip` · `OptionCardPicker` · `BackBar` · `ProgressDots` · `ListGroup`/`ListRow`(설정형 리스트) · `SectionLabel` · `LocationField`/`PlaceRow`(위치·장소) · `InfoNote` · `GeneratingView`(AI 생성 로딩) · `FieldBox` · `MoreMenu` · `SuccessModal` · `CourseStepList`.
+
+## 규칙 (신규 UI)
+
+- **이모지·원색 색깔 뱃지 금지.** 시각 표현은 lucide 라인 아이콘 + 톤 패밀리 파스텔 배경으로.
+- **하드코딩 금지.** 색은 `C.*`, 간격은 `SP.*`, 반경은 `R.*`를 쓴다. 매직 숫자·헥스 문자열 금지.
+- **기존 컴포넌트 재사용.** 새로 만들기 전에 [components/ui.tsx](components/ui.tsx)에 같은 역할이 있는지 먼저 본다.
+- **i18n 동기화.** 화면 문구는 `locales/ko.json`·`locales/en.json`을 같은 작업에서 함께 갱신한다.
+
+---
+
+> 과거 이 파일에는 Airbnb 웹 마켓플레이스 레퍼런스 문서가 들어 있었으나, 실제 앱(웜 핑크 모바일 커플앱)과 무관하여 실제 코드 토큰 기준으로 재작성했다. (2026-07-21)
