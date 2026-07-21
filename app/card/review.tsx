@@ -20,6 +20,14 @@ const RATING_ICONS: Record<string, typeof Heart> = {
   change: RotateCcw,
 };
 
+// 목업(07_card_memory_new)의 red/gold/green/blue 구분을 lock의 파스텔 톤 패밀리로 재현한다.
+const RATING_TONES: Record<string, { fg: string; bg: string }> = {
+  love: { fg: C.danger, bg: C.pinkLight },
+  good: { fg: C.creamFg, bg: C.cream },
+  ok: { fg: C.mintFg, bg: C.mint },
+  change: { fg: C.lavenderFg, bg: C.lavender },
+};
+
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -153,17 +161,18 @@ export default function ReviewScreen() {
             {c.ratings.map((item: { key: keyof typeof RATING_ICONS; label: string }) => {
               const sel = rating === item.key;
               const Icon = RATING_ICONS[item.key];
+              const tone = RATING_TONES[item.key];
               return (
                 <TouchableOpacity
                   key={item.key}
-                  style={[styles.ratingCard, sel && styles.ratingCardSel]}
+                  style={[styles.ratingCard, sel && { backgroundColor: tone.bg, borderColor: tone.fg, borderWidth: 1.5 }]}
                   onPress={() => setRating(item.key)}
                   activeOpacity={0.75}
                 >
-                  <View style={[styles.ratingIconWrap, sel && styles.ratingIconWrapSel]}>
-                    <Icon size={18} color={sel ? C.pinkDeep : C.textSub} strokeWidth={2} />
+                  <View style={[styles.ratingIconWrap, sel && { backgroundColor: C.white }]}>
+                    <Icon size={18} color={sel ? tone.fg : C.textSub} strokeWidth={2} />
                   </View>
-                  <Text style={[styles.ratingLabel, sel && styles.ratingLabelSel]}>{item.label}</Text>
+                  <Text style={[styles.ratingLabel, sel && { color: tone.fg, fontWeight: '600' }]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -231,7 +240,6 @@ const styles = StyleSheet.create({
     padding: SP.md + 2,
     gap: SP.sm,
   },
-  ratingCardSel: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder, borderWidth: 1.5 },
   ratingIconWrap: {
     width: 36,
     height: 36,
@@ -240,9 +248,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ratingIconWrapSel: { backgroundColor: C.white },
   ratingLabel: { fontSize: 13, color: C.textSub, fontWeight: '500' },
-  ratingLabelSel: { color: C.pinkDeep, fontWeight: '600' },
 
   reviewInput: {
     backgroundColor: C.white,
