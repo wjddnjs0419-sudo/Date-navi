@@ -25,7 +25,7 @@
 - **미결(Phase 2 사용자 결정)**: SuccessModal 목업=버튼닫힘 vs 현행=자동닫힘 1.1초 상호작용 모델 차이(현재 둘 다 동작). GeneratingView 목업 부제/팁카드는 i18n 이유로 생략(Phase 1 course가 키 추가 가능).
 
 ### 다음 (Phase 1 병렬)
-- **기준선 = `ui/phase0` 병합 후 main 커밋**(현재 tip `7fb3be2`). 병합은 사용자 승인 대기.
+- **기준선 = `ui/phase0` 병합 후 main 커밋**(main 병합 커밋 `5a3faee`). 병합은 사용자 승인 대기.
 - 클러스터별 작업 패킷 6개 생성 → 각 worktree 세션 배포. spec §8 형식.
 
 ## 2026-07-21 세션 BD — UI 전면 교체 착수 준비 (목업 감사 + 일러스트 asset 생성)
