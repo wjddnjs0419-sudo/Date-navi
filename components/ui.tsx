@@ -1,9 +1,9 @@
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
-  AccessibilityInfo, Easing, Modal,
-  type ViewStyle, type TextStyle, type StyleProp,
+  AccessibilityInfo, Easing, Modal, Image,
+  type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C, SP, R } from '../constants/theme';
@@ -315,6 +315,61 @@ const ddayS = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   label: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
+});
+
+// ─── PlanListRow ──────────────────────────────────────────────────────────────
+// "다가오는 데이트" 리스트 행. 홈/전체 계획 화면이 공유한다.
+export function PlanListRow({
+  title, dateLabel, days, imageSource, onPress,
+}: {
+  title: string;
+  dateLabel: string;
+  days: number;
+  imageSource?: ImageSourcePropType;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
+      {imageSource
+        ? <Image source={imageSource} style={planRowS.thumb} />
+        : <View style={planRowS.thumbPlaceholder} />}
+      <View style={planRowS.body}>
+        <Text style={planRowS.title} numberOfLines={1}>{title}</Text>
+        <View style={planRowS.dateRow}>
+          <Calendar size={13} color={C.textSub} strokeWidth={2} />
+          <Text style={planRowS.date}>{dateLabel}</Text>
+        </View>
+      </View>
+      <View style={planRowS.right}>
+        <DdayBadge days={days} />
+        <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+const planRowS = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.md,
+    paddingVertical: SP.md,
+  },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: R.sm,
+  },
+  thumbPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: R.sm,
+    backgroundColor: C.pinkLight,
+  },
+  body: { flex: 1, minWidth: 0 },
+  title: { fontSize: 15, fontWeight: '700', color: C.text },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: 4 },
+  date: { fontSize: 12, color: C.textSub },
+  right: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, flexShrink: 0 },
 });
 
 // ─── MetaChipRow ──────────────────────────────────────────────────────────────
