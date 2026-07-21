@@ -72,18 +72,15 @@ describe('share/send screen — course summary card', () => {
     ]);
   });
 
-  it('renders estimated time via the shared MetaChipRow, and budget alongside it', async () => {
+  it('renders estimated time and budget together via the shared MetaChipRow', async () => {
     let instance!: ReturnType<typeof create>;
     await act(async () => { instance = create(<SendScreen />); });
 
     const metaRow = instance.root.findByType(MetaChipRow);
-    const labels = metaRow.props.items.map((i: { label: string }) => i.label);
-    expect(labels).toEqual(['총 4시간']);
-
-    const { Wallet } = require('lucide-react-native');
-    expect(instance.root.findAllByType(Wallet).length).toBeGreaterThan(0);
-    const budgetText = instance.root.findAllByProps({ children: '8만원대' });
-    expect(budgetText.length).toBeGreaterThan(0);
+    expect(metaRow.props.items).toEqual([
+      { icon: 'clock', label: '총 4시간' },
+      { icon: 'wallet', label: '8만원대' },
+    ]);
   });
 
   it('shares the course summary via the native OS share sheet', async () => {

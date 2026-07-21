@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native';
+import { Wallet } from 'lucide-react-native';
 import { DdayBadge, MetaChipRow } from '../components/ui';
 
 const TR = require('react-test-renderer') as {
@@ -32,5 +33,13 @@ describe('MetaChipRow', () => {
     });
     const texts = tree.root.findAllByType(Text).map((n: any) => n.props.children);
     expect(texts).toEqual(expect.arrayContaining(['성수동 중심', '약 3시간']));
+  });
+
+  it('wallet 아이콘 변형을 렌더한다', () => {
+    let tree: any;
+    TR.act(() => {
+      tree = TR.create(<MetaChipRow items={[{ icon: 'wallet', label: '10만원대' }]} />);
+    });
+    expect(tree.root.findAllByType(Wallet).length).toBe(1);
   });
 });

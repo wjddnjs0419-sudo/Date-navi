@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateInviteMessage } from '../../lib/ai';
-import { Share2, Sparkles, Wallet } from 'lucide-react-native';
+import { Share2, Sparkles } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, Chip, CourseStepList, MetaChipRow, SectionLabel, SoftCard, SuccessModal } from '../../components/ui';
@@ -130,15 +130,12 @@ export default function SendScreen() {
 
             {(!!card?.estimated_time || !!card?.estimated_budget) && (
               <View style={s.metaRow}>
-                {!!card?.estimated_time && (
-                  <MetaChipRow items={[{ icon: 'clock', label: card.estimated_time }]} />
-                )}
-                {!!card?.estimated_budget && (
-                  <View style={s.budgetChip}>
-                    <Wallet size={13} color={C.textSub} strokeWidth={2} />
-                    <Text style={s.budgetChipText}>{card.estimated_budget}</Text>
-                  </View>
-                )}
+                <MetaChipRow
+                  items={[
+                    ...(card?.estimated_time ? [{ icon: 'clock' as const, label: card.estimated_time }] : []),
+                    ...(card?.estimated_budget ? [{ icon: 'wallet' as const, label: card.estimated_budget }] : []),
+                  ]}
+                />
               </View>
             )}
 
@@ -218,13 +215,6 @@ const s = StyleSheet.create({
   cardDesc: { fontSize: 12, color: C.textSub, marginTop: SP.xs },
   stepsWrap: { marginTop: SP.md },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
-  // PHASE0-BACKMERGE: MetaChipRow의 icon 유니언에 'wallet'(예산) 추가되면 이 커스텀 칩은 제거하고 흡수한다.
-  budgetChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.xs,
-  },
-  budgetChipText: { fontSize: 12, color: C.textSub, fontWeight: '500' },
   nativeShareBtn: {
     flexDirection: 'row',
     alignItems: 'center',

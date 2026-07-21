@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, Easing, Modal, Image,
   type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight, Wallet } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C, SP, R } from '../constants/theme';
@@ -375,8 +375,8 @@ const planRowS = StyleSheet.create({
 
 // ─── MetaChipRow ──────────────────────────────────────────────────────────────
 // 코스 카드 하단의 요약 정보(지역·소요시간·이동거리) 아웃라인 칩 행.
-const META_ICONS = { map: MapPin, clock: Clock, walk: Footprints } as const;
-export function MetaChipRow({ items }: { items: { icon: 'map' | 'clock' | 'walk'; label: string }[] }) {
+const META_ICONS = { map: MapPin, clock: Clock, walk: Footprints, wallet: Wallet } as const;
+export function MetaChipRow({ items }: { items: { icon: 'map' | 'clock' | 'walk' | 'wallet'; label: string }[] }) {
   return (
     <View style={metaChipS.row}>
       {items.map((item, i) => {

@@ -6,6 +6,15 @@ export type RelativeTimeLabels = {
   days: string;
 };
 
+export function daysUntilIso(iso: string | null, now: number = Date.now()): number {
+  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return 0;
+  const target = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target - today.getTime()) / 86400000);
+}
+
 export function relativeTime(iso: string, labels: RelativeTimeLabels, now: number = Date.now()): string {
   const diffMs = now - new Date(iso).getTime();
   const min = Math.floor(diffMs / 60000);

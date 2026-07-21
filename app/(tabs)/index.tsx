@@ -17,6 +17,7 @@ import { formatDateLabel } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
 import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { DATE_MODE_ROUTES } from '../../lib/dateModes';
+import { daysUntilIso } from '../../lib/time';
 
 type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
 type UpcomingPlan = {
@@ -27,16 +28,6 @@ type UpcomingPlan = {
 const SCREEN_W = Dimensions.get('window').width;
 // 히어로 일러스트: 화면 폭 대비 명시적 숫자 폭(RN이 width:'100%'+aspectRatio 조합을 무시하는 문제 회피).
 const HERO_ART_W = Math.round(SCREEN_W * 0.42);
-
-// PHASE0-BACKMERGE: D-day 계산(홈·일정 공유 후보). now 주입으로 테스트 결정성 확보.
-function daysUntilIso(iso: string | null, now: number = Date.now()): number {
-  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return 0;
-  const target = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  return Math.round((target - today.getTime()) / 86400000);
-}
 
 export default function HomeScreen() {
   const router = useRouter();

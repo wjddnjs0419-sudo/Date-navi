@@ -11,6 +11,7 @@ import { BackBar, SoftCard, PlanListRow, BigButton, SectionLabel } from '../../c
 import { formatDateLabel } from '../../components/pickers';
 import { DATE_MODE_ROUTES } from '../../lib/dateModes';
 import { useI18n } from '../../lib/i18n';
+import { daysUntilIso } from '../../lib/time';
 
 type PlanCard = {
   id: string;
@@ -20,16 +21,6 @@ type PlanCard = {
   confirmed_time: string | null;
   confirmed_place: string | null;
 };
-
-// PHASE0-BACKMERGE: confirmed_date(ISO) 로부터 D-day 를 계산하는 순수 헬퍼.
-// 공유 컴포넌트(DdayBadge)에 넘길 days 값을 만든다. 홈 화면과 동일 규약.
-function daysUntilIso(iso: string | null, now: number = Date.now()): number {
-  const m = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return 0;
-  const target = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
-  const today = new Date(now); today.setHours(0, 0, 0, 0);
-  return Math.round((target - today.getTime()) / 86400000);
-}
 
 // PHASE0-BACKMERGE: 확정 데이트를 월(YYYY-MM) 단위로 묶어 목업의 타임라인을 재현한다.
 // 날짜 미정(confirmed_date=null) 카드는 마지막 "미정" 그룹으로 모은다.
