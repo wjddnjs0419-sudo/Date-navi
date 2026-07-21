@@ -899,18 +899,11 @@ const moreS = StyleSheet.create({
 });
 
 // ─── SuccessModal ─────────────────────────────────────────────────────────────
-const SUCCESS_MODAL_DURATION_MS = 1100;
-
 export function SuccessModal({
   visible, message, onHide,
 }: { visible: boolean; message: string; onHide: () => void }) {
   const { t } = useI18n();
-  useEffect(() => {
-    if (!visible) return;
-    const timer = setTimeout(onHide, SUCCESS_MODAL_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [visible, onHide]);
-
+  // 목업대로 버튼 닫힘: '확인'(onHide) 또는 하드웨어 back(onRequestClose)으로만 닫는다. 자동닫힘 없음.
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
       <View style={successS.backdrop}>
