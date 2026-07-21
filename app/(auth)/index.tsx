@@ -22,7 +22,8 @@ const KAKAO_BUTTON_RATIO = 600 / 90;
 // 이미지에 내장된 코너 반경(측정값 7px / 원본 높이 90px). 이미지는 변형하지 않고,
 // 구글·애플 버튼 반경을 같은 비율로 맞춰 세 버튼의 코너를 일치시킨다.
 const KAKAO_CORNER_RATIO = 7 / 90;
-const CONTENT_WIDTH = Dimensions.get('window').width - 48; // heroContainer paddingHorizontal 24 * 2
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CONTENT_WIDTH = SCREEN_WIDTH - 48; // heroContainer paddingHorizontal 24 * 2
 const SOCIAL_BUTTON_HEIGHT = Math.round(CONTENT_WIDTH / KAKAO_BUTTON_RATIO);
 const SOCIAL_BUTTON_RADIUS = Math.round(SOCIAL_BUTTON_HEIGHT * KAKAO_CORNER_RATIO);
 
@@ -87,7 +88,7 @@ export default function AuthScreen() {
 
           <Illustration
             name="date-course-map-horizontal"
-            width={CONTENT_WIDTH}
+            width={SCREEN_WIDTH}
             style={s.illustration}
           />
         </View>

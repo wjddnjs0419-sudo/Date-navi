@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Dimensions } from 'react-native';
 import { C } from '../constants/colors';
 import { Wordmark } from '../components/brand';
 import { Illustration } from '../components/illustration';
@@ -68,6 +68,12 @@ describe('login hero matches UI RENEW mockup', () => {
     const renderer = render();
     const illustration = renderer.root.findByType(Illustration);
     expect(illustration.props.name).toBe('date-course-map-horizontal');
+  });
+
+  it('renders the illustration full-bleed at the screen width, not clipped by the hero padding', () => {
+    const renderer = render();
+    const illustration = renderer.root.findByType(Illustration);
+    expect(illustration.props.width).toBe(Dimensions.get('window').width);
   });
 
   it('highlights the "가볍게" phrase inside the headline in accent pink', () => {
