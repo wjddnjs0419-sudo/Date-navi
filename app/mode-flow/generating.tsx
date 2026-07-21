@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Sparkles } from 'lucide-react-native';
 import { generateDateCards, regenerateDateCards, getUserPreferences, type FeelingInput, type DateCard } from '../../lib/ai';
 import { createSession, getSession, addPreviousPlaceIds } from '../../lib/recommendationSession';
 import { collectPlaceIds } from '../../lib/recommendation';
@@ -9,7 +8,9 @@ import { attachRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { logEvent } from '../../lib/analytics';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
+import { SP } from '../../constants/theme';
 import { BigButton, GeneratingView } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import {
   RecommendationRequestError,
@@ -174,49 +175,75 @@ export default function GeneratingScreen() {
       .map((intent) => (language === 'en' ? intent.displayLabel.en : intent.displayLabel.ko))
       .join(', ');
     return (
-      <View style={s.container}>
-        <View style={[s.iconWrap, s.iconWrapGray]}>
-          <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
-        </View>
-        <Text style={s.heading}>{t('modeFlow.generating.relaxation.title')}</Text>
-        <Text style={s.errSub}>{t('modeFlow.generating.relaxation.body', { conditions })}</Text>
-        <BigButton onPress={handleRelax} style={s.retryBtn}>{t('modeFlow.generating.relaxation.relaxButton')}</BigButton>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => router.replace('/mode-flow/course' as any)}
-          style={s.editButton}
-        >
-          <Text style={s.editButtonText}>{t('modeFlow.generating.relaxation.editButton')}</Text>
-        </TouchableOpacity>
-      </View>
+      <GeneratingFallback
+        heading={t('modeFlow.generating.relaxation.title')}
+        message={t('modeFlow.generating.relaxation.body', { conditions })}
+        primaryLabel={t('modeFlow.generating.relaxation.relaxButton')}
+        onPrimary={handleRelax}
+        secondaryLabel={t('modeFlow.generating.relaxation.editButton')}
+        onSecondary={() => router.replace('/mode-flow/course' as any)}
+      />
     );
   }
 
   if (errorMsg !== '') {
+    const message = `${errorMsg}${requestExpired ? '' : `\n${t('modeFlow.generating.errorSuffix')}`}`;
+    // 만료된 준비 요청은 재시도 불가 → 편집만 (기존 동작 유지, requestExpired ⇒ isCourse).
+    if (requestExpired) {
+      return (
+        <GeneratingFallback
+          heading={t('modeFlow.generating.errorTitle')}
+          message={message}
+          primaryLabel={t('modeFlow.generating.courseEdit')}
+          onPrimary={() => router.replace('/mode-flow/course' as any)}
+        />
+      );
+    }
     return (
-      <View style={s.container}>
-        <View style={[s.iconWrap, s.iconWrapGray]}>
-          <Sparkles size={56} strokeWidth={1.5} color={C.textSub} />
-        </View>
-        <Text style={s.heading}>{t('modeFlow.generating.errorTitle')}</Text>
-        <Text style={s.errSub}>{errorMsg}{requestExpired ? '' : `\n${t('modeFlow.generating.errorSuffix')}`}</Text>
-        {!requestExpired && (
-          <BigButton onPress={() => { setErrorMsg(''); setCourseError(null); setStep(0); setRetryKey(k => k + 1); }} style={s.retryBtn}>{t('modeFlow.result.retry')}</BigButton>
-        )}
-        {isCourse && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => router.replace('/mode-flow/course' as any)}
-            style={s.editButton}
-          >
-            <Text style={s.editButtonText}>{t('modeFlow.generating.courseEdit')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <GeneratingFallback
+        heading={t('modeFlow.generating.errorTitle')}
+        message={message}
+        primaryLabel={t('modeFlow.result.retry')}
+        onPrimary={() => { setErrorMsg(''); setCourseError(null); setStep(0); setRetryKey(k => k + 1); }}
+        secondaryLabel={isCourse ? t('modeFlow.generating.courseEdit') : undefined}
+        onSecondary={isCourse ? () => router.replace('/mode-flow/course' as any) : undefined}
+      />
     );
   }
 
   return <GeneratingView heading={heading} steps={steps} step={courseStage === 'preparing' ? 0 : step} />;
+}
+
+// 생성 실패·완화 안내 화면. 마스코트 일러스트 + 헤딩 + 메시지 + 주/보조 액션.
+// 데이터 흐름은 각 상태가 담당하고, 여기서는 비주얼만 통일한다.
+export function GeneratingFallback({
+  heading,
+  message,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  heading: string;
+  message: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <View style={s.container}>
+      <Illustration name="mascot-heart-single" width={132} />
+      <Text style={s.heading}>{heading}</Text>
+      <Text style={s.errSub}>{message}</Text>
+      <BigButton onPress={onPrimary} style={s.retryBtn}>{primaryLabel}</BigButton>
+      {secondaryLabel != null && onSecondary != null && (
+        <TouchableOpacity accessibilityRole="button" onPress={onSecondary} style={s.editButton}>
+          <Text style={s.editButtonText}>{secondaryLabel}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 }
 
 const s = StyleSheet.create({
@@ -225,26 +252,15 @@ const s = StyleSheet.create({
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: SP.xxxl,
   },
-  iconWrap: {
-    width: 140, height: 140, borderRadius: 70,
-    backgroundColor: C.white,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: C.pink,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  iconWrapGray: { backgroundColor: C.gray },
-  retryBtn: { marginTop: 24 },
-  editButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, marginTop: 8 },
+  retryBtn: { marginTop: SP.xl },
+  editButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: SP.xl, marginTop: SP.sm },
   editButtonText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
   heading: {
     fontSize: 22, fontWeight: '700', color: C.text,
     textAlign: 'center', lineHeight: 29,
-    marginTop: 32, marginBottom: 32,
+    marginTop: SP.xl, marginBottom: SP.md,
   },
-  errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: -16 },
+  errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20 },
 });

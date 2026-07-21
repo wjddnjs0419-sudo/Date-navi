@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Lock, RefreshCw, Trash2, Unlock } from 'lucide-react-native';
-import { C } from '../../constants/colors';
+import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 
 export type StepActionSheetProps = {
@@ -53,8 +53,8 @@ export function StepActionSheet({
             onPress={onDelete}
             style={[s.row, deleteDisabled && s.rowDisabled]}
           >
-            <Trash2 size={18} color={deleteDisabled ? C.textMuted : C.pinkDeep} />
-            <Text testID="step-action-delete-label" style={[s.rowText, deleteDisabled && s.rowTextDisabled]}>
+            <Trash2 size={18} color={deleteDisabled ? C.textMuted : C.danger} />
+            <Text testID="step-action-delete-label" style={[s.rowText, s.rowTextDanger, deleteDisabled && s.rowTextDisabled]}>
               {canDelete ? t('modeFlow.courseResult.delete') : t('modeFlow.courseResult.deleteMin')}
             </Text>
           </TouchableOpacity>
@@ -69,16 +69,17 @@ const s = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 31, 36, 0.28)' },
   panel: {
     backgroundColor: C.bg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 28,
+    borderTopLeftRadius: R.hero,
+    borderTopRightRadius: R.hero,
+    paddingHorizontal: SP.xl,
+    paddingTop: SP.md,
+    paddingBottom: SP.xxl + SP.xs,
   },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, alignSelf: 'center', marginBottom: 14 },
-  title: { fontSize: 15, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 10 },
-  row: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 4 },
+  handle: { width: 40, height: 4, borderRadius: R.badge, backgroundColor: C.border, alignSelf: 'center', marginBottom: SP.md },
+  title: { fontSize: 16, fontWeight: '800', color: C.text, marginBottom: SP.sm },
+  row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: SP.md, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: SP.xs },
   rowDisabled: { opacity: 0.4 },
   rowText: { fontSize: 15, fontWeight: '600', color: C.text },
+  rowTextDanger: { color: C.danger },
   rowTextDisabled: { color: C.textMuted },
 });

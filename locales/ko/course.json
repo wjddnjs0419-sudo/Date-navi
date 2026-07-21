@@ -2,6 +2,8 @@
   "course": {
     "unselected": "미선택",
     "modeLabel": "코스로 정리해줘",
+    "title": "데이트 코스 만들기",
+    "subtitle": "원하는 단계와 조건을 선택하면 딱 맞는 코스를 제안해드려요.",
     "steps": {
       "label": "코스 단계",
       "hint": "2~4단계까지 순서대로 구성할 수 있어요.",
@@ -87,7 +89,7 @@
       "additionalRequest": "추가 요청 입력",
       "generate": "데이트 코스 만들기"
     },
-    "generateButton": "코스 만들기",
+    "generateButton": "AI 코스 추천받기",
     "back": "←"
   }
 }

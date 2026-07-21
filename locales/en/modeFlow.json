@@ -129,6 +129,9 @@
       "lock": "Lock this place",
       "unlock": "Unlock",
       "viewDetails": "Place details & external checks",
+      "detailBtn": "View details",
+      "otherPlaceBtn": "See another place",
+      "walkChip": "Within {{minutes}} min walk",
       "detailNotice": "Check reviews and operating information directly with the external service. Date Navi does not store or verify third-party review content.",
       "replacementTitle": "Replacement options",
       "replacementNotice": "The top three appear first. Check reviews and maps directly with the external service.",
@@ -168,7 +171,7 @@
     },
     "placeSearch": {
       "title": "Search places",
-      "placeholder": "Search by name",
+      "placeholder": "Search by name, category, or area",
       "empty": "No results",
       "error": "Search failed. Please try again",
       "pick": "Select",
