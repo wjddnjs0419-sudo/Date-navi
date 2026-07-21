@@ -15,6 +15,7 @@ import {
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel, SoftCard } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
 import {
@@ -453,12 +454,9 @@ export default function CoupleConnectScreen() {
         ) : (
           <>
             <SoftCard style={s.inviteCard}>
-              <View style={s.inviteTopRow}>
-                <View>
-                  <Text style={s.inviteLabel}>{t.myInviteCode}</Text>
-                  <Text style={s.codeText}>{displayCode}</Text>
-                </View>
-              </View>
+              <Text style={s.inviteLabel}>{t.myInviteCode}</Text>
+              <Text style={s.codeText}>{displayCode}</Text>
+              <Illustration name="mascot-heart-couple" width={150} style={s.inviteMascot} />
 
               {status === 'waiting' ? (
                 <TouchableOpacity style={s.shareBtn} onPress={shareInvite} activeOpacity={0.82}>
@@ -535,11 +533,12 @@ const s = StyleSheet.create({
     marginTop: 24,
     backgroundColor: C.cream,
     padding: 20,
+    alignItems: 'center',
   },
-  inviteTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   inviteLabel: { fontSize: 11, color: C.creamFg, fontWeight: '700', letterSpacing: 0.4 },
-  codeText: { fontSize: 32, fontWeight: '800', color: C.text, letterSpacing: 4, marginTop: 8 },
-  createBtn: { marginTop: 18 },
+  codeText: { fontSize: 34, fontWeight: '800', color: C.pinkDeep, letterSpacing: 4, marginTop: 8 },
+  inviteMascot: { marginVertical: 12 },
+  createBtn: { marginTop: 4, width: '100%' },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -548,7 +547,8 @@ const s = StyleSheet.create({
     backgroundColor: C.pink,
     borderRadius: 18,
     paddingVertical: 16,
-    marginTop: 18,
+    marginTop: 4,
+    width: '100%',
   },
   shareBtnText: { fontSize: 15, fontWeight: '700', color: C.white },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24 },

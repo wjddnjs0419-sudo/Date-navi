@@ -4,19 +4,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Check } from 'lucide-react-native';
+import { Calendar, Users, Signpost, MessageCircle, RotateCw, ChevronRight } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { G, R, SP } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 const OPTIONS = [
-  { id: 'planner', labelKey: 'onboarding.type.options.planner' },
-  { id: 'together', labelKey: 'onboarding.type.options.together' },
-  { id: 'chooser', labelKey: 'onboarding.type.options.chooser' },
-  { id: 'shy', labelKey: 'onboarding.type.options.shy' },
-  { id: 'flexible', labelKey: 'onboarding.type.options.flexible' },
+  { id: 'planner', labelKey: 'onboarding.type.options.planner', Icon: Calendar },
+  { id: 'together', labelKey: 'onboarding.type.options.together', Icon: Users },
+  { id: 'chooser', labelKey: 'onboarding.type.options.chooser', Icon: Signpost },
+  { id: 'shy', labelKey: 'onboarding.type.options.shy', Icon: MessageCircle },
+  { id: 'flexible', labelKey: 'onboarding.type.options.flexible', Icon: RotateCw },
 ];
 
 export default function TypeScreen() {
@@ -71,8 +71,11 @@ export default function TypeScreen() {
                 activeOpacity={0.7}
                 style={[s.option, sel && s.optionSel]}
               >
+                <View style={[s.iconCircle, sel && s.iconCircleSel]}>
+                  <o.Icon size={20} strokeWidth={2} color={sel ? C.white : C.pink} />
+                </View>
                 <Text style={[s.optionText, sel && s.optionTextSel]}>{t(o.labelKey)}</Text>
-                {sel && <Check size={16} strokeWidth={2.5} color={C.pink} />}
+                <ChevronRight size={18} strokeWidth={2} color={sel ? C.pinkBorder : C.textFaint} />
               </TouchableOpacity>
             );
           })}
@@ -97,20 +100,35 @@ const s = StyleSheet.create({
   headingBlock: { marginTop: 20 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, marginTop: 8, lineHeight: 20 },
-  optionList: { marginTop: 24, gap: 8 },
+  optionList: { marginTop: 24, gap: 12 },
   option: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: R.lg,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: SP.md,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
   },
   optionSel: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
-  optionText: { fontSize: 13, color: C.inkSoft, fontWeight: '500' },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.pinkLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  iconCircleSel: { backgroundColor: C.pink },
+  optionText: { flex: 1, fontSize: 14, color: C.inkSoft, fontWeight: '500' },
   optionTextSel: { color: C.pinkDeep, fontWeight: '600' },
   spacer: { flex: 1 },
 });
