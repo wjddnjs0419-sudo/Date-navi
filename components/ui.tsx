@@ -397,7 +397,7 @@ const metaChipS = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SP.xs,
-    borderRadius: 20,
+    borderRadius: R.xl,
     paddingHorizontal: SP.md,
     paddingVertical: SP.xs,
     borderWidth: 1,
