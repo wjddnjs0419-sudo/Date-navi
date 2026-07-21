@@ -99,6 +99,7 @@
       "existingValueOption": "Current value · {{time}}",
       "budgetLabel": "Budget",
       "budgetPlaceholder": "e.g. around $40",
+      "stepsReferenceLabel": "Course steps (reference)",
       "saveCta": "Save",
       "saveError": "Something went wrong updating it."
     },

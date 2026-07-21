@@ -99,6 +99,7 @@
       "existingValueOption": "기존 값 · {{time}}",
       "budgetLabel": "예산",
       "budgetPlaceholder": "예: 5만원 내외",
+      "stepsReferenceLabel": "코스 순서 (참고용)",
       "saveCta": "저장하기",
       "saveError": "수정 중 문제가 발생했어요."
     },

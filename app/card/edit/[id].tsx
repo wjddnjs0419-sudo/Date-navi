@@ -6,9 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
-import { C } from '../../../constants/colors';
-import { G } from '../../../constants/theme';
-import { BackBar, BigButton, OptionCardPicker } from '../../../components/ui';
+import { C, SP, R, G } from '../../../constants/theme';
+import { BackBar, BigButton, OptionCardPicker, CourseStepList } from '../../../components/ui';
+import { resolveDisplaySteps, type CourseStep } from '../../../lib/course';
 import { useI18n } from '../../../lib/i18n';
 
 export default function EditCardScreen() {
@@ -26,6 +26,8 @@ export default function EditCardScreen() {
   const [summary, setSummary] = useState('');
   const [time, setTime] = useState('');
   const [budget, setBudget] = useState('');
+  const [refMode, setRefMode] = useState('');
+  const [refSteps, setRefSteps] = useState<CourseStep[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -33,7 +35,7 @@ export default function EditCardScreen() {
       (async () => {
         const { data } = await supabase
           .from('date_cards')
-          .select('title, summary, estimated_time, estimated_budget')
+          .select('title, summary, estimated_time, estimated_budget, mode, steps')
           .eq('id', id)
           .maybeSingle();
         if (!active) return;
@@ -42,6 +44,8 @@ export default function EditCardScreen() {
           setSummary(data.summary ?? '');
           setTime(data.estimated_time ?? '');
           setBudget(data.estimated_budget ?? '');
+          setRefMode(data.mode ?? '');
+          setRefSteps(resolveDisplaySteps(data));
         }
         setLoading(false);
       })();
@@ -142,6 +146,13 @@ export default function EditCardScreen() {
           />
         </View>
 
+        {refMode === 'make_course' && refSteps.length > 0 && (
+          <>
+            <Text style={s.label}>{t('card.edit.stepsReferenceLabel')}</Text>
+            <CourseStepList steps={refSteps} />
+          </>
+        )}
+
         <View style={s.bottomSpacer} />
       </ScrollView>
 
@@ -158,18 +169,18 @@ export default function EditCardScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xxxl + SP.sm },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingTop: { marginTop: 16 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
+  headingTop: { marginTop: SP.lg },
+  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
+  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: SP.xl, marginBottom: SP.sm },
   inputWrap: {
     backgroundColor: C.white,
-    borderRadius: 16,
+    borderRadius: R.lg,
     borderWidth: 1,
     borderColor: C.border,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
   },
   inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
   // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. paddingVertical: 0으로 기본 패딩도 제거.
@@ -179,9 +190,9 @@ const s = StyleSheet.create({
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.xl,
+    paddingBottom: SP.xxxl,
+    paddingTop: SP.md,
     backgroundColor: C.bg,
   },
 });
