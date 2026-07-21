@@ -3,10 +3,10 @@ import {
   AccessibilityInfo, Easing, Modal,
   type ViewStyle, type TextStyle, type StyleProp,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, Sparkles, Check, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { C } from '../constants/theme';
+import { C, SP, R } from '../constants/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GeoCoords } from '../lib/ai';
 import type { CourseStep } from '../lib/course';
@@ -294,6 +294,61 @@ export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?:
 const badgeS = StyleSheet.create({
   base: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
   label: { fontSize: 10, fontWeight: '600', letterSpacing: 0.2 },
+});
+
+// ─── DdayBadge ────────────────────────────────────────────────────────────────
+// "다가오는 데이트" 리스트 행 우측에 붙는 D-day 표시. 진한 핑크 텍스트의 옅은 핑크 알약.
+export function DdayBadge({ days }: { days: number }) {
+  const label = days > 0 ? `D-${days}` : days === 0 ? 'D-DAY' : `D+${Math.abs(days)}`;
+  return (
+    <View style={ddayS.base}>
+      <Text style={ddayS.label}>{label}</Text>
+    </View>
+  );
+}
+const ddayS = StyleSheet.create({
+  base: {
+    backgroundColor: C.pinkLight,
+    borderRadius: R.badge,
+    paddingHorizontal: SP.sm,
+    paddingVertical: SP.xs / 2,
+    alignSelf: 'flex-start',
+  },
+  label: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
+});
+
+// ─── MetaChipRow ──────────────────────────────────────────────────────────────
+// 코스 카드 하단의 요약 정보(지역·소요시간·이동거리) 아웃라인 칩 행.
+const META_ICONS = { map: MapPin, clock: Clock, walk: Footprints } as const;
+export function MetaChipRow({ items }: { items: { icon: 'map' | 'clock' | 'walk'; label: string }[] }) {
+  return (
+    <View style={metaChipS.row}>
+      {items.map((item, i) => {
+        const Icon = META_ICONS[item.icon];
+        return (
+          <View key={i} style={metaChipS.chip}>
+            <Icon size={13} color={C.textSub} strokeWidth={2} />
+            <Text style={metaChipS.label}>{item.label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+const metaChipS = StyleSheet.create({
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SP.xs,
+    borderRadius: 20,
+    paddingHorizontal: SP.md,
+    paddingVertical: SP.xs,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.white,
+  },
+  label: { fontSize: 12, color: C.textSub, fontWeight: '500' },
 });
 
 // ─── BackBar ─────────────────────────────────────────────────────────────────
