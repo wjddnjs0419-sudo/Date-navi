@@ -7,9 +7,10 @@ import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
 import { signInWithKakao, getKakaoSignInErrorMessageKey } from '../../lib/kakaoAuth';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
+import { C, SP, R } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
+import { Wordmark } from '../../components/brand';
+import { Illustration } from '../../components/illustration';
 
 const KAKAO_BUTTON_IMAGE = {
   ko: require('../../kakao_login/ko/kakao_login_large_wide.png'),
@@ -19,9 +20,9 @@ const KAKAO_BUTTON_IMAGE = {
 // 카카오 공식 버튼 이미지 원본 비율(600×90). 높이 = 폭 / 이 값.
 const KAKAO_BUTTON_RATIO = 600 / 90;
 // 이미지에 내장된 코너 반경(측정값 7px / 원본 높이 90px). 이미지는 변형하지 않고,
-// 구글 버튼 반경을 같은 비율로 맞춰 두 버튼의 코너를 일치시킨다.
+// 구글·애플 버튼 반경을 같은 비율로 맞춰 세 버튼의 코너를 일치시킨다.
 const KAKAO_CORNER_RATIO = 7 / 90;
-const CONTENT_WIDTH = Dimensions.get('window').width - 48; // welcomeContainer paddingHorizontal 24 * 2
+const CONTENT_WIDTH = Dimensions.get('window').width - 48; // heroContainer paddingHorizontal 24 * 2
 const SOCIAL_BUTTON_HEIGHT = Math.round(CONTENT_WIDTH / KAKAO_BUTTON_RATIO);
 const SOCIAL_BUTTON_RADIUS = Math.round(SOCIAL_BUTTON_HEIGHT * KAKAO_CORNER_RATIO);
 
@@ -30,9 +31,11 @@ export default function AuthScreen() {
   const { t, language } = useI18n();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [appleNotice, setAppleNotice] = useState(false);
 
   async function handleKakaoSignIn() {
     setErrorMsg('');
+    setAppleNotice(false);
     setLoading(true);
     try {
       const { cancelled } = await signInWithKakao();
@@ -47,6 +50,7 @@ export default function AuthScreen() {
 
   async function handleGoogleSignIn() {
     setErrorMsg('');
+    setAppleNotice(false);
     setLoading(true);
     try {
       const { cancelled } = await signInWithGoogle();
@@ -60,27 +64,33 @@ export default function AuthScreen() {
     }
   }
 
+  // Apple 로그인 로직(expo-apple-authentication)은 아직 없다. 목업의 3번째 버튼 자리를
+  // 비주얼로만 채우고, 탭하면 준비 중 안내만 보여준다. PHASE0-BACKMERGE 아님 — 별도 세션에서
+  // 실제 Apple 로그인 로직을 붙일 때 이 핸들러를 교체한다.
+  function handleApplePress() {
+    setErrorMsg('');
+    setAppleNotice(true);
+  }
+
   return (
-    <SafeAreaView style={G.screen}>
-      <View style={s.welcomeContainer}>
-        {/* 로고 배너 */}
-        <View style={s.logoBanner}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={s.logoImage}
-            resizeMode="contain"
+    <SafeAreaView style={s.screen}>
+      <View style={s.heroContainer}>
+        <View style={s.hero}>
+          <Wordmark size="lg" style={s.wordmark} />
+
+          <Text style={s.heading}>
+            {t('auth.welcomeHeadingPrefix')}
+            <Text style={s.headingHighlight}>{t('auth.welcomeHeadingHighlight')}</Text>
+            {t('auth.welcomeHeadingSuffix')}
+          </Text>
+          <Text style={s.subText}>{t('auth.welcomeBody')}</Text>
+
+          <Illustration
+            name="date-course-map-horizontal"
+            width={CONTENT_WIDTH}
+            style={s.illustration}
           />
         </View>
-
-        {/* 헤드라인 */}
-        <View style={s.headlineBlock}>
-          <Text style={s.heading}>{t('auth.welcomeHeading')}</Text>
-          <Text style={s.subText}>
-            {t('auth.welcomeBody')}
-          </Text>
-        </View>
-
-        <View style={s.spacer} />
 
         {/* 소셜 버튼 영역 */}
         <View style={s.btnArea}>
@@ -95,6 +105,16 @@ export default function AuthScreen() {
             onPress={handleGoogleSignIn}
             disabled={loading}
           />
+          <AppleLoginButton
+            label={t('auth.appleStart')}
+            onPress={handleApplePress}
+            disabled={loading}
+          />
+          {appleNotice && (
+            <View style={s.noticeBox}>
+              <Text style={s.noticeText}>{t('auth.appleComingSoon')}</Text>
+            </View>
+          )}
           {errorMsg !== '' && (
             <View style={s.errorBox}>
               <Text style={s.errorText}>{errorMsg}</Text>
@@ -151,6 +171,25 @@ function GoogleLoginButton({ label, onPress, disabled }: {
   );
 }
 
+function AppleLoginButton({ label, onPress, disabled }: {
+  label: string; onPress: () => void; disabled?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      testID="apple-login-button"
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[s.socialBtn, s.socialBtnApple, disabled && s.socialBtnDisabled]}
+    >
+      <AppleFruitIcon />
+      <Text style={[s.socialBtnText, s.socialBtnTextApple]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 // Google 공식 4색 "G" 로고. 색상·형태는 브랜딩 가이드 고정값이라 변경 금지.
 function GoogleGLogo() {
   return (
@@ -163,53 +202,78 @@ function GoogleGLogo() {
   );
 }
 
+// Apple 로그인은 아직 실제 로직이 없는 자리표시 버튼이라, Apple 상표(사과 실루엣)를
+// 그대로 쓰지 않고 잎사귀가 달린 일반 과일 실루엣으로 대체했다.
+function AppleFruitIcon() {
+  return (
+    <View style={s.appleIcon}>
+      <View style={s.appleIconLeaf} />
+      <View style={s.appleIconBody} />
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
-  welcomeContainer: {
+  screen: { flex: 1, backgroundColor: C.bg },
+  heroContainer: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 32,
+    paddingHorizontal: SP.xxl,
+    paddingTop: SP.sm,
+    paddingBottom: SP.xxxl,
+    justifyContent: 'space-between',
   },
-  logoBanner: {
-    height: 260,
-    backgroundColor: C.bgSplash,
-    borderRadius: 28,
-    marginTop: 8,
-    marginBottom: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+  hero: { alignItems: 'center' },
+  wordmark: { marginTop: SP.lg, marginBottom: SP.xxl },
+  heading: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: C.text,
+    textAlign: 'center',
+    lineHeight: 34,
   },
-  logoImage: {
-    width: 180,
-    height: 180,
+  headingHighlight: { color: C.pink },
+  subText: {
+    fontSize: 13,
+    color: C.textSub,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: SP.md,
   },
-  headlineBlock: { paddingHorizontal: 4 },
-  spacer: { flex: 1 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 10 },
-  btnArea: { gap: 10 },
+  illustration: { marginTop: SP.xxl },
+  btnArea: { gap: SP.md },
   socialBtn: {
     height: SOCIAL_BUTTON_HEIGHT,
     borderRadius: SOCIAL_BUTTON_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: SP.sm,
   },
   socialBtnGoogle: { backgroundColor: C.white, borderColor: '#747775', borderWidth: 1 },
+  socialBtnApple: { backgroundColor: C.dark },
   kakaoBtn: { height: SOCIAL_BUTTON_HEIGHT },
   kakaoImage: { width: '100%', height: '100%' },
   socialBtnDisabled: { opacity: 0.5 },
   // Google 브랜딩 가이드: 라이트 버튼 텍스트 색 #1F1F1F.
   socialBtnText: { fontSize: 15, fontWeight: '600' },
   socialBtnTextGoogle: { color: '#1F1F1F' },
+  socialBtnTextApple: { color: C.white },
+  appleIcon: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  appleIconBody: { width: 13, height: 13, borderRadius: 7, backgroundColor: C.white },
+  appleIconLeaf: {
+    position: 'absolute', top: -1, right: 3,
+    width: 6, height: 4, borderRadius: 3,
+    backgroundColor: C.white, transform: [{ rotate: '35deg' }],
+  },
   legal: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 17 },
   legalLink: { textDecorationLine: 'underline' },
+  noticeBox: { paddingVertical: SP.xs },
+  noticeText: { color: C.textSub, fontSize: 12, textAlign: 'center' },
   errorBox: {
     backgroundColor: C.pinkLight,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
+    borderRadius: R.sm,
+    padding: SP.md,
+    marginTop: SP.md,
   },
   errorText: { color: C.pinkDeep, fontSize: 13, textAlign: 'center' },
 });
