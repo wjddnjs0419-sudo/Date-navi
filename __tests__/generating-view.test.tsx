@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { GeneratingView } from '../components/ui';
+import { Illustration } from '../components/illustration';
 
 // repo convention: require + act() wrapper, and unmount() inside act() so the
 // GeneratingView pulse loop is stopped (otherwise the Animated timer leaks past
@@ -55,6 +56,18 @@ describe('GeneratingView contract', () => {
     });
     const txt = tree.root.findAllByType(Text).map((n: any) => n.props.children).flat().join(' ');
     expect(txt).toContain('3 / 4');
+    TR.act(() => { tree.unmount(); });
+  });
+
+  it('renders the course-map illustration at 240 width', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(
+        <GeneratingView heading="코스를 만드는 중" steps={['a', 'b']} step={0} />,
+      );
+    });
+    const illustration = tree.root.findAllByType(Illustration)[0];
+    expect(illustration.props.width).toBe(240);
     TR.act(() => { tree.unmount(); });
   });
 });

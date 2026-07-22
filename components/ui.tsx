@@ -793,7 +793,7 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
       <Text style={genS.heading}>{heading}</Text>
 
       <Animated.View style={[genS.illustrationWrap, { transform: [{ scale: pulseScale }] }]}>
-        <Illustration name="date-course-map-vertical" width={200} />
+        <Illustration name="date-course-map-vertical" width={240} />
       </Animated.View>
 
       <View style={genS.progressBlock}>
