@@ -2,18 +2,18 @@
   "review": {
     "heading": "How was the date?",
     "sub": "A quick note helps future picks get better.",
-    "ratingLabel": "Overall?",
-    "ratings": [
-      { "key": "amazing", "label": "Amazing" },
-      { "key": "good", "label": "Good" },
-      { "key": "okay", "label": "It was okay" },
-      { "key": "meh", "label": "A bit disappointing" },
-      { "key": "bad", "label": "Not great" }
-    ],
+    "starRatingLabel": "Overall rating",
+    "noStarRatingError": "Please pick a star rating.",
+    "ratingFeedback": {
+      "bad": "Not great",
+      "meh": "A bit disappointing",
+      "okay": "It was okay",
+      "good": "Good",
+      "amazing": "Amazing"
+    },
     "reviewLabel": "One-line review",
     "reviewPlaceholder": "What would you say in one line?",
     "saveButton": "Save as memory",
-    "noRatingError": "Please pick an overall rating.",
     "saveError": "Could not save. Please try again.",
     "missingCoupleError": "Could not load couple info."
   }

@@ -9,26 +9,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { Star, Smile, Meh, Frown, Angry, Camera } from 'lucide-react-native';
+import { Star, Camera } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
-
-const MOOD_ICONS: Record<string, typeof Star> = {
-  amazing: Star,
-  good: Smile,
-  okay: Meh,
-  meh: Frown,
-  bad: Angry,
-};
-
-// 목업(09_review)의 emoji 5종을 lock의 파스텔 톤 패밀리로 재현한다.
-const MOOD_TONES: Record<string, { fg: string; bg: string }> = {
-  amazing: { fg: C.danger, bg: C.pinkLight },
-  good: { fg: C.creamFg, bg: C.cream },
-  okay: { fg: C.mintFg, bg: C.mint },
-  meh: { fg: C.lavenderFg, bg: C.lavender },
-  bad: { fg: C.grayFg, bg: C.gray },
-};
+import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../lib/ratingFeedback';
 
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +24,7 @@ export default function ReviewScreen() {
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [mood, setMood] = useState<string | null>(null);
+  const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -111,17 +95,18 @@ export default function ReviewScreen() {
   }
 
   async function handleSave() {
-    if (!mood) { Alert.alert('', c.noRatingError); return; }
+    if (!rating) { Alert.alert('', c.noStarRatingError); return; }
     if (!myUserId || !coupleId) { Alert.alert('', s.common.coupleRequired); return; }
     if (saving) return;
     setSaving(true);
     try {
-      const wantAgain = mood === 'amazing' || mood === 'good';
+      const wantAgain = deriveWantAgain(rating as Rating);
 
       const { error } = await supabase.from('date_memories').insert({
         couple_id: coupleId,
         card_id: id,
         user_id: myUserId,
+        rating,
         review: reviewText.trim(),
         want_again: wantAgain,
         photo_url: photoUrl,
@@ -147,6 +132,10 @@ export default function ReviewScreen() {
     );
   }
 
+  const feedbackKey = rating ? RATING_FEEDBACK_KEY[rating as Rating] : null;
+  const FeedbackIcon = rating ? RATING_FEEDBACK_ICON[rating as Rating] : null;
+  const feedbackTone = rating ? RATING_FEEDBACK_TONE[rating as Rating] : null;
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
@@ -158,27 +147,33 @@ export default function ReviewScreen() {
             <Text style={styles.sub}>{c.sub}</Text>
           </View>
 
-          <Text style={styles.sectionLabel}>{c.ratingLabel}</Text>
-          <View style={styles.ratingGrid}>
-            {c.ratings.map((item: { key: keyof typeof MOOD_ICONS; label: string }) => {
-              const sel = mood === item.key;
-              const Icon = MOOD_ICONS[item.key];
-              const tone = MOOD_TONES[item.key];
-              return (
-                <TouchableOpacity
-                  key={item.key}
-                  style={[styles.ratingCard, sel && { backgroundColor: tone.bg, borderColor: tone.fg, borderWidth: 1.5 }]}
-                  onPress={() => setMood(item.key)}
-                  activeOpacity={0.75}
-                >
-                  <View style={[styles.ratingIconWrap, sel && { backgroundColor: C.white }]}>
-                    <Icon size={18} color={sel ? tone.fg : C.textSub} strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.ratingLabel, sel && { color: tone.fg, fontWeight: '600' }]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+          <Text style={styles.sectionLabel}>{c.starRatingLabel}</Text>
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity
+                key={n}
+                testID={`review-star-${n}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${n}점`}
+                onPress={() => setRating(n)}
+                style={styles.starBtn}
+              >
+                <Star
+                  size={28}
+                  strokeWidth={1.8}
+                  color={C.pinkDeep}
+                  fill={n <= rating ? C.pinkDeep : 'transparent'}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
+
+          {feedbackKey && FeedbackIcon && feedbackTone && (
+            <View style={[styles.feedbackCard, { backgroundColor: feedbackTone.bg, borderColor: feedbackTone.fg }]}>
+              <FeedbackIcon size={18} color={feedbackTone.fg} strokeWidth={2} />
+              <Text style={[styles.feedbackLabel, { color: feedbackTone.fg }]}>{c.ratingFeedback[feedbackKey]}</Text>
+            </View>
+          )}
 
           <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>{c.reviewLabel}</Text>
           <TextInput
@@ -232,25 +227,21 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.md },
   sectionLabelSpaced: { marginTop: SP.xl },
 
-  ratingGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
-  ratingCard: {
-    width: '47%',
-    backgroundColor: C.white,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: SP.md + 2,
-    gap: SP.sm,
-  },
-  ratingIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: R.sm,
-    backgroundColor: C.cream,
+  starRow: { flexDirection: 'row', gap: SP.sm },
+  starBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+
+  feedbackCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: SP.sm,
+    marginTop: SP.md,
+    marginBottom: SP.xl,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
+    borderRadius: R.lg,
+    borderWidth: 1.5,
   },
-  ratingLabel: { fontSize: 13, color: C.textSub, fontWeight: '500' },
+  feedbackLabel: { fontSize: 13, fontWeight: '600' },
 
   reviewInput: {
     backgroundColor: C.white,

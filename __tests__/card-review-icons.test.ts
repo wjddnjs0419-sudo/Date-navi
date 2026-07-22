@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// STYLESEED lock은 lucide 단일 아이콘 패밀리를 요구한다 — 평점 카드의 이모지를 lucide로 교체한다.
 function read(rel: string): string {
   return readFileSync(join(process.cwd(), rel), 'utf8');
 }
 
 describe('card review screen icons', () => {
   const source = read('app/card/review.tsx');
+  const feedback = read('lib/ratingFeedback.ts');
 
   it('no longer renders emoji rating icons', () => {
     expect(source).not.toContain('❤️');
@@ -16,19 +16,17 @@ describe('card review screen icons', () => {
     expect(source).not.toContain('🔄');
   });
 
-  it('imports lucide icons for the rating row', () => {
+  it('imports the shared star icon and rating feedback module', () => {
     expect(source).toMatch(/import \{[^}]*Star[^}]*\} from 'lucide-react-native'/);
-    expect(source).toMatch(/import \{[^}]*Smile[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/from '\.\.\/\.\.\/lib\/ratingFeedback'/);
   });
 
-  // 목업(07_card_memory_new)은 4개 평점을 red/gold/green/blue로 구분한다. lock의 palette mode에
-  // 맞춰 실제 hex 대신 파스텔 톤 패밀리(pink/cream/mint/lavender)로 그 의도를 재현한다.
-  it('gives each rating a distinct pastel tone (amazing/good/okay/meh/bad)', () => {
-    expect(source).toMatch(/amazing:[\s\S]{0,40}C\.danger/);
-    expect(source).toMatch(/good:[\s\S]{0,40}C\.creamFg/);
-    expect(source).toMatch(/okay:[\s\S]{0,40}C\.mintFg/);
-    expect(source).toMatch(/meh:[\s\S]{0,40}C\.lavenderFg/);
-    expect(source).toMatch(/bad:[\s\S]{0,40}C\.grayFg/);
+  it('gives each rating a distinct pastel tone (bad/meh/okay/good/amazing) in the shared feedback module', () => {
+    expect(feedback).toMatch(/1:[\s\S]{0,60}C\.grayFg/);
+    expect(feedback).toMatch(/2:[\s\S]{0,60}C\.lavenderFg/);
+    expect(feedback).toMatch(/3:[\s\S]{0,60}C\.mintFg/);
+    expect(feedback).toMatch(/4:[\s\S]{0,60}C\.creamFg/);
+    expect(feedback).toMatch(/5:[\s\S]{0,60}C\.danger/);
   });
 
   it('preserves the save contract (memory insert + card status flip + redirect)', () => {
