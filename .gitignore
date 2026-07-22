@@ -34,7 +34,7 @@ yarn-error.*
 .env
 .env.local
 .env.*.local
-!.env.example
+.env.example
 
 # OS
 .DS_Store
@@ -54,3 +54,8 @@ docs/screenshots/**/*.zip
 
 # UI 전면 교체 참고 목업(GPT 생성, 24M) — 로컬 참고용, 리포 제외
 UI RENEW/
+
+# 세션 진행 상황 기록 — 로컬 전용, 원격에 공유하지 않음
+PLAN.md
+RESULT.md
+RESULT_ARCHIVE.md
