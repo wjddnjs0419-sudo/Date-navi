@@ -4,22 +4,11 @@
     "sub": "가볍게 남기면 다음 추천이 더 잘 맞아요.",
     "ratingLabel": "전반적으로 어땠나요?",
     "ratings": [
-      {
-        "key": "love",
-        "label": "다시 하고 싶어"
-      },
-      {
-        "key": "good",
-        "label": "좋았어"
-      },
-      {
-        "key": "ok",
-        "label": "무난했어"
-      },
-      {
-        "key": "change",
-        "label": "다음엔 조금 바꾸고 싶어"
-      }
+      { "key": "amazing", "label": "최고였어요" },
+      { "key": "good", "label": "좋았어요" },
+      { "key": "okay", "label": "무난했어요" },
+      { "key": "meh", "label": "아쉬웠어요" },
+      { "key": "bad", "label": "별로였어요" }
     ],
     "reviewLabel": "한 줄 후기",
     "reviewPlaceholder": "오늘 데이트 한 마디로 남기기",

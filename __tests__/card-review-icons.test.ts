@@ -17,17 +17,18 @@ describe('card review screen icons', () => {
   });
 
   it('imports lucide icons for the rating row', () => {
-    expect(source).toMatch(/import \{[^}]*Heart[^}]*\} from 'lucide-react-native'/);
     expect(source).toMatch(/import \{[^}]*Star[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*Smile[^}]*\} from 'lucide-react-native'/);
   });
 
   // 목업(07_card_memory_new)은 4개 평점을 red/gold/green/blue로 구분한다. lock의 palette mode에
   // 맞춰 실제 hex 대신 파스텔 톤 패밀리(pink/cream/mint/lavender)로 그 의도를 재현한다.
-  it('gives each rating a distinct pastel tone (love/good/ok/change)', () => {
-    expect(source).toMatch(/love:[\s\S]{0,40}C\.danger/);
+  it('gives each rating a distinct pastel tone (amazing/good/okay/meh/bad)', () => {
+    expect(source).toMatch(/amazing:[\s\S]{0,40}C\.danger/);
     expect(source).toMatch(/good:[\s\S]{0,40}C\.creamFg/);
-    expect(source).toMatch(/ok:[\s\S]{0,40}C\.mintFg/);
-    expect(source).toMatch(/change:[\s\S]{0,40}C\.lavenderFg/);
+    expect(source).toMatch(/okay:[\s\S]{0,40}C\.mintFg/);
+    expect(source).toMatch(/meh:[\s\S]{0,40}C\.lavenderFg/);
+    expect(source).toMatch(/bad:[\s\S]{0,40}C\.grayFg/);
   });
 
   it('preserves the save contract (memory insert + card status flip + redirect)', () => {

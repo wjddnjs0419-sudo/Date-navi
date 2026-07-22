@@ -4,22 +4,11 @@
     "sub": "A quick note helps future picks get better.",
     "ratingLabel": "Overall?",
     "ratings": [
-      {
-        "key": "love",
-        "label": "Want to do it again"
-      },
-      {
-        "key": "good",
-        "label": "It was great"
-      },
-      {
-        "key": "ok",
-        "label": "It was fine"
-      },
-      {
-        "key": "change",
-        "label": "A few tweaks next time"
-      }
+      { "key": "amazing", "label": "Amazing" },
+      { "key": "good", "label": "Good" },
+      { "key": "okay", "label": "It was okay" },
+      { "key": "meh", "label": "A bit disappointing" },
+      { "key": "bad", "label": "Not great" }
     ],
     "reviewLabel": "One-line review",
     "reviewPlaceholder": "What would you say in one line?",

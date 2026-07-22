@@ -9,23 +9,25 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { Heart, Star, CircleCheck, RotateCcw, Camera } from 'lucide-react-native';
+import { Star, Smile, Meh, Frown, Angry, Camera } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
 
-const RATING_ICONS: Record<string, typeof Heart> = {
-  love: Heart,
-  good: Star,
-  ok: CircleCheck,
-  change: RotateCcw,
+const MOOD_ICONS: Record<string, typeof Star> = {
+  amazing: Star,
+  good: Smile,
+  okay: Meh,
+  meh: Frown,
+  bad: Angry,
 };
 
-// 목업(07_card_memory_new)의 red/gold/green/blue 구분을 lock의 파스텔 톤 패밀리로 재현한다.
-const RATING_TONES: Record<string, { fg: string; bg: string }> = {
-  love: { fg: C.danger, bg: C.pinkLight },
+// 목업(09_review)의 emoji 5종을 lock의 파스텔 톤 패밀리로 재현한다.
+const MOOD_TONES: Record<string, { fg: string; bg: string }> = {
+  amazing: { fg: C.danger, bg: C.pinkLight },
   good: { fg: C.creamFg, bg: C.cream },
-  ok: { fg: C.mintFg, bg: C.mint },
-  change: { fg: C.lavenderFg, bg: C.lavender },
+  okay: { fg: C.mintFg, bg: C.mint },
+  meh: { fg: C.lavenderFg, bg: C.lavender },
+  bad: { fg: C.grayFg, bg: C.gray },
 };
 
 export default function ReviewScreen() {
@@ -38,7 +40,7 @@ export default function ReviewScreen() {
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [rating, setRating] = useState<string | null>(null);
+  const [mood, setMood] = useState<string | null>(null);
   const [reviewText, setReviewText] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -109,12 +111,12 @@ export default function ReviewScreen() {
   }
 
   async function handleSave() {
-    if (!rating) { Alert.alert('', c.noRatingError); return; }
+    if (!mood) { Alert.alert('', c.noRatingError); return; }
     if (!myUserId || !coupleId) { Alert.alert('', s.common.coupleRequired); return; }
     if (saving) return;
     setSaving(true);
     try {
-      const wantAgain = rating === 'love' || rating === 'good';
+      const wantAgain = mood === 'amazing' || mood === 'good';
 
       const { error } = await supabase.from('date_memories').insert({
         couple_id: coupleId,
@@ -158,15 +160,15 @@ export default function ReviewScreen() {
 
           <Text style={styles.sectionLabel}>{c.ratingLabel}</Text>
           <View style={styles.ratingGrid}>
-            {c.ratings.map((item: { key: keyof typeof RATING_ICONS; label: string }) => {
-              const sel = rating === item.key;
-              const Icon = RATING_ICONS[item.key];
-              const tone = RATING_TONES[item.key];
+            {c.ratings.map((item: { key: keyof typeof MOOD_ICONS; label: string }) => {
+              const sel = mood === item.key;
+              const Icon = MOOD_ICONS[item.key];
+              const tone = MOOD_TONES[item.key];
               return (
                 <TouchableOpacity
                   key={item.key}
                   style={[styles.ratingCard, sel && { backgroundColor: tone.bg, borderColor: tone.fg, borderWidth: 1.5 }]}
-                  onPress={() => setRating(item.key)}
+                  onPress={() => setMood(item.key)}
                   activeOpacity={0.75}
                 >
                   <View style={[styles.ratingIconWrap, sel && { backgroundColor: C.white }]}>
