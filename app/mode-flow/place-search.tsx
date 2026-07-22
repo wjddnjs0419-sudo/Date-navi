@@ -69,7 +69,7 @@ export default function PlaceSearchScreen() {
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) {
+    if (!q && !categoryCode) {
       setResults([]);
       setLoading(false);
       setError(false);
@@ -84,7 +84,7 @@ export default function PlaceSearchScreen() {
           body: {
             coords: { x, y },
             radius: 3000,
-            queries: [q],
+            queries: q ? [q] : [],
             ...(categoryCode ? { categoryCodes: [categoryCode] } : {}),
           },
         })
@@ -121,7 +121,7 @@ export default function PlaceSearchScreen() {
     router.back();
   };
 
-  const showEmpty = !loading && !error && query.trim().length > 0 && results.length === 0;
+  const showEmpty = !loading && !error && (query.trim().length > 0 || !!categoryCode) && results.length === 0;
 
   return (
     <View style={s.root}>
