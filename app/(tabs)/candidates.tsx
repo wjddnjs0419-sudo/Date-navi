@@ -21,10 +21,11 @@ import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
-type CardWithReactions = {
+export type CardWithReactions = {
   id: string; title: string; summary: string;
   estimated_time: string; estimated_budget: string;
   tags: string[]; mode: string; source: string; created_at: string;
+  created_by: string;
   myReaction: ReactionType | null; partnerReaction: ReactionType | null;
   myConditionTag: ConditionTag | null; partnerConditionTag: ConditionTag | null;
 };
@@ -34,7 +35,33 @@ type BucketItem = {
   myReaction: 'love' | 'next_time' | null;
   partnerReaction: 'love' | 'next_time' | null;
 };
-type FilterTab = 'all' | 'both' | 'conditional' | 'nextTime' | 'bucket';
+export type FilterTab = 'all' | 'mutual' | 'mine' | 'partner' | 'bucket';
+export type SortOrder = 'newest' | 'oldest';
+
+const POSITIVE_REACTIONS: ReactionType[] = ['love', 'like'];
+const isPositive = (r: ReactionType | null) => !!r && POSITIVE_REACTIONS.includes(r);
+
+// 필터 탭 매칭. 'mine'/'partner'는 직접 추가한(source=manual) 카드에만 적용된다 —
+// AI 카드는 특정 파트너가 "저장"한 게 아니라 둘을 위해 생성된 카드라 대상이 아니다.
+export function matchesFilter(c: CardWithReactions, f: FilterTab, myId: string): boolean {
+  if (f === 'all') return true;
+  if (f === 'mutual') return isPositive(c.myReaction) && isPositive(c.partnerReaction);
+  if (f === 'mine') return c.source === 'manual' && c.created_by === myId;
+  if (f === 'partner') return c.source === 'manual' && c.created_by !== myId;
+  return false; // bucket은 별도 상태(bucketItems)로 처리됨
+}
+
+// 카드 상단 배지에 쓰이는 단일 상태. matchesFilter와 동일한 우선순위(mutual 우선)를 따른다.
+export function cardBadgeStatus(c: CardWithReactions, myId: string): 'mutual' | 'mine' | 'partner' | 'undecided' {
+  if (isPositive(c.myReaction) && isPositive(c.partnerReaction)) return 'mutual';
+  if (c.source === 'manual') return c.created_by === myId ? 'mine' : 'partner';
+  return 'undecided';
+}
+
+export function sortCards(list: CardWithReactions[], order: SortOrder): CardWithReactions[] {
+  const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return order === 'oldest' ? sorted : sorted.reverse();
+}
 
 export default function CandidatesScreen() {
   const router = useRouter();
@@ -125,7 +152,7 @@ export default function CandidatesScreen() {
 
       const { data: rawCardRows } = await supabase
         .from('date_cards')
-        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_at, content_i18n')
+        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_by, created_at, content_i18n')
         .eq('couple_id', profile.couple_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
