@@ -9,9 +9,15 @@ const SOURCES = {
   'mascot-heart-couple': require('../assets/illustrations/mascot-heart-couple.png'),
   'mascot-heart-couple-check': require('../assets/illustrations/mascot-heart-couple-check.png'),
   'bg-park': require('../assets/illustrations/bg-park.png'),
+  'mini-skyline-route': require('../assets/illustrations/mini-skyline-route.png'),
+  'mini-park-bench': require('../assets/illustrations/mini-park-bench.png'),
+  'mini-trees-heart': require('../assets/illustrations/mini-trees-heart.png'),
 } as const;
 
 export type IllustrationName = keyof typeof SOURCES;
+
+// 헤딩 옆 미니 일러스트(mini-*)는 화면마다 원본 비율이 달라도 항상 이 너비로 통일한다.
+export const MINI_ILLUSTRATION_WIDTH = 130;
 
 export function Illustration({
   name, width, height, style, resizeMode = 'contain',

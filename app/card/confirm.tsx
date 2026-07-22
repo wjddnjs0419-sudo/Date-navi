@@ -9,7 +9,8 @@ import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
-import { BackBar, BigButton, Chip, SoftCard, SuccessModal } from '../../components/ui';
+import { BackBar, BigButton, Chip, HeartDoodle, SoftCard, SuccessModal } from '../../components/ui';
+import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../components/illustration';
 import {
   DateWheelPicker,
   PickerSheet,
@@ -237,8 +238,12 @@ export default function ConfirmScreen() {
           <BackBar />
 
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>{c.heading}</Text>
+            <View style={styles.headingRow}>
+              <Text style={styles.heading}>{c.heading}</Text>
+              <HeartDoodle style={styles.headingHeart} />
+            </View>
             <Text style={styles.sub}>{c.sub}</Text>
+            <Illustration name="mini-skyline-route" width={MINI_ILLUSTRATION_WIDTH} style={styles.headingIllustration} />
           </View>
 
           {card && (
@@ -337,8 +342,11 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
 
   headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
+  headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  headingHeart: { marginTop: 2, marginLeft: 4 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
   sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
 
   cardPreview: { marginBottom: SP.xl, backgroundColor: C.white },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.sm },
@@ -364,7 +372,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: R.sm,
-    backgroundColor: C.cream,
+    backgroundColor: C.pinkLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,

@@ -3,7 +3,7 @@ import {
   AccessibilityInfo, Easing, Modal, Image,
   type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight, Wallet } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight, Wallet, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { C, SP, R } from '../constants/theme';
@@ -295,6 +295,22 @@ export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?:
 const badgeS = StyleSheet.create({
   base: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
   label: { fontSize: 10, fontWeight: '600', letterSpacing: 0.2 },
+});
+
+// ─── HeartDoodle ──────────────────────────────────────────────────────────────
+// 헤딩 옆에 붙는 작은 손그림 하트 2개. 목업의 반복 장식 요소 — 순수 장식이라 스크린리더에서 숨긴다.
+export function HeartDoodle({ filled = false, style }: { filled?: boolean; style?: StyleProp<ViewStyle> }) {
+  const fill = filled ? C.pink : 'none';
+  return (
+    <View style={[heartDoodleS.wrap, style]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <Heart size={10} color={C.pink} strokeWidth={2} fill={fill} style={heartDoodleS.small} />
+      <Heart size={15} color={C.pink} strokeWidth={2} fill={fill} />
+    </View>
+  );
+}
+const heartDoodleS = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
+  small: { marginBottom: 4 },
 });
 
 // ─── DdayBadge ────────────────────────────────────────────────────────────────

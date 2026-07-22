@@ -14,7 +14,7 @@ import {
 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G } from '../../constants/theme';
-import { BackBar, BigButton, ListGroup, ListRow, SectionLabel, SoftCard } from '../../components/ui';
+import { BackBar, BigButton, HeartDoodle, ListGroup, ListRow, SectionLabel, SoftCard } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
@@ -403,7 +403,11 @@ export default function CoupleConnectScreen() {
       : t.subtitle;
 
   return (
-    <SafeAreaView style={G.screen}>
+    <View style={s.root}>
+      {status === 'linked' && (
+        <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
+      )}
+      <SafeAreaView style={s.safe}>
       <ScrollView
         contentContainerStyle={s.container}
         keyboardShouldPersistTaps="handled"
@@ -412,7 +416,10 @@ export default function CoupleConnectScreen() {
         <BackBar onPress={handleBack} />
 
         <View style={s.headingBlock}>
-          <Text style={s.heading}>{heading}</Text>
+          <View style={s.headingRow}>
+            <Text style={s.heading}>{heading}</Text>
+            {status === 'linked' && <HeartDoodle filled style={s.headingHeart} />}
+          </View>
           <Text style={s.subText}>{subtitle}</Text>
         </View>
 
@@ -519,13 +526,20 @@ export default function CoupleConnectScreen() {
           onChange={setDraftRelationshipDate}
         />
       </PickerSheet>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1 },
+  // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
+  bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 44 },
   headingBlock: { marginTop: 16 },
+  headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  headingHeart: { marginTop: 2, marginLeft: 4 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
   section: { marginTop: 26 },

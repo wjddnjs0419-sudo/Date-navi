@@ -37,4 +37,14 @@ describe('card confirm screen icons', () => {
   it('preserves the success-modal home redirect', () => {
     expect(source).toMatch(/onHide=\{[\s\S]*?router\.replace\('\/\(tabs\)\/'/);
   });
+
+  it('renders the heading heart doodle and skyline mini illustration (목업 06 반복 누락 패턴)', () => {
+    expect(source).toMatch(/headingBlock[\s\S]*?<HeartDoodle/);
+    expect(source).toMatch(/<Illustration name="mini-skyline-route" width=\{MINI_ILLUSTRATION_WIDTH\}/);
+  });
+
+  it('uses pinkLight (not cream) for the row icon background', () => {
+    expect(source).toMatch(/rowIconWrap:[\s\S]{0,80}backgroundColor: C\.pinkLight/);
+    expect(source).not.toMatch(/rowIconWrap:[\s\S]{0,80}backgroundColor: C\.cream/);
+  });
 });

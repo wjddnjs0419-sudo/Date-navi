@@ -29,6 +29,10 @@ describe('card memory new screen icons', () => {
     expect(source).toMatch(/change:[\s\S]{0,40}C\.lavenderFg/);
   });
 
+  it('renders the park-bench mini illustration next to the heading (목업 07 반복 누락 패턴)', () => {
+    expect(source).toMatch(/headingBlock[\s\S]*?<Illustration name="mini-park-bench" width=\{MINI_ILLUSTRATION_WIDTH\}/);
+  });
+
   it('preserves the save contract (memory insert with title + photo required)', () => {
     expect(source).toMatch(/if \(!photoUrl\)[\s\S]*?photoRequiredError/);
     expect(source).toMatch(/from\('date_memories'\)\.insert\(\{[\s\S]*?card_id: null[\s\S]*?want_again: wantAgain/);

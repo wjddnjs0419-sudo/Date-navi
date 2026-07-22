@@ -10,7 +10,8 @@ import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../../lib/supabase';
 import { Camera, Heart } from 'lucide-react-native';
 import { C, SP, R, G } from '../../../../constants/theme';
-import { BackBar, BigButton } from '../../../../components/ui';
+import { BackBar, BigButton, HeartDoodle } from '../../../../components/ui';
+import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../../components/illustration';
 import { useI18n } from '../../../../lib/i18n';
 
 export default function EditMemoryScreen() {
@@ -139,8 +140,14 @@ export default function EditMemoryScreen() {
       >
         <BackBar onPress={() => router.back()} />
 
-        <Text style={[s.heading, s.headingTop]}>{strings.card.memory.editHeading}</Text>
-        <Text style={s.subText}>{strings.card.memory.editSub}</Text>
+        <View style={s.headingBlock}>
+          <View style={s.headingRow}>
+            <Text style={[s.heading, s.headingTop]}>{strings.card.memory.editHeading}</Text>
+            <HeartDoodle style={s.headingHeart} />
+          </View>
+          <Text style={s.subText}>{strings.card.memory.editSub}</Text>
+          <Illustration name="mini-trees-heart" width={MINI_ILLUSTRATION_WIDTH} style={s.headingIllustration} />
+        </View>
 
         <TouchableOpacity
           style={s.photoPlaceholder}
@@ -222,9 +229,13 @@ export default function EditMemoryScreen() {
 const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xxxl + SP.sm },
+  headingBlock: { marginBottom: SP.md },
+  headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  headingHeart: { marginTop: SP.lg + 4, marginLeft: 4 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
   headingTop: { marginTop: SP.lg },
   subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
+  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
   label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: SP.xl, marginBottom: SP.sm },
   inputWrap: {
     backgroundColor: C.white,

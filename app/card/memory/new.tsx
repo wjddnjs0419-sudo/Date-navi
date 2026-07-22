@@ -12,6 +12,7 @@ import { useI18n } from '../../../lib/i18n';
 import { Heart, Star, CircleCheck, RotateCcw, Camera } from 'lucide-react-native';
 import { C, SP, R } from '../../../constants/theme';
 import { BackBar, BigButton } from '../../../components/ui';
+import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../components/illustration';
 
 const RATING_ICONS: Record<string, typeof Heart> = {
   love: Heart,
@@ -153,6 +154,7 @@ export default function NewMemoryScreen() {
           <View style={styles.headingBlock}>
             <Text style={styles.heading}>{s.card.memory.newHeading}</Text>
             <Text style={styles.sub}>{s.card.memory.newSub}</Text>
+            <Illustration name="mini-park-bench" width={MINI_ILLUSTRATION_WIDTH} style={styles.headingIllustration} />
           </View>
 
           <TouchableOpacity
@@ -236,6 +238,7 @@ const styles = StyleSheet.create({
   headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
   sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
+  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
 
   sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.md },
   sectionLabelTop: { marginTop: SP.xl },

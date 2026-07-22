@@ -18,6 +18,11 @@ describe('card memory edit screen icons', () => {
     expect(source).toMatch(/wantAgainRow[\s\S]*?<Heart/);
   });
 
+  it('renders the heading heart doodle and trees mini illustration (목업 09 반복 누락 패턴)', () => {
+    expect(source).toMatch(/headingBlock[\s\S]*?<HeartDoodle/);
+    expect(source).toMatch(/<Illustration name="mini-trees-heart" width=\{MINI_ILLUSTRATION_WIDTH\}/);
+  });
+
   it('preserves the save contract (freeform title gate + fields)', () => {
     const payload = source.match(/\.update\(\{([\s\S]*?)\}\)/)?.[1] ?? '';
     expect(payload).toContain("title: isFreeform ? (title.trim() || null) : undefined");
