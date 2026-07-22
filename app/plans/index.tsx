@@ -22,6 +22,35 @@ type PlanCard = {
   confirmed_place: string | null;
 };
 
+export type PlanTab = 'upcoming' | 'coordinating' | 'done';
+
+// soft_messages(제안) + reactions(반응)로 "조율 중"(제안했지만 상대가 아직 반응 안 함) 카드 id 집합을 구한다.
+// 같은 카드에 여러 제안이 있으면 마지막 제안자를 기준으로 판정한다.
+export function computeCoordinatingIds(
+  proposals: { card_id: string; user_id: string }[],
+  reactions: { card_id: string; user_id: string }[],
+): Set<string> {
+  const proposerByCard = new Map<string, string>();
+  for (const p of proposals) proposerByCard.set(p.card_id, p.user_id);
+
+  const result = new Set<string>();
+  for (const [cardId, proposerId] of proposerByCard) {
+    const reactedByRecipient = reactions.some(r => r.card_id === cardId && r.user_id !== proposerId);
+    if (!reactedByRecipient) result.add(cardId);
+  }
+  return result;
+}
+
+export function planTabOf(
+  card: { id: string; status: string },
+  coordinatingIds: Set<string>,
+): PlanTab | null {
+  if (card.status === 'done') return 'done';
+  if (card.status === 'confirmed') return 'upcoming';
+  if (card.status === 'active' && coordinatingIds.has(card.id)) return 'coordinating';
+  return null;
+}
+
 // PHASE0-BACKMERGE: 확정 데이트를 월(YYYY-MM) 단위로 묶어 목업의 타임라인을 재현한다.
 // 날짜 미정(confirmed_date=null) 카드는 마지막 "미정" 그룹으로 모은다.
 function groupByMonth(plans: PlanCard[]): { key: string; year: number; month: number; items: PlanCard[] }[] {
