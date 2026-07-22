@@ -8,7 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Plus, Heart, Plane, Check, Sparkles } from 'lucide-react-native';
 import { C, SP, R, G } from '../../constants/theme';
-import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow } from '../../components/ui';
+import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow, SortDropdown } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
@@ -369,6 +369,20 @@ export default function CandidatesScreen() {
             ))}
           </ScrollView>
 
+          {activeFilter !== 'bucket' && (
+            <View style={s.sortRow}>
+              <SortDropdown
+                value={sortOrder}
+                options={[
+                  { value: 'newest' as SortOrder, label: t('candidates.sortNewest') },
+                  { value: 'oldest' as SortOrder, label: t('candidates.sortOldest') },
+                ]}
+                onChange={setSortOrder}
+                testID="candidates-sort-dropdown"
+              />
+            </View>
+          )}
+
           {/* 상대가 보낸 제안 */}
           {activeFilter !== 'bucket' && pendingProposals.length > 0 && (
             <TouchableOpacity
@@ -626,6 +640,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   filterScroll: { marginTop: 16 },
   filterContent: { gap: 8, paddingRight: 4 },
+  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
   loader: { marginTop: 60 },
   bgLavender: { backgroundColor: C.lavender },
   bottomSpacer: { height: 100 },

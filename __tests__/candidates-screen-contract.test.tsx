@@ -146,4 +146,9 @@ describe('후보 화면 목업 계약', () => {
     const tree = await render();
     expect(allText(tree)).toContain('candidates.confirmBannerCta');
   });
+
+  it('정렬 드롭다운(최신순)을 렌더한다', async () => {
+    const tree = await render();
+    expect(allText(tree)).toContain('candidates.sortNewest');
+  });
 });
