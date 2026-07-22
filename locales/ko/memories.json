@@ -34,6 +34,9 @@
     "bannerTitle": "특별한 순간을 더 남겨보세요",
     "bannerSub": "사진과 메모로 추억을 기록해요",
     "recordCta": "추억 남기기",
-    "untitled": "추억"
+    "untitled": "추억",
+    "filterAll": "전체",
+    "filterBest": "베스트",
+    "emptyBest": "베스트로 표시된 추억이 없어요"
   }
 }
