@@ -181,3 +181,4 @@ handleGenerateAiOptions()
 - Jest에서 Deno Edge 공용 모듈을 직접 import하면 Deno용 상대 경로 `.ts` 확장자가 루트 `tsc`의 TS5097을 일으킬 수 있다 — `noEmit` 프로젝트의 `tsconfig.json`에 `allowImportingTsExtensions: true`를 켜서 Deno 해석과 테스트 타입 검사를 함께 만족시킬 것.
 - `as const` 검색 설정의 숫자를 함수 기본값으로 직접 쓰면 매개변수 타입이 해당 숫자 리터럴로 추론된다 — 테스트에서 다른 timeout을 주입해야 하는 DI 경계는 `timeoutMs: number = CONFIG.timeoutMs`처럼 명시할 것.
 - Deno에서 generic `createClient`를 `ReturnType<typeof createClient>`로 받으면 DB schema가 `unknown/never`로 소거되고 `Response.json()`은 `unknown`이라 object spread가 실패한다 — logger 경계는 `ReturnType<typeof createClient<any>>`로 유지하고 JSON은 non-null object/비배열 guard 뒤 spread할 것.
+- `react-test-renderer`에서 `<View testID="x">`/`<Animated.View testID="x">`는 forwardRef 컴포넌트(+`Animated.View`는 `AnimatedComponent` 레이어까지) 노드와 실제 호스트 노드가 testID를 함께 갖는다 — `root.findAll(n => n.props.testID === 'x')`로 "요소 1개"를 검증하면 View는 2개, Animated.View는 3개가 매칭돼 항상 깨진다. 호스트 노드만 세려면 `typeof n.type === 'string'` 조건을 함께 걸 것.
