@@ -949,6 +949,85 @@ const successS = StyleSheet.create({
   cta: { marginTop: SP.sm },
 });
 
+// ─── SortDropdown ─────────────────────────────────────────────────────────────
+// 재사용 가능한 정렬 드롭다운. MoreMenu와 동일하게 트리거 위치를 measureInWindow로 재서
+// 화면 어디에 놓여도 옵션 팝오버가 트리거 바로 아래에 붙는다.
+export function SortDropdown<T extends string>({
+  value, options, onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [menuTop, setMenuTop] = useState(0);
+  const triggerRef = useRef<View>(null);
+  const current = options.find(o => o.value === value) ?? options[0];
+
+  function openMenu() {
+    // 위치 측정과 별개로 즉시 연다: measureInWindow 콜백이 늦거나(혹은 테스트 환경처럼 아예
+    // 호출되지 않으면) 메뉴가 영영 안 열리는 문제를 막는다. menuTop은 측정되는 대로 갱신된다.
+    setOpen(true);
+    triggerRef.current?.measureInWindow((_x, y, _w, h) => {
+      setMenuTop(y + h + 4);
+    });
+  }
+
+  return (
+    <>
+      <TouchableOpacity
+        ref={triggerRef as any}
+        accessibilityRole="button"
+        onPress={openMenu}
+        style={sortDropdownS.trigger}
+      >
+        <Text style={sortDropdownS.triggerText}>{current.label}</Text>
+        <ChevronDown size={14} color={C.textSub} strokeWidth={2} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={sortDropdownS.backdrop} onPress={() => setOpen(false)}>
+          <Pressable style={[sortDropdownS.menu, { top: menuTop }]} onPress={() => {}}>
+            {options.map((opt, i) => (
+              <View key={opt.value}>
+                {i > 0 && <View style={sortDropdownS.divider} />}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  testID={`sort-option-${opt.value}`}
+                  onPress={() => { setOpen(false); onChange(opt.value); }}
+                  style={sortDropdownS.item}
+                >
+                  <Text style={[sortDropdownS.itemText, opt.value === value && sortDropdownS.itemTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+const sortDropdownS = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    minHeight: 36, paddingHorizontal: 12,
+    borderRadius: 18, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
+  },
+  triggerText: { fontSize: 12, fontWeight: '600', color: C.textSub },
+  backdrop: { flex: 1 },
+  menu: {
+    position: 'absolute', left: 20, width: 140,
+    backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
+    elevation: 6, overflow: 'hidden',
+  },
+  item: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
+  itemText: { fontSize: 13, fontWeight: '600', color: C.textSub },
+  itemTextActive: { color: C.pinkDeep, fontWeight: '700' },
+  divider: { height: 1, backgroundColor: C.border },
+});
+
 // ─── CourseStepList ───────────────────────────────────────────────────────────
 function StepConnector() {
   return (
