@@ -15,6 +15,7 @@ import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { publishPickedPlace } from '../../lib/place-pick-bridge';
+import { saveRecentPlaceSearch } from '../../lib/recentPlaceSearches';
 import { Illustration } from '../../components/illustration';
 
 type Place = {
@@ -77,6 +78,7 @@ export default function PlaceSearchScreen() {
     }
     const handle = setTimeout(() => {
       const current = ++reqId.current;
+      if (q) void saveRecentPlaceSearch(q);
       setLoading(true);
       setError(false);
       void supabase.functions
