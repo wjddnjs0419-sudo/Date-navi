@@ -175,7 +175,10 @@
       "empty": "No results",
       "error": "Search failed. Please try again",
       "pick": "Select",
-      "back": "Back"
+      "back": "Back",
+      "recentSearchesTitle": "Recent searches",
+      "recommendedAreasTitle": "Recommended areas",
+      "recommendedAreas": ["Seongsu-dong", "Han River", "Yeonnam-dong", "Jamsil", "Itaewon"]
     }
   }
 }

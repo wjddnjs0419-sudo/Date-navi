@@ -15,7 +15,9 @@ import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { publishPickedPlace } from '../../lib/place-pick-bridge';
+import { loadRecentPlaceSearches, saveRecentPlaceSearch } from '../../lib/recentPlaceSearches';
 import { Illustration } from '../../components/illustration';
+import { Chip } from '../../components/ui';
 
 type Place = {
   placeId: string;
@@ -65,11 +67,22 @@ export default function PlaceSearchScreen() {
   const [results, setResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const reqId = useRef(0);
 
   useEffect(() => {
+    void loadRecentPlaceSearches().then(setRecentSearches);
+  }, []);
+
+  const recommendedAreas = t('modeFlow.placeSearch.recommendedAreas', { returnObjects: true }) as string[];
+
+  function pickSuggestion(term: string) {
+    setQuery(term);
+  }
+
+  useEffect(() => {
     const q = query.trim();
-    if (!q) {
+    if (!q && !categoryCode) {
       setResults([]);
       setLoading(false);
       setError(false);
@@ -77,6 +90,9 @@ export default function PlaceSearchScreen() {
     }
     const handle = setTimeout(() => {
       const current = ++reqId.current;
+      if (q) {
+        void saveRecentPlaceSearch(q).then(setRecentSearches);
+      }
       setLoading(true);
       setError(false);
       void supabase.functions
@@ -84,7 +100,7 @@ export default function PlaceSearchScreen() {
           body: {
             coords: { x, y },
             radius: 3000,
-            queries: [q],
+            queries: q ? [q] : [],
             ...(categoryCode ? { categoryCodes: [categoryCode] } : {}),
           },
         })
@@ -121,7 +137,7 @@ export default function PlaceSearchScreen() {
     router.back();
   };
 
-  const showEmpty = !loading && !error && query.trim().length > 0 && results.length === 0;
+  const showEmpty = !loading && !error && (query.trim().length > 0 || !!categoryCode) && results.length === 0;
 
   return (
     <View style={s.root}>
@@ -161,6 +177,29 @@ export default function PlaceSearchScreen() {
       {error && <Text style={s.status}>{t('modeFlow.placeSearch.error')}</Text>}
 
       {showEmpty && <Text style={s.status}>{t('modeFlow.placeSearch.empty')}</Text>}
+
+      {!loading && !error && query.trim().length === 0 && !categoryCode && (
+        <View style={s.suggestions}>
+          {recentSearches.length > 0 && (
+            <View style={s.suggestionGroup}>
+              <Text style={s.suggestionTitle}>{t('modeFlow.placeSearch.recentSearchesTitle')}</Text>
+              <View style={s.chipRow}>
+                {recentSearches.map((term) => (
+                  <Chip key={term} tone="gray" onPress={() => pickSuggestion(term)}>{term}</Chip>
+                ))}
+              </View>
+            </View>
+          )}
+          <View style={s.suggestionGroup}>
+            <Text style={s.suggestionTitle}>{t('modeFlow.placeSearch.recommendedAreasTitle')}</Text>
+            <View style={s.chipRow}>
+              {recommendedAreas.map((area) => (
+                <Chip key={area} tone="pink" onPress={() => pickSuggestion(area)}>{area}</Chip>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
 
       <FlatList
         data={results}
@@ -228,6 +267,10 @@ const s = StyleSheet.create({
   input: { flex: 1, color: C.text, fontSize: 14 },
   center: { paddingVertical: SP.xl, alignItems: 'center' },
   status: { color: C.textMuted, fontSize: 13, textAlign: 'center', paddingVertical: SP.xl },
+  suggestions: { paddingHorizontal: SP.lg, paddingTop: SP.lg, gap: SP.xl },
+  suggestionGroup: { gap: SP.sm },
+  suggestionTitle: { color: C.textSub, fontSize: 13, fontWeight: '700' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs },
   list: { paddingHorizontal: SP.lg, paddingTop: SP.md, gap: SP.xs },
   row: {
     minHeight: 72,
