@@ -82,6 +82,8 @@ describe('추억 수정 화면 — 별점 편집', () => {
     const tree = await render();
     const txt = tree.root.findAllByType(Text).map((n) => n.props.children).flat(Infinity).join(' ');
     expect(txt).toContain('전체 별점');
+    // rating=5(loaded)일 때만 뜨는 파생 피드백 문구 — 로드 경로가 조용히 rating을 0으로 되돌리는 회귀를 잡아낸다.
+    expect(txt).toContain('최고였어요');
     const stars = tree.root.findAllByType(TouchableOpacity).filter((n) => String(n.props.testID ?? '').startsWith('edit-memory-star-'));
     expect(stars.length).toBe(5);
   });
