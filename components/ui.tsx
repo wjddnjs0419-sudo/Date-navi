@@ -953,21 +953,27 @@ const successS = StyleSheet.create({
 // 재사용 가능한 정렬 드롭다운. MoreMenu와 동일하게 트리거 위치를 measureInWindow로 재서
 // 화면 어디에 놓여도 옵션 팝오버가 트리거 바로 아래에 붙는다.
 export function SortDropdown<T extends string>({
-  value, options, onChange,
+  value, options, onChange, testID,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  testID?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [menuTop, setMenuTop] = useState(0);
+  // null = 아직 위치를 측정하지 못함. 0으로 기본값을 두면 measureInWindow 콜백이 오기 전
+  // 한 프레임 동안 메뉴가 top:0(화면 맨 위)에 잘못 그려졌다 제자리로 튀는 게 보인다.
+  const [menuTop, setMenuTop] = useState<number | null>(null);
   const triggerRef = useRef<View>(null);
   const current = options.find(o => o.value === value) ?? options[0];
+  const measured = menuTop !== null;
 
   function openMenu() {
     // 위치 측정과 별개로 즉시 연다: measureInWindow 콜백이 늦거나(혹은 테스트 환경처럼 아예
-    // 호출되지 않으면) 메뉴가 영영 안 열리는 문제를 막는다. menuTop은 측정되는 대로 갱신된다.
+    // 호출되지 않으면) 메뉴가 영영 안 열리는 문제를 막는다. 측정 전에는 opacity:0으로 숨겨,
+    // 잘못된 위치(top:0)가 잠깐이라도 보이지 않게 한다.
     setOpen(true);
+    setMenuTop(null);
     triggerRef.current?.measureInWindow((_x, y, _w, h) => {
       setMenuTop(y + h + 4);
     });
@@ -979,6 +985,7 @@ export function SortDropdown<T extends string>({
         ref={triggerRef as any}
         accessibilityRole="button"
         onPress={openMenu}
+        testID={testID}
         style={sortDropdownS.trigger}
       >
         <Text style={sortDropdownS.triggerText}>{current.label}</Text>
@@ -986,7 +993,10 @@ export function SortDropdown<T extends string>({
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={sortDropdownS.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={[sortDropdownS.menu, { top: menuTop }]} onPress={() => {}}>
+          <Pressable
+            style={[sortDropdownS.menu, { top: menuTop ?? 0 }, !measured && sortDropdownS.menuHidden]}
+            onPress={() => {}}
+          >
             {options.map((opt, i) => (
               <View key={opt.value}>
                 {i > 0 && <View style={sortDropdownS.divider} />}
@@ -1022,6 +1032,9 @@ const sortDropdownS = StyleSheet.create({
     shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
     elevation: 6, overflow: 'hidden',
   },
+  // 위치 측정 전(top이 아직 확정 안 됨) 잘못된 위치가 눈에 보이지 않도록 숨긴다.
+  // display:'none'이 아닌 opacity로 숨겨, 테스트에서 findAllByType으로는 여전히 옵션을 찾아 누를 수 있다.
+  menuHidden: { opacity: 0 },
   item: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   itemText: { fontSize: 13, fontWeight: '600', color: C.textSub },
   itemTextActive: { color: C.pinkDeep, fontWeight: '700' },
