@@ -25,18 +25,22 @@ type PlanCard = {
 export type PlanTab = 'upcoming' | 'coordinating' | 'done';
 
 // soft_messages(제안) + reactions(반응)로 "조율 중"(제안했지만 상대가 아직 반응 안 함) 카드 id 집합을 구한다.
-// 같은 카드에 여러 제안이 있으면 마지막 제안자를 기준으로 판정한다.
+// 같은 카드에 여러 제안이 있으면 그동안 제안한 적 있는 사람 전원을 "제안자"로 취급한다 —
+// 그중 누구 하나가 반응해도 조율 중 유지, 그 누구도 아닌 사람이 반응해야만 종료.
 export function computeCoordinatingIds(
   proposals: { card_id: string; user_id: string }[],
   reactions: { card_id: string; user_id: string }[],
 ): Set<string> {
-  const proposerByCard = new Map<string, string>();
-  for (const p of proposals) proposerByCard.set(p.card_id, p.user_id);
+  const proposersByCard = new Map<string, Set<string>>();
+  for (const p of proposals) {
+    if (!proposersByCard.has(p.card_id)) proposersByCard.set(p.card_id, new Set());
+    proposersByCard.get(p.card_id)!.add(p.user_id);
+  }
 
   const result = new Set<string>();
-  for (const [cardId, proposerId] of proposerByCard) {
-    const reactedByRecipient = reactions.some(r => r.card_id === cardId && r.user_id !== proposerId);
-    if (!reactedByRecipient) result.add(cardId);
+  for (const [cardId, proposers] of proposersByCard) {
+    const reactedByNonProposer = reactions.some(r => r.card_id === cardId && !proposers.has(r.user_id));
+    if (!reactedByNonProposer) result.add(cardId);
   }
   return result;
 }

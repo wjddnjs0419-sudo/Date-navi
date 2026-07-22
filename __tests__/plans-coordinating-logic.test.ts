@@ -18,6 +18,17 @@ describe('computeCoordinatingIds', () => {
     const reactions = [{ card_id: 'card1', user_id: 'u2' }];
     expect(computeCoordinatingIds(proposals, reactions)).toEqual(new Set());
   });
+
+  it('같은 카드에 여러 제안이 있으면 마지막 제안자를 기준으로 판정한다', () => {
+    // u1이 먼저 제안, u2가 나중에 다시 제안 → 마지막 제안자는 u2.
+    // u1(원래 제안자)이 반응해도 그건 "제안자 아닌 사람"이 아니므로 여전히 조율 중이어야 한다.
+    const proposals = [
+      { card_id: 'card1', user_id: 'u1' },
+      { card_id: 'card1', user_id: 'u2' },
+    ];
+    const reactions = [{ card_id: 'card1', user_id: 'u1' }];
+    expect(computeCoordinatingIds(proposals, reactions)).toEqual(new Set(['card1']));
+  });
 });
 
 describe('planTabOf', () => {
