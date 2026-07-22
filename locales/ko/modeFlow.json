@@ -175,7 +175,10 @@
       "empty": "검색 결과가 없어요",
       "error": "검색에 실패했어요. 다시 시도해 주세요",
       "pick": "선택",
-      "back": "뒤로"
+      "back": "뒤로",
+      "recentSearchesTitle": "최근 검색",
+      "recommendedAreasTitle": "추천 지역",
+      "recommendedAreas": ["성수동", "한강", "연남동", "잠실", "이태원"]
     }
   }
 }
