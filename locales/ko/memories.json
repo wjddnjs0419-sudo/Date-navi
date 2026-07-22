@@ -36,6 +36,7 @@
     "recordCta": "추억 남기기",
     "untitled": "추억",
     "filterAll": "전체",
-    "filterBest": "베스트"
+    "filterBest": "베스트",
+    "emptyBest": "베스트로 표시된 추억이 없어요"
   }
 }

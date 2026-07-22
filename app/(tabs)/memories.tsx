@@ -229,6 +229,12 @@ export default function MemoriesScreen() {
                 </View>
               </>
             }
+            ListEmptyComponent={
+              <View style={s.filterEmptyWrap}>
+                <Heart size={32} strokeWidth={1.5} color={C.textFaint} />
+                <Text style={s.filterEmptyText}>{t('memories.emptyBest')}</Text>
+              </View>
+            }
             ListFooterComponent={
               <TouchableOpacity
                 style={s.banner}
@@ -326,6 +332,10 @@ const s = StyleSheet.create({
   emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
   emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: SP.md },
   emptyCta: { marginTop: SP.xxl },
+
+  // 필터 탭(베스트) 결과가 0건일 때 리스트 본문에 보여주는 인라인 빈 상태.
+  filterEmptyWrap: { alignItems: 'center', paddingVertical: SP.xxl },
+  filterEmptyText: { fontSize: 13, color: C.textSub, marginTop: SP.md },
 
   list: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: 40, gap: SP.md },
 

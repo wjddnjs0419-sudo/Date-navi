@@ -36,6 +36,7 @@
     "recordCta": "Add a memory",
     "untitled": "Memory",
     "filterAll": "All",
-    "filterBest": "Best"
+    "filterBest": "Best",
+    "emptyBest": "No favorite memories yet"
   }
 }
