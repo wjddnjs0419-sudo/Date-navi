@@ -286,10 +286,11 @@
 
 ## Pending Approval
 
-### [정정 필요 — UI 전면 교체 목업 불일치 다수] 2026-07-22 세션 BG
-- 세션 BF의 "ss-verify 통과" 보고는 8화면만 훑은 부실 검증이었음. 목업 50장 vs 라이브 정밀 비교(서브에이전트 5개) 결과 **PASS 사실상 0건** — candidates·plans·memories 필터/정렬/D-day/진행률/사진 누락, course-result·place_search·review 구조 자체가 다름, 카드 옆 미니 일러스트 5화면 공통 누락 등. 상세는 `RESULT.md` 세션 BG 참조.
-- asset 배경 불투명 버그(전체 7/8장) 수정 완료, 로그인 화면은 목업 1:1 근접 확정.
-- **남음**: 목업 구조 갭 재작업 우선순위 결정(사용자 협의 예정) — 핵심 플로우 4화면(홈·candidates·plans·course-result) 유력 후보. `share/mutual` 텍스트 겹침 버그 원인 미확정(실기기 확인 필요). 실기기 확인(사용자, Xcode Release Run).
+### [Done] 2026-07-22 세션 BH — 반복 누락 4패턴(하트 낙서·미니 일러스트·pink회귀·bg-park 풀블리드) + 하단 여백 화면 확장(couple-choice·place-search·place-detail·notifications). 상세는 `RESULT.md` 세션 BH 참조.
+
+### [다음 세션 착수 예정 — 사용자 확정] 목업 구조 갭 — 핵심 플로우
+- 세션 BG에서 발견한 "구조/기능 통째 누락": candidates·plans·memories 필터/정렬탭, D-day 카운트다운 실데이터 검증, 진행률바, course-result 사진/소요시간/타임라인 등. 유력 후보 핵심 플로우 4화면(홈·candidates·plans·course-result).
+- `share/mutual` 텍스트 겹침 버그 원인 미확정(실기기 확인 필요) — 남은 채로 이월.
 
 ### [Done] 2026-07-21 세션 BD — UI 전면 교체 asset 준비. `assets/illustrations/` 8장(매트 클레이 파스텔 핑크). 화면 조립은 세션 BE(Phase 0)~BF(Phase 1 6클러스터 병합)에서 완료 → 위 [Phase 2 진행 중] 항목 참조.
 

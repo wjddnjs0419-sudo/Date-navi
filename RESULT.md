@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-07-22 세션 BH — 반복 누락 4패턴 + 하단 여백(bg-park) 화면 확장
+
+> 세션 BG에서 확정한 "반복 패턴"(하트 낙서·미니 일러스트 5화면 공통 누락, pink→cream 회귀) 착수. 사용자 피드백으로 스코프가 두 번 확장됨: ①일러스트 크기 통일 + couple-connect 상단 일러스트 제거(하단에 이미 있어 중복) ②"알림 목록"(홈 벨 아이콘)에도 같은 배경 누락 발견 → 반영 ③앱 전체 36화면 육안 감사로 동일 패턴(일러스트 없음+하단 여백) 3곳 추가 발견 → 반영.
+
+### 패턴1·2 — 하트 낙서 + 미니 일러스트 + pink→cream (4화면)
+- `card/confirm`·`card/memory/new`·`card/memory/edit`·`onboarding/couple-connect`(linked) 헤딩에 `HeartDoodle`(신규, `components/ui.tsx`, lucide Heart 2개 벡터) + 미니 일러스트 배선.
+- 미니 일러스트 4장 Higgsfield(`nano_banana_pro`) 신규 생성 → `remove_background` → **코너 alpha 실측 검증**(PIL로 `im.getpixel` 확인, 세션 BG의 "RGBA 태그만 믿고 안 봄" 재발 방지). 첫 시도는 프롬프트에 "transparent"라는 단어를 쓰면 모델이 체커보드 무늬를 실제 픽셀로 그려버리는 것을 발견 → "plain solid white background"로 바꿔 해결.
+- 사용자 피드백 반영: 크기 들쭉날쭉하던 것을 `MINI_ILLUSTRATION_WIDTH`(130, `components/illustration.tsx`) 상수 하나로 통일. couple-connect는 하단에 bg-park가 이미 있어 상단 마스코트 일러스트(`mini-mascot-trees`)는 제거(asset도 삭제).
+- `card/confirm.tsx` `rowIconWrap` 배경 `C.cream`→`C.pinkLight`.
+- 패턴3(D-day 고정)은 세션 BG에서 이미 "버그 아님"으로 결론난 사안이라 스코프 제외(사용자 확인).
+
+### 패턴4 + 확장 — bg-park 하단 풀블리드
+- `onboarding/couple-connect`(linked): connected 화면과 동일 코드 패턴(SafeAreaView 밖 root에 절대위치, resizeMode=cover)으로 적용.
+- `account/notifications`(홈 벨 아이콘 진입): 목업이 없는 화면이지만 사용자가 직접 지적("알람 아이콘 들어가면 나오는 창") → 동일 패턴 적용.
+- 앱 전체 36개 화면(스크린샷 스크립트 전체 라우트) 시뮬레이터 실렌더 → 육안 전수 검토. "일러스트 없음+하단 크게 빔" 후보 6개 중 사용자가 3개 확정: `onboarding/couple-choice`, `mode-flow/place-search`(검색 전 빈 상태), `mode-flow/place-detail`. `plans`는 "리스트가 늘어나면 자연히 채워질 화면"이라 사용자가 스코프에서 제외 — 의도적 판단, 버그 아님.
+- 법률 페이지(텍스트 전용)·로딩 화면(의도된 중앙정렬)·모달 3종(바텀시트라 배경 부적합)은 감사에서 제외.
+
+### 검증
+- TDD로 진행(RED 확인 후 구현). 테스트 946개/tsc 클린. 시뮬레이터 실렌더로 전체(4+1+3=8화면) 목업/사용자 지적과 대조 확인.
+- **인프라 교훈**: 다른 세션이 이미 띄워둔 Metro/시뮬레이터 인스턴스를 재사용할 때, 코드 변경 후 `xcrun simctl terminate`+`launch`로 강제 리로드하지 않으면 스크린샷이 스테일 번들을 보여줌(처음 캡처 라운드에서 실제로 걸림 — pink 배경도 하트 낙서도 없는 옛 화면을 "실패"로 오판할 뻔함).
+
+### 다음 세션
+- **핵심 수정 예정(사용자 확정)**: 세션 BG에서 남겨둔 "목업 구조 갭"(candidates·plans·memories 필터/정렬탭, D-day 카운트다운 실데이터 검증, 진행률바, course-result 사진/소요시간/타임라인 등) — 유력 후보 핵심 플로우 4화면(홈·candidates·plans·course-result).
+- `share/mutual` 텍스트 겹침 버그 원인 미확정 상태 유지(실기기 확인 필요).
+- 커밋 안 함(사용자 요청 없었음) — 변경 파일 20개(수정 12 + 신규 8), git status 참조.
+
 ## 2026-07-22 세션 BG — asset 배경 버그 + 목업 정밀 감사 (세션 BF의 ss-verify가 부실했음을 정정)
 
 > 사용자 지적: "장난해? asset들 다 배경 사각형으로 남고" — 세션 BF에서 8화면만 훑고 "ss-verify 통과"라 보고한 게 틀렸음. 정밀 재조사 요청.
