@@ -33,7 +33,10 @@ describe('course result footer button symmetry', () => {
 // step-action-sheet와 같은 바텀시트 모달(어두운 배경 + 우상단 X)로 띄운다.
 describe('course result replacement bottom sheet', () => {
   it('renders replacement options inside a slide-up modal', () => {
-    expect(source).toMatch(/<Modal[^>]*visible=\{!!replacementTargetId\}/s);
+    // visible also folds in !searchScreenActive so the sheet hides (without clearing the
+    // target step) while "Search a place" pushes the place-search screen on top — otherwise
+    // this native Modal keeps floating over that screen as a stray dark overlay.
+    expect(source).toMatch(/<Modal[^>]*visible=\{!!replacementTargetId && !searchScreenActive\}/s);
     expect(source).toMatch(/<Modal[^>]*animationType="slide"/s);
   });
 

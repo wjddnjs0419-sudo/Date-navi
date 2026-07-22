@@ -1,6 +1,6 @@
 import { Image, type StyleProp, type ImageStyle } from 'react-native';
 
-const RATIO = 375 / 81;
+const RATIO = 363 / 81;
 const HEIGHTS = { sm: 24, lg: 44 } as const;
 
 export function Wordmark({

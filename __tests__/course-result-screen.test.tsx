@@ -6,10 +6,12 @@ const mockRouterReplace = jest.fn();
 const mockMutateRecommendationSession = jest.fn();
 const mockLoadRecommendationSession = jest.fn();
 const mockSupabaseFunctionsInvoke = jest.fn();
+let mockCapturedFocusEffect: (() => void) | null = null;
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ requestId: 'request-1', sessionId: 'session-1' }),
   useRouter: () => ({ back: jest.fn(), push: mockRouterPush, replace: mockRouterReplace }),
+  useFocusEffect: (cb: () => void) => { mockCapturedFocusEffect = cb; },
 }));
 
 jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(async () => ({})) }));
@@ -126,6 +128,7 @@ type TestRendererInstance = {
     findAllByProps: (props: Record<string, unknown>) => TestNode[];
     findAllByType: (type: unknown) => TestNode[];
   };
+  unmount: () => void;
 };
 const TestRenderer = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => void | Promise<void>;
@@ -143,6 +146,11 @@ function findSheet(instance: TestRendererInstance): TestNode {
 }
 
 describe('course result screen', () => {
+  // TestRendererInstance created by each test; unmounted below so a test that leaves the
+  // replacement panel open (e.g. after a mocked failure) doesn't leak its subscribePickedPlace
+  // listener into later tests sharing that module-level bridge.
+  let instance!: TestRendererInstance;
+
   beforeEach(() => {
     mockRouterPush.mockClear();
     mockRouterReplace.mockClear();
@@ -150,11 +158,15 @@ describe('course result screen', () => {
     mockLoadRecommendationSession.mockClear();
     mockSupabaseFunctionsInvoke.mockClear();
     mockRequestRecommendationResponse.mockClear();
+    mockCapturedFocusEffect = null;
+  });
+
+  afterEach(() => {
+    act(() => { instance.unmount(); });
   });
 
   it('renders the course steps only once, with no duplicate full-screen candidate pager', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     // react-native's <Text> renders through a composite + host layer that both carry
@@ -165,7 +177,6 @@ describe('course result screen', () => {
 
   it('shows a location meta chip and each step reason (mockup P0/04/05)', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     // location label surfaces in the always-visible meta chip row (conditions panel is collapsed)
@@ -176,7 +187,6 @@ describe('course result screen', () => {
 
   it('renders a category icon per step', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const { Coffee, Utensils, Footprints } = require('lucide-react-native');
@@ -188,7 +198,6 @@ describe('course result screen', () => {
   it('opens the step action sheet when a step card is tapped, and lock toggle calls applyMutation via mutateRecommendationSession', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockMutateRecommendationSession.mockResolvedValue(buildSnapshot());
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-cafe' });
@@ -206,7 +215,6 @@ describe('course result screen', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot({
       steps: buildSnapshot().steps.slice(0, 2),
     });
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
@@ -218,7 +226,6 @@ describe('course result screen', () => {
 
   it('shows send/save actions instead of after-date feedback once the course is confirmed', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot({ status: 'confirmed', confirmedCardId: 'card-1' });
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     expect(() => instance.root.findByProps({ testID: 'confirmed-send' })).not.toThrow();
@@ -228,7 +235,6 @@ describe('course result screen', () => {
 
   it('stacks step cards vertically at full width instead of a fixed-width horizontal strip', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
@@ -243,7 +249,6 @@ describe('course result screen', () => {
 
   it('wraps the scrollable header/step/replacement content separately from the pinned footer actions', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const { ScrollView } = require('react-native');
@@ -272,7 +277,6 @@ describe('course result screen', () => {
       },
       error: null,
     });
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
@@ -320,7 +324,6 @@ describe('course result screen', () => {
     } as unknown as Awaited<ReturnType<typeof mockRequestRecommendationResponse>>);
     mockMutateRecommendationSession.mockResolvedValueOnce(snapshot);
 
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
@@ -336,12 +339,61 @@ describe('course result screen', () => {
     expect(payload).toMatchObject({ stepId: 'step-meal', candidateId: 'candidate_007', kakaoPlaceId: 'k-new' });
   });
 
+  it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
+    act(() => { card.props.onPress(); });
+    const sheet = findSheet(instance);
+    await act(async () => { sheet.props.onReplace(); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-replacement-tab-search' }).props.onPress(); });
+    act(() => { instance.root.findByProps({ testID: 'course-replacement-search-cta' }).props.onPress(); });
+
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+    const modal = instance.root.findByProps({ testID: 'course-replacement-modal' });
+    expect(modal.props.visible).toBe(false);
+  });
+
+  it('re-shows the replacement sheet when the screen regains focus after an unfinished search trip, and still completes the replace once a place is picked', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
+    act(() => { card.props.onPress(); });
+    const sheet = findSheet(instance);
+    await act(async () => { sheet.props.onReplace(); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-replacement-tab-search' }).props.onPress(); });
+    act(() => { instance.root.findByProps({ testID: 'course-replacement-search-cta' }).props.onPress(); });
+
+    // simulate returning to this screen (via focus) after the search screen was left on top
+    act(() => { mockCapturedFocusEffect?.(); });
+
+    expect(instance.root.findByProps({ testID: 'course-replacement-modal' }).props.visible).toBe(true);
+
+    const { publishPickedPlace } = require('../lib/place-pick-bridge') as typeof import('../lib/place-pick-bridge');
+    await act(async () => { publishPickedPlace({ kakaoPlaceId: 'k-searched', name: '검색으로 고른 식당', address: 'addr', longitude: 127.05, latitude: 37.55 }); });
+
+    expect(mockRequestRecommendationResponse).toHaveBeenCalledTimes(1);
+    const sentRequest = mockRequestRecommendationResponse.mock.calls[0][0] as { replacement: { stepId: string; kakaoPlaceId: string } };
+    expect(sentRequest.replacement).toMatchObject({ stepId: 'step-meal', kakaoPlaceId: 'k-searched' });
+  });
+
   it('솔로(coupleId 없음)가 확정을 누르면 서버 mutate 대신 커플 연결 안내를 띄운다', async () => {
     const { Alert } = require('react-native');
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockMutateRecommendationSession.mockResolvedValue(buildSnapshot({ coupleId: null, status: 'confirmed' }));
     (globalThis as any).__mockSnapshot = buildSnapshot({ coupleId: null });
-    let instance!: TestRendererInstance;
     act(() => { instance = create(<CourseResultScreen />); });
 
     const confirmBtn = instance.root.findByProps({ testID: 'course-confirm' });

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { SP, R } from '../../constants/theme';
@@ -100,6 +100,12 @@ export default function CourseResultScreen() {
   const [replacementCandidates, setReplacementCandidates] = useState<ReplacementCandidate[]>([]);
   const [replacementTab, setReplacementTab] = useState<'recommend' | 'search'>('recommend');
   const [actionSheetStepId, setActionSheetStepId] = useState<string | null>(null);
+  // "Search a place"로 이동하는 동안 대상 스텝(replacementTargetId)은 유지한 채
+  // 시트만 숨긴다. 그렇지 않으면 네이티브 Modal이 검색 화면 위에 계속 떠 있고,
+  // 사용자가 백드롭을 눌러 닫으면 replacementTargetId까지 초기화되어 검색으로
+  // 고른 장소가 반영되지 않는다.
+  const [searchScreenActive, setSearchScreenActive] = useState(false);
+  useFocusEffect(useCallback(() => { setSearchScreenActive(false); }, []));
 
   async function applyMutation(
     action: 'lock' | 'unlock' | 'reorder' | 'delete' | 'confirm',
@@ -486,7 +492,7 @@ export default function CourseResultScreen() {
         {editError !== '' && !replacementTargetId && <Text style={s.editError}>{editError}</Text>}
       </ScrollView>
 
-      <Modal visible={!!replacementTargetId} transparent animationType="slide" onRequestClose={closeReplacementPanel}>
+      <Modal testID="course-replacement-modal" visible={!!replacementTargetId && !searchScreenActive} transparent animationType="slide" onRequestClose={closeReplacementPanel}>
         <View style={s.replacementModalWrap}>
           <Pressable style={s.replacementBackdrop} onPress={closeReplacementPanel} testID="course-replacement-backdrop" />
           <View style={s.replacementSheet}>
@@ -554,6 +560,7 @@ export default function CourseResultScreen() {
                     const center = snapshot.request.location; // latitude/longitude 보유
                     const targetStep = snapshot.steps.find((step) => step.stepId === replacementTargetId);
                     const targetCategoryCode = targetStep ? KAKAO_CATEGORY_CODE[targetStep.category] : undefined;
+                    setSearchScreenActive(true);
                     router.push({ pathname: '/mode-flow/place-search', params: {
                       x: String(center.longitude), y: String(center.latitude),
                       ...(targetCategoryCode ? { categoryCode: targetCategoryCode } : {}),

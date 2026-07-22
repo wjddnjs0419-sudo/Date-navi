@@ -60,7 +60,6 @@ export default function MemoriesScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      setRelationshipDays(null);
       const { data: profile } = await supabase
         .from('date_planner_profiles')
         .select('couple_id, anniversary_date')
@@ -199,8 +198,8 @@ export default function MemoriesScreen() {
             ListHeaderComponent={
               <>
                 <View style={s.statsCard}>
-                  <View style={s.statsHeartTile}>
-                    <Heart size={22} color={C.pinkDeep} fill={C.pinkDeep} />
+                  <View style={s.statsHeartTile} testID="memories-stats-icon-tile">
+                    <Illustration name="mascot-heart-couple" width={40} />
                   </View>
                   <View style={s.statsCols}>
                     {stats.map((st) => (
@@ -210,7 +209,6 @@ export default function MemoriesScreen() {
                       </View>
                     ))}
                   </View>
-                  <Illustration name="mascot-heart-couple" width={48} style={s.statsMascot} />
                 </View>
                 <View style={s.tabBar}>
                   {(['all', 'best'] as const).map((tab) => (
@@ -351,13 +349,12 @@ const s = StyleSheet.create({
   },
   statsHeartTile: {
     width: 48, height: 48, borderRadius: R.sm,
-    backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   statsCols: { flex: 1, flexDirection: 'row' },
   statBox: { flex: 1 },
   statValue: { fontSize: 20, fontWeight: '800', color: C.text },
   statLabel: { fontSize: 10, color: C.textSub, marginTop: 2 },
-  statsMascot: { marginLeft: SP.xs },
 
   tabBar: { flexDirection: 'row', gap: SP.sm, marginBottom: SP.lg },
   tabBtn: {
