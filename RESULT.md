@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-07-22 세션 BI — candidates·plans 목업 구조 갭 Task 1~8 (워크트리, 미병합)
+
+> 세션 BG/BH에서 남긴 "목업 구조 갭" 중 candidates(우리 후보) 필터 체계와 plans(데이트 계획) 상태 탭을 구현. 별도 워크트리(`.claude/worktrees/candidates-plans-structural-gap`, 브랜치 `worktree-candidates-plans-structural-gap`)에서 계획서(`docs/superpowers/plans/2026-07-22-candidates-plans-structural-gap.md`) Task 1~8을 TDD로 진행. 중간에 세션이 한 번 끊겼다가(Task 1~5 커밋된 상태) 재개해 Task 5 엣지케이스 수정부터 이어갔다.
+
+### 구현 내용
+- **candidates**: 필터를 목업 체계(전체/서로 좋아요/내가 저장/상대가 저장)로 전면 교체. "내가 저장"/"상대가 저장"은 `source==='manual'` 카드에 한해 `created_by`로 판정(AI 카드는 "좋아요 미정" 배지). 정렬 드롭다운(최신순/오래된순) 재사용 컴포넌트 `SortDropdown` 신설.
+- **plans**: `date_cards` 쿼리를 `active`/`confirmed`/`done`까지 확장하고 `soft_messages`+`reactions`로 "조율 중"(제안했지만 상대가 아직 반응 안 함)을 판정해 예정/조율 중/완료 3탭으로 분류. 조율 중 카드는 날짜 미확정이라 D-day 배지 대신 "상대의 응답을 기다리는 중" 문구(`PlanListRow`에 `showDday` prop 추가).
+- **엣지케이스 수정**: 같은 카드에 여러 명이 제안한 경우, "마지막 제안자 1명"이 아니라 "제안한 적 있는 전원(Set)"을 제안자로 취급하도록 수정 — 안 그러면 원래 제안자의 반응을 "상대 반응"으로 오판해 조율 중 상태를 조기 종료시킴.
+- 사진(썸네일) 연동은 API 키 부재로 스코프에서 완전 제외(계획 문서에 명시).
+
+### 검증
+- TDD로 8개 커밋 전부 RED→GREEN 확인 후 진행. 전체 스위트 144 suites/971 tests + tsc 클린.
+- 시뮬레이터 실렌더(`EXPO_PUBLIC_SCREENSHOT=1` + 제어서버, 워크트리에서 Metro 기동): candidates 기본 상태(필터 칩 4종, 정렬 드롭다운, 배지)와 plans 기본 상태(탭 바 3종 + 빈 상태) 육안 확인 — 레이아웃/색상 정상, 어색한 여백 없음. 스크린샷 목업 fixture엔 manual 카드·조율 중 후보 데이터가 없어 "내가 저장"/"상대가 저장"/"조율 중" 목록 상태(비어있지 않은 상태)는 육안 미확인 — 해당 로직은 유닛 테스트로만 검증됨.
+
+### 다음 세션
+- **병합 필요**: 이 브랜치(`worktree-candidates-plans-structural-gap`)는 아직 main에 병합 안 됨. 병합 여부/시점 확인.
+- `.env.example`에 Google Places API 키 안내 주석(미커밋, 연동 코드 미착수)이 남아있음 — 이번 스코프(사진 제외)와 무관하게 유지할지 확인 필요.
+- `share/mutual` 텍스트 겹침 버그(세션 BG부터 이월) 여전히 원인 미확정, 실기기 확인 필요.
+
 ## 2026-07-22 세션 BH — 반복 누락 4패턴 + 하단 여백(bg-park) 화면 확장
 
 > 세션 BG에서 확정한 "반복 패턴"(하트 낙서·미니 일러스트 5화면 공통 누락, pink→cream 회귀) 착수. 사용자 피드백으로 스코프가 두 번 확장됨: ①일러스트 크기 통일 + couple-connect 상단 일러스트 제거(하단에 이미 있어 중복) ②"알림 목록"(홈 벨 아이콘)에도 같은 배경 누락 발견 → 반영 ③앱 전체 36화면 육안 감사로 동일 패턴(일러스트 없음+하단 여백) 3곳 추가 발견 → 반영.

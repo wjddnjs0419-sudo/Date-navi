@@ -286,11 +286,12 @@
 
 ## Pending Approval
 
+### [병합 대기] 2026-07-22 세션 BI — candidates 필터 체계(전체/서로좋아요/내가저장/상대가저장 + 정렬) + plans 상태 탭(예정/조율중/완료) 구현 완료. TDD 8커밋, 전체 테스트/tsc 클린, 시뮬레이터 기본 상태 육안 확인 완료. **워크트리(`worktree-candidates-plans-structural-gap`)에 있고 아직 main 미병합** — 병합 여부 확인 필요. 상세는 `RESULT.md` 세션 BI 참조.
+- 남은 목업 구조 갭: memories 필터/정렬탭, D-day 카운트다운 실데이터 검증, 진행률바, course-result 사진/소요시간/타임라인 — 다음 세션 대상.
+
 ### [Done] 2026-07-22 세션 BH — 반복 누락 4패턴(하트 낙서·미니 일러스트·pink회귀·bg-park 풀블리드) + 하단 여백 화면 확장(couple-choice·place-search·place-detail·notifications). 상세는 `RESULT.md` 세션 BH 참조.
 
-### [다음 세션 착수 예정 — 사용자 확정] 목업 구조 갭 — 핵심 플로우
-- 세션 BG에서 발견한 "구조/기능 통째 누락": candidates·plans·memories 필터/정렬탭, D-day 카운트다운 실데이터 검증, 진행률바, course-result 사진/소요시간/타임라인 등. 유력 후보 핵심 플로우 4화면(홈·candidates·plans·course-result).
-- `share/mutual` 텍스트 겹침 버그 원인 미확정(실기기 확인 필요) — 남은 채로 이월.
+### `share/mutual` 텍스트 겹침 버그 — 세션 BG부터 이월, 원인 미확정(실기기 확인 필요)
 
 ### [Done] 2026-07-21 세션 BD — UI 전면 교체 asset 준비. `assets/illustrations/` 8장(매트 클레이 파스텔 핑크). 화면 조립은 세션 BE(Phase 0)~BF(Phase 1 6클러스터 병합)에서 완료 → 위 [Phase 2 진행 중] 항목 참조.
 
