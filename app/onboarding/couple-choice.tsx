@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Clock3, ChevronRight } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
 import { BackBar, SoftCard } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { useI18n } from '../../lib/i18n';
 
 export default function CoupleChoiceScreen() {
@@ -14,7 +14,9 @@ export default function CoupleChoiceScreen() {
   const { t } = useI18n();
 
   return (
-    <SafeAreaView style={G.screen}>
+    <View style={s.root}>
+      <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
+      <SafeAreaView style={s.safe}>
       <View style={s.container}>
         <BackBar />
 
@@ -55,11 +57,16 @@ export default function CoupleChoiceScreen() {
 
         <View style={s.spacer} />
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1 },
+  // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
+  bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   headingBlock: { marginTop: 24 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },

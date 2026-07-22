@@ -15,6 +15,7 @@ import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { publishPickedPlace } from '../../lib/place-pick-bridge';
+import { Illustration } from '../../components/illustration';
 
 type Place = {
   placeId: string;
@@ -123,7 +124,9 @@ export default function PlaceSearchScreen() {
   const showEmpty = !loading && !error && query.trim().length > 0 && results.length === 0;
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <View style={s.root}>
+      <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
+      <SafeAreaView style={s.safe} edges={['top']}>
       <View style={s.header}>
         <TouchableOpacity
           accessibilityRole="button"
@@ -191,12 +194,16 @@ export default function PlaceSearchScreen() {
           );
         }}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1 },
+  // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
+  bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

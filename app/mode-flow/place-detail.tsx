@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ExternalLink, MapPin } from 'lucide-react-native';
 import { BackBar } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { buildKakaoMapUrl, buildNaverMapUrl } from '../../lib/replacement-candidates';
@@ -27,7 +28,9 @@ export default function PlaceDetailScreen() {
     );
   }
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <View style={s.root}>
+      <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
+      <SafeAreaView style={s.safe} edges={['top']}>
       <View style={s.header}><BackBar /></View>
       <View style={s.content}>
         <View style={s.titleBlock}>
@@ -62,12 +65,16 @@ export default function PlaceDetailScreen() {
           <Text style={s.backText}>{t('modeFlow.courseResult.back')}</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1 },
+  // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
+  bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   header: { paddingHorizontal: SP.xl },
   content: { padding: SP.xl, gap: SP.md },
   titleBlock: { gap: SP.sm, marginBottom: SP.xs },

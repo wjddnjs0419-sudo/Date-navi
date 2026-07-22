@@ -7,8 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Heart, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
 import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
+import { SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
+import { Illustration } from '../../components/illustration';
 import { supabase } from '../../lib/supabase';
 import { buildPushNavigationTarget, type PushNotificationType } from '../../lib/push';
 import { useI18n } from '../../lib/i18n';
@@ -124,7 +125,9 @@ export default function NotificationsScreen() {
   const unreadCount = items.length;
 
   return (
-    <SafeAreaView style={G.screen}>
+    <View style={s.root}>
+      <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
+      <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.headerRow}>
           <BackBar />
@@ -226,11 +229,17 @@ export default function NotificationsScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1 },
+  // connected.tsx / couple-connect.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로
+  // 그려야 하단이 진짜 화면 끝까지 붙는다.
+  bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clearBtn: { fontSize: 12, color: C.textSub, fontWeight: '500' },
