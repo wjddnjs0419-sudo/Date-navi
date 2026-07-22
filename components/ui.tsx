@@ -770,13 +770,18 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
   const statusLabel = steps[current] ?? '';
 
   useEffect(() => {
+    const target = ((current + 1) / total) * 100;
+    if (reduceMotion) {
+      fillPercent.setValue(target);
+      return;
+    }
     Animated.timing(fillPercent, {
-      toValue: ((current + 1) / total) * 100,
+      toValue: target,
       duration: 400,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false, // width 애니메이션은 layout 속성이라 native driver 불가
     }).start();
-  }, [current, total, fillPercent]);
+  }, [current, total, fillPercent, reduceMotion]);
 
   const fillWidth = fillPercent.interpolate({
     inputRange: [0, 100],
