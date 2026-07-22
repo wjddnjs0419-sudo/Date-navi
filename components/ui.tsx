@@ -277,12 +277,14 @@ const optionCardS = StyleSheet.create({
 });
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender';
+type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender' | 'blue' | 'orange';
 const BADGE_TONES: Record<BadgeTone, { bg: string; fg: string }> = {
   gray: { bg: C.gray, fg: C.textSub },
   pink: { bg: C.pinkLight, fg: C.pinkDeep },
   mint: { bg: C.mint, fg: C.mintFg },
   lavender: { bg: C.lavender, fg: C.lavenderFg },
+  blue: { bg: '#E8F1FC', fg: C.catCafe },
+  orange: { bg: C.cream, fg: C.creamFg },
 };
 export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?: BadgeTone }) {
   const c = BADGE_TONES[tone];

@@ -73,15 +73,16 @@ export default function CandidatesScreen() {
   };
   const FILTER_LABEL: Record<FilterTab, string> = {
     all: t('candidates.filterAll'),
-    both: t('candidates.filterBoth'),
-    conditional: t('candidates.filterConditional'),
-    nextTime: t('candidates.filterNextTime'),
+    mutual: t('candidates.filterMutual'),
+    mine: t('candidates.filterMine'),
+    partner: t('candidates.filterPartner'),
     bucket: t('candidates.filterBucket'),
   };
   const [cards, setCards] = useState<CardWithReactions[]>([]);
   // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
   const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
   const [bucketItems, setBucketItems] = useState<BucketItem[]>([]);
   const [bucketLoading, setBucketLoading] = useState(false);
@@ -92,8 +93,8 @@ export default function CandidatesScreen() {
 
   // bucket 필터는 next_meet 모드 진입점이므로 모드 활성 여부에 연동해 숨긴다.
   const FILTERS: FilterTab[] = isDateModeEnabled('next_meet')
-    ? ['all', 'both', 'conditional', 'nextTime', 'bucket']
-    : ['all', 'both', 'conditional', 'nextTime'];
+    ? ['all', 'mutual', 'mine', 'partner', 'bucket']
+    : ['all', 'mutual', 'mine', 'partner'];
 
   useFocusEffect(
     useCallback(() => {
@@ -305,15 +306,6 @@ export default function CandidatesScreen() {
     ]);
   }
 
-  function classify(c: CardWithReactions): FilterTab {
-    const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
-    if (c.myReaction === 'next_time' || c.partnerReaction === 'next_time') return 'nextTime';
-    if (pos(c.myReaction) && pos(c.partnerReaction)) return 'both';
-    if ((pos(c.myReaction) && c.partnerReaction === 'burden') ||
-        (c.myReaction === 'burden' && pos(c.partnerReaction))) return 'conditional';
-    return 'all';
-  }
-
   // 카드의 실제 나/상대 반응을 하나의 친근한 상태 문구로 요약한다. (목업의 "서로 좋아요를 눌렀어요!")
   function reactionStatus(c: CardWithReactions): { key: string; icon: 'spark' | 'heart'; color: string } {
     const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
@@ -326,16 +318,17 @@ export default function CandidatesScreen() {
     return { key: 'statusNone', icon: 'heart', color: C.textMuted };
   }
 
-  // 필터 칩 옆 개수. all/bucket 외에는 classify 결과로 센다.
+  // 필터 칩 옆 개수. all/bucket 외에는 matchesFilter 결과로 센다.
   function filterCount(f: FilterTab): number {
     if (f === 'all') return cards.length;
     if (f === 'bucket') return bucketItems.length;
-    return cards.filter(c => classify(c) === f).length;
+    return cards.filter(c => matchesFilter(c, f, currentUserId ?? '')).length;
   }
 
-  const filtered = activeFilter === 'all'
-    ? cards
-    : cards.filter(c => classify(c) === activeFilter);
+  const filtered = sortCards(
+    activeFilter === 'all' ? cards : cards.filter(c => matchesFilter(c, activeFilter, currentUserId ?? '')),
+    sortOrder,
+  );
 
   return (
     <SafeAreaView style={G.screen}>
@@ -419,11 +412,12 @@ export default function CandidatesScreen() {
                 <View style={s.cardList}>
                   {filtered.map((card) => {
                     const { Icon: IconComponent, bg, fg } = getCardStyle(card.tags);
-                    const bothLove = card.myReaction === 'love' && card.partnerReaction === 'love';
+                    const badgeStatus = cardBadgeStatus(card, currentUserId ?? '');
                     const status = reactionStatus(card);
                     const StatusIcon = status.icon === 'spark' ? Sparkles : Heart;
                     const conditions = [card.myConditionTag, card.partnerConditionTag]
                       .filter((c): c is ConditionTag => c != null);
+                    const BADGE_TONE_BY_STATUS = { mutual: 'pink', mine: 'blue', partner: 'orange', undecided: 'gray' } as const;
                     return (
                       <SwipeableCard
                         key={card.id}
@@ -439,14 +433,9 @@ export default function CandidatesScreen() {
                           <View style={s.flex1}>
                             <View style={s.cardTitleRow}>
                               <Text style={s.cardTitle}>{card.title}</Text>
-                              <View style={s.badgeRow}>
-                                {card.source === 'manual' && (
-                                  <Badge tone="lavender">{t('candidates.addManual')}</Badge>
-                                )}
-                                <Badge tone={bothLove ? 'pink' : 'gray'}>
-                                  {bothLove ? t('candidates.thisDateBadge') : t('candidates.candidateBadge')}
-                                </Badge>
-                              </View>
+                              <Badge tone={BADGE_TONE_BY_STATUS[badgeStatus]}>
+                                {t(`candidates.badge${badgeStatus.charAt(0).toUpperCase()}${badgeStatus.slice(1)}`)}
+                              </Badge>
                             </View>
                             <View style={s.chips}>
                               {(card.tags ?? []).slice(0, 3).map((tag, tagIndex) => (
@@ -503,7 +492,7 @@ export default function CandidatesScreen() {
             </View>
             <TouchableOpacity
               style={s.confirmBannerCta}
-              onPress={() => handleFilterChange('both')}
+              onPress={() => handleFilterChange('mutual')}
               activeOpacity={0.85}
             >
               <Text style={s.confirmBannerCtaText}>{t('candidates.confirmBannerCta')}</Text>
@@ -658,7 +647,6 @@ const s = StyleSheet.create({
   cardList: { marginTop: 16, gap: 12 },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  badgeRow: { flexDirection: 'row', gap: 4 },
   cardIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, flex: 1, lineHeight: 20 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },

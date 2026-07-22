@@ -66,6 +66,7 @@ jest.mock('../lib/supabase', () => {
               tags: ['romantic', 'photo'],
               mode: 'make_course',
               source: 'ai',
+              created_by: 'u1',
               created_at: '2026-07-01',
               content_i18n: null,
             }],
@@ -116,14 +117,19 @@ describe('후보 화면 목업 계약', () => {
     expect(txt).toContain('candidates.fabAddCourse');
   });
 
-  it('필터 칩(전체/둘다/조건부/다음에)을 렌더한다', async () => {
+  it('필터 칩(전체/서로 좋아요/내가 저장/상대가 저장)을 렌더한다', async () => {
     const tree = await render();
     expect(tree.root.findAllByType(Chip).length).toBeGreaterThanOrEqual(4);
     const txt = allText(tree);
     expect(txt).toContain('candidates.filterAll');
-    expect(txt).toContain('candidates.filterBoth');
-    expect(txt).toContain('candidates.filterConditional');
-    expect(txt).toContain('candidates.filterNextTime');
+    expect(txt).toContain('candidates.filterMutual');
+    expect(txt).toContain('candidates.filterMine');
+    expect(txt).toContain('candidates.filterPartner');
+  });
+
+  it('AI 카드(둘 다 좋아요)는 상단 배지에 서로 좋아요 상태를 렌더한다', async () => {
+    const tree = await render();
+    expect(allText(tree)).toContain('candidates.badgeMutual');
   });
 
   it('로드된 카드의 제목을 카드 행으로 렌더한다', async () => {
