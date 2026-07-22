@@ -149,4 +149,40 @@ describe('recommend-date 입력 시점 스텝 핀', () => {
     expect(result.status).toBe(200);
     expect(stepsOf(result).find((s) => s.stepId === 'meal')?.kakaoPlaceId).toBe('pinned-meal');
   });
+
+  it('핀 스텝 자신을 다른 장소 보기(replace) 대상으로 삼아도 새 후보로 교체된다', async () => {
+    const pool = [
+      candidate('cand-a', 'pinned-meal', 'FD6', 127),
+      candidate('cand-new', 'new-meal', 'FD6', 127.001),
+      candidate('cafe-cand', 'cafe-id', 'CE7', 127.002),
+    ];
+    const deps = dependencies(pool);
+    const body: RecommendationRequest = {
+      ...base(),
+      sessionId: 'session-1',
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '블루보틀', pinnedKakaoPlaceId: 'pinned-meal', pinnedName: '블루보틀' },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+      replacement: { stepId: 'meal', kakaoPlaceId: 'new-meal' },
+      lockedSteps: [
+        {
+          stepId: 'cafe',
+          candidateId: 'cafe-cand',
+          kakaoPlaceId: 'cafe-id',
+          name: 'Verified cafe-id',
+          address: 'Address cafe-id',
+          roadAddress: 'Road cafe-id',
+          mapUrl: 'https://place.map.kakao.com/cafe-id',
+          latitude: 37,
+          longitude: 127.002,
+        },
+      ],
+    };
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+
+    expect(result.status).toBe(200);
+    expect(stepsOf(result).find((s) => s.stepId === 'meal')?.kakaoPlaceId).toBe('new-meal');
+  });
 });

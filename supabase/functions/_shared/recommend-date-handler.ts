@@ -246,7 +246,17 @@ export async function handleRecommendDate(
         return errorResult(422, 'COURSE_VALIDATION_FAILED');
       }
       built = buildCandidateOnlyCourse({
-        request: intentAwareRequest,
+        request: {
+          ...intentAwareRequest,
+          // The replacement target's own pin (if any) describes the place being replaced away
+          // from, not a constraint on the new candidate — clearing it here lets the freshly
+          // picked candidate through instead of forcing it to match the old pinned place.
+          courseSteps: intentAwareRequest.courseSteps.map((step) => (
+            step.id === serverRequest.replacement?.stepId
+              ? { ...step, pinnedKakaoPlaceId: undefined, pinnedName: undefined }
+              : step
+          )),
+        },
         candidates: search.candidates,
         selection: {
           steps: serverRequest.courseSteps.map((step) => ({
