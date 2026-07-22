@@ -339,13 +339,14 @@ const ddayS = StyleSheet.create({
 // ─── PlanListRow ──────────────────────────────────────────────────────────────
 // "다가오는 데이트" 리스트 행. 홈/전체 계획 화면이 공유한다.
 export function PlanListRow({
-  title, dateLabel, days, imageSource, onPress,
+  title, dateLabel, days, imageSource, onPress, showDday = true,
 }: {
   title: string;
   dateLabel: string;
   days: number;
   imageSource?: ImageSourcePropType;
   onPress: () => void;
+  showDday?: boolean;
 }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
@@ -360,7 +361,7 @@ export function PlanListRow({
         </View>
       </View>
       <View style={planRowS.right}>
-        <DdayBadge days={days} />
+        {showDday && <DdayBadge days={days} />}
         <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
       </View>
     </TouchableOpacity>
