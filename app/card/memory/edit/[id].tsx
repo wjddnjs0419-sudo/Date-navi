@@ -1,3 +1,4 @@
+// app/card/memory/edit/[id].tsx
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
@@ -8,16 +9,18 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../../lib/supabase';
-import { Camera, Heart } from 'lucide-react-native';
+import { Camera, Star } from 'lucide-react-native';
 import { C, SP, R, G } from '../../../../constants/theme';
 import { BackBar, BigButton, HeartDoodle } from '../../../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../../components/illustration';
 import { useI18n } from '../../../../lib/i18n';
+import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../../lib/ratingFeedback';
 
 export default function EditMemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { strings } = useI18n();
+  const c = strings.review;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,7 +28,7 @@ export default function EditMemoryScreen() {
   const [isFreeform, setIsFreeform] = useState(false);
   const [title, setTitle] = useState('');
   const [reviewText, setReviewText] = useState('');
-  const [wantAgain, setWantAgain] = useState(true);
+  const [rating, setRating] = useState(0);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useFocusEffect(
@@ -35,7 +38,7 @@ export default function EditMemoryScreen() {
         setLoading(true);
         const { data } = await supabase
           .from('date_memories')
-          .select('card_id, title, review, want_again, photo_url')
+          .select('card_id, title, review, want_again, photo_url, rating')
           .eq('id', id)
           .maybeSingle();
         if (!active) return;
@@ -43,7 +46,7 @@ export default function EditMemoryScreen() {
           setIsFreeform(!data.card_id);
           setTitle(data.title ?? '');
           setReviewText(data.review ?? '');
-          setWantAgain(data.want_again);
+          setRating(data.rating ?? 0);
           setPhotoUrl(data.photo_url);
         }
         setLoading(false);
@@ -100,14 +103,18 @@ export default function EditMemoryScreen() {
   }
 
   async function handleSave() {
+    if (!rating) { Alert.alert('', c.noStarRatingError); return; }
     if (saving) return;
     setSaving(true);
     try {
+      const wantAgain = deriveWantAgain(rating as Rating);
+
       const { data, error } = await supabase
         .from('date_memories')
         .update({
           title: isFreeform ? (title.trim() || null) : undefined,
           review: reviewText.trim(),
+          rating,
           want_again: wantAgain,
           photo_url: photoUrl,
         })
@@ -130,6 +137,10 @@ export default function EditMemoryScreen() {
       </View>
     );
   }
+
+  const feedbackKey = rating ? RATING_FEEDBACK_KEY[rating as Rating] : null;
+  const FeedbackIcon = rating ? RATING_FEEDBACK_ICON[rating as Rating] : null;
+  const feedbackTone = rating ? RATING_FEEDBACK_TONE[rating as Rating] : null;
 
   return (
     <SafeAreaView style={G.screen}>
@@ -196,23 +207,33 @@ export default function EditMemoryScreen() {
           />
         </View>
 
-        <Text style={s.label}>{strings.card.memory.wantAgainLabel}</Text>
-        <View style={s.wantAgainRow}>
-          {[{ value: true, label: strings.card.memory.wantAgainYes }, { value: false, label: strings.card.memory.wantAgainNo }].map((item) => {
-            const on = wantAgain === item.value;
-            return (
-              <TouchableOpacity
-                key={String(item.value)}
-                style={[s.wantBtn, on && s.wantBtnOn]}
-                onPress={() => setWantAgain(item.value)}
-                activeOpacity={0.75}
-              >
-                <Heart size={16} color={on ? C.pinkDeep : C.textLight} strokeWidth={2} fill={on ? C.pinkLight : 'none'} />
-                <Text style={[s.wantText, on && s.wantTextOn]}>{item.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        <Text style={s.label}>{c.starRatingLabel}</Text>
+        <View style={s.starRow}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <TouchableOpacity
+              key={n}
+              testID={`edit-memory-star-${n}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${n}점`}
+              onPress={() => setRating(n)}
+              style={s.starBtn}
+            >
+              <Star
+                size={28}
+                strokeWidth={1.8}
+                color={C.pinkDeep}
+                fill={n <= rating ? C.pinkDeep : 'transparent'}
+              />
+            </TouchableOpacity>
+          ))}
         </View>
+
+        {feedbackKey && FeedbackIcon && feedbackTone && (
+          <View style={[s.feedbackCard, { backgroundColor: feedbackTone.bg, borderColor: feedbackTone.fg }]}>
+            <FeedbackIcon size={18} color={feedbackTone.fg} strokeWidth={2} />
+            <Text style={[s.feedbackLabel, { color: feedbackTone.fg }]}>{c.ratingFeedback[feedbackKey]}</Text>
+          </View>
+        )}
 
         <View style={s.footerSpacer} />
       </ScrollView>
@@ -265,22 +286,20 @@ const s = StyleSheet.create({
   photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
   photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
 
-  wantAgainRow: { flexDirection: 'row', gap: SP.sm },
-  wantBtn: {
-    flex: 1,
+  starRow: { flexDirection: 'row', gap: SP.sm },
+  starBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+
+  feedbackCard: {
     flexDirection: 'row',
-    gap: SP.xs,
-    paddingVertical: SP.lg - 2,
-    borderRadius: R.md,
-    backgroundColor: C.white,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: C.border,
+    gap: SP.sm,
+    marginTop: SP.md,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
+    borderRadius: R.lg,
+    borderWidth: 1.5,
   },
-  wantBtnOn: { backgroundColor: C.pinkLight, borderColor: C.pink },
-  wantText: { fontSize: 14, color: C.textSub, fontWeight: '500' },
-  wantTextOn: { color: C.pinkDeep, fontWeight: '700' },
+  feedbackLabel: { fontSize: 13, fontWeight: '600' },
 
   footer: {
     position: 'absolute',
