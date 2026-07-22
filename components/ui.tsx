@@ -277,12 +277,14 @@ const optionCardS = StyleSheet.create({
 });
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender';
+type BadgeTone = 'gray' | 'pink' | 'mint' | 'lavender' | 'blue' | 'orange';
 const BADGE_TONES: Record<BadgeTone, { bg: string; fg: string }> = {
   gray: { bg: C.gray, fg: C.textSub },
   pink: { bg: C.pinkLight, fg: C.pinkDeep },
   mint: { bg: C.mint, fg: C.mintFg },
   lavender: { bg: C.lavender, fg: C.lavenderFg },
+  blue: { bg: '#E8F1FC', fg: C.catCafe },
+  orange: { bg: C.cream, fg: C.creamFg },
 };
 export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?: BadgeTone }) {
   const c = BADGE_TONES[tone];
@@ -337,13 +339,14 @@ const ddayS = StyleSheet.create({
 // ─── PlanListRow ──────────────────────────────────────────────────────────────
 // "다가오는 데이트" 리스트 행. 홈/전체 계획 화면이 공유한다.
 export function PlanListRow({
-  title, dateLabel, days, imageSource, onPress,
+  title, dateLabel, days, imageSource, onPress, showDday = true,
 }: {
   title: string;
   dateLabel: string;
   days: number;
   imageSource?: ImageSourcePropType;
   onPress: () => void;
+  showDday?: boolean;
 }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
@@ -358,7 +361,7 @@ export function PlanListRow({
         </View>
       </View>
       <View style={planRowS.right}>
-        <DdayBadge days={days} />
+        {showDday && <DdayBadge days={days} />}
         <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
       </View>
     </TouchableOpacity>
@@ -945,6 +948,98 @@ const successS = StyleSheet.create({
   mascot: { marginBottom: SP.xs },
   message: { fontSize: 19, fontWeight: '700', color: C.text, textAlign: 'center', lineHeight: 26 },
   cta: { marginTop: SP.sm },
+});
+
+// ─── SortDropdown ─────────────────────────────────────────────────────────────
+// 재사용 가능한 정렬 드롭다운. MoreMenu와 동일하게 트리거 위치를 measureInWindow로 재서
+// 화면 어디에 놓여도 옵션 팝오버가 트리거 바로 아래에 붙는다.
+export function SortDropdown<T extends string>({
+  value, options, onChange, testID,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+  testID?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  // null = 아직 위치를 측정하지 못함. 0으로 기본값을 두면 measureInWindow 콜백이 오기 전
+  // 한 프레임 동안 메뉴가 top:0(화면 맨 위)에 잘못 그려졌다 제자리로 튀는 게 보인다.
+  const [menuTop, setMenuTop] = useState<number | null>(null);
+  const triggerRef = useRef<View>(null);
+  const current = options.find(o => o.value === value) ?? options[0];
+  const measured = menuTop !== null;
+
+  function openMenu() {
+    // 위치 측정과 별개로 즉시 연다: measureInWindow 콜백이 늦거나(혹은 테스트 환경처럼 아예
+    // 호출되지 않으면) 메뉴가 영영 안 열리는 문제를 막는다. 측정 전에는 opacity:0으로 숨겨,
+    // 잘못된 위치(top:0)가 잠깐이라도 보이지 않게 한다.
+    setOpen(true);
+    setMenuTop(null);
+    triggerRef.current?.measureInWindow((_x, y, _w, h) => {
+      setMenuTop(y + h + 4);
+    });
+  }
+
+  return (
+    <>
+      <TouchableOpacity
+        ref={triggerRef as any}
+        accessibilityRole="button"
+        onPress={openMenu}
+        testID={testID}
+        style={sortDropdownS.trigger}
+      >
+        <Text style={sortDropdownS.triggerText}>{current.label}</Text>
+        <ChevronDown size={14} color={C.textSub} strokeWidth={2} />
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={sortDropdownS.backdrop} onPress={() => setOpen(false)}>
+          <Pressable
+            style={[sortDropdownS.menu, { top: menuTop ?? 0 }, !measured && sortDropdownS.menuHidden]}
+            onPress={() => {}}
+          >
+            {options.map((opt, i) => (
+              <View key={opt.value}>
+                {i > 0 && <View style={sortDropdownS.divider} />}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  testID={`sort-option-${opt.value}`}
+                  onPress={() => { setOpen(false); onChange(opt.value); }}
+                  style={sortDropdownS.item}
+                >
+                  <Text style={[sortDropdownS.itemText, opt.value === value && sortDropdownS.itemTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+const sortDropdownS = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    minHeight: 36, paddingHorizontal: 12,
+    borderRadius: 18, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
+  },
+  triggerText: { fontSize: 12, fontWeight: '600', color: C.textSub },
+  backdrop: { flex: 1 },
+  menu: {
+    position: 'absolute', left: 20, width: 140,
+    backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
+    elevation: 6, overflow: 'hidden',
+  },
+  // 위치 측정 전(top이 아직 확정 안 됨) 잘못된 위치가 눈에 보이지 않도록 숨긴다.
+  // display:'none'이 아닌 opacity로 숨겨, 테스트에서 findAllByType으로는 여전히 옵션을 찾아 누를 수 있다.
+  menuHidden: { opacity: 0 },
+  item: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
+  itemText: { fontSize: 13, fontWeight: '600', color: C.textSub },
+  itemTextActive: { color: C.pinkDeep, fontWeight: '700' },
+  divider: { height: 1, backgroundColor: C.border },
 });
 
 // ─── CourseStepList ───────────────────────────────────────────────────────────

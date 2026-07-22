@@ -8,7 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Plus, Heart, Plane, Check, Sparkles } from 'lucide-react-native';
 import { C, SP, R, G } from '../../constants/theme';
-import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow } from '../../components/ui';
+import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow, SortDropdown } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
@@ -21,10 +21,11 @@ import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
-type CardWithReactions = {
+export type CardWithReactions = {
   id: string; title: string; summary: string;
   estimated_time: string; estimated_budget: string;
   tags: string[]; mode: string; source: string; created_at: string;
+  created_by: string;
   myReaction: ReactionType | null; partnerReaction: ReactionType | null;
   myConditionTag: ConditionTag | null; partnerConditionTag: ConditionTag | null;
 };
@@ -34,7 +35,33 @@ type BucketItem = {
   myReaction: 'love' | 'next_time' | null;
   partnerReaction: 'love' | 'next_time' | null;
 };
-type FilterTab = 'all' | 'both' | 'conditional' | 'nextTime' | 'bucket';
+export type FilterTab = 'all' | 'mutual' | 'mine' | 'partner' | 'bucket';
+export type SortOrder = 'newest' | 'oldest';
+
+const POSITIVE_REACTIONS: ReactionType[] = ['love', 'like'];
+const isPositive = (r: ReactionType | null) => !!r && POSITIVE_REACTIONS.includes(r);
+
+// 필터 탭 매칭. 'mine'/'partner'는 직접 추가한(source=manual) 카드에만 적용된다 —
+// AI 카드는 특정 파트너가 "저장"한 게 아니라 둘을 위해 생성된 카드라 대상이 아니다.
+export function matchesFilter(c: CardWithReactions, f: FilterTab, myId: string): boolean {
+  if (f === 'all') return true;
+  if (f === 'mutual') return isPositive(c.myReaction) && isPositive(c.partnerReaction);
+  if (f === 'mine') return c.source === 'manual' && c.created_by === myId;
+  if (f === 'partner') return c.source === 'manual' && c.created_by !== myId;
+  return false; // bucket은 별도 상태(bucketItems)로 처리됨
+}
+
+// 카드 상단 배지에 쓰이는 단일 상태. matchesFilter와 동일한 우선순위(mutual 우선)를 따른다.
+export function cardBadgeStatus(c: CardWithReactions, myId: string): 'mutual' | 'mine' | 'partner' | 'undecided' {
+  if (isPositive(c.myReaction) && isPositive(c.partnerReaction)) return 'mutual';
+  if (c.source === 'manual') return c.created_by === myId ? 'mine' : 'partner';
+  return 'undecided';
+}
+
+export function sortCards(list: CardWithReactions[], order: SortOrder): CardWithReactions[] {
+  const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return order === 'oldest' ? sorted : sorted.reverse();
+}
 
 export default function CandidatesScreen() {
   const router = useRouter();
@@ -46,15 +73,16 @@ export default function CandidatesScreen() {
   };
   const FILTER_LABEL: Record<FilterTab, string> = {
     all: t('candidates.filterAll'),
-    both: t('candidates.filterBoth'),
-    conditional: t('candidates.filterConditional'),
-    nextTime: t('candidates.filterNextTime'),
+    mutual: t('candidates.filterMutual'),
+    mine: t('candidates.filterMine'),
+    partner: t('candidates.filterPartner'),
     bucket: t('candidates.filterBucket'),
   };
   const [cards, setCards] = useState<CardWithReactions[]>([]);
   // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
   const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
   const [bucketItems, setBucketItems] = useState<BucketItem[]>([]);
   const [bucketLoading, setBucketLoading] = useState(false);
@@ -65,8 +93,8 @@ export default function CandidatesScreen() {
 
   // bucket 필터는 next_meet 모드 진입점이므로 모드 활성 여부에 연동해 숨긴다.
   const FILTERS: FilterTab[] = isDateModeEnabled('next_meet')
-    ? ['all', 'both', 'conditional', 'nextTime', 'bucket']
-    : ['all', 'both', 'conditional', 'nextTime'];
+    ? ['all', 'mutual', 'mine', 'partner', 'bucket']
+    : ['all', 'mutual', 'mine', 'partner'];
 
   useFocusEffect(
     useCallback(() => {
@@ -125,7 +153,7 @@ export default function CandidatesScreen() {
 
       const { data: rawCardRows } = await supabase
         .from('date_cards')
-        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_at, content_i18n')
+        .select('id, title, summary, estimated_time, estimated_budget, tags, mode, source, created_by, created_at, content_i18n')
         .eq('couple_id', profile.couple_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
@@ -278,15 +306,6 @@ export default function CandidatesScreen() {
     ]);
   }
 
-  function classify(c: CardWithReactions): FilterTab {
-    const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
-    if (c.myReaction === 'next_time' || c.partnerReaction === 'next_time') return 'nextTime';
-    if (pos(c.myReaction) && pos(c.partnerReaction)) return 'both';
-    if ((pos(c.myReaction) && c.partnerReaction === 'burden') ||
-        (c.myReaction === 'burden' && pos(c.partnerReaction))) return 'conditional';
-    return 'all';
-  }
-
   // 카드의 실제 나/상대 반응을 하나의 친근한 상태 문구로 요약한다. (목업의 "서로 좋아요를 눌렀어요!")
   function reactionStatus(c: CardWithReactions): { key: string; icon: 'spark' | 'heart'; color: string } {
     const pos = (r: ReactionType | null) => r === 'love' || r === 'like';
@@ -299,16 +318,17 @@ export default function CandidatesScreen() {
     return { key: 'statusNone', icon: 'heart', color: C.textMuted };
   }
 
-  // 필터 칩 옆 개수. all/bucket 외에는 classify 결과로 센다.
+  // 필터 칩 옆 개수. all/bucket 외에는 matchesFilter 결과로 센다.
   function filterCount(f: FilterTab): number {
     if (f === 'all') return cards.length;
     if (f === 'bucket') return bucketItems.length;
-    return cards.filter(c => classify(c) === f).length;
+    return cards.filter(c => matchesFilter(c, f, currentUserId ?? '')).length;
   }
 
-  const filtered = activeFilter === 'all'
-    ? cards
-    : cards.filter(c => classify(c) === activeFilter);
+  const filtered = sortCards(
+    activeFilter === 'all' ? cards : cards.filter(c => matchesFilter(c, activeFilter, currentUserId ?? '')),
+    sortOrder,
+  );
 
   return (
     <SafeAreaView style={G.screen}>
@@ -348,6 +368,20 @@ export default function CandidatesScreen() {
               </Chip>
             ))}
           </ScrollView>
+
+          {activeFilter !== 'bucket' && (
+            <View style={s.sortRow}>
+              <SortDropdown
+                value={sortOrder}
+                options={[
+                  { value: 'newest' as SortOrder, label: t('candidates.sortNewest') },
+                  { value: 'oldest' as SortOrder, label: t('candidates.sortOldest') },
+                ]}
+                onChange={setSortOrder}
+                testID="candidates-sort-dropdown"
+              />
+            </View>
+          )}
 
           {/* 상대가 보낸 제안 */}
           {activeFilter !== 'bucket' && pendingProposals.length > 0 && (
@@ -392,11 +426,12 @@ export default function CandidatesScreen() {
                 <View style={s.cardList}>
                   {filtered.map((card) => {
                     const { Icon: IconComponent, bg, fg } = getCardStyle(card.tags);
-                    const bothLove = card.myReaction === 'love' && card.partnerReaction === 'love';
+                    const badgeStatus = cardBadgeStatus(card, currentUserId ?? '');
                     const status = reactionStatus(card);
                     const StatusIcon = status.icon === 'spark' ? Sparkles : Heart;
                     const conditions = [card.myConditionTag, card.partnerConditionTag]
                       .filter((c): c is ConditionTag => c != null);
+                    const BADGE_TONE_BY_STATUS = { mutual: 'pink', mine: 'blue', partner: 'orange', undecided: 'gray' } as const;
                     return (
                       <SwipeableCard
                         key={card.id}
@@ -412,14 +447,9 @@ export default function CandidatesScreen() {
                           <View style={s.flex1}>
                             <View style={s.cardTitleRow}>
                               <Text style={s.cardTitle}>{card.title}</Text>
-                              <View style={s.badgeRow}>
-                                {card.source === 'manual' && (
-                                  <Badge tone="lavender">{t('candidates.addManual')}</Badge>
-                                )}
-                                <Badge tone={bothLove ? 'pink' : 'gray'}>
-                                  {bothLove ? t('candidates.thisDateBadge') : t('candidates.candidateBadge')}
-                                </Badge>
-                              </View>
+                              <Badge tone={BADGE_TONE_BY_STATUS[badgeStatus]}>
+                                {t(`candidates.badge${badgeStatus.charAt(0).toUpperCase()}${badgeStatus.slice(1)}`)}
+                              </Badge>
                             </View>
                             <View style={s.chips}>
                               {(card.tags ?? []).slice(0, 3).map((tag, tagIndex) => (
@@ -476,7 +506,7 @@ export default function CandidatesScreen() {
             </View>
             <TouchableOpacity
               style={s.confirmBannerCta}
-              onPress={() => handleFilterChange('both')}
+              onPress={() => handleFilterChange('mutual')}
               activeOpacity={0.85}
             >
               <Text style={s.confirmBannerCtaText}>{t('candidates.confirmBannerCta')}</Text>
@@ -610,6 +640,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   filterScroll: { marginTop: 16 },
   filterContent: { gap: 8, paddingRight: 4 },
+  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
   loader: { marginTop: 60 },
   bgLavender: { backgroundColor: C.lavender },
   bottomSpacer: { height: 100 },
@@ -631,7 +662,6 @@ const s = StyleSheet.create({
   cardList: { marginTop: 16, gap: 12 },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  badgeRow: { flexDirection: 'row', gap: 4 },
   cardIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, flex: 1, lineHeight: 20 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },

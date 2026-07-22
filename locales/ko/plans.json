@@ -7,6 +7,12 @@
     "emptySub": "후보 중 마음에 드는 데이트를\n\"이번 데이트로 정하기\"로 확정해보세요.",
     "noDateTimePlace": "날짜·장소는 아직 정하지 않았어요.",
     "reviewCta": "데이트 끝났어요 · 어땠어요?",
-    "makeCta": "새 데이트 계획 만들기"
+    "makeCta": "새 데이트 계획 만들기",
+    "tabUpcoming": "예정",
+    "tabCoordinating": "조율 중",
+    "tabDone": "완료",
+    "coordinatingStatus": "상대의 응답을 기다리는 중",
+    "emptyCoordinating": "조율 중인 데이트가 없어요",
+    "emptyDone": "완료한 데이트가 없어요"
   }
 }

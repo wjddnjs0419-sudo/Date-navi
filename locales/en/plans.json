@@ -7,6 +7,12 @@
     "emptySub": "Pick a candidate you like and confirm it\nwith \"Choose this for the date.\"",
     "noDateTimePlace": "Date and place haven't been set yet.",
     "reviewCta": "Date's done · How was it?",
-    "makeCta": "Plan a new date"
+    "makeCta": "Plan a new date",
+    "tabUpcoming": "Upcoming",
+    "tabCoordinating": "Coordinating",
+    "tabDone": "Done",
+    "coordinatingStatus": "Waiting for your partner's response",
+    "emptyCoordinating": "No dates being coordinated",
+    "emptyDone": "No completed dates yet"
   }
 }
