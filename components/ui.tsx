@@ -720,6 +720,7 @@ const noteS = StyleSheet.create({
 // 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
 export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
   const pulseScale = useRef(new Animated.Value(1)).current;
+  const fillPercent = useRef(new Animated.Value(0)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -768,26 +769,43 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
   const current = Math.min(Math.max(step, 0), total - 1);
   const statusLabel = steps[current] ?? '';
 
+  useEffect(() => {
+    const target = ((current + 1) / total) * 100;
+    if (reduceMotion) {
+      fillPercent.setValue(target);
+      return;
+    }
+    Animated.timing(fillPercent, {
+      toValue: target,
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // width 애니메이션은 layout 속성이라 native driver 불가
+    }).start();
+  }, [current, total, fillPercent, reduceMotion]);
+
+  const fillWidth = fillPercent.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
     <View style={genS.container}>
       <Text style={genS.heading}>{heading}</Text>
 
       <Animated.View style={[genS.illustrationWrap, { transform: [{ scale: pulseScale }] }]}>
-        <Illustration name="date-course-map-vertical" width={200} />
+        <Illustration name="date-course-map-vertical" width={240} />
       </Animated.View>
 
       <View style={genS.progressBlock}>
         <View style={genS.progressHeader}>
           <Text style={genS.statusLabel} numberOfLines={1}>{statusLabel}</Text>
-          <Text style={genS.progressCount}>{current + 1} / {total}</Text>
+          <Text style={genS.progressCount}>{`${current + 1} / ${total}`}</Text>
         </View>
-        <View style={genS.progressTrack}>
-          {steps.map((label, i) => (
-            <View
-              key={`${label}-${i}`}
-              style={[genS.progressSegment, i <= current ? genS.progressSegmentOn : genS.progressSegmentOff]}
-            />
-          ))}
+        <View style={genS.progressTrack} testID="generating-progress-track">
+          <Animated.View
+            testID="generating-progress-fill"
+            style={[genS.progressFill, { width: fillWidth }]}
+          />
         </View>
       </View>
     </View>
@@ -820,10 +838,12 @@ const genS = StyleSheet.create({
   },
   statusLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: C.text },
   progressCount: { fontSize: 13, fontWeight: '600', color: C.pink },
-  progressTrack: { flexDirection: 'row', gap: SP.xs },
-  progressSegment: { flex: 1, height: 6, borderRadius: R.badge },
-  progressSegmentOn: { backgroundColor: C.pink },
-  progressSegmentOff: { backgroundColor: C.pinkMid },
+  progressTrack: {
+    height: 8, borderRadius: R.badge, backgroundColor: C.pinkMid, overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%', borderRadius: R.badge, backgroundColor: C.pink,
+  },
 });
 
 // ─── FieldBox ─────────────────────────────────────────────────────────────────

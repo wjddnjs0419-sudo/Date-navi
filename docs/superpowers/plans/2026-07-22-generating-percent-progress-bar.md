@@ -18,7 +18,7 @@
 - Modify: `components/ui.tsx`
 - Modify: `__tests__/generating-view.test.tsx`
 
-- [ ] **Step 1: 실패하는 테스트 추가**
+- [x] **Step 1: 실패하는 테스트 추가**
 
 ```tsx
 // __tests__/generating-view.test.tsx 기존 describe 블록 안에 추가
@@ -49,12 +49,12 @@
   });
 ```
 
-- [ ] **Step 2: 테스트 실행 → 실패 확인**
+- [x] **Step 2: 테스트 실행 → 실패 확인**
 
 Run: `npx jest generating-view`
 Expected: FAIL — 현재 구현엔 `generating-progress-track`/`generating-progress-fill` testID가 없음(대신 `steps.length`개의 이름 없는 박스가 있음).
 
-- [ ] **Step 3: `components/ui.tsx`의 `GeneratingView` 진행바 렌더 교체**
+- [x] **Step 3: `components/ui.tsx`의 `GeneratingView` 진행바 렌더 교체**
 
 `useRef`/`useState` 선언부에 퍼센트 애니메이션 값 추가(기존 `pulseScale` 선언 바로 아래):
 
@@ -104,31 +104,35 @@ Expected: FAIL — 현재 구현엔 `generating-progress-track`/`generating-prog
 
 (기존 `progressSegment`/`progressSegmentOn`/`progressSegmentOff` 스타일 키는 더 이상 쓰이지 않으므로 삭제한다.)
 
-- [ ] **Step 4: 테스트 실행 → 통과 확인**
+- [x] **Step 4: 테스트 실행 → 통과 확인**
 
 Run: `npx jest generating-view`
 Expected: PASS
 
-- [ ] **Step 5: 전체 검증**
+- [x] **Step 5: 전체 검증**
 
 Run: `npm run validate && npx jest`
 Expected: 모두 PASS
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add components/ui.tsx __tests__/generating-view.test.tsx
 git commit -m "feat(generating): 단계 분절 바 → 목업과 동일한 연속 퍼센트 채움 바"
 ```
 
+커밋 `cd2fff2`. 코드 품질 리뷰에서 지적된 reduceMotion 미존중 이슈를 `5834025`로 후속 수정.
+
+**계획 외 추가 작업**: 사용자가 세션 중 실기기 스크린샷을 보고 "생성 중 화면 일러스트가 작아 보인다" 피드백 → 코스맵 일러스트(`date-course-map-vertical`) 폭 200→240으로 확대(TDD, 커밋 `a4cb9c2`). 이 계획서에는 없던 범위지만 같은 화면·같은 세션이라 함께 처리.
+
 ---
 
 ## Task 2 — 목업 대조 시각 검증
 
-- [ ] 시뮬레이터에서 `/mode-flow/generating` 렌더(course 흐름 진입), 단계가 넘어갈 때 바가 부드럽게 채워지는지 육안 확인.
-- [ ] `01_generating.png`와 나란히 비교 — 바 색상/두께/모서리, 라벨 위치 일치 여부.
-- [ ] `/ss-verify` 실행해 점수 확인, 80 미만이면 수정 후 재확인.
-- [ ] `RESULT.md`/`PLAN.md` 갱신 — 파트너 아바타는 이 화면 대상이 아니었음(목업에도 없음)을 기록하고, 사용자가 다른 화면을 염두에 뒀다면 다음 세션에 화면을 특정해 별도로 다룬다고 명시.
+- [ ] 시뮬레이터에서 `/mode-flow/generating` 렌더(course 흐름 진입), 단계가 넘어갈 때 바가 부드럽게 채워지는지 육안 확인. — **사용자가 직접 Xcode Run으로 진행하기로 함(Claude 미실행).**
+- [ ] `01_generating.png`와 나란히 비교 — 바 색상/두께/모서리, 라벨 위치 일치 여부. — 위와 동일, 사용자 직접 확인 예정.
+- [ ] `/ss-verify` 실행해 점수 확인, 80 미만이면 수정 후 재확인. — 위와 동일, 사용자 직접 확인 예정.
+- [x] `RESULT.md`/`PLAN.md` 갱신 — 파트너 아바타는 이 화면 대상이 아니었음(목업에도 없음)을 기록. 세션 중 사용자가 다른 화면을 언급하지 않았으므로 별도 특정 불필요. (세션 BM 항목 참조)
 
 ---
 
