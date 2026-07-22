@@ -44,15 +44,24 @@ jest.mock('../lib/supabase', () => {
         }
         if (table === 'date_memories') {
           return makeBuilder({
-            data: [{
-              id: 'm1', card_id: 'card1', title: '성수동 감성 데이트', review: '카페가 특히 좋았어요',
-              want_again: true, created_at: '2026-07-15T00:00:00Z', photo_url: null,
-            }],
+            data: [
+              {
+                id: 'm1', card_id: 'card1', title: '성수동 감성 데이트', review: '카페가 특히 좋았어요',
+                want_again: true, created_at: '2026-07-15T00:00:00Z', photo_url: null,
+              },
+              {
+                id: 'm2', card_id: 'card2', title: '한강 피크닉', review: '그냥 그랬어요',
+                want_again: false, created_at: '2026-07-10T00:00:00Z', photo_url: null,
+              },
+            ],
           });
         }
         if (table === 'date_cards') {
           return makeBuilder({
-            data: [{ id: 'card1', title: '성수동 감성 데이트', mode: 'make_course', estimated_time: '약 3시간', estimated_budget: '5만원', tags: ['산책', '카페'] }],
+            data: [
+              { id: 'card1', title: '성수동 감성 데이트', mode: 'make_course', estimated_time: '약 3시간', estimated_budget: '5만원', tags: ['산책', '카페'] },
+              { id: 'card2', title: '한강 피크닉', mode: 'make_course', estimated_time: '약 2시간', estimated_budget: '2만원', tags: ['한강'] },
+            ],
           });
         }
         return makeBuilder({ data: [] });
@@ -103,5 +112,31 @@ describe('추억 화면 목업 계약', () => {
   it('하단 추억 남기기 배너를 렌더한다', async () => {
     const tree = await render();
     expect(allText(tree)).toContain('memories.recordCta');
+  });
+
+  it('필터 탭(전체/베스트)을 렌더한다', async () => {
+    const tree = await render();
+    const txt = allText(tree);
+    expect(txt).toContain('memories.filterAll');
+    expect(txt).toContain('memories.filterBest');
+  });
+
+  it('기본 탭(전체)은 두 추억을 모두 보여준다', async () => {
+    const tree = await render();
+    const txt = allText(tree);
+    expect(txt).toContain('성수동 감성 데이트');
+    expect(txt).toContain('한강 피크닉');
+  });
+
+  it('베스트 탭을 누르면 want_again=true인 추억만 보여준다', async () => {
+    const tree = await render();
+    const { TouchableOpacity } = require('react-native');
+    const bestTab = tree.root.findAllByType(TouchableOpacity).find((n) => n.props.testID === 'memories-tab-best');
+    await TR.act(async () => { bestTab?.props.onPress(); });
+    // FlatList가 예약하는 셀 렌더 갱신 타이머(기본 50ms)를 흘려보내 act 경고를 방지한다.
+    await TR.act(() => new Promise((resolve) => setTimeout(resolve, 60)));
+    const txt = allText(tree);
+    expect(txt).toContain('성수동 감성 데이트');
+    expect(txt).not.toContain('한강 피크닉');
   });
 });

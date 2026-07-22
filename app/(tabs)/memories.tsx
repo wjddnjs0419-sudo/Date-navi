@@ -50,6 +50,7 @@ export default function MemoriesScreen() {
   const { t } = useI18n();
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [relationshipDays, setRelationshipDays] = useState<number | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'best'>('all');
   // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
   const { loading, begin: beginLoad, end: endLoad } = useRevalidatingLoad();
 
@@ -153,6 +154,8 @@ export default function MemoriesScreen() {
     { label: t('memories.statThisMonth'), value: String(thisMonthCount) },
   ];
 
+  const filteredItems = activeFilter === 'best' ? items.filter((i) => i.want_again) : items;
+
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
@@ -189,25 +192,42 @@ export default function MemoriesScreen() {
           </View>
         ) : (
           <FlatList
-            data={items}
+            data={filteredItems}
             keyExtractor={item => item.id}
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              <View style={s.statsCard}>
-                <View style={s.statsHeartTile}>
-                  <Heart size={22} color={C.pinkDeep} fill={C.pinkDeep} />
+              <>
+                <View style={s.statsCard}>
+                  <View style={s.statsHeartTile}>
+                    <Heart size={22} color={C.pinkDeep} fill={C.pinkDeep} />
+                  </View>
+                  <View style={s.statsCols}>
+                    {stats.map((st) => (
+                      <View key={st.label} style={s.statBox}>
+                        <Text style={s.statValue}>{st.value}</Text>
+                        <Text style={s.statLabel}>{st.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Illustration name="mascot-heart-couple" width={48} style={s.statsMascot} />
                 </View>
-                <View style={s.statsCols}>
-                  {stats.map((st) => (
-                    <View key={st.label} style={s.statBox}>
-                      <Text style={s.statValue}>{st.value}</Text>
-                      <Text style={s.statLabel}>{st.label}</Text>
-                    </View>
+                <View style={s.tabBar}>
+                  {(['all', 'best'] as const).map((tab) => (
+                    <TouchableOpacity
+                      key={tab}
+                      testID={`memories-tab-${tab}`}
+                      onPress={() => setActiveFilter(tab)}
+                      style={[s.tabBtn, activeFilter === tab && s.tabBtnActive]}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={[s.tabBtnText, activeFilter === tab && s.tabBtnTextActive]}>
+                        {t(tab === 'all' ? 'memories.filterAll' : 'memories.filterBest')}
+                      </Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
-                <Illustration name="mascot-heart-couple" width={48} style={s.statsMascot} />
-              </View>
+              </>
             }
             ListFooterComponent={
               <TouchableOpacity
@@ -328,6 +348,15 @@ const s = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: '800', color: C.text },
   statLabel: { fontSize: 10, color: C.textSub, marginTop: 2 },
   statsMascot: { marginLeft: SP.xs },
+
+  tabBar: { flexDirection: 'row', gap: SP.sm, marginBottom: SP.lg },
+  tabBtn: {
+    flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center',
+    borderRadius: R.btn, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
+  },
+  tabBtnActive: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
+  tabBtnText: { fontSize: 13, fontWeight: '600', color: C.textSub },
+  tabBtnTextActive: { color: C.pinkDeep, fontWeight: '700' },
 
   card: {
     flexDirection: 'row',

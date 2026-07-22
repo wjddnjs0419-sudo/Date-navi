@@ -34,6 +34,8 @@
     "bannerTitle": "Capture more special moments",
     "bannerSub": "Record memories with photos and notes",
     "recordCta": "Add a memory",
-    "untitled": "Memory"
+    "untitled": "Memory",
+    "filterAll": "All",
+    "filterBest": "Best"
   }
 }
