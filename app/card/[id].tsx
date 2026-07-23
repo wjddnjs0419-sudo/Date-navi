@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House } from 'lucide-react-native';
+import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House, Flame, Smile, Meh } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -58,6 +58,14 @@ const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
   { type: 'burden', color: C.coolGray, bg: C.gray },
   { type: 'next_time', color: C.lavenderFg, bg: C.lavender },
 ];
+
+// 이모지 대신 아이콘 — 알림 본문처럼 텍스트뿐인 자리에서는 이모지를 그대로 쓴다.
+export const REACTION_ICONS: Record<ReactionType, typeof MapPin> = {
+  love: Flame,
+  like: Smile,
+  burden: Meh,
+  next_time: Clock,
+};
 
 const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
   change_place: MapPin,
@@ -411,6 +419,7 @@ export default function CardDetailScreen() {
           <View style={styles.reactionGrid}>
             {REACTIONS.map(r => {
               const selected = myReaction === r.type;
+              const ReactionIcon = REACTION_ICONS[r.type];
               return (
                 <TouchableOpacity
                   key={r.type}
@@ -424,7 +433,7 @@ export default function CardDetailScreen() {
                   disabled={saving}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.reactionEmoji}>{s.card.reactionLabels[r.type].emoji}</Text>
+                  <ReactionIcon size={26} color={selected ? r.color : C.textSub} strokeWidth={2} />
                   <Text style={[styles.reactionLabel, selected && styles.reactionLabelSelected, selected && { color: r.color }]}>
                     {s.card.reactionLabels[r.type].label}
                   </Text>
@@ -556,7 +565,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   reactionBtnSelected: { borderWidth: 2 },
-  reactionEmoji: { fontSize: 28 },
   reactionLabel: { fontSize: 14, color: C.textSub, fontWeight: '500' },
   reactionLabelSelected: { fontWeight: '700' },
 

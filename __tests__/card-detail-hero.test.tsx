@@ -127,6 +127,28 @@ describe('card detail tag row', () => {
   });
 });
 
+describe('reaction grid icons', () => {
+  const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
+  const { REACTION_ICONS } = require('../app/card/[id]') as typeof import('../app/card/[id]');
+  const lucide = require('lucide-react-native');
+
+  it('gives every reaction a lucide icon instead of an emoji glyph', () => {
+    expect(REACTION_ICONS.love).toBe(lucide.Flame);
+    expect(REACTION_ICONS.like).toBe(lucide.Smile);
+    expect(REACTION_ICONS.burden).toBe(lucide.Meh);
+    expect(REACTION_ICONS.next_time).toBe(lucide.Clock);
+  });
+
+  it('no longer renders the emoji text node in the grid', () => {
+    expect(source).not.toContain('reactionEmoji');
+    expect(source).not.toMatch(/reactionLabels\[r\.type\]\.emoji/);
+  });
+
+  it('keeps the emoji in the partner sentence — plain text, not an icon slot', () => {
+    expect(source).toMatch(/partnerReaction\([\s\S]{0,120}\.emoji\)/);
+  });
+});
+
 describe('shouldUnreactOnTap', () => {
   it('unreacts when tapping the already-selected reaction', () => {
     expect(shouldUnreactOnTap('love', 'love')).toBe(true);
