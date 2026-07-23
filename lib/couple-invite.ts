@@ -44,3 +44,17 @@ export function parseInviteCodeFromUrl(url?: string | null) {
   const match = /[?&]code=([^&]+)/.exec(url);
   return match ? normalizeInviteCode(decodeURIComponent(match[1])) : '';
 }
+
+type ConnectionStatus = 'none' | 'waiting' | 'linked';
+
+// 연결 완료 감지 시 이동할 목적지. 온보딩 중 + linked + 파트너 있을 때만 이동.
+export function resolveCoupleConnectDestination(input: {
+  status: ConnectionStatus;
+  partnerUserId: string | null;
+  onboardingCompleted: boolean;
+}): 'connected' | null {
+  if (input.onboardingCompleted) return null;
+  if (input.status !== 'linked') return null;
+  if (!input.partnerUserId) return null;
+  return 'connected';
+}

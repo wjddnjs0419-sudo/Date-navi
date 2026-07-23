@@ -188,6 +188,7 @@ export default function NewMemoryScreen() {
                 accessibilityLabel={`${n}점`}
                 onPress={() => setRating(n)}
                 style={styles.starBtn}
+                activeOpacity={1}
               >
                 <Star
                   size={28}

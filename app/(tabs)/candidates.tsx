@@ -19,7 +19,6 @@ import { getCardStyle } from '../../lib/tagStyle';
 import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 export type CardWithReactions = {
   id: string; title: string; summary: string;
@@ -27,7 +26,6 @@ export type CardWithReactions = {
   tags: string[]; mode: string; source: string; created_at: string;
   created_by: string;
   myReaction: ReactionType | null; partnerReaction: ReactionType | null;
-  myConditionTag: ConditionTag | null; partnerConditionTag: ConditionTag | null;
 };
 type BucketItem = {
   id: string; item: string; status: string;
@@ -66,11 +64,6 @@ export function sortCards(list: CardWithReactions[], order: SortOrder): CardWith
 export default function CandidatesScreen() {
   const router = useRouter();
   const { t, language } = useI18n();
-  const CONDITION_LABEL: Record<ConditionTag, string> = {
-    change_place: t('candidates.conditionLabels.change_place'),
-    closer: t('candidates.conditionLabels.closer'),
-    indoor: t('candidates.conditionLabels.indoor'),
-  };
   const FILTER_LABEL: Record<FilterTab, string> = {
     all: t('candidates.filterAll'),
     mutual: t('candidates.filterMutual'),
@@ -163,22 +156,17 @@ export default function CandidatesScreen() {
 
       const { data: rxRows } = await supabase
         .from('reactions')
-        .select('card_id, user_id, reaction_type, condition_tag')
+        .select('card_id, user_id, reaction_type')
         .in('card_id', cardRows.map(c => c.id));
 
       setCards(cardRows.map(card => {
         const rx = rxRows?.filter(r => r.card_id === card.id) ?? [];
         const mine = rx.find(r => r.user_id === user.id);
         const ptnr = rx.find(r => r.user_id !== user.id);
-        // 레거시 데이터(예: 제거된 'budget_adjust')는 CONDITION_LABEL에 없으므로 무시한다.
-        const validTag = (tag?: string | null): ConditionTag | null =>
-          tag && tag in CONDITION_LABEL ? (tag as ConditionTag) : null;
         return {
           ...card,
           myReaction: (mine?.reaction_type as ReactionType) ?? null,
           partnerReaction: (ptnr?.reaction_type as ReactionType) ?? null,
-          myConditionTag: validTag(mine?.condition_tag),
-          partnerConditionTag: validTag(ptnr?.condition_tag),
         };
       }));
     } finally {
@@ -429,8 +417,6 @@ export default function CandidatesScreen() {
                     const badgeStatus = cardBadgeStatus(card, currentUserId ?? '');
                     const status = reactionStatus(card);
                     const StatusIcon = status.icon === 'spark' ? Sparkles : Heart;
-                    const conditions = [card.myConditionTag, card.partnerConditionTag]
-                      .filter((c): c is ConditionTag => c != null);
                     const BADGE_TONE_BY_STATUS = { mutual: 'pink', mine: 'blue', partner: 'orange', undecided: 'gray' } as const;
                     return (
                       <SwipeableCard
@@ -477,11 +463,6 @@ export default function CandidatesScreen() {
                             {t(`candidates.${status.key}`)}
                           </Text>
                         </View>
-                        {conditions.length > 0 && (
-                          <Text style={s.conditionLine}>
-                            {conditions.map(c => CONDITION_LABEL[c]).join('  ·  ')}
-                          </Text>
-                        )}
                       </SoftCard>
                       </SwipeableCard>
                     );
@@ -670,7 +651,6 @@ const s = StyleSheet.create({
   cardDivider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.md },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
   statusText: { fontSize: 13, fontWeight: '600', flex: 1 },
-  conditionLine: { fontSize: 11, color: C.lavenderFg, fontWeight: '500', marginTop: SP.xs, marginLeft: SP.xl + SP.xs },
   addPill: {
     flexDirection: 'row', alignItems: 'center', gap: SP.xs,
     paddingLeft: SP.md, paddingRight: SP.lg, paddingVertical: SP.sm,

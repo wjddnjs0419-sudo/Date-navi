@@ -14,8 +14,10 @@
     },
     "photo": {
       "initial": "나",
-      "pickTitle": "사진 선택",
-      "pickBody": "갤러리에서 사진을 선택하는 기능은 곧 추가될 예정이에요.",
+      "permTitle": "사진 접근 권한 필요",
+      "permMessage": "프로필 사진을 등록하려면 설정에서 사진 접근을 허용해주세요.",
+      "openSettingsCta": "설정 열기",
+      "uploadError": "사진 업로드 중 문제가 생겼어요.",
       "title": "프로필 사진을\n골라주세요",
       "sub": "지금 건너뛰어도 괜찮아요.",
       "change": "사진 변경하기",

@@ -64,8 +64,9 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
   describe('카드 상세 (app/card/[id].tsx)', () => {
     const source = read('app/card/[id].tsx');
 
-    it('재생성 버튼은 카드 모드가 활성일 때만 노출된다 (레거시 모드 카드 게이트)', () => {
-      expect(source).toMatch(/myConditionTag && isDateModeEnabled\(card\.mode \?\? 'feeling'\)/);
+    it('카드 상세에는 카드 생성 경로가 없다 (조건 재생성 제거로 게이트도 함께 사라짐)', () => {
+      expect(source).not.toContain('generateDateCards');
+      expect(source).not.toContain('isDateModeEnabled');
     });
   });
 

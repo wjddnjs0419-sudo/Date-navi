@@ -14,8 +14,10 @@
     },
     "photo": {
       "initial": "Me",
-      "pickTitle": "Choose photo",
-      "pickBody": "Gallery photo selection will be added soon.",
+      "permTitle": "Photo access needed",
+      "permMessage": "To set a profile photo, allow photo access in Settings.",
+      "openSettingsCta": "Open Settings",
+      "uploadError": "Something went wrong while uploading the photo.",
       "title": "Choose a\nprofile photo",
       "sub": "You can skip this for now.",
       "change": "Change photo",

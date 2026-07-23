@@ -11,7 +11,6 @@
     "memoryDone": "This date is marked complete",
     "saveError": "Could not save. Please try again.",
     "confirmButton": "Make this the date? →",
-    "heroCourseCount": "{{count}}-stop course",
     "reactionLabels": {
       "love": {
         "emoji": "🔥",
@@ -40,26 +39,6 @@
       "next_time": "Next time",
       "low_risk": "Low risk"
     },
-    "conditionTags": {
-      "change_place": {
-        "label": "If we change the place",
-        "freeText": "Keep a similar vibe but recommend somewhere closer"
-      },
-      "closer": {
-        "label": "If it's closer",
-        "freeText": "Recommend something within a 10-minute trip"
-      },
-      "indoor": {
-        "label": "If it's indoors",
-        "freeText": "Recommend an indoor space instead"
-      }
-    },
-    "regenerateFallbackText": "Adjust the conditions and recommend again",
-    "regenerateAlertTitle": "New candidates created",
-    "regenerateAlertMessage": "Created 3 similar date candidates for \"{{label}}\". Check them in the Candidates tab!",
-    "conditionSectionTitle": "What condition would make it work?",
-    "conditionSectionSub": "Pick a condition and the app will find new matching candidates",
-    "regenerateWithCondition": "Find again with the \"{{label}}\" condition",
     "new": {
       "heading": "Let's register this idea\nas a candidate",
       "subtitle": "Just a title is enough to make it a candidate.",
@@ -131,7 +110,6 @@
       "wantAgainTag": "Want again",
       "meFallback": "Me",
       "badge": "Our memory"
-    },
-    "regeneratePromptPrefix": "Similar vibe to {{title}}, but "
+    }
   }
 }

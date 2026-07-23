@@ -110,11 +110,6 @@
       "like": "좋아",
       "burden": "부담돼",
       "next_time": "다음에"
-    },
-    "conditionLabels": {
-      "change_place": "📍 장소만 바꾸면",
-      "closer": "🚶 가까우면",
-      "indoor": "🏠 실내면"
     }
   }
 }
