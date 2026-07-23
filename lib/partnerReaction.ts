@@ -1,7 +1,6 @@
 export type ReactionRow = {
   card_id: string;
   reaction_type: string;
-  condition_tag: string | null;
   created_at: string;
 };
 
@@ -14,11 +13,9 @@ export function pickLatestReaction(rows: ReactionRow[]): ReactionRow | null {
 
 export function formatReactionText(
   row: ReactionRow,
-  labels: { condition: (tag: string) => string | undefined; reaction: (type: string) => string },
+  labels: { reaction: (type: string) => string },
 ): string {
-  const conditionLabel = row.condition_tag ? labels.condition(row.condition_tag) : undefined;
-  const reactionLabel = labels.reaction(row.reaction_type);
-  return conditionLabel ? `${conditionLabel} ${reactionLabel}` : reactionLabel;
+  return labels.reaction(row.reaction_type);
 }
 
 export type CardStatusRow = {

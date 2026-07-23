@@ -110,11 +110,6 @@
       "like": "Like it",
       "burden": "Feels like a lot",
       "next_time": "Next time"
-    },
-    "conditionLabels": {
-      "change_place": "📍 If we change the place",
-      "closer": "🚶 If it's closer",
-      "indoor": "🏠 If it's indoors"
     }
   }
 }

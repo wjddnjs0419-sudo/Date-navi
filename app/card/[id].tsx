@@ -11,17 +11,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House, Flame, Smile, Meh, Heart } from 'lucide-react-native';
+import { Clock, Wallet, MessageCircle, Share2, Flame, Smile, Meh, Heart } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
-import { isDateModeEnabled } from '../../lib/dateModes';
-import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, Chip } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
-import { readRecommendationIdentity, writeRecommendationIdentity } from '../../lib/recommendationIdentity';
+import { readRecommendationIdentity } from '../../lib/recommendationIdentity';
 
 type CardDetail = {
   id: string;
@@ -45,7 +43,6 @@ type CardDetail = {
 };
 
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
 // 재탭으로 반응을 해제할지 결정한다 — 같은 반응을 다시 누르면 해제.
 export function shouldUnreactOnTap(current: ReactionType | null, tapped: ReactionType): boolean {
@@ -60,18 +57,13 @@ const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
 ];
 
 // 이모지 대신 아이콘 — 알림 본문처럼 텍스트뿐인 자리에서는 이모지를 그대로 쓴다.
-export const REACTION_ICONS: Record<ReactionType, typeof MapPin> = {
+export const REACTION_ICONS: Record<ReactionType, typeof Clock> = {
   love: Flame,
   like: Smile,
   burden: Meh,
   next_time: Clock,
 };
 
-const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
-  change_place: MapPin,
-  closer: Footprints,
-  indoor: House,
-};
 
 // 코스 스텝 라벨이 이미 화면에 있는 태그는 같은 말을 두 번 하는 셈이라 감춘다.
 export function visibleTags(tags: string[] | null | undefined, steps: CourseStep[]): string[] {
@@ -145,21 +137,12 @@ export default function CardDetailScreen() {
   const router = useRouter();
   const { strings: s, t, language } = useI18n();
   const alertTitle = s.common.error;
-  const CONDITION_TAGS: { tag: ConditionTag; label: string; freeText: string }[] = [
-    { tag: 'change_place', label: t('card.conditionTags.change_place.label'), freeText: t('card.conditionTags.change_place.freeText') },
-    { tag: 'closer', label: t('card.conditionTags.closer.label'), freeText: t('card.conditionTags.closer.freeText') },
-    { tag: 'indoor', label: t('card.conditionTags.indoor.label'), freeText: t('card.conditionTags.indoor.freeText') },
-  ];
-
   const [card, setCard] = useState<CardDetail | null>(null);
   const [myReaction, setMyReaction] = useState<ReactionType | null>(null);
-  const [myConditionTag, setMyConditionTag] = useState<ConditionTag | null>(null);
   const [partnerReaction, setPartnerReaction] = useState<ReactionType | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [coupleId, setCoupleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [generatingAlt, setGeneratingAlt] = useState(false);
   const [memoryDone, setMemoryDone] = useState(false);
 
   useFocusEffect(
@@ -170,13 +153,6 @@ export default function CardDetailScreen() {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
           setMyUserId(user.id);
-
-          const { data: profile } = await supabase
-            .from('date_planner_profiles')
-            .select('couple_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (profile?.couple_id) setCoupleId(profile.couple_id);
 
           const { data: cardData } = await supabase
             .from('date_cards')
@@ -197,7 +173,7 @@ export default function CardDetailScreen() {
 
           const { data: rxData } = await supabase
             .from('reactions')
-            .select('user_id, reaction_type, condition_tag')
+            .select('user_id, reaction_type')
             .eq('card_id', id);
 
           if (rxData) {
@@ -205,10 +181,6 @@ export default function CardDetailScreen() {
             const partner = rxData.find(r => r.user_id !== user.id);
             if (mine) {
               setMyReaction(mine.reaction_type as ReactionType);
-              // 레거시 데이터(예: 제거된 'budget_adjust')는 CONDITION_TAGS에 없으므로 무시한다.
-              if (mine.condition_tag && CONDITION_TAGS.some(c => c.tag === mine.condition_tag)) {
-                setMyConditionTag(mine.condition_tag as ConditionTag);
-              }
             }
             if (partner) setPartnerReaction(partner.reaction_type as ReactionType);
           }
@@ -219,19 +191,18 @@ export default function CardDetailScreen() {
     }, [id]),
   );
 
-  async function handleReact(type: ReactionType, condTag?: ConditionTag) {
+  async function handleReact(type: ReactionType) {
     if (saving) return;
     setSaving(true);
     try {
       const { error } = await supabase
         .from('reactions')
         .upsert(
-          { card_id: id, user_id: myUserId, reaction_type: type, condition_tag: condTag ?? null },
+          { card_id: id, user_id: myUserId, reaction_type: type },
           { onConflict: 'card_id,user_id' },
         );
       if (error) throw error;
       setMyReaction(type);
-      setMyConditionTag(condTag ?? null);
     } catch {
       Alert.alert(alertTitle, s.card.saveError);
     } finally {
@@ -250,7 +221,6 @@ export default function CardDetailScreen() {
         .eq('user_id', myUserId);
       if (error) throw error;
       setMyReaction(null);
-      setMyConditionTag(null);
     } catch {
       Alert.alert(alertTitle, s.card.saveError);
     } finally {
@@ -262,59 +232,6 @@ export default function CardDetailScreen() {
   function handleReactionTap(type: ReactionType) {
     if (shouldUnreactOnTap(myReaction, type)) handleUnreact();
     else handleReact(type);
-  }
-
-  async function handleGenerateAlt(condTag: ConditionTag) {
-    if (!coupleId || !myUserId || !card) return;
-    setGeneratingAlt(true);
-    try {
-      const condInfo = CONDITION_TAGS.find(c => c.tag === condTag);
-      // 원본 input_json을 base로 쓰고 조건분만 override → location/coords 보존 (§15).
-      // input_json이 없는 구 카드는 기존 하드코딩 base로 폴백(location 없음).
-      const base: FeelingInput = card.input_json && typeof card.input_json === 'object'
-        ? {
-            energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [],
-            ...card.input_json,
-          }
-        : { energy: 'medium', distance: 'any', mood: 'comfortable', duration: '2-3h', avoid: [] };
-      const input: FeelingInput = {
-        ...base,
-        distance: condTag === 'closer' ? 'near' : base.distance,
-        avoid: condTag === 'indoor' ? [...new Set([...(base.avoid ?? []), 'outdoor'])] : base.avoid,
-        freeText: `${t('card.regeneratePromptPrefix', { title: card.title })}${condInfo?.freeText ?? t('card.regenerateFallbackText')}`,
-      };
-      const prefs = await getUserPreferences();
-      const newCards = await generateDateCards(input, card.mode || 'feeling', prefs, language);
-      for (const nc of newCards) {
-        await supabase.from('date_cards').insert({
-          couple_id: coupleId,
-          created_by: myUserId,
-          mode: card.mode || 'feeling',
-          source: 'ai',
-          status: 'active',
-          title: nc.title,
-          summary: nc.summary,
-          estimated_time: nc.estimated_time,
-          estimated_budget: nc.estimated_budget,
-          tags: nc.tags,
-          why_recommended: nc.why_recommended,
-          place_name: nc.place_name ?? null,
-          place_address: nc.place_address ?? null,
-          map_url: nc.map_url ?? null,
-          steps: nc.steps ?? null,
-          ...writeRecommendationIdentity(nc),
-        });
-      }
-      Alert.alert(
-        t('card.regenerateAlertTitle'),
-        t('card.regenerateAlertMessage', { label: condInfo?.label }),
-        [{ text: t('common.ok') }],
-      );
-    } catch {
-      Alert.alert(alertTitle, s.card.saveError);
-    } finally {
-      setGeneratingAlt(false);
-    }
   }
 
   function confirmDelete() {
@@ -477,51 +394,6 @@ export default function CardDetailScreen() {
             })}
           </View>
 
-          {/* 조건부 반응 — burden 선택 시 노출 */}
-          {myReaction === 'burden' && (
-            <View style={styles.conditionBox}>
-              <Text style={styles.conditionTitle}>{t('card.conditionSectionTitle')}</Text>
-              <Text style={styles.conditionSub}>{t('card.conditionSectionSub')}</Text>
-              <View style={styles.conditionGrid}>
-                {CONDITION_TAGS.map(c => {
-                  const selected = myConditionTag === c.tag;
-                  const Icon = CONDITION_ICONS[c.tag];
-                  return (
-                    <TouchableOpacity
-                      key={c.tag}
-                      style={[styles.conditionBtn, selected && styles.conditionBtnSelected]}
-                      onPress={() => handleReact('burden', selected ? undefined : c.tag)}
-                      disabled={saving}
-                      activeOpacity={0.75}
-                    >
-                      <Icon size={14} color={selected ? C.inkSoft : C.textSub} strokeWidth={2} />
-                      <Text style={[styles.conditionLabel, selected && styles.conditionLabelSelected]}>
-                        {c.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {/* 재생성은 카드 모드가 활성일 때만 — 숨긴 모드의 레거시 생성 경로 차단 */}
-              {myConditionTag && isDateModeEnabled(card.mode ?? 'feeling') && (
-                <TouchableOpacity
-                  style={[styles.altBtn, generatingAlt && styles.altBtnBusy]}
-                  onPress={() => handleGenerateAlt(myConditionTag)}
-                  disabled={generatingAlt}
-                  activeOpacity={0.85}
-                >
-                  {generatingAlt ? (
-                    <ActivityIndicator size="small" color={C.coolGrayLight} />
-                  ) : (
-                    <Text style={styles.altBtnText}>
-                      {t('card.regenerateWithCondition', { label: CONDITION_TAGS.find(c => c.tag === myConditionTag)?.label })}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
           {memoryDone ? (
             <View style={styles.memoryDoneBadge}>
               <Text style={styles.memoryDoneText}>{s.card.memoryDone}</Text>
@@ -603,30 +475,6 @@ const styles = StyleSheet.create({
   reactionBtnSelected: { borderWidth: 2 },
   reactionLabel: { fontSize: 14, color: C.textSub, fontWeight: '500' },
   reactionLabelSelected: { fontWeight: '700' },
-
-  conditionBox: {
-    backgroundColor: C.gray,
-    borderRadius: R.lg,
-    padding: SP.lg,
-    marginBottom: SP.lg,
-  },
-  conditionTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.xs },
-  conditionSub: { fontSize: 12, color: C.coolGrayLight, marginBottom: SP.md },
-  conditionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm, marginBottom: SP.md },
-  conditionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
-    paddingHorizontal: SP.md, paddingVertical: SP.sm, borderRadius: R.xl,
-    backgroundColor: C.white, borderWidth: 1.5, borderColor: 'transparent',
-  },
-  conditionBtnSelected: { backgroundColor: C.lavender, borderColor: C.coolGray },
-  conditionLabel: { fontSize: 13, fontWeight: '500', color: C.textSub },
-  conditionLabelSelected: { color: C.inkSoft, fontWeight: '700' },
-  altBtn: {
-    backgroundColor: C.ink, borderRadius: R.btn,
-    paddingVertical: SP.md, alignItems: 'center',
-  },
-  altBtnBusy: { opacity: 0.6 },
-  altBtnText: { fontSize: 13, fontWeight: '700', color: C.white },
 
   memoryBtn: {
     backgroundColor: C.ink,

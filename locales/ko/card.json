@@ -39,26 +39,6 @@
       "next_time": "다음 만남",
       "low_risk": "실패 확률 낮게"
     },
-    "conditionTags": {
-      "change_place": {
-        "label": "장소만 바꾸면",
-        "freeText": "비슷한 분위기, 더 가까운 장소로 바꿔서 추천해줘"
-      },
-      "closer": {
-        "label": "가까우면",
-        "freeText": "더 가까운 거리, 이동 10분 이내로 바꿔서 추천해줘"
-      },
-      "indoor": {
-        "label": "실내면",
-        "freeText": "실내 공간으로 바꿔서 추천해줘"
-      }
-    },
-    "regenerateFallbackText": "조건을 바꿔서 추천해줘",
-    "regenerateAlertTitle": "새 후보 생성 완료",
-    "regenerateAlertMessage": "\"{{label}}\" 조건으로 비슷한 데이트 후보 3개를 만들었어요. 우리 후보 탭에서 확인해보세요!",
-    "conditionSectionTitle": "어떤 조건이 맞으면 좋을까요?",
-    "conditionSectionSub": "조건을 선택하면 앱이 맞춤 후보를 새로 찾아드려요",
-    "regenerateWithCondition": "{{label}} 조건으로 다시 찾아줘",
     "new": {
       "heading": "아이디어를 후보로\n등록할게요",
       "subtitle": "제목만 입력해도 바로 후보가 돼요.",
@@ -130,7 +110,6 @@
       "wantAgainTag": "다시 하고 싶어",
       "meFallback": "나",
       "badge": "우리 추억"
-    },
-    "regeneratePromptPrefix": "{{title}} 분위기와 비슷하지만 "
+    }
   }
 }

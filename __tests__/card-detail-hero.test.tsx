@@ -162,6 +162,27 @@ describe('CardLoveToggle', () => {
   });
 });
 
+describe('burden condition flow removal', () => {
+  const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
+
+  it('drops the condition picker and its regeneration path', () => {
+    expect(source).not.toContain('CONDITION_TAGS');
+    expect(source).not.toContain('CONDITION_ICONS');
+    expect(source).not.toContain('handleGenerateAlt');
+    expect(source).not.toContain('conditionBox');
+    expect(source).not.toContain('regenerateWithCondition');
+  });
+
+  it('stops reading and writing condition_tag', () => {
+    expect(source).not.toContain('condition_tag');
+    expect(source).not.toContain('ConditionTag');
+  });
+
+  it('no longer pulls in the card generation pipeline', () => {
+    expect(source).not.toContain('generateDateCards');
+  });
+});
+
 describe('reaction grid icons', () => {
   const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
   const { REACTION_ICONS } = require('../app/card/[id]') as typeof import('../app/card/[id]');

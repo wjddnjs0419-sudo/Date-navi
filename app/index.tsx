@@ -20,6 +20,9 @@ export default function Index() {
   useEffect(() => {
     // 네이티브 스플래시를 숨기고 JS 스플래시를 보여줌.
     // 마크는 네이티브와 같은 위치·크기라 그대로 두고, 텍스트만 얹히듯 나타난다.
+    // 같은 색이라도 네이티브/RN 합성 경로 차이로 미세한 톤 차이가 남기 때문에
+    // 하드컷 대신 페이드로 넘겨서 경계가 보이지 않게 한다.
+    SplashScreen.setOptions({ fade: true, duration: 260 });
     SplashScreen.hideAsync();
 
     Animated.timing(opacity, {

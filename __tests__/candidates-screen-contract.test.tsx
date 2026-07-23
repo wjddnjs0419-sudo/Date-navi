@@ -75,8 +75,8 @@ jest.mock('../lib/supabase', () => {
         if (table === 'reactions') {
           return makeBuilder({
             data: [
-              { card_id: 'card1', user_id: 'u1', reaction_type: 'love', condition_tag: null },
-              { card_id: 'card1', user_id: 'u2', reaction_type: 'love', condition_tag: null },
+              { card_id: 'card1', user_id: 'u1', reaction_type: 'love' },
+              { card_id: 'card1', user_id: 'u2', reaction_type: 'love' },
             ],
           });
         }

@@ -97,10 +97,10 @@ export const SCREENSHOT_FIXTURES: Record<string, any[]> = {
     },
   ],
   reactions: [
-    { card_id: 'card-1', user_id: SCREENSHOT_USER_ID, reaction_type: 'love', condition_tag: null, created_at: now },
-    { card_id: 'card-1', user_id: SCREENSHOT_PARTNER_ID, reaction_type: 'love', condition_tag: null, created_at: now },
-    { card_id: 'card-2', user_id: SCREENSHOT_USER_ID, reaction_type: 'like', condition_tag: null, created_at: now },
-    { card_id: 'card-2', user_id: SCREENSHOT_PARTNER_ID, reaction_type: 'burden', condition_tag: 'closer', created_at: now },
+    { card_id: 'card-1', user_id: SCREENSHOT_USER_ID, reaction_type: 'love', created_at: now },
+    { card_id: 'card-1', user_id: SCREENSHOT_PARTNER_ID, reaction_type: 'love', created_at: now },
+    { card_id: 'card-2', user_id: SCREENSHOT_USER_ID, reaction_type: 'like', created_at: now },
+    { card_id: 'card-2', user_id: SCREENSHOT_PARTNER_ID, reaction_type: 'burden', created_at: now },
   ],
   date_memories: [
     {
