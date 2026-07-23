@@ -185,4 +185,66 @@ describe('recommend-date 입력 시점 스텝 핀', () => {
     expect(result.status).toBe(200);
     expect(stepsOf(result).find((s) => s.stepId === 'meal')?.kakaoPlaceId).toBe('new-meal');
   });
+
+  it('핀 장소가 excludedPlaceIds에 있으면(재추천으로 교체 지시) 핀 게이트를 건너뛰고 새 장소를 고른다', async () => {
+    // 랭킹이 excluded를 걸러낸 상태를 모사: 후보 풀에 핀 장소가 없다.
+    const pool = [
+      candidate('ai-meal', 'other-meal', 'FD6', 127.002),
+      candidate('cafe-cand', 'cafe-id', 'CE7', 127.001),
+    ];
+    const deps = dependencies(pool);
+    const body: RecommendationRequest = {
+      ...base(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '블루보틀', pinnedKakaoPlaceId: 'pinned-meal', pinnedName: '블루보틀' },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+      excludedPlaceIds: ['pinned-meal', 'old-cafe-place'],
+    };
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+
+    expect(result.status).toBe(200);
+    expect(stepsOf(result).find((s) => s.stepId === 'meal')?.kakaoPlaceId).toBe('other-meal');
+  });
+
+  it('요청에서 잠긴 핀 스텝은 강제하지 않아 AI 선택이 폴백 없이 반영된다', async () => {
+    // 잠긴 스텝의 candidateId는 과거 검색 호출의 것이라 이번 풀에 없다(락이 자체 사실을 운반).
+    const pool = [
+      candidate('cand-a', 'pinned-meal', 'FD6', 127),
+      candidate('cafe-cand', 'cafe-id', 'CE7', 127.001),
+    ];
+    const deps = dependencies(pool, {
+      generateSelection: jest.fn(async () => ({
+        steps: [{ stepId: 'meal', candidateId: 'stale-lock-cand' }, { stepId: 'cafe', candidateId: 'cafe-cand' }],
+      })),
+    });
+    const body: RecommendationRequest = {
+      ...base(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '블루보틀', pinnedKakaoPlaceId: 'pinned-meal', pinnedName: '블루보틀' },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+      lockedSteps: [
+        {
+          stepId: 'meal',
+          candidateId: 'stale-lock-cand',
+          kakaoPlaceId: 'pinned-meal',
+          name: '블루보틀',
+          address: 'Address pinned-meal',
+          roadAddress: 'Road pinned-meal',
+          mapUrl: 'https://place.map.kakao.com/pinned-meal',
+          latitude: 37,
+          longitude: 127,
+        },
+      ],
+    };
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+
+    expect(result.status).toBe(200);
+    const metadata = (result.body as { metadata: { fallbackUsed: boolean } }).metadata;
+    expect(metadata.fallbackUsed).toBe(false);
+    expect(stepsOf(result).find((s) => s.stepId === 'meal')?.kakaoPlaceId).toBe('pinned-meal');
+  });
 });

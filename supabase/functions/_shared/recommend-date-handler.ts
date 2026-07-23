@@ -186,11 +186,29 @@ export async function handleRecommendDate(
   if (search.searchMetadata.allSearchesFailed && search.searchMetadata.timeoutCount > 0) {
     return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
   }
+  // 이번 호출에서 실제로 핀 장소를 다시 골라야 하는 스텝만 핀으로 취급한다. 잠긴 스텝은 락이
+  // 자리(장소 사실)를 그대로 운반하고, 교체 대상 스텝은 핀에서 떠나는 중이며, 핀 장소가
+  // excludedPlaceIds에 있으면 호출자가 명시적으로 그 자리를 떠나라고 요구한 것이다. 세 경우 모두
+  // 핀 실재 게이트와 핀 강제(pin wins)의 대상이 아니다 — 여기서 걸러내지 않으면 재추천·교체가
+  // 자기 핀과 충돌해 항상 422로 실패한다.
+  const requestLockedStepIds = new Set((serverRequest.lockedSteps ?? []).map((step) => step.stepId));
+  const requestExcludedPlaceIds = new Set(serverRequest.excludedPlaceIds ?? []);
   const pinnedStepIds = new Set(
-    serverRequest.courseSteps.filter((step) => step.pinnedKakaoPlaceId).map((step) => step.id),
+    serverRequest.courseSteps.filter((step) => (
+      step.pinnedKakaoPlaceId
+      && !requestLockedStepIds.has(step.id)
+      && step.id !== serverRequest.replacement?.stepId
+      && !requestExcludedPlaceIds.has(step.pinnedKakaoPlaceId)
+    )).map((step) => step.id),
   );
+  // 핀 비활성 스텝은 하위 선택·프롬프트·폴백 전 단계에서 일반 스텝으로 취급되도록 핀을 벗긴다.
+  const effectiveCourseSteps = serverRequest.courseSteps.map((step) => (
+    step.pinnedKakaoPlaceId && !pinnedStepIds.has(step.id)
+      ? { ...step, pinnedKakaoPlaceId: undefined, pinnedName: undefined }
+      : step
+  ));
   // 입력 시점 지정 장소: 파이프라인이 이름 재검색으로 병합한 뒤에도 후보 풀에 없으면 실재 검증 실패.
-  for (const step of serverRequest.courseSteps) {
+  for (const step of effectiveCourseSteps) {
     if (step.pinnedKakaoPlaceId
       && !search.candidates.some((candidate) => candidate.kakaoPlaceId === step.pinnedKakaoPlaceId)) {
       return errorResult(422, 'STEP_PIN_UNAVAILABLE');
@@ -246,17 +264,7 @@ export async function handleRecommendDate(
         return errorResult(422, 'COURSE_VALIDATION_FAILED');
       }
       built = buildCandidateOnlyCourse({
-        request: {
-          ...intentAwareRequest,
-          // The replacement target's own pin (if any) describes the place being replaced away
-          // from, not a constraint on the new candidate — clearing it here lets the freshly
-          // picked candidate through instead of forcing it to match the old pinned place.
-          courseSteps: intentAwareRequest.courseSteps.map((step) => (
-            step.id === serverRequest.replacement?.stepId
-              ? { ...step, pinnedKakaoPlaceId: undefined, pinnedName: undefined }
-              : step
-          )),
-        },
+        request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
         selection: {
           steps: serverRequest.courseSteps.map((step) => ({
@@ -272,12 +280,12 @@ export async function handleRecommendDate(
     if (!built && pinnedStepIds.size === serverRequest.courseSteps.length) {
       // 전량 지정: AI 호출 없이 지정 장소로 결정론 조립(생성 비용 0). 문구는 결정론이라 품질 동일.
       built = buildCandidateOnlyCourse({
-        request: intentAwareRequest,
+        request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
         selection: {
           steps: forcePinnedCandidateIds(
             serverRequest.courseSteps.map((step) => ({ stepId: step.id, candidateId: '' })),
-            serverRequest.courseSteps,
+            effectiveCourseSteps,
             search.candidates,
           ),
         },
@@ -289,7 +297,7 @@ export async function handleRecommendDate(
       try {
         downstream = await dependencies.generateSelection({
           authorization,
-          prompt: buildRecommendationPrompt(intentAwareRequest, search.candidates),
+          prompt: buildRecommendationPrompt({ ...intentAwareRequest, courseSteps: effectiveCourseSteps }, search.candidates),
           promptVersion: RECOMMEND_DATE_PROMPT_VERSION,
         });
       } catch (error) {
@@ -309,10 +317,10 @@ export async function handleRecommendDate(
           try {
             // 부분 지정: 핀 스텝은 AI 선택을 무시하고 지정 후보로 강제(pin wins).
             const selection = pinnedStepIds.size > 0
-              ? { steps: forcePinnedCandidateIds(parsedSelection.data.steps, serverRequest.courseSteps, search.candidates) }
+              ? { steps: forcePinnedCandidateIds(parsedSelection.data.steps, effectiveCourseSteps, search.candidates) }
               : parsedSelection.data;
             built = buildCandidateOnlyCourse({
-              request: serverRequest,
+              request: { ...serverRequest, courseSteps: effectiveCourseSteps },
               candidates: search.candidates,
               selection,
               generatedAt,
@@ -334,7 +342,7 @@ export async function handleRecommendDate(
 
     if (!built) {
       built = buildDeterministicCandidateCourse({
-        request: intentAwareRequest,
+        request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
         generatedAt,
       });
