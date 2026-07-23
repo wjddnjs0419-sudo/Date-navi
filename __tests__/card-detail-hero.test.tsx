@@ -16,7 +16,7 @@ jest.mock('../lib/i18n', () => ({
   }),
 }));
 
-const { CandidateHeroCard } = require('../app/card/[id]') as typeof import('../app/card/[id]');
+const { CandidateHeroCard, shouldUnreactOnTap } = require('../app/card/[id]') as typeof import('../app/card/[id]');
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
@@ -98,5 +98,16 @@ describe('CandidateHeroCard', () => {
     const cta = tree.root.findAllByProps({ accessibilityLabel: '이번 데이트로 정할까요? →' })[0];
     TR.act(() => { cta.props.onPress(); });
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('shouldUnreactOnTap', () => {
+  it('unreacts when tapping the already-selected reaction', () => {
+    expect(shouldUnreactOnTap('love', 'love')).toBe(true);
+    expect(shouldUnreactOnTap('burden', 'burden')).toBe(true);
+  });
+  it('does not unreact when tapping a different or first reaction', () => {
+    expect(shouldUnreactOnTap('love', 'like')).toBe(false);
+    expect(shouldUnreactOnTap(null, 'love')).toBe(false);
   });
 });

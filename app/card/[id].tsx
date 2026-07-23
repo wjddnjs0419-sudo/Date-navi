@@ -47,6 +47,11 @@ type CardDetail = {
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
+// 재탭으로 반응을 해제할지 결정한다 — 같은 반응을 다시 누르면 해제.
+export function shouldUnreactOnTap(current: ReactionType | null, tapped: ReactionType): boolean {
+  return current === tapped;
+}
+
 const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
   { type: 'love', color: C.danger, bg: C.pinkLight },
   { type: 'like', color: C.creamFg, bg: C.cream },
