@@ -226,6 +226,31 @@ export default function CardDetailScreen() {
     }
   }
 
+  async function handleUnreact() {
+    if (saving || !myUserId) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('card_id', id)
+        .eq('user_id', myUserId);
+      if (error) throw error;
+      setMyReaction(null);
+      setMyConditionTag(null);
+    } catch {
+      Alert.alert(alertTitle, s.card.saveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // 같은 반응 재탭 → 해제, 아니면 설정. 하트와 반응 그리드가 공유한다.
+  function handleReactionTap(type: ReactionType) {
+    if (shouldUnreactOnTap(myReaction, type)) handleUnreact();
+    else handleReact(type);
+  }
+
   async function handleGenerateAlt(condTag: ConditionTag) {
     if (!coupleId || !myUserId || !card) return;
     setGeneratingAlt(true);
@@ -349,7 +374,7 @@ export default function CardDetailScreen() {
             placeAddress={card.place_address}
             placeUrl={card.map_url}
             myLove={myReaction === 'love'}
-            onToggleLove={() => handleReact('love')}
+            onToggleLove={() => handleReactionTap('love')}
             partnerReactionLabel={partnerReactionLabel}
             onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
           />
@@ -408,7 +433,7 @@ export default function CardDetailScreen() {
                     selected && styles.reactionBtnSelected,
                     selected && { borderColor: r.color },
                   ]}
-                  onPress={() => handleReact(r.type)}
+                  onPress={() => handleReactionTap(r.type)}
                   disabled={saving}
                   activeOpacity={0.75}
                 >
