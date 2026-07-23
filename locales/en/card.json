@@ -11,6 +11,7 @@
     "memoryDone": "This date is marked complete",
     "saveError": "Could not save. Please try again.",
     "confirmButton": "Make this the date? →",
+    "heroCourseCount": "{{count}}-stop course",
     "reactionLabels": {
       "love": {
         "emoji": "🔥",

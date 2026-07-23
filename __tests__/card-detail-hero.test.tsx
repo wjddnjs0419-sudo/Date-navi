@@ -5,7 +5,8 @@ import { Text } from 'react-native';
 jest.mock('../lib/i18n', () => ({
   useI18n: () => ({
     language: 'ko',
-    t: (key: string) => key,
+    t: (key: string, params?: Record<string, unknown>) =>
+      params ? `${key} ${JSON.stringify(params)}` : key,
     strings: {
       card: {
         confirmButton: '이번 데이트로 정할까요? →',
@@ -16,7 +17,7 @@ jest.mock('../lib/i18n', () => ({
   }),
 }));
 
-const { CandidateHeroCard } = require('../app/card/[id]') as typeof import('../app/card/[id]');
+const { CandidateHeroCard, shouldUnreactOnTap } = require('../app/card/[id]') as typeof import('../app/card/[id]');
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
@@ -50,19 +51,31 @@ describe('CandidateHeroCard', () => {
     expect(texts(tree)).toContain('서울 성동구');
   });
 
-  it('omits the place row when no place is attached', () => {
+  it('omits the place row when steps stand in for a place', () => {
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {
-      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={() => {}} onConfirm={() => {}} />);
+      tree = TR.create(
+        <CandidateHeroCard
+          placeAddress="서울 성동구"
+          myLove={false}
+          onToggleLove={() => {}}
+          onConfirm={() => {}}
+          steps={[{ label: '카페' }, { label: '전시' }]}
+        />,
+      );
     });
+    // placeName이 없으면 주소가 넘어와도 PlaceRow는 그리지 않는다 — 코스 요약이 그 자리를 차지한다.
     expect(texts(tree)).not.toContain('서울 성동구');
+    expect(texts(tree)).toContain('카페 → 전시');
   });
 
   it('calls onToggleLove when the heart button is pressed', () => {
     const onToggleLove = jest.fn();
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {
-      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={onToggleLove} onConfirm={() => {}} />);
+      tree = TR.create(
+        <CandidateHeroCard placeName="어반나이프" myLove={false} onToggleLove={onToggleLove} onConfirm={() => {}} />,
+      );
     });
     const heartBtn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
     TR.act(() => { heartBtn.props.onPress(); });
@@ -89,6 +102,35 @@ describe('CandidateHeroCard', () => {
     expect(texts(tree)).toContain('⏳ 상대방 반응을 기다리는 중...');
   });
 
+  it('renders a course summary when steps exist and no place is attached', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(
+        <CandidateHeroCard
+          myLove={false}
+          onToggleLove={() => {}}
+          onConfirm={() => {}}
+          steps={[{ label: '카페' }, { label: '스타벅스' }, { label: '추가 장소' }]}
+        />,
+      );
+    });
+    expect(texts(tree)).toContain('카페 → 스타벅스 → 추가 장소');
+    expect(texts(tree)).toContain('card.heroCourseCount {"count":3}');
+  });
+
+  it('renders no hero card when neither place nor steps exist', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={() => {}} onConfirm={() => {}} />);
+    });
+    const t = texts(tree);
+    expect(t).not.toContain('card.heroCourseCount');
+    // 하트 버튼(love 라벨)도 없어야 한다
+    expect(tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })).toHaveLength(0);
+    // 확정 CTA는 여전히 있어야 한다
+    expect(t).toContain('이번 데이트로 정할까요? →');
+  });
+
   it('calls onConfirm when the CTA is pressed', () => {
     const onConfirm = jest.fn();
     let tree!: ReturnType<typeof TR.create>;
@@ -98,5 +140,16 @@ describe('CandidateHeroCard', () => {
     const cta = tree.root.findAllByProps({ accessibilityLabel: '이번 데이트로 정할까요? →' })[0];
     TR.act(() => { cta.props.onPress(); });
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('shouldUnreactOnTap', () => {
+  it('unreacts when tapping the already-selected reaction', () => {
+    expect(shouldUnreactOnTap('love', 'love')).toBe(true);
+    expect(shouldUnreactOnTap('burden', 'burden')).toBe(true);
+  });
+  it('does not unreact when tapping a different or first reaction', () => {
+    expect(shouldUnreactOnTap('love', 'like')).toBe(false);
+    expect(shouldUnreactOnTap(null, 'love')).toBe(false);
   });
 });

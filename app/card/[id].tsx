@@ -47,6 +47,11 @@ type CardDetail = {
 type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
 type ConditionTag = 'change_place' | 'closer' | 'indoor';
 
+// 재탭으로 반응을 해제할지 결정한다 — 같은 반응을 다시 누르면 해제.
+export function shouldUnreactOnTap(current: ReactionType | null, tapped: ReactionType): boolean {
+  return current === tapped;
+}
+
 const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
   { type: 'love', color: C.danger, bg: C.pinkLight },
   { type: 'like', color: C.creamFg, bg: C.cream },
@@ -64,6 +69,7 @@ const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
 // 로직은 화면 본체(handleReact/router.push)를 그대로 위임받아 쓴다.
 export function CandidateHeroCard({
   placeName, placeAddress, placeUrl,
+  steps,
   myLove, onToggleLove,
   partnerReactionLabel,
   onConfirm,
@@ -71,29 +77,46 @@ export function CandidateHeroCard({
   placeName?: string | null;
   placeAddress?: string | null;
   placeUrl?: string | null;
+  steps?: CourseStep[];
   myLove: boolean;
   onToggleLove: () => void;
   partnerReactionLabel?: string | null;
   onConfirm: () => void;
 }) {
-  const { strings: s } = useI18n();
+  const { strings: s, t } = useI18n();
+  const courseSteps = steps ?? [];
+  const showCourse = !placeName && courseSteps.length > 0;
+  const showHeroCard = !!placeName || showCourse;
   return (
     <View style={heroS.wrap}>
-      <SoftCard style={heroS.card}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={s.card.reactionLabels.love.label}
-          onPress={onToggleLove}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={heroS.loveBtn}
-          activeOpacity={0.75}
-        >
-          <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
-        </TouchableOpacity>
-        {!!placeName && (
-          <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
-        )}
-      </SoftCard>
+      {showHeroCard && (
+        <SoftCard style={heroS.card}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={s.card.reactionLabels.love.label}
+            onPress={onToggleLove}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={heroS.loveBtn}
+            activeOpacity={0.75}
+          >
+            <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
+          </TouchableOpacity>
+          {!!placeName && (
+            <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
+          )}
+          {showCourse && (
+            <View style={heroS.courseWrap}>
+              <View style={heroS.courseCountRow}>
+                <MapPin size={15} color={C.pinkDeep} strokeWidth={2} />
+                <Text style={heroS.courseCount}>{t('card.heroCourseCount', { count: courseSteps.length })}</Text>
+              </View>
+              <Text style={heroS.courseChain} numberOfLines={1}>
+                {courseSteps.map(step => step.label).join(' → ')}
+              </Text>
+            </View>
+          )}
+        </SoftCard>
+      )}
 
       <View style={heroS.partnerBubble}>
         <Text style={heroS.partnerText}>{partnerReactionLabel ?? s.card.partnerWaiting}</Text>
@@ -113,6 +136,10 @@ const heroS = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
   },
   placeRow: { paddingRight: SP.xxxl },
+  courseWrap: { paddingRight: SP.xxxl, gap: SP.xs },
+  courseCountRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  courseCount: { fontSize: 15, fontWeight: '700', color: C.text },
+  courseChain: { fontSize: 13, color: C.textSub },
   partnerBubble: {
     backgroundColor: C.pinkLight,
     borderRadius: R.lg,
@@ -219,6 +246,31 @@ export default function CardDetailScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleUnreact() {
+    if (saving || !myUserId) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('card_id', id)
+        .eq('user_id', myUserId);
+      if (error) throw error;
+      setMyReaction(null);
+      setMyConditionTag(null);
+    } catch {
+      Alert.alert(alertTitle, s.card.saveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // 같은 반응 재탭 → 해제, 아니면 설정. 하트와 반응 그리드가 공유한다.
+  function handleReactionTap(type: ReactionType) {
+    if (shouldUnreactOnTap(myReaction, type)) handleUnreact();
+    else handleReact(type);
   }
 
   async function handleGenerateAlt(condTag: ConditionTag) {
@@ -343,8 +395,9 @@ export default function CardDetailScreen() {
             placeName={card.place_name}
             placeAddress={card.place_address}
             placeUrl={card.map_url}
+            steps={resolveDisplaySteps(card)}
             myLove={myReaction === 'love'}
-            onToggleLove={() => handleReact('love')}
+            onToggleLove={() => handleReactionTap('love')}
             partnerReactionLabel={partnerReactionLabel}
             onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
           />
@@ -403,7 +456,7 @@ export default function CardDetailScreen() {
                     selected && styles.reactionBtnSelected,
                     selected && { borderColor: r.color },
                   ]}
-                  onPress={() => handleReact(r.type)}
+                  onPress={() => handleReactionTap(r.type)}
                   disabled={saving}
                   activeOpacity={0.75}
                 >
