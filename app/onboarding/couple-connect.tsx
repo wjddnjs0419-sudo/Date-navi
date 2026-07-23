@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ScrollView, Share, ActivityIndicator,
@@ -23,6 +23,7 @@ import {
   formatInviteCode,
   inviteCodeBody,
   normalizeInviteCode,
+  resolveCoupleConnectDestination,
 } from '../../lib/couple-invite';
 
 type ConnectionStatus = 'none' | 'waiting' | 'linked';
@@ -103,7 +104,8 @@ export default function CoupleConnectScreen() {
         .select('onboarding_completed')
         .eq('user_id', user.id)
         .maybeSingle<{ onboarding_completed: boolean | null }>();
-      setOnboardingCompleted(!!prefs?.onboarding_completed);
+      const completed = !!prefs?.onboarding_completed;
+      setOnboardingCompleted(completed);
 
       const { data: profile } = await supabase
         .from('date_planner_profiles')
@@ -133,6 +135,17 @@ export default function CoupleConnectScreen() {
       const isLinked = coupleRow.status === 'linked' && !!coupleRow.partner_user_id;
       setCouple(coupleRow);
       setStatus(isLinked ? 'linked' : 'waiting');
+
+      // 연결된 상태의 이 화면은 커플 관리용이라 온보딩을 이어갈 CTA가 없다.
+      // 온보딩 중이라면 축하 화면으로 넘겨 남은 단계로 흐르게 한다.
+      if (resolveCoupleConnectDestination({
+        status: isLinked ? 'linked' : 'waiting',
+        partnerUserId: coupleRow.partner_user_id,
+        onboardingCompleted: completed,
+      })) {
+        router.replace('/onboarding/connected' as any);
+        return;
+      }
 
       let partnerAnniversary = '';
       if (isLinked) {
@@ -170,6 +183,35 @@ export default function CoupleConnectScreen() {
       void loadConnection();
     }, [loadConnection]),
   );
+
+  // 초대한 쪽은 코드를 공유한 뒤 이 화면에 머문다. 상대가 수락해도 화면을 다시 열기 전까지는
+  // 아무 일도 일어나지 않으므로, 자기 커플 행의 변경을 구독해 연결 즉시 축하 화면으로 보낸다.
+  const onboardingCompletedRef = useRef(onboardingCompleted);
+  useEffect(() => { onboardingCompletedRef.current = onboardingCompleted; }, [onboardingCompleted]);
+
+  const coupleId = couple?.id;
+  useEffect(() => {
+    if (!coupleId) return;
+
+    const channel = supabase
+      .channel(`couple-connect-${coupleId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'date_planner_couples', filter: `id=eq.${coupleId}` },
+        (payload) => {
+          const next = payload.new as { status?: ConnectionStatus; partner_user_id?: string | null };
+          const destination = resolveCoupleConnectDestination({
+            status: next.status ?? 'waiting',
+            partnerUserId: next.partner_user_id ?? null,
+            onboardingCompleted: onboardingCompletedRef.current,
+          });
+          if (destination) router.replace('/onboarding/connected' as any);
+        },
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [coupleId, router]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
