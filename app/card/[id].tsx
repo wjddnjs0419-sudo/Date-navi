@@ -69,6 +69,7 @@ const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
 // 로직은 화면 본체(handleReact/router.push)를 그대로 위임받아 쓴다.
 export function CandidateHeroCard({
   placeName, placeAddress, placeUrl,
+  steps,
   myLove, onToggleLove,
   partnerReactionLabel,
   onConfirm,
@@ -76,29 +77,46 @@ export function CandidateHeroCard({
   placeName?: string | null;
   placeAddress?: string | null;
   placeUrl?: string | null;
+  steps?: CourseStep[];
   myLove: boolean;
   onToggleLove: () => void;
   partnerReactionLabel?: string | null;
   onConfirm: () => void;
 }) {
-  const { strings: s } = useI18n();
+  const { strings: s, t } = useI18n();
+  const courseSteps = steps ?? [];
+  const showCourse = !placeName && courseSteps.length > 0;
+  const showHeroCard = !!placeName || showCourse;
   return (
     <View style={heroS.wrap}>
-      <SoftCard style={heroS.card}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={s.card.reactionLabels.love.label}
-          onPress={onToggleLove}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={heroS.loveBtn}
-          activeOpacity={0.75}
-        >
-          <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
-        </TouchableOpacity>
-        {!!placeName && (
-          <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
-        )}
-      </SoftCard>
+      {showHeroCard && (
+        <SoftCard style={heroS.card}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={s.card.reactionLabels.love.label}
+            onPress={onToggleLove}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={heroS.loveBtn}
+            activeOpacity={0.75}
+          >
+            <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
+          </TouchableOpacity>
+          {!!placeName && (
+            <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
+          )}
+          {showCourse && (
+            <View style={heroS.courseWrap}>
+              <View style={heroS.courseCountRow}>
+                <MapPin size={15} color={C.pinkDeep} strokeWidth={2} />
+                <Text style={heroS.courseCount}>{t('card.heroCourseCount', { count: courseSteps.length })}</Text>
+              </View>
+              <Text style={heroS.courseChain} numberOfLines={1}>
+                {courseSteps.map(step => step.label).join(' → ')}
+              </Text>
+            </View>
+          )}
+        </SoftCard>
+      )}
 
       <View style={heroS.partnerBubble}>
         <Text style={heroS.partnerText}>{partnerReactionLabel ?? s.card.partnerWaiting}</Text>
@@ -118,6 +136,10 @@ const heroS = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
   },
   placeRow: { paddingRight: SP.xxxl },
+  courseWrap: { paddingRight: SP.xxxl, gap: SP.xs },
+  courseCountRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  courseCount: { fontSize: 15, fontWeight: '700', color: C.text },
+  courseChain: { fontSize: 13, color: C.textSub },
   partnerBubble: {
     backgroundColor: C.pinkLight,
     borderRadius: R.lg,
@@ -373,6 +395,7 @@ export default function CardDetailScreen() {
             placeName={card.place_name}
             placeAddress={card.place_address}
             placeUrl={card.map_url}
+            steps={resolveDisplaySteps(card)}
             myLove={myReaction === 'love'}
             onToggleLove={() => handleReactionTap('love')}
             partnerReactionLabel={partnerReactionLabel}

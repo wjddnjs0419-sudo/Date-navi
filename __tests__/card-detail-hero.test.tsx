@@ -5,7 +5,8 @@ import { Text } from 'react-native';
 jest.mock('../lib/i18n', () => ({
   useI18n: () => ({
     language: 'ko',
-    t: (key: string) => key,
+    t: (key: string, params?: Record<string, unknown>) =>
+      params ? `${key} ${JSON.stringify(params)}` : key,
     strings: {
       card: {
         confirmButton: '이번 데이트로 정할까요? →',
@@ -62,7 +63,9 @@ describe('CandidateHeroCard', () => {
     const onToggleLove = jest.fn();
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {
-      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={onToggleLove} onConfirm={() => {}} />);
+      tree = TR.create(
+        <CandidateHeroCard placeName="어반나이프" myLove={false} onToggleLove={onToggleLove} onConfirm={() => {}} />,
+      );
     });
     const heartBtn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
     TR.act(() => { heartBtn.props.onPress(); });
@@ -87,6 +90,35 @@ describe('CandidateHeroCard', () => {
       tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={() => {}} onConfirm={() => {}} />);
     });
     expect(texts(tree)).toContain('⏳ 상대방 반응을 기다리는 중...');
+  });
+
+  it('renders a course summary when steps exist and no place is attached', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(
+        <CandidateHeroCard
+          myLove={false}
+          onToggleLove={() => {}}
+          onConfirm={() => {}}
+          steps={[{ label: '카페' }, { label: '스타벅스' }, { label: '추가 장소' }]}
+        />,
+      );
+    });
+    expect(texts(tree)).toContain('카페 → 스타벅스 → 추가 장소');
+    expect(texts(tree)).toContain('card.heroCourseCount {"count":3}');
+  });
+
+  it('renders no hero card when neither place nor steps exist', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={() => {}} onConfirm={() => {}} />);
+    });
+    const t = texts(tree);
+    expect(t).not.toContain('card.heroCourseCount');
+    // 하트 버튼(love 라벨)도 없어야 한다
+    expect(tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })).toHaveLength(0);
+    // 확정 CTA는 여전히 있어야 한다
+    expect(t).toContain('이번 데이트로 정할까요? →');
   });
 
   it('calls onConfirm when the CTA is pressed', () => {
