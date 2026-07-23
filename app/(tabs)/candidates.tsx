@@ -50,10 +50,11 @@ export function matchesFilter(c: CardWithReactions, f: FilterTab, myId: string):
 }
 
 // 카드 상단 배지에 쓰이는 단일 상태. matchesFilter와 동일한 우선순위(mutual 우선)를 따른다.
-export function cardBadgeStatus(c: CardWithReactions, myId: string): 'mutual' | 'mine' | 'partner' | 'undecided' {
+export function cardBadgeStatus(c: CardWithReactions, myId: string): 'mutual' | 'mine' | 'partner' | null {
   if (isPositive(c.myReaction) && isPositive(c.partnerReaction)) return 'mutual';
   if (c.source === 'manual') return c.created_by === myId ? 'mine' : 'partner';
-  return 'undecided';
+  // 나머지는 "그 외 전부"라 배지로 말할 내용이 없다 — 카드 하단 상태 문구가 더 정확히 알려준다.
+  return null;
 }
 
 export function sortCards(list: CardWithReactions[], order: SortOrder): CardWithReactions[] {
@@ -417,7 +418,7 @@ export default function CandidatesScreen() {
                     const badgeStatus = cardBadgeStatus(card, currentUserId ?? '');
                     const status = reactionStatus(card);
                     const StatusIcon = status.icon === 'spark' ? Sparkles : Heart;
-                    const BADGE_TONE_BY_STATUS = { mutual: 'pink', mine: 'blue', partner: 'orange', undecided: 'gray' } as const;
+                    const BADGE_TONE_BY_STATUS = { mutual: 'pink', mine: 'blue', partner: 'orange' } as const;
                     return (
                       <SwipeableCard
                         key={card.id}
@@ -433,9 +434,11 @@ export default function CandidatesScreen() {
                           <View style={s.flex1}>
                             <View style={s.cardTitleRow}>
                               <Text style={s.cardTitle}>{card.title}</Text>
-                              <Badge tone={BADGE_TONE_BY_STATUS[badgeStatus]}>
-                                {t(`candidates.badge${badgeStatus.charAt(0).toUpperCase()}${badgeStatus.slice(1)}`)}
-                              </Badge>
+                              {badgeStatus && (
+                                <Badge tone={BADGE_TONE_BY_STATUS[badgeStatus]}>
+                                  {t(`candidates.badge${badgeStatus.charAt(0).toUpperCase()}${badgeStatus.slice(1)}`)}
+                                </Badge>
+                              )}
                             </View>
                             <View style={s.chips}>
                               {(card.tags ?? []).slice(0, 3).map((tag, tagIndex) => (

@@ -69,6 +69,19 @@ jest.mock('../lib/supabase', () => {
               created_by: 'u1',
               created_at: '2026-07-01',
               content_i18n: null,
+            }, {
+              // 반응이 하나도 없는 AI 카드 — 예전이라면 "좋아요 미정" 배지가 붙던 자리다.
+              id: 'card2',
+              title: '아직 아무도 안 누른 후보',
+              summary: '반응 없는 카드',
+              estimated_time: '약 2시간',
+              estimated_budget: '2만원',
+              tags: ['walk'],
+              mode: 'make_course',
+              source: 'ai',
+              created_by: 'u1',
+              created_at: '2026-07-02',
+              content_i18n: null,
             }],
           });
         }
@@ -130,6 +143,11 @@ describe('후보 화면 목업 계약', () => {
   it('AI 카드(둘 다 좋아요)는 상단 배지에 서로 좋아요 상태를 렌더한다', async () => {
     const tree = await render();
     expect(allText(tree)).toContain('candidates.badgeMutual');
+  });
+
+  it('반응이 갈리지 않은 카드에는 "좋아요 미정" 배지를 붙이지 않는다', async () => {
+    const tree = await render();
+    expect(allText(tree)).not.toContain('candidates.badgeUndecided');
   });
 
   it('로드된 카드의 제목을 카드 행으로 렌더한다', async () => {

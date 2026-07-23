@@ -47,8 +47,13 @@ describe('cardBadgeStatus', () => {
     expect(cardBadgeStatus({ ...base, source: 'manual' as const, created_by: 'u2' }, 'u1')).toBe('partner');
   });
 
-  it('ai 카드이고 상호 긍정 아니면 undecided', () => {
-    expect(cardBadgeStatus(base, 'u1')).toBe('undecided');
+  // "좋아요 미정"은 나머지 전부를 뜻할 뿐이라 정보가 없었다. 배지 자체를 안 그린다.
+  it('ai 카드이고 상호 긍정 아니면 배지 없음(null)', () => {
+    expect(cardBadgeStatus(base, 'u1')).toBeNull();
+  });
+
+  it('내가 좋아요만 눌러도 배지는 없다 — 하단 상태 문구가 그 사실을 말한다', () => {
+    expect(cardBadgeStatus({ ...base, myReaction: 'love' as const }, 'u1')).toBeNull();
   });
 });
 

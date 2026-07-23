@@ -79,15 +79,21 @@ describe('card detail layout order', () => {
     expect(source).not.toContain('heroCourseCount');
   });
 
-  it('places the course/place block above the action bar, which sits after tags and the why box', () => {
+  it('places the course/place block above the action bar, which sits after the tags', () => {
     const course = body.indexOf('<CourseStepList');
     const tags = body.indexOf('styles.tagRow');
-    const why = body.indexOf('styles.whyBox');
     const actionBar = body.indexOf('<CandidateActionBar');
     expect(course).toBeGreaterThan(-1);
     expect(actionBar).toBeGreaterThan(-1);
     expect(course).toBeLessThan(tags);
-    expect(why).toBeLessThan(actionBar);
+    expect(tags).toBeLessThan(actionBar);
+  });
+
+  // 추천 이유는 카드를 고를 때 읽는 문장이지, 이미 연 카드에서 또 볼 내용은 아니다.
+  it('drops the why-recommended box from the detail screen', () => {
+    expect(source).not.toContain('whyBox');
+    expect(source).not.toContain('why_recommended');
+    expect(source).not.toContain('MessageCircle');
   });
 
   it('keeps the place row on the screen for single-place cards', () => {

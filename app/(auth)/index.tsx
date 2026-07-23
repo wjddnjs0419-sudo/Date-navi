@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
 import { signInWithKakao, getKakaoSignInErrorMessageKey } from '../../lib/kakaoAuth';
+import { socialButtonHeight, socialButtonRadius } from '../../lib/socialButtonMetrics';
 import { C, SP, R } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { Wordmark } from '../../components/brand';
@@ -17,15 +19,9 @@ const KAKAO_BUTTON_IMAGE = {
   en: require('../../kakao_login/en/kakao_login_large_wide.png'),
 } as const;
 
-// 카카오 공식 버튼 이미지 원본 비율(600×90). 높이 = 폭 / 이 값.
-const KAKAO_BUTTON_RATIO = 600 / 90;
-// 이미지에 내장된 코너 반경(측정값 7px / 원본 높이 90px). 이미지는 변형하지 않고,
-// 구글·애플 버튼 반경을 같은 비율로 맞춰 세 버튼의 코너를 일치시킨다.
-const KAKAO_CORNER_RATIO = 7 / 90;
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CONTENT_WIDTH = SCREEN_WIDTH - 48; // heroContainer paddingHorizontal 24 * 2
-const SOCIAL_BUTTON_HEIGHT = Math.round(CONTENT_WIDTH / KAKAO_BUTTON_RATIO);
-const SOCIAL_BUTTON_RADIUS = Math.round(SOCIAL_BUTTON_HEIGHT * KAKAO_CORNER_RATIO);
+const SOCIAL_BUTTON_HEIGHT = socialButtonHeight(SCREEN_WIDTH);
+const SOCIAL_BUTTON_RADIUS = socialButtonRadius(SOCIAL_BUTTON_HEIGHT);
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -33,6 +29,17 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [appleNotice, setAppleNotice] = useState(false);
+  // Sign in with Apple은 Apple 플랫폼에서만 제공된다. 다른 곳에서 Apple 버튼을 노출하는 건
+  // 브랜드 가이드 위반이라, 사용 가능할 때만 렌더한다.
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    AppleAuthentication.isAvailableAsync()
+      .then((available) => { if (!cancelled) setAppleAvailable(available); })
+      .catch(() => { if (!cancelled) setAppleAvailable(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleKakaoSignIn() {
     setErrorMsg('');
@@ -106,11 +113,13 @@ export default function AuthScreen() {
             onPress={handleGoogleSignIn}
             disabled={loading}
           />
-          <AppleLoginButton
-            label={t('auth.appleStart')}
-            onPress={handleApplePress}
-            disabled={loading}
-          />
+          {appleAvailable && (
+            <AppleLoginButton
+              label={t('auth.appleStart')}
+              onPress={handleApplePress}
+              disabled={loading}
+            />
+          )}
           {appleNotice && (
             <View style={s.noticeBox}>
               <Text style={s.noticeText}>{t('auth.appleComingSoon')}</Text>
@@ -172,22 +181,22 @@ function GoogleLoginButton({ label, onPress, disabled }: {
   );
 }
 
+// Apple 공식 버튼. 로고·문구·다국어·터치 피드백을 전부 Apple 네이티브 뷰가 그리므로
+// 라벨이나 아이콘을 직접 그리면 안 된다(브랜드 가이드). 우리가 정할 수 있는 건
+// 타입(SIGN_IN)·색(BLACK)·코너 반경·크기뿐이다.
 function AppleLoginButton({ label, onPress, disabled }: {
   label: string; onPress: () => void; disabled?: boolean;
 }) {
   return (
-    <TouchableOpacity
+    <AppleAuthentication.AppleAuthenticationButton
       testID="apple-login-button"
-      onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.85}
-      accessibilityRole="button"
+      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+      cornerRadius={SOCIAL_BUTTON_RADIUS}
       accessibilityLabel={label}
-      style={[s.socialBtn, s.socialBtnApple, disabled && s.socialBtnDisabled]}
-    >
-      <AppleFruitIcon />
-      <Text style={[s.socialBtnText, s.socialBtnTextApple]}>{label}</Text>
-    </TouchableOpacity>
+      onPress={disabled ? () => {} : onPress}
+      style={[s.appleBtn, disabled && s.socialBtnDisabled]}
+    />
   );
 }
 
@@ -200,17 +209,6 @@ function GoogleGLogo() {
       <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
       <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </Svg>
-  );
-}
-
-// Apple 로그인은 아직 실제 로직이 없는 자리표시 버튼이라, Apple 상표(사과 실루엣)를
-// 그대로 쓰지 않고 잎사귀가 달린 일반 과일 실루엣으로 대체했다.
-function AppleFruitIcon() {
-  return (
-    <View style={s.appleIcon}>
-      <View style={s.appleIconLeaf} />
-      <View style={s.appleIconBody} />
-    </View>
   );
 }
 
@@ -251,21 +249,13 @@ const s = StyleSheet.create({
     gap: SP.sm,
   },
   socialBtnGoogle: { backgroundColor: C.white, borderColor: '#747775', borderWidth: 1 },
-  socialBtnApple: { backgroundColor: C.dark },
+  appleBtn: { height: SOCIAL_BUTTON_HEIGHT, width: '100%' },
   kakaoBtn: { height: SOCIAL_BUTTON_HEIGHT },
   kakaoImage: { width: '100%', height: '100%' },
   socialBtnDisabled: { opacity: 0.5 },
   // Google 브랜딩 가이드: 라이트 버튼 텍스트 색 #1F1F1F.
   socialBtnText: { fontSize: 15, fontWeight: '600' },
   socialBtnTextGoogle: { color: '#1F1F1F' },
-  socialBtnTextApple: { color: C.white },
-  appleIcon: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
-  appleIconBody: { width: 13, height: 13, borderRadius: 7, backgroundColor: C.white },
-  appleIconLeaf: {
-    position: 'absolute', top: -1, right: 3,
-    width: 6, height: 4, borderRadius: 3,
-    backgroundColor: C.white, transform: [{ rotate: '35deg' }],
-  },
   legal: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 17 },
   legalLink: { textDecorationLine: 'underline' },
   noticeBox: { paddingVertical: SP.xs },
