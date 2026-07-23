@@ -65,8 +65,14 @@ const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
   indoor: House,
 };
 
-// 목업(08_candidate_detail)의 상단 카드 — 장소 + 하트 퀵반응 + 파트너 반응 + 확정 CTA.
-// 로직은 화면 본체(handleReact/router.push)를 그대로 위임받아 쓴다.
+// 코스 스텝 라벨이 이미 화면에 있는 태그는 같은 말을 두 번 하는 셈이라 감춘다.
+export function visibleTags(tags: string[] | null | undefined, steps: CourseStep[]): string[] {
+  const norm = (v: string) => v.trim().toLowerCase();
+  const stepLabels = new Set(steps.map(step => norm(step.label)));
+  return (tags ?? []).filter(tag => !stepLabels.has(norm(tag)));
+}
+
+// 파트너 반응 버블 + 확정 CTA. 로직은 화면 본체(router.push)를 그대로 위임받아 쓴다.
 export function CandidateActionBar({
   partnerReactionLabel,
   onConfirm,
@@ -376,7 +382,7 @@ export default function CardDetailScreen() {
           )}
 
           <View style={styles.tagRow}>
-            {(card.tags ?? []).map((tag, i) => (
+            {visibleTags(card.tags, resolveDisplaySteps(card)).map((tag, i) => (
               <Chip key={i} tone="gray">{tag}</Chip>
             ))}
           </View>

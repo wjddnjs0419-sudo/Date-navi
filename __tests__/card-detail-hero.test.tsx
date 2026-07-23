@@ -19,7 +19,7 @@ jest.mock('../lib/i18n', () => ({
   }),
 }));
 
-const { CandidateActionBar, shouldUnreactOnTap } = require('../app/card/[id]') as typeof import('../app/card/[id]');
+const { CandidateActionBar, shouldUnreactOnTap, visibleTags } = require('../app/card/[id]') as typeof import('../app/card/[id]');
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
@@ -92,6 +92,33 @@ describe('card detail layout order', () => {
 
   it('keeps the place row on the screen for single-place cards', () => {
     expect(body).toMatch(/<PlaceRow[\s\S]{0,200}card\.place_name/);
+  });
+});
+
+describe('visibleTags', () => {
+  it('hides tags that merely repeat a course step label', () => {
+    expect(visibleTags(['카페', '분위기좋은', '산책'], [{ label: '카페' }, { label: '산책' }]))
+      .toEqual(['분위기좋은']);
+  });
+
+  it('keeps every tag when there are no steps', () => {
+    expect(visibleTags(['카페', '산책'], [])).toEqual(['카페', '산책']);
+  });
+
+  it('ignores case and surrounding whitespace when matching', () => {
+    expect(visibleTags([' Cafe ', '전시'], [{ label: 'cafe' }])).toEqual(['전시']);
+  });
+
+  it('tolerates a missing tag list', () => {
+    expect(visibleTags(null, [{ label: '카페' }])).toEqual([]);
+  });
+});
+
+describe('card detail tag row', () => {
+  const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
+
+  it('renders the filtered tags rather than the raw card tags', () => {
+    expect(source).toMatch(/styles\.tagRow[\s\S]{0,160}visibleTags\(card\.tags/);
   });
 });
 
