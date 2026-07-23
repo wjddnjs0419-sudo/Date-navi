@@ -126,6 +126,15 @@ describe('온보딩 프로필 사진 화면', () => {
     expect(mockAlert).not.toHaveBeenCalled();
   });
 
+  it('아이콘만 있는 카메라 버튼에 이름과 충분한 터치 영역을 준다', async () => {
+    const tree = await render();
+    const cameraBtn = tree.root.findAllByType(TouchableOpacity)[1];
+    expect(cameraBtn.props.accessibilityLabel).toBe('onboarding.photo.change');
+    expect(cameraBtn.props.accessibilityRole).toBe('button');
+    // 버튼이 40px이라 hitSlop으로 44px 타깃을 채운다.
+    expect(cameraBtn.props.hitSlop).toBeDefined();
+  });
+
   it('사진 없이도 다음 단계로 넘어갈 수 있다', async () => {
     const tree = await render();
     const nextBtn = tree.root.findAllByType(TouchableOpacity).slice(-1)[0];

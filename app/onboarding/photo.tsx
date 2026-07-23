@@ -123,7 +123,14 @@ export default function PhotoScreen() {
               </View>
             )}
           </View>
-          <TouchableOpacity style={s.cameraBtn} onPress={handlePickPhoto} disabled={uploading}>
+          <TouchableOpacity
+            style={s.cameraBtn}
+            onPress={handlePickPhoto}
+            disabled={uploading}
+            accessibilityRole="button"
+            accessibilityLabel={t('onboarding.photo.change')}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          >
             <Camera size={18} color={C.pinkDeep} />
           </TouchableOpacity>
         </View>

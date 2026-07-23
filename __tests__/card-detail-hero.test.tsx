@@ -118,7 +118,12 @@ describe('card detail tag row', () => {
   const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
 
   it('renders the filtered tags rather than the raw card tags', () => {
-    expect(source).toMatch(/styles\.tagRow[\s\S]{0,160}visibleTags\(card\.tags/);
+    expect(source).toMatch(/visibleTags\(card\.tags[\s\S]{0,200}styles\.tagRow/);
+    expect(source).not.toMatch(/styles\.tagRow[\s\S]{0,80}\(card\.tags \?\? \[\]\)/);
+  });
+
+  it('skips the tag row entirely when filtering leaves nothing', () => {
+    expect(source).toMatch(/tags\.length > 0 \?[\s\S]{0,200}styles\.tagRow/);
   });
 });
 

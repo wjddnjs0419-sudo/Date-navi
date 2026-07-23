@@ -381,11 +381,17 @@ export default function CardDetailScreen() {
             </View>
           )}
 
-          <View style={styles.tagRow}>
-            {visibleTags(card.tags, resolveDisplaySteps(card)).map((tag, i) => (
-              <Chip key={i} tone="gray">{tag}</Chip>
-            ))}
-          </View>
+          {(() => {
+            // 스텝 라벨과 겹치는 태그를 걸러내면 남는 게 없을 수 있다 — 그때는 빈 여백을 남기지 않는다.
+            const tags = visibleTags(card.tags, resolveDisplaySteps(card));
+            return tags.length > 0 ? (
+              <View style={styles.tagRow}>
+                {tags.map((tag, i) => (
+                  <Chip key={i} tone="gray">{tag}</Chip>
+                ))}
+              </View>
+            ) : null;
+          })()}
 
           <View style={styles.whyBox}>
             <MessageCircle size={15} color={C.pinkDeep} strokeWidth={2} style={styles.whyIcon} />
@@ -524,7 +530,7 @@ const styles = StyleSheet.create({
 
   whyBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm,
-    backgroundColor: C.pinkLight, borderRadius: R.lg, padding: SP.lg, marginBottom: SP.sm,
+    backgroundColor: C.pinkLight, borderRadius: R.lg, padding: SP.lg, marginBottom: SP.lg,
   },
   whyIcon: { marginTop: 2 },
   whyText: { flex: 1, fontSize: 14, color: C.pinkDeep, lineHeight: 21 },
