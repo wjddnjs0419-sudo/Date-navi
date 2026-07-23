@@ -51,12 +51,22 @@ describe('CandidateHeroCard', () => {
     expect(texts(tree)).toContain('서울 성동구');
   });
 
-  it('omits the place row when no place is attached', () => {
+  it('omits the place row when steps stand in for a place', () => {
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {
-      tree = TR.create(<CandidateHeroCard myLove={false} onToggleLove={() => {}} onConfirm={() => {}} />);
+      tree = TR.create(
+        <CandidateHeroCard
+          placeAddress="서울 성동구"
+          myLove={false}
+          onToggleLove={() => {}}
+          onConfirm={() => {}}
+          steps={[{ label: '카페' }, { label: '전시' }]}
+        />,
+      );
     });
+    // placeName이 없으면 주소가 넘어와도 PlaceRow는 그리지 않는다 — 코스 요약이 그 자리를 차지한다.
     expect(texts(tree)).not.toContain('서울 성동구');
+    expect(texts(tree)).toContain('카페 → 전시');
   });
 
   it('calls onToggleLove when the heart button is pressed', () => {
