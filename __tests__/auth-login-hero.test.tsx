@@ -108,18 +108,6 @@ describe('login hero matches UI RENEW mockup', () => {
     expect(flatStyle.color).toBe(C.pink);
   });
 
-  it('renders a disabled-looking Apple button that shows a coming-soon notice instead of signing in', async () => {
-    const renderer = await render();
-    const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });
-    act(() => { appleButton.props.onPress(); });
-
-    expect(mockSignInWithGoogle).not.toHaveBeenCalled();
-    expect(mockSignInWithKakao).not.toHaveBeenCalled();
-
-    const notice = renderer.root.findByProps({ children: 'auth.appleComingSoon' });
-    expect(notice.type).toBe(Text);
-  });
-
   it('uses the official black Sign in with Apple button instead of a hand-drawn lookalike', async () => {
     const renderer = await render();
     const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });

@@ -8,6 +8,8 @@ import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
 import { signInWithKakao, getKakaoSignInErrorMessageKey } from '../../lib/kakaoAuth';
+import { signInWithApple, getAppleSignInErrorMessageKey } from '../../lib/appleAuth';
+import { saveAppleFullNameIfMissing } from '../../lib/appleProfile';
 import { socialButtonHeight, socialButtonRadius } from '../../lib/socialButtonMetrics';
 import { C, SP, R } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
@@ -28,7 +30,6 @@ export default function AuthScreen() {
   const { t, language } = useI18n();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [appleNotice, setAppleNotice] = useState(false);
   // Sign in with Apple은 Apple 플랫폼에서만 제공된다. 다른 곳에서 Apple 버튼을 노출하는 건
   // 브랜드 가이드 위반이라, 사용 가능할 때만 렌더한다.
   const [appleAvailable, setAppleAvailable] = useState(false);
@@ -43,7 +44,6 @@ export default function AuthScreen() {
 
   async function handleKakaoSignIn() {
     setErrorMsg('');
-    setAppleNotice(false);
     setLoading(true);
     try {
       const { cancelled } = await signInWithKakao();
@@ -58,7 +58,6 @@ export default function AuthScreen() {
 
   async function handleGoogleSignIn() {
     setErrorMsg('');
-    setAppleNotice(false);
     setLoading(true);
     try {
       const { cancelled } = await signInWithGoogle();
@@ -72,12 +71,22 @@ export default function AuthScreen() {
     }
   }
 
-  // Apple 로그인 로직(expo-apple-authentication)은 아직 없다. 목업의 3번째 버튼 자리를
-  // 비주얼로만 채우고, 탭하면 준비 중 안내만 보여준다. PHASE0-BACKMERGE 아님 — 별도 세션에서
-  // 실제 Apple 로그인 로직을 붙일 때 이 핸들러를 교체한다.
-  function handleApplePress() {
+  async function handleAppleSignIn() {
     setErrorMsg('');
-    setAppleNotice(true);
+    setLoading(true);
+    try {
+      const { cancelled, fullName } = await signInWithApple();
+      if (!cancelled) {
+        // 이름은 애플이 최초 1회만 주므로 로그인 직후 이 자리에서 넘겨야 한다.
+        await saveAppleFullNameIfMissing(fullName);
+        await logEvent('login', { method: 'apple' });
+      }
+    } catch (e: any) {
+      const key = getAppleSignInErrorMessageKey(e?.code);
+      if (key) setErrorMsg(t(key));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -116,14 +125,9 @@ export default function AuthScreen() {
           {appleAvailable && (
             <AppleLoginButton
               label={t('auth.appleStart')}
-              onPress={handleApplePress}
+              onPress={handleAppleSignIn}
               disabled={loading}
             />
-          )}
-          {appleNotice && (
-            <View style={s.noticeBox}>
-              <Text style={s.noticeText}>{t('auth.appleComingSoon')}</Text>
-            </View>
           )}
           {errorMsg !== '' && (
             <View style={s.errorBox}>
@@ -258,8 +262,6 @@ const s = StyleSheet.create({
   socialBtnTextGoogle: { color: '#1F1F1F' },
   legal: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 17 },
   legalLink: { textDecorationLine: 'underline' },
-  noticeBox: { paddingVertical: SP.xs },
-  noticeText: { color: C.textSub, fontSize: 12, textAlign: 'center' },
   errorBox: {
     backgroundColor: C.pinkLight,
     borderRadius: R.sm,
