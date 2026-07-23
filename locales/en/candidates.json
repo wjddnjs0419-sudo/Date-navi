@@ -67,7 +67,6 @@
     "badgeMutual": "Both liked",
     "badgeMine": "I saved it",
     "badgePartner": "Partner saved it",
-    "badgeUndecided": "Not decided yet",
     "proposalTitle": "{{count}} date proposals from your partner",
     "proposalSub": "\"{{title}}\" · Check it now →",
     "emptyStateTitle": "No date candidates yet",

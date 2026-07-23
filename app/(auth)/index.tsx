@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { logEvent } from '../../lib/analytics';
 import { signInWithGoogle, getGoogleSignInErrorMessageKey } from '../../lib/googleAuth';
 import { isErrorWithCode } from '@react-native-google-signin/google-signin';
 import { signInWithKakao, getKakaoSignInErrorMessageKey } from '../../lib/kakaoAuth';
+import { socialButtonHeight, socialButtonRadius } from '../../lib/socialButtonMetrics';
 import { C, SP, R } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { Wordmark } from '../../components/brand';
@@ -17,15 +19,9 @@ const KAKAO_BUTTON_IMAGE = {
   en: require('../../kakao_login/en/kakao_login_large_wide.png'),
 } as const;
 
-// 카카오 공식 버튼 이미지 원본 비율(600×90). 높이 = 폭 / 이 값.
-const KAKAO_BUTTON_RATIO = 600 / 90;
-// 이미지에 내장된 코너 반경(측정값 7px / 원본 높이 90px). 이미지는 변형하지 않고,
-// 구글·애플 버튼 반경을 같은 비율로 맞춰 세 버튼의 코너를 일치시킨다.
-const KAKAO_CORNER_RATIO = 7 / 90;
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CONTENT_WIDTH = SCREEN_WIDTH - 48; // heroContainer paddingHorizontal 24 * 2
-const SOCIAL_BUTTON_HEIGHT = Math.round(CONTENT_WIDTH / KAKAO_BUTTON_RATIO);
-const SOCIAL_BUTTON_RADIUS = Math.round(SOCIAL_BUTTON_HEIGHT * KAKAO_CORNER_RATIO);
+const SOCIAL_BUTTON_HEIGHT = socialButtonHeight(SCREEN_WIDTH);
+const SOCIAL_BUTTON_RADIUS = socialButtonRadius(SOCIAL_BUTTON_HEIGHT);
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -33,6 +29,17 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [appleNotice, setAppleNotice] = useState(false);
+  // Sign in with Apple은 Apple 플랫폼에서만 제공된다. 다른 곳에서 Apple 버튼을 노출하는 건
+  // 브랜드 가이드 위반이라, 사용 가능할 때만 렌더한다.
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    AppleAuthentication.isAvailableAsync()
+      .then((available) => { if (!cancelled) setAppleAvailable(available); })
+      .catch(() => { if (!cancelled) setAppleAvailable(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleKakaoSignIn() {
     setErrorMsg('');
