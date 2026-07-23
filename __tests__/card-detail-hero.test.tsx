@@ -19,7 +19,7 @@ jest.mock('../lib/i18n', () => ({
   }),
 }));
 
-const { CandidateActionBar, shouldUnreactOnTap, visibleTags } = require('../app/card/[id]') as typeof import('../app/card/[id]');
+const { CandidateActionBar, CardLoveToggle, shouldUnreactOnTap, visibleTags } = require('../app/card/[id]') as typeof import('../app/card/[id]');
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
@@ -93,6 +93,15 @@ describe('card detail layout order', () => {
   it('keeps the place row on the screen for single-place cards', () => {
     expect(body).toMatch(/<PlaceRow[\s\S]{0,200}card\.place_name/);
   });
+
+  it('puts the love toggle on the title row, above the course block', () => {
+    const titleRow = body.indexOf('styles.titleRow');
+    const heart = body.indexOf('<CardLoveToggle');
+    const course = body.indexOf('<CourseStepList');
+    expect(titleRow).toBeGreaterThan(-1);
+    expect(heart).toBeGreaterThan(titleRow);
+    expect(heart).toBeLessThan(course);
+  });
 });
 
 describe('visibleTags', () => {
@@ -124,6 +133,32 @@ describe('card detail tag row', () => {
 
   it('skips the tag row entirely when filtering leaves nothing', () => {
     expect(source).toMatch(/tags\.length > 0 \?[\s\S]{0,200}styles\.tagRow/);
+  });
+});
+
+describe('CardLoveToggle', () => {
+  it('calls onToggle when tapped, whichever state it is in', () => {
+    const onToggle = jest.fn();
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={onToggle} disabled={false} />); });
+    const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
+    TR.act(() => { btn.props.onPress(); });
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks itself selected for assistive tech when the card is loved', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => { tree = TR.create(<CardLoveToggle active onToggle={() => {}} disabled={false} />); });
+    const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
+    expect(btn.props.accessibilityState).toEqual({ selected: true });
+  });
+
+  it('goes inert while a reaction is being saved', () => {
+    const onToggle = jest.fn();
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={onToggle} disabled />); });
+    const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
+    expect(btn.props.disabled).toBe(true);
   });
 });
 

@@ -7,9 +7,9 @@ import { splashMarkLayout } from '../lib/splash-layout';
 
 const MARK = require('../assets/splash-icon.png');
 
-// splash-icon.png 안에서 마크가 차지하는 세로 비율(build_assets.py의 SPLASH_MARK_RATIO 기준).
-// 마크 바로 아래에 타이틀을 붙이기 위한 값.
-const MARK_BOTTOM_RATIO = 0.81;
+// splash-icon.png 캔버스에서 마크의 아랫변이 놓인 위치(alpha bbox 기준 실측값).
+// 마크 바로 아래에 타이틀을 붙이기 위한 값이라, 에셋을 다시 만들면 같이 갱신해야 한다.
+const MARK_BOTTOM_RATIO = 0.78;
 
 export default function Index() {
   const { t } = useI18n();

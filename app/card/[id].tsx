@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House, Flame, Smile, Meh } from 'lucide-react-native';
+import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House, Flame, Smile, Meh, Heart } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -79,6 +79,34 @@ export function visibleTags(tags: string[] | null | undefined, steps: CourseStep
   const stepLabels = new Set(steps.map(step => norm(step.label)));
   return (tags ?? []).filter(tag => !stepLabels.has(norm(tag)));
 }
+
+// 목업 08의 제목 줄 하트 — 반응 그리드의 love와 같은 상태를 공유하는 단축 토글이다.
+export function CardLoveToggle({
+  active, onToggle, disabled,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  disabled: boolean;
+}) {
+  const { strings: s } = useI18n();
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={s.card.reactionLabels.love.label}
+      accessibilityState={{ selected: active }}
+      onPress={onToggle}
+      disabled={disabled}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={loveS.btn}
+      activeOpacity={0.75}
+    >
+      <Heart size={22} color={active ? C.danger : C.textLight} fill={active ? C.danger : 'none'} strokeWidth={2} />
+    </TouchableOpacity>
+  );
+}
+const loveS = StyleSheet.create({
+  btn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+});
 
 // 파트너 반응 버블 + 확정 CTA. 로직은 화면 본체(router.push)를 그대로 위임받아 쓴다.
 export function CandidateActionBar({
@@ -352,7 +380,14 @@ export default function CardDetailScreen() {
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <Badge tone="pink">{s.card.modeLabels[card.mode] ?? card.mode}</Badge>
-          <Text style={[T.h1, styles.title]}>{card.title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={[T.h1, styles.title]}>{card.title}</Text>
+            <CardLoveToggle
+              active={myReaction === 'love'}
+              onToggle={() => handleReactionTap('love')}
+              disabled={saving}
+            />
+          </View>
 
           {card.mode === 'make_course' ? (
             <View style={styles.stepsWrap}>
@@ -525,7 +560,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: SP.xxl, paddingBottom: SP.xxxl * 2 },
 
-  title: { marginTop: SP.sm, marginBottom: SP.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm },
+  title: { flex: 1, marginTop: SP.sm, marginBottom: SP.lg },
   summary: { fontSize: 15, color: C.textSub, lineHeight: 22, marginBottom: SP.lg },
   stepsWrap: { marginBottom: SP.lg },
   placeRow: { marginBottom: SP.lg },
