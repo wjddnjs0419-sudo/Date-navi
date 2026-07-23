@@ -74,11 +74,10 @@ export function visibleTags(tags: string[] | null | undefined, steps: CourseStep
 
 // 목업 08의 제목 줄 하트 — 반응 그리드의 love와 같은 상태를 공유하는 단축 토글이다.
 export function CardLoveToggle({
-  active, onToggle, disabled,
+  active, onToggle,
 }: {
   active: boolean;
   onToggle: () => void;
-  disabled: boolean;
 }) {
   const { strings: s } = useI18n();
   return (
@@ -87,7 +86,6 @@ export function CardLoveToggle({
       accessibilityLabel={s.card.reactionLabels.love.label}
       accessibilityState={{ selected: active }}
       onPress={onToggle}
-      disabled={disabled}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       style={loveS.btn}
       activeOpacity={0.75}
@@ -142,7 +140,6 @@ export default function CardDetailScreen() {
   const [partnerReaction, setPartnerReaction] = useState<ReactionType | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [memoryDone, setMemoryDone] = useState(false);
 
   useFocusEffect(
@@ -191,9 +188,11 @@ export default function CardDetailScreen() {
     }, [id]),
   );
 
+  // 탭 즉시 칠하고 저장은 뒤에서 처리한다 — 왕복을 기다리면 선택이 한 박자 늦게 보인다.
+  // 실패하면 누르기 전 반응으로 되돌린다.
   async function handleReact(type: ReactionType) {
-    if (saving) return;
-    setSaving(true);
+    const previous = myReaction;
+    setMyReaction(type);
     try {
       const { error } = await supabase
         .from('reactions')
@@ -202,17 +201,16 @@ export default function CardDetailScreen() {
           { onConflict: 'card_id,user_id' },
         );
       if (error) throw error;
-      setMyReaction(type);
     } catch {
+      setMyReaction(previous);
       Alert.alert(alertTitle, s.card.saveError);
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleUnreact() {
-    if (saving || !myUserId) return;
-    setSaving(true);
+    if (!myUserId) return;
+    const previous = myReaction;
+    setMyReaction(null);
     try {
       const { error } = await supabase
         .from('reactions')
@@ -220,11 +218,9 @@ export default function CardDetailScreen() {
         .eq('card_id', id)
         .eq('user_id', myUserId);
       if (error) throw error;
-      setMyReaction(null);
     } catch {
+      setMyReaction(previous);
       Alert.alert(alertTitle, s.card.saveError);
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -302,7 +298,6 @@ export default function CardDetailScreen() {
             <CardLoveToggle
               active={myReaction === 'love'}
               onToggle={() => handleReactionTap('love')}
-              disabled={saving}
             />
           </View>
 
@@ -382,7 +377,6 @@ export default function CardDetailScreen() {
                     selected && { borderColor: r.color },
                   ]}
                   onPress={() => handleReactionTap(r.type)}
-                  disabled={saving}
                   activeOpacity={0.75}
                 >
                   <ReactionIcon size={26} color={selected ? r.color : C.textSub} strokeWidth={2} />

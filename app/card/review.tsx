@@ -157,6 +157,7 @@ export default function ReviewScreen() {
                 accessibilityLabel={`${n}점`}
                 onPress={() => setRating(n)}
                 style={styles.starBtn}
+                activeOpacity={1}
               >
                 <Star
                   size={28}

@@ -217,6 +217,7 @@ export default function EditMemoryScreen() {
               accessibilityLabel={`${n}점`}
               onPress={() => setRating(n)}
               style={s.starBtn}
+              activeOpacity={1}
             >
               <Star
                 size={28}

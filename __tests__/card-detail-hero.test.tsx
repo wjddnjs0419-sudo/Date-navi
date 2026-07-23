@@ -140,7 +140,7 @@ describe('CardLoveToggle', () => {
   it('calls onToggle when tapped, whichever state it is in', () => {
     const onToggle = jest.fn();
     let tree!: ReturnType<typeof TR.create>;
-    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={onToggle} disabled={false} />); });
+    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={onToggle} />); });
     const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
     TR.act(() => { btn.props.onPress(); });
     expect(onToggle).toHaveBeenCalledTimes(1);
@@ -148,17 +148,16 @@ describe('CardLoveToggle', () => {
 
   it('marks itself selected for assistive tech when the card is loved', () => {
     let tree!: ReturnType<typeof TR.create>;
-    TR.act(() => { tree = TR.create(<CardLoveToggle active onToggle={() => {}} disabled={false} />); });
+    TR.act(() => { tree = TR.create(<CardLoveToggle active onToggle={() => {}} />); });
     const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
     expect(btn.props.accessibilityState).toEqual({ selected: true });
   });
 
-  it('goes inert while a reaction is being saved', () => {
-    const onToggle = jest.fn();
+  it('stays tappable — the reaction paints optimistically, so there is nothing to wait on', () => {
     let tree!: ReturnType<typeof TR.create>;
-    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={onToggle} disabled />); });
+    TR.act(() => { tree = TR.create(<CardLoveToggle active={false} onToggle={() => {}} />); });
     const btn = tree.root.findAllByProps({ accessibilityLabel: '완전 끌려' })[0];
-    expect(btn.props.disabled).toBe(true);
+    expect(btn.props.disabled).toBeFalsy();
   });
 });
 
