@@ -11,7 +11,6 @@
     "memoryDone": "완료한 데이트예요",
     "saveError": "저장에 실패했어요. 다시 시도해주세요.",
     "confirmButton": "이번 데이트로 정할까요? →",
-    "heroCourseCount": "{{count}}곳 코스",
     "reactionLabels": {
       "love": {
         "emoji": "🔥",

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, MessageCircle, Heart, Share2, MapPin, Footprints, House } from 'lucide-react-native';
+import { Clock, Wallet, MessageCircle, Share2, MapPin, Footprints, House } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -19,7 +19,7 @@ import { localizeCardContent } from '../../lib/card-i18n';
 import { isDateModeEnabled } from '../../lib/dateModes';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
-import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, SoftCard, Chip } from '../../components/ui';
+import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, Chip } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity, writeRecommendationIdentity } from '../../lib/recommendationIdentity';
 
@@ -67,57 +67,16 @@ const CONDITION_ICONS: Record<ConditionTag, typeof MapPin> = {
 
 // 목업(08_candidate_detail)의 상단 카드 — 장소 + 하트 퀵반응 + 파트너 반응 + 확정 CTA.
 // 로직은 화면 본체(handleReact/router.push)를 그대로 위임받아 쓴다.
-export function CandidateHeroCard({
-  placeName, placeAddress, placeUrl,
-  steps,
-  myLove, onToggleLove,
+export function CandidateActionBar({
   partnerReactionLabel,
   onConfirm,
 }: {
-  placeName?: string | null;
-  placeAddress?: string | null;
-  placeUrl?: string | null;
-  steps?: CourseStep[];
-  myLove: boolean;
-  onToggleLove: () => void;
   partnerReactionLabel?: string | null;
   onConfirm: () => void;
 }) {
-  const { strings: s, t } = useI18n();
-  const courseSteps = steps ?? [];
-  const showCourse = !placeName && courseSteps.length > 0;
-  const showHeroCard = !!placeName || showCourse;
+  const { strings: s } = useI18n();
   return (
     <View style={heroS.wrap}>
-      {showHeroCard && (
-        <SoftCard style={heroS.card}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={s.card.reactionLabels.love.label}
-            onPress={onToggleLove}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={heroS.loveBtn}
-            activeOpacity={0.75}
-          >
-            <Heart size={18} color={myLove ? C.danger : C.textLight} fill={myLove ? C.danger : 'none'} strokeWidth={2} />
-          </TouchableOpacity>
-          {!!placeName && (
-            <PlaceRow name={placeName} address={placeAddress ?? undefined} url={placeUrl ?? undefined} style={heroS.placeRow} />
-          )}
-          {showCourse && (
-            <View style={heroS.courseWrap}>
-              <View style={heroS.courseCountRow}>
-                <MapPin size={15} color={C.pinkDeep} strokeWidth={2} />
-                <Text style={heroS.courseCount}>{t('card.heroCourseCount', { count: courseSteps.length })}</Text>
-              </View>
-              <Text style={heroS.courseChain} numberOfLines={1}>
-                {courseSteps.map(step => step.label).join(' → ')}
-              </Text>
-            </View>
-          )}
-        </SoftCard>
-      )}
-
       <View style={heroS.partnerBubble}>
         <Text style={heroS.partnerText}>{partnerReactionLabel ?? s.card.partnerWaiting}</Text>
       </View>
@@ -130,16 +89,6 @@ export function CandidateHeroCard({
 }
 const heroS = StyleSheet.create({
   wrap: { gap: SP.md, marginBottom: SP.xl },
-  card: { position: 'relative' },
-  loveBtn: {
-    position: 'absolute', top: SP.sm, right: SP.sm, zIndex: 1,
-    width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-  },
-  placeRow: { paddingRight: SP.xxxl },
-  courseWrap: { paddingRight: SP.xxxl, gap: SP.xs },
-  courseCountRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  courseCount: { fontSize: 15, fontWeight: '700', color: C.text },
-  courseChain: { fontSize: 13, color: C.textSub },
   partnerBubble: {
     backgroundColor: C.pinkLight,
     borderRadius: R.lg,
@@ -391,23 +340,21 @@ export default function CardDetailScreen() {
           <Badge tone="pink">{s.card.modeLabels[card.mode] ?? card.mode}</Badge>
           <Text style={[T.h1, styles.title]}>{card.title}</Text>
 
-          <CandidateHeroCard
-            placeName={card.place_name}
-            placeAddress={card.place_address}
-            placeUrl={card.map_url}
-            steps={resolveDisplaySteps(card)}
-            myLove={myReaction === 'love'}
-            onToggleLove={() => handleReactionTap('love')}
-            partnerReactionLabel={partnerReactionLabel}
-            onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
-          />
-
           {card.mode === 'make_course' ? (
             <View style={styles.stepsWrap}>
               <CourseStepList steps={resolveDisplaySteps(card)} summary={card.summary} />
             </View>
           ) : (
             <Text style={styles.summary}>{card.summary}</Text>
+          )}
+
+          {!!card.place_name && (
+            <PlaceRow
+              name={card.place_name}
+              address={card.place_address ?? undefined}
+              url={card.map_url ?? undefined}
+              style={styles.placeRow}
+            />
           )}
 
           {(!!card.estimated_time || !!card.estimated_budget) && (
@@ -438,6 +385,11 @@ export default function CardDetailScreen() {
             <MessageCircle size={15} color={C.pinkDeep} strokeWidth={2} style={styles.whyIcon} />
             <Text style={styles.whyText}>{card.why_recommended}</Text>
           </View>
+
+          <CandidateActionBar
+            partnerReactionLabel={partnerReactionLabel}
+            onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
+          />
 
           <View style={styles.divider} />
 
@@ -555,6 +507,7 @@ const styles = StyleSheet.create({
   title: { marginTop: SP.sm, marginBottom: SP.lg },
   summary: { fontSize: 15, color: C.textSub, lineHeight: 22, marginBottom: SP.lg },
   stepsWrap: { marginBottom: SP.lg },
+  placeRow: { marginBottom: SP.lg },
 
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.lg },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
