@@ -113,11 +113,13 @@ export default function AuthScreen() {
             onPress={handleGoogleSignIn}
             disabled={loading}
           />
-          <AppleLoginButton
-            label={t('auth.appleStart')}
-            onPress={handleApplePress}
-            disabled={loading}
-          />
+          {appleAvailable && (
+            <AppleLoginButton
+              label={t('auth.appleStart')}
+              onPress={handleApplePress}
+              disabled={loading}
+            />
+          )}
           {appleNotice && (
             <View style={s.noticeBox}>
               <Text style={s.noticeText}>{t('auth.appleComingSoon')}</Text>
@@ -179,22 +181,22 @@ function GoogleLoginButton({ label, onPress, disabled }: {
   );
 }
 
+// Apple 공식 버튼. 로고·문구·다국어·터치 피드백을 전부 Apple 네이티브 뷰가 그리므로
+// 라벨이나 아이콘을 직접 그리면 안 된다(브랜드 가이드). 우리가 정할 수 있는 건
+// 타입(SIGN_IN)·색(BLACK)·코너 반경·크기뿐이다.
 function AppleLoginButton({ label, onPress, disabled }: {
   label: string; onPress: () => void; disabled?: boolean;
 }) {
   return (
-    <TouchableOpacity
+    <AppleAuthentication.AppleAuthenticationButton
       testID="apple-login-button"
-      onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.85}
-      accessibilityRole="button"
+      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+      cornerRadius={SOCIAL_BUTTON_RADIUS}
       accessibilityLabel={label}
-      style={[s.socialBtn, s.socialBtnApple, disabled && s.socialBtnDisabled]}
-    >
-      <AppleFruitIcon />
-      <Text style={[s.socialBtnText, s.socialBtnTextApple]}>{label}</Text>
-    </TouchableOpacity>
+      onPress={disabled ? () => {} : onPress}
+      style={[s.appleBtn, disabled && s.socialBtnDisabled]}
+    />
   );
 }
 
@@ -207,17 +209,6 @@ function GoogleGLogo() {
       <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
       <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </Svg>
-  );
-}
-
-// Apple 로그인은 아직 실제 로직이 없는 자리표시 버튼이라, Apple 상표(사과 실루엣)를
-// 그대로 쓰지 않고 잎사귀가 달린 일반 과일 실루엣으로 대체했다.
-function AppleFruitIcon() {
-  return (
-    <View style={s.appleIcon}>
-      <View style={s.appleIconLeaf} />
-      <View style={s.appleIconBody} />
-    </View>
   );
 }
 
@@ -258,21 +249,13 @@ const s = StyleSheet.create({
     gap: SP.sm,
   },
   socialBtnGoogle: { backgroundColor: C.white, borderColor: '#747775', borderWidth: 1 },
-  socialBtnApple: { backgroundColor: C.dark },
+  appleBtn: { height: SOCIAL_BUTTON_HEIGHT, width: '100%' },
   kakaoBtn: { height: SOCIAL_BUTTON_HEIGHT },
   kakaoImage: { width: '100%', height: '100%' },
   socialBtnDisabled: { opacity: 0.5 },
   // Google 브랜딩 가이드: 라이트 버튼 텍스트 색 #1F1F1F.
   socialBtnText: { fontSize: 15, fontWeight: '600' },
   socialBtnTextGoogle: { color: '#1F1F1F' },
-  socialBtnTextApple: { color: C.white },
-  appleIcon: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
-  appleIconBody: { width: 13, height: 13, borderRadius: 7, backgroundColor: C.white },
-  appleIconLeaf: {
-    position: 'absolute', top: -1, right: 3,
-    width: 6, height: 4, borderRadius: 3,
-    backgroundColor: C.white, transform: [{ rotate: '35deg' }],
-  },
   legal: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 17 },
   legalLink: { textDecorationLine: 'underline' },
   noticeBox: { paddingVertical: SP.xs },

@@ -61,18 +61,14 @@ const TestRenderer = require('react-test-renderer') as {
 const { act, create } = TestRenderer;
 const AuthScreen = require('../app/(auth)/index').default as React.ComponentType;
 const AppleAuth = require('expo-apple-authentication') as {
+  AppleAuthenticationButton: unknown;
   AppleAuthenticationButtonType: Record<string, number>;
   AppleAuthenticationButtonStyle: Record<string, number>;
 };
 
-function render(): TestRendererInstance {
-  let renderer!: TestRendererInstance;
-  act(() => { renderer = create(<AuthScreen />); });
-  return renderer;
-}
-
-// Apple 버튼은 isAvailableAsync()가 resolve된 뒤에야 붙으므로 async flush가 필요하다.
-async function renderSettled(): Promise<TestRendererInstance> {
+// Apple 버튼은 isAvailableAsync()가 resolve된 뒤에야 붙으므로, 모든 테스트가
+// 마운트 직후의 async 상태 갱신까지 flush한 뒤 단언한다.
+async function render(): Promise<TestRendererInstance> {
   let renderer!: TestRendererInstance;
   await act(async () => { renderer = create(<AuthScreen />); });
   return renderer;
@@ -86,26 +82,26 @@ describe('login hero matches UI RENEW mockup', () => {
     mockIsAppleAuthAvailable.mockResolvedValue(true);
   });
 
-  it('renders the large wordmark hero', () => {
-    const renderer = render();
+  it('renders the large wordmark hero', async () => {
+    const renderer = await render();
     const wordmark = renderer.root.findByType(Wordmark);
     expect(wordmark.props.size).toBe('lg');
   });
 
-  it('renders the horizontal date-course-map illustration', () => {
-    const renderer = render();
+  it('renders the horizontal date-course-map illustration', async () => {
+    const renderer = await render();
     const illustration = renderer.root.findByType(Illustration);
     expect(illustration.props.name).toBe('date-course-map-horizontal');
   });
 
-  it('renders the illustration full-bleed at the screen width, not clipped by the hero padding', () => {
-    const renderer = render();
+  it('renders the illustration full-bleed at the screen width, not clipped by the hero padding', async () => {
+    const renderer = await render();
     const illustration = renderer.root.findByType(Illustration);
     expect(illustration.props.width).toBe(Dimensions.get('window').width);
   });
 
-  it('highlights the "가볍게" phrase inside the headline in accent pink', () => {
-    const renderer = render();
+  it('highlights the "가볍게" phrase inside the headline in accent pink', async () => {
+    const renderer = await render();
     const highlight = renderer.root.findByProps({ children: 'auth.welcomeHeadingHighlight' });
     expect(highlight.type).toBe(Text);
     const flatStyle = [highlight.props.style].flat(Infinity).reduce((acc, s) => ({ ...acc, ...s }), {});
@@ -113,7 +109,7 @@ describe('login hero matches UI RENEW mockup', () => {
   });
 
   it('renders a disabled-looking Apple button that shows a coming-soon notice instead of signing in', async () => {
-    const renderer = await renderSettled();
+    const renderer = await render();
     const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });
     act(() => { appleButton.props.onPress(); });
 
@@ -125,16 +121,16 @@ describe('login hero matches UI RENEW mockup', () => {
   });
 
   it('uses the official black Sign in with Apple button instead of a hand-drawn lookalike', async () => {
-    const renderer = await renderSettled();
+    const renderer = await render();
     const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });
 
-    expect(appleButton.type).toBe('AppleAuthenticationButton');
+    expect(appleButton.type).toBe(AppleAuth.AppleAuthenticationButton);
     expect(appleButton.props.buttonType).toBe(AppleAuth.AppleAuthenticationButtonType.SIGN_IN);
     expect(appleButton.props.buttonStyle).toBe(AppleAuth.AppleAuthenticationButtonStyle.BLACK);
   });
 
   it('sizes the Apple button to match the Kakao and Google buttons', async () => {
-    const renderer = await renderSettled();
+    const renderer = await render();
     const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });
 
     const expectedHeight = socialButtonHeight(Dimensions.get('window').width);
@@ -145,7 +141,7 @@ describe('login hero matches UI RENEW mockup', () => {
 
   it('hides the Apple button on platforms where Sign in with Apple is unavailable', async () => {
     mockIsAppleAuthAvailable.mockResolvedValue(false);
-    const renderer = await renderSettled();
+    const renderer = await render();
 
     expect(renderer.root.findAllByProps({ testID: 'apple-login-button' })).toHaveLength(0);
   });

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, MessageCircle, Share2, Flame, Smile, Meh, Heart } from 'lucide-react-native';
+import { Clock, Wallet, Share2, Flame, Smile, Meh, Heart } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -28,7 +28,6 @@ type CardDetail = {
   estimated_time: string;
   estimated_budget: string;
   tags: string[];
-  why_recommended: string;
   place_name?: string | null;
   place_address?: string | null;
   map_url?: string | null;
@@ -348,11 +347,6 @@ export default function CardDetailScreen() {
             ) : null;
           })()}
 
-          <View style={styles.whyBox}>
-            <MessageCircle size={15} color={C.pinkDeep} strokeWidth={2} style={styles.whyIcon} />
-            <Text style={styles.whyText}>{card.why_recommended}</Text>
-          </View>
-
           <CandidateActionBar
             partnerReactionLabel={partnerReactionLabel}
             onConfirm={() => router.push({ pathname: '/card/confirm', params: { id } })}
@@ -438,13 +432,6 @@ const styles = StyleSheet.create({
   metaDivider: { width: 1, height: 14, backgroundColor: C.border, marginHorizontal: SP.md },
 
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm, marginBottom: SP.lg },
-
-  whyBox: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm,
-    backgroundColor: C.pinkLight, borderRadius: R.lg, padding: SP.lg, marginBottom: SP.lg,
-  },
-  whyIcon: { marginTop: 2 },
-  whyText: { flex: 1, fontSize: 14, color: C.pinkDeep, lineHeight: 21 },
 
   divider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.xxl },
 
