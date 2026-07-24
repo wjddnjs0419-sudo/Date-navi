@@ -151,7 +151,12 @@
       "additionalStep": "추가 장소",
       "send": "상대에게 보내기",
       "save": "저장",
-      "savedMessage": "코스를 저장했어요!"
+      "savedMessage": "코스를 저장했어요!",
+      "titleSheetTitle": "제목 정하기",
+      "titleFieldLabel": "이 데이트를 뭐라고 부를까요?",
+      "titlePlaceholder": "제목을 입력하세요",
+      "titleHelper": "그대로 두면 위치로 만든 이름으로 저장돼요.",
+      "titleSaveButton": "제목 저장하기"
     },
     "bucketlist": {
       "empty": "아이디어를 입력해주세요",

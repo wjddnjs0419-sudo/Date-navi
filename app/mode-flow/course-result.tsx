@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, Modal, Pressable,
+  ActivityIndicator, Alert, Modal, Pressable, TextInput,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,9 @@ import { C } from '../../constants/colors';
 import { SP, R } from '../../constants/theme';
 import { getCourseCategoryIcon } from '../../lib/course-draft';
 import { BackBar, BigButton, Badge, MetaChipRow, SuccessModal } from '../../components/ui';
+import { PickerSheet } from '../../components/pickers';
+import { resolveConfirmTitle } from '../../lib/confirm-title';
+import { localizeCardContent, overrideCardTitle } from '../../lib/card-i18n';
 
 // 카테고리별 핀 색(STYLESEED lock의 +categorical 매핑). 없으면 pink.
 const CATEGORY_COLOR: Record<string, string> = {
@@ -282,16 +285,74 @@ export default function CourseResultScreen() {
     }
   }
 
+  // 저장·보내기 직전에 제목 편집 시트를 먼저 띄운다. 기본값은 확정 시 서버가 만든
+  // 카드 제목(위치 기반 "…데이트 코스")이며, 비워두면 그 기본값으로 폴백한다.
+  async function openTitleSheet(action: 'save' | 'send') {
+    if (!snapshot) return;
+    if (!snapshot.coupleId) { Alert.alert(t('common.coupleRequired')); return; }
+    let current = snapshot.request.location.label;
+    if (snapshot.confirmedCardId) {
+      const { data } = await supabase
+        .from('date_cards').select('title, content_i18n').eq('id', snapshot.confirmedCardId).maybeSingle();
+      // 기본값은 화면에 실제 보이는 제목(언어 오버레이 적용)과 일치시킨다.
+      const localized = data ? localizeCardContent(data, language).title : null;
+      if (localized) current = localized;
+    }
+    setDefaultTitle(current);
+    setDraftTitle(current);
+    setPendingAction(action);
+    setTitleSheetOpen(true);
+  }
+
+  // 시트 확정: 세션을 확정(멱등)해 카드 id를 확보/보존한 뒤, 사용자가 정한 제목으로
+  // date_cards.title을 갱신하고(확정이 제목을 재생성해도 이 갱신이 최후 반영) 원래 동작을 잇는다.
+  async function commitTitle() {
+    if (!snapshot) { setTitleSheetOpen(false); return; }
+    setTitleSheetOpen(false);
+    const action = pendingAction;
+    setSaving(true);
+    setErrorMsg('');
+    try {
+      const next = await mutateRecommendationSession(snapshot.sessionId, 'confirm', {});
+      setSnapshot(next);
+      // 읽기(openTitleSheet)는 snapshot.confirmedCardId 로 제목을 가져왔으므로 쓰기도 같은 id 를 쓴다.
+      // 재확정 시 next.confirmedCardId 가 비어 update 가 조용히 스킵되던 버그를 막는다.
+      const cardId = snapshot.confirmedCardId ?? next.confirmedCardId;
+      const finalTitle = resolveConfirmTitle(draftTitle, defaultTitle);
+      if (cardId && finalTitle !== defaultTitle) {
+        // 화면은 content_i18n[언어].title 을 title 위에 덮어쓰므로(localizeCardContent),
+        // 커스텀 제목은 두 곳 모두에 반영해야 실제로 보인다.
+        const { data: row } = await supabase
+          .from('date_cards').select('content_i18n').eq('id', cardId).maybeSingle();
+        const { data: updated, error } = await supabase
+          .from('date_cards')
+          .update({ title: finalTitle, content_i18n: overrideCardTitle(row?.content_i18n, finalTitle) })
+          .eq('id', cardId)
+          .select('id');
+        if (error) throw error;
+        if (!updated?.length) throw new Error('title update affected no rows');
+      }
+      if (action === 'send') {
+        if (cardId) router.push({ pathname: '/share/send', params: { cardId } } as any);
+      } else {
+        setSaved(true);
+        setSavedModalVisible(true);
+      }
+    } catch {
+      setErrorMsg(t('modeFlow.courseResult.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSendToPartner() {
+    if (!snapshot?.confirmedCardId) {
+      Alert.alert(t('modeFlow.courseResult.errorTitle'), t('modeFlow.courseResult.confirmFirst'));
+      return;
+    }
     setSending(true);
     try {
-      if (!snapshot?.confirmedCardId) {
-        Alert.alert(t('modeFlow.courseResult.errorTitle'), t('modeFlow.courseResult.confirmFirst'));
-        return;
-      }
-      router.push({ pathname: '/share/send', params: { cardId: snapshot.confirmedCardId } } as any);
-    } catch {
-      Alert.alert(t('modeFlow.courseResult.sendErrorTitle'), t('modeFlow.courseResult.sendError'));
+      await openTitleSheet('send');
     } finally {
       setSending(false);
     }
@@ -315,26 +376,13 @@ export default function CourseResultScreen() {
   const [saved, setSaved] = useState(false);
   const [savedModalVisible, setSavedModalVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [titleSheetOpen, setTitleSheetOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [defaultTitle, setDefaultTitle] = useState('');
+  const [pendingAction, setPendingAction] = useState<'save' | 'send'>('save');
 
   async function handleSave() {
-    if (!snapshot) return;
-    if (!snapshot.coupleId) {
-      Alert.alert(t('common.coupleRequired'));
-      return;
-    }
-    setSaving(true);
-    setErrorMsg('');
-    try {
-      // applyMutation은 에러를 삼키므로 저장 성공 여부를 직접 확인한다.
-      const next = await mutateRecommendationSession(snapshot.sessionId, 'confirm', {});
-      setSnapshot(next);
-      setSaved(true);
-      setSavedModalVisible(true);
-    } catch {
-      setErrorMsg(t('modeFlow.courseResult.saveError'));
-    } finally {
-      setSaving(false);
-    }
+    await openTitleSheet('save');
   }
 
   if (loading) {
@@ -629,11 +677,40 @@ export default function CourseResultScreen() {
           />
         );
       })()}
+
+      <PickerSheet
+        visible={titleSheetOpen}
+        title={t('modeFlow.courseResult.titleSheetTitle')}
+        confirmLabel={t('modeFlow.courseResult.titleSaveButton')}
+        avoidKeyboard
+        onCancel={() => setTitleSheetOpen(false)}
+        onConfirm={() => void commitTitle()}
+      >
+        <Text style={s.titleFieldLabel}>{t('modeFlow.courseResult.titleFieldLabel')}</Text>
+        <View style={[s.titleInputWrap, draftTitle.trim().length > 0 && s.titleInputWrapActive]}>
+          <TextInput
+            style={s.titleInput}
+            value={draftTitle}
+            onChangeText={setDraftTitle}
+            placeholder={t('modeFlow.courseResult.titlePlaceholder')}
+            placeholderTextColor={C.textFaint}
+            returnKeyType="done"
+            onSubmitEditing={() => void commitTitle()}
+            autoFocus
+          />
+        </View>
+        <Text style={s.titleHelper}>{t('modeFlow.courseResult.titleHelper')}</Text>
+      </PickerSheet>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  titleFieldLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', marginBottom: SP.sm },
+  titleInputWrap: { borderWidth: 1.5, borderColor: C.pinkBorder, backgroundColor: C.white, borderRadius: R.md, paddingHorizontal: SP.lg, paddingVertical: SP.md + 1 },
+  titleInputWrapActive: { borderColor: C.pink },
+  titleInput: { fontSize: 15, color: C.text, fontWeight: '600', paddingVertical: 0 },
+  titleHelper: { fontSize: 12, color: C.textSub, marginTop: SP.sm, lineHeight: 18 },
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
   loadingText: { fontSize: 14, color: C.textSub, marginTop: 16, textAlign: 'center' },

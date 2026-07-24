@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -210,6 +212,7 @@ export function PickerSheet({
   onConfirm,
   confirmLabel,
   centered,
+  avoidKeyboard,
 }: {
   visible: boolean;
   title: string;
@@ -218,11 +221,16 @@ export function PickerSheet({
   onConfirm: () => void;
   confirmLabel?: string;
   centered?: boolean;
+  // 시트 안에 TextInput이 있어 키보드가 올라올 때, 시트를 키보드 위로 밀어올린다.
+  avoidKeyboard?: boolean;
 }) {
   const { t } = useI18n();
+  // 텍스트 입력이 없는 휠 피커는 회피가 필요없으므로 기본 View, avoidKeyboard일 때만 감싼다.
+  const Container = avoidKeyboard ? KeyboardAvoidingView : View;
+  const containerProps = avoidKeyboard ? { behavior: Platform.OS === 'ios' ? ('padding' as const) : ('height' as const) } : {};
   return (
     <Modal visible={visible} transparent animationType={centered ? 'fade' : 'slide'} onRequestClose={onCancel}>
-      <View style={[sheetS.wrap, centered && sheetS.wrapCentered]}>
+      <Container style={[sheetS.wrap, centered && sheetS.wrapCentered]} {...containerProps}>
         <Pressable style={sheetS.backdrop} onPress={onCancel} />
         <View style={[sheetS.panel, centered && sheetS.panelCentered]}>
           {!centered && <View style={sheetS.handle} />}
@@ -241,7 +249,7 @@ export function PickerSheet({
           {children}
           <BigButton onPress={onConfirm} style={sheetS.doneBtn}>{confirmLabel ?? t('pickers.done')}</BigButton>
         </View>
-      </View>
+      </Container>
     </Modal>
   );
 }

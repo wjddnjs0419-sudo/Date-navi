@@ -21,9 +21,10 @@ describe('course result save returns home with a success modal', () => {
   });
 
   it('shows the save error inline when the confirm mutation fails', () => {
-    // applyMutation은 에러를 삼키므로 handleSave가 직접 mutation 결과를 다뤄야 한다.
-    expect(source).toMatch(/async function handleSave\(\)[\s\S]*?mutateRecommendationSession\(/);
-    expect(source).toMatch(/async function handleSave\(\)[\s\S]*?setErrorMsg\(t\('modeFlow\.courseResult\.saveError'\)\)/);
+    // applyMutation은 에러를 삼키므로, 저장 커밋(commitTitle)이 직접 mutation 결과를 다뤄야 한다.
+    // (제목 시트 도입으로 저장 로직이 handleSave→commitTitle로 이동)
+    expect(source).toMatch(/async function commitTitle\(\)[\s\S]*?mutateRecommendationSession\(/);
+    expect(source).toMatch(/async function commitTitle\(\)[\s\S]*?setErrorMsg\(t\('modeFlow\.courseResult\.saveError'\)\)/);
   });
 
   it('adds the saved message copy to both locales', () => {
