@@ -490,7 +490,7 @@ export default function CandidatesScreen() {
             </View>
             <TouchableOpacity
               style={s.confirmBannerCta}
-              onPress={() => handleFilterChange('mutual')}
+              onPress={() => router.push('/share/mutual' as any)}
               activeOpacity={0.85}
             >
               <Text style={s.confirmBannerCtaText}>{t('candidates.confirmBannerCta')}</Text>
