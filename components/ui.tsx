@@ -350,9 +350,8 @@ export function PlanListRow({
 }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
-      {imageSource
-        ? <Image source={imageSource} style={planRowS.thumb} />
-        : <View style={planRowS.thumbPlaceholder} />}
+      {/* 사진 등록 기능 전까지 썸네일 숨김 (imageSource 있을 때만 표시) */}
+      {imageSource && <Image source={imageSource} style={planRowS.thumb} />}
       <View style={planRowS.body}>
         <Text style={planRowS.title} numberOfLines={1}>{title}</Text>
         <View style={planRowS.dateRow}>
