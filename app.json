@@ -13,7 +13,7 @@
       "backgroundColor": "#FFF9FC"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.datenavi.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
