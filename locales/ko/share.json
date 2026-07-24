@@ -8,19 +8,7 @@
       "justNow": "방금 전",
       "heading": "이 데이트 어때요?",
       "chooseReaction": "마음에 드는 반응을 골라주세요",
-      "noteLabel": "한마디 (선택)",
-      "notePlaceholder": "예: 이거 좋은데 이번 주말보단 다음 주가 좋을 것 같아.",
-      "submitCta": "반응 남기기",
-      "options": {
-        "full": "완전 끌려",
-        "good": "좋아",
-        "niceFeel": "느낌은 좋아",
-        "closer": "가까우면 좋아",
-        "burdenToday": "오늘은 조금 부담돼",
-        "nextTime": "다음에 하고 싶어",
-        "ifMoneyComes": "돈 들어오면 하자",
-        "notFarWalk": "오래 걷지 않으면 좋아"
-      }
+      "submitCta": "반응 남기기"
     },
     "mutual": {
       "heading": "둘 다 괜찮아한 후보예요",

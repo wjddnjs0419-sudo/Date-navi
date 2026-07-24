@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, TextInput,
+  View, Text, StyleSheet, ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -9,20 +9,11 @@ import { supabase } from '../../lib/supabase';
 import { Wallet } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, CourseStepList, MetaChipRow, OptionCardPicker, SectionLabel, SoftCard } from '../../components/ui';
+import { BackBar, BigButton, CourseStepList, MetaChipRow, SectionLabel, SoftCard } from '../../components/ui';
+import { ReactionPicker } from '../../components/ReactionPicker';
+import { ReactionType } from '../../lib/reactions';
 import { useI18n } from '../../lib/i18n';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
-
-const REACTION_OPTIONS: { id: string; type: string }[] = [
-  { id: 'full', type: 'love' },
-  { id: 'good', type: 'love' },
-  { id: 'niceFeel', type: 'like' },
-  { id: 'closer', type: 'like' },
-  { id: 'burdenToday', type: 'burden' },
-  { id: 'nextTime', type: 'next_time' },
-  { id: 'ifMoneyComes', type: 'next_time' },
-  { id: 'notFarWalk', type: 'like' },
-];
 
 type ReactionCard = {
   title: string;
@@ -35,10 +26,9 @@ type ReactionCard = {
 export default function ReactionScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, strings: s } = useI18n();
 
-  const [selectedId, setSelectedId] = useState(REACTION_OPTIONS[3].id);
-  const [note, setNote] = useState('');
+  const [selected, setSelected] = useState<ReactionType | null>(null);
   const [saving, setSaving] = useState(false);
   const [partnerName, setPartnerName] = useState(t('share.reaction.partnerFallback'));
   const [card, setCard] = useState<ReactionCard | null>(null);
@@ -94,16 +84,16 @@ export default function ReactionScreen() {
       router.push('/share/mutual' as any);
       return;
     }
+    if (!selected) return;
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const reactionType = REACTION_OPTIONS.find((opt) => opt.id === selectedId)?.type ?? 'like';
       await supabase
         .from('reactions')
         .upsert(
-          { card_id: cardId, user_id: user.id, reaction_type: reactionType },
+          { card_id: cardId, user_id: user.id, reaction_type: selected },
           { onConflict: 'card_id,user_id' },
         );
 
@@ -115,80 +105,67 @@ export default function ReactionScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BackBar />
 
-        <View style={s.senderRow}>
-          <View style={s.senderAvatar}>
-            <Text style={s.senderAvatarText}>{partnerName.slice(0, 1)}</Text>
+        <View style={styles.senderRow}>
+          <View style={styles.senderAvatar}>
+            <Text style={styles.senderAvatarText}>{partnerName.slice(0, 1)}</Text>
           </View>
           <View>
-            <Text style={s.senderName}>{t('share.reaction.senderSent', { name: partnerName })}</Text>
-            <Text style={s.senderTime}>{t('share.reaction.justNow')}</Text>
+            <Text style={styles.senderName}>{t('share.reaction.senderSent', { name: partnerName })}</Text>
+            <Text style={styles.senderTime}>{t('share.reaction.justNow')}</Text>
           </View>
         </View>
 
-        <Text style={[T.h1, s.headingSpacing]}>{t('share.reaction.heading')}</Text>
+        <Text style={[T.h1, styles.headingSpacing]}>{t('share.reaction.heading')}</Text>
 
-        <SoftCard style={s.cardBox}>
-          <Text style={s.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
-          <Text style={s.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
+        <SoftCard style={styles.cardBox}>
+          <Text style={styles.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
+          <Text style={styles.cardDesc}>{card?.summary ?? t('share.cardDescFallback')}</Text>
 
-          <View style={s.stepsWrap}>
+          <View style={styles.stepsWrap}>
             <CourseStepList steps={resolveDisplaySteps(card ?? {})} summary={card?.summary} />
           </View>
 
           {(!!card?.estimated_time || !!card?.estimated_budget) && (
-            <View style={s.metaRow}>
+            <View style={styles.metaRow}>
               {!!card?.estimated_time && (
                 <MetaChipRow items={[{ icon: 'clock', label: card.estimated_time }]} />
               )}
               {!!card?.estimated_budget && (
-                <View style={s.budgetChip}>
+                <View style={styles.budgetChip}>
                   <Wallet size={13} color={C.textSub} strokeWidth={2} />
-                  <Text style={s.budgetChipText}>{card.estimated_budget}</Text>
+                  <Text style={styles.budgetChipText}>{card.estimated_budget}</Text>
                 </View>
               )}
             </View>
           )}
 
           {!!sentMessage && (
-            <View style={s.noteBubble}>
-              <Text style={s.noteBubbleText}>{sentMessage}</Text>
+            <View style={styles.noteBubble}>
+              <Text style={styles.noteBubbleText}>{sentMessage}</Text>
             </View>
           )}
         </SoftCard>
 
-        <View style={s.sectionBlock}>
+        <View style={styles.sectionBlock}>
           <SectionLabel>{t('share.reaction.chooseReaction')}</SectionLabel>
-          <OptionCardPicker
-            columns={2}
-            largeTouchTarget
-            value={selectedId}
-            onChange={setSelectedId}
-            options={REACTION_OPTIONS.map((opt) => ({ value: opt.id, label: t(`share.reaction.options.${opt.id}`) }))}
+          <ReactionPicker
+            selected={selected}
+            onSelect={setSelected}
+            labelFor={(type) => s.card.reactionLabels[type].label}
           />
         </View>
 
-        <View style={s.sectionBlock}>
-          <SectionLabel>{t('share.reaction.noteLabel')}</SectionLabel>
-          <View style={s.noteInputBox}>
-            <TextInput
-              style={s.noteInput}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('share.reaction.notePlaceholder')}
-              placeholderTextColor={C.textFaint}
-              multiline
-            />
-          </View>
-        </View>
-
-        <View style={s.bottomSpacer} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      <View style={s.footer}>
-        <BigButton onPress={handleSubmit} variant={saving ? 'disabled' : 'primary'}>
+      <View style={styles.footer}>
+        <BigButton
+          onPress={selected ? handleSubmit : undefined}
+          variant={saving || !selected ? 'disabled' : 'primary'}
+        >
           {saving ? <ActivityIndicator color={C.white} size="small" /> : t('share.reaction.submitCta')}
         </BigButton>
       </View>
@@ -196,7 +173,7 @@ export default function ReactionScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
   senderRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
   senderAvatar: {
@@ -226,15 +203,6 @@ const s = StyleSheet.create({
     backgroundColor: C.pinkLight,
   },
   noteBubbleText: { fontSize: 12, color: C.pinkDeep, lineHeight: 18 },
-  noteInputBox: {
-    backgroundColor: C.white,
-    borderRadius: R.btn,
-    padding: SP.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    minHeight: 70,
-  },
-  noteInput: { fontSize: 13, color: C.text, lineHeight: 20 },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
