@@ -32,8 +32,23 @@ test('legal pages disclose implemented data processing in both locales', () => {
   expect(enTermsText).toContain(enExternalLinkDisclosure);
   expect(koPolicyText).toContain(koExternalLinkDisclosure);
   expect(enPolicyText).toContain(enExternalLinkDisclosure);
-  expect(ko.legal.terms.updated).toContain('[시행일]');
-  expect(en.legal.terms.updated).toContain('[Effective date]');
+  expect(ko.legal.terms.updated).toContain('2026년 7월 24일');
+  expect(ko.legal.privacy.updated).toContain('2026년 7월 24일');
+  expect(en.legal.terms.updated).toContain('July 24, 2026');
+  expect(en.legal.privacy.updated).toContain('July 24, 2026');
+});
+
+test('legal documents contain no unresolved release placeholders', () => {
+  const documents = [ko.legal.terms, ko.legal.privacy, en.legal.terms, en.legal.privacy];
+  for (const document of documents) {
+    const text = [
+      document.title,
+      document.updated,
+      ...asSections(document.sections).map(({ title, body }) => `${title} ${body}`),
+    ].join(' ');
+    expect(text).not.toMatch(/\[[^\]]*\]/);
+    expect(text).not.toMatch(/검토자 안내|Reviewer note/);
+  }
 });
 
 test('each localized legal document has non-empty numbered sections', () => {

@@ -2,7 +2,7 @@
   "legal": {
     "terms": {
       "title": "Terms of Service",
-      "updated": "Last updated: [Effective date]",
+      "updated": "Last updated: July 24, 2026",
       "sections": [
         {
           "title": "1. Service and agreement",
@@ -10,7 +10,7 @@
         },
         {
           "title": "2. Account and couple sharing",
-          "body": "You must create an account through social sign-in and keep your information accurate. The minimum age and any parental-consent requirement are [Minimum age/consent requirement] and must be finalized before release. Once you connect as a couple, the profile, preferences, date cards, reactions, and memories designated for sharing in the Service may be visible to your partner."
+          "body": "You must create an account through social sign-in and keep your information accurate. The Service is available only to users aged 14 or older; users under 14 may not use the Service. Once you connect as a couple, the profile, preferences, date cards, reactions, and memories designated for sharing in the Service may be visible to your partner."
         },
         {
           "title": "3. Permitted and prohibited use",
@@ -38,21 +38,21 @@
         },
         {
           "title": "9. Disclaimer, liability, and governing rules",
-          "body": "To the extent permitted by law, we do not guarantee uninterrupted availability, the accuracy of AI or place information, or fitness for a particular purpose. The scope of liability and [Governing law/venue] must be reviewed and set under applicable law and the finalized operator information."
+          "body": "To the extent permitted by law, we do not guarantee uninterrupted availability, the accuracy of AI or place information, or fitness for a particular purpose. The scope of liability and governing law are subject to the laws of the Republic of Korea."
         },
         {
-          "title": "10. Contact and reviewer note",
-          "body": "Service contact: jake051096@gmail.com\n\nReviewer note: Before release, confirm and replace [Effective date], [Legal entity/operator], [Business address], and [Governing law/venue]."
+          "title": "10. Contact",
+          "body": "Service contact: jake051096@gmail.com"
         }
       ]
     },
     "privacy": {
       "title": "Privacy Policy",
-      "updated": "Last updated: [Effective date]",
+      "updated": "Last updated: July 24, 2026",
       "sections": [
         {
           "title": "1. Controller and contact",
-          "body": "Privacy controller: [Legal entity/operator], [Business address]\nPrivacy contact: jake051096@gmail.com"
+          "body": "Privacy controller: Jeongwon Kim\nPrivacy contact: jake051096@gmail.com"
         },
         {
           "title": "2. Data we collect",
@@ -87,8 +87,8 @@
           "body": "To the extent allowed by applicable law, you may request access, correction, deletion, restriction of processing, or object to processing of your data. Send requests to jake051096@gmail.com."
         },
         {
-          "title": "10. Reviewer note",
-          "body": "Before release, review and finalize [Effective date], [Legal entity/operator], [Business address], retention, backup, international-transfer details, and any disclosures required by applicable law."
+          "title": "10. Changes to this policy",
+          "body": "If this policy changes, we will announce the changes and their effective date within the app or Service."
         }
       ]
     }
