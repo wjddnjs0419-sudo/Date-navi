@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { resolveConfirmTitle } from '../../lib/confirm-title';
 import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton, Chip, HeartDoodle, SoftCard, SuccessModal } from '../../components/ui';
@@ -66,6 +67,8 @@ export default function ConfirmScreen() {
   const [time, setTime] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [titleSheetOpen, setTitleSheetOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
   const [draftDate, setDraftDate] = useState(defaultIsoDate());
   const [draftTime, setDraftTime] = useState('PM 7:00');
   const [place, setPlace] = useState('');
@@ -94,15 +97,24 @@ export default function ConfirmScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  async function handleSave() {
+  function openTitleSheet() {
+    if (saving) return;
+    setDraftTitle(card?.title ?? '');
+    setTitleSheetOpen(true);
+  }
+
+  async function commitSave() {
     if (saving) return;
     setSaving(true);
+    setTitleSheetOpen(false);
     const wasConfirmed = isPlan;
+    const finalTitle = resolveConfirmTitle(draftTitle, card?.title ?? '');
     try {
       const { data, error } = await supabase
         .from('date_cards')
         .update({
           status: 'confirmed',
+          title: finalTitle,
           confirmed_date: date.trim() || null,
           confirmed_time: time.trim() || null,
           confirmed_place: place.trim() || null,
@@ -306,7 +318,7 @@ export default function ConfirmScreen() {
           </View>
 
           <View style={styles.actions}>
-            <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
+            <BigButton onPress={openTitleSheet} variant={saving ? 'disabled' : 'primary'}>
               {saving ? c.saving : c.saveButton}
             </BigButton>
             <BigButton variant="text" onPress={() => (isPlan ? setEditing(false) : router.back())}>
@@ -330,6 +342,28 @@ export default function ConfirmScreen() {
         onConfirm={() => { setTime(draftTime); setTimePickerOpen(false); }}
       >
         <TimeWheelPicker value={draftTime} onChange={setDraftTime} />
+      </PickerSheet>
+      <PickerSheet
+        visible={titleSheetOpen}
+        title={c.titleSheetTitle}
+        confirmLabel={c.titleSaveButton}
+        onCancel={() => setTitleSheetOpen(false)}
+        onConfirm={commitSave}
+      >
+        <Text style={styles.titleFieldLabel}>{c.titleFieldLabel}</Text>
+        <View style={[styles.titleInputWrap, draftTitle.trim().length > 0 && styles.titleInputWrapActive]}>
+          <TextInput
+            style={styles.titleInput}
+            value={draftTitle}
+            onChangeText={setDraftTitle}
+            placeholder={c.titlePlaceholder}
+            placeholderTextColor={C.textFaint}
+            returnKeyType="done"
+            onSubmitEditing={commitSave}
+            autoFocus
+          />
+        </View>
+        <Text style={styles.titleHelper}>{c.titleHelper}</Text>
       </PickerSheet>
     </SafeAreaView>
   );
@@ -388,6 +422,19 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', width: 72 },
   detailValue: { fontSize: 14, color: C.text, fontWeight: '600', flex: 1 },
   detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
+
+  titleFieldLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', marginBottom: SP.sm },
+  titleInputWrap: {
+    borderWidth: 1.5,
+    borderColor: C.pinkBorder,
+    backgroundColor: C.white,
+    borderRadius: R.md,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md + 1,
+  },
+  titleInputWrapActive: { borderColor: C.pink },
+  titleInput: { fontSize: 15, color: C.text, fontWeight: '600', paddingVertical: 0 },
+  titleHelper: { fontSize: 12, color: C.textSub, marginTop: SP.sm, lineHeight: 18 },
 
   actions: { gap: SP.xs + 2 },
   doneBtn: {

@@ -26,8 +26,16 @@ describe('card confirm screen icons', () => {
   });
 
   it('preserves the confirm save contract (status flip + confirmed fields)', () => {
-    expect(source).toMatch(/async function handleSave\(\)[\s\S]*?status: 'confirmed'/);
+    expect(source).toMatch(/async function commitSave\(\)[\s\S]*?status: 'confirmed'/);
     expect(source).toMatch(/confirmed_date: date\.trim\(\) \|\| null/);
+  });
+
+  it('confirms via a title sheet that persists the resolved title', () => {
+    // 저장 버튼은 곧바로 저장하지 않고 제목 시트를 연다.
+    expect(source).toMatch(/onPress=\{openTitleSheet\}/);
+    // 최종 title은 resolveConfirmTitle로 정규화되어 update에 포함된다.
+    expect(source).toMatch(/title: finalTitle/);
+    expect(source).toMatch(/resolveConfirmTitle\(draftTitle, card\?\.title \?\? ''\)/);
   });
 
   it('preserves the cancel-plan delete contract', () => {

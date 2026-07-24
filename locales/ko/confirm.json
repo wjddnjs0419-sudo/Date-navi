@@ -28,6 +28,11 @@
     "saving": "저장 중...",
     "confirmedMessage": "데이트가 확정됐어요",
     "savedMessage": "변경사항이 저장됐어요",
-    "back": "돌아가기"
+    "back": "돌아가기",
+    "titleSheetTitle": "제목 정하기",
+    "titleFieldLabel": "이 데이트를 뭐라고 부를까요?",
+    "titlePlaceholder": "제목을 입력하세요",
+    "titleHelper": "그대로 두면 위치로 만든 이름으로 저장돼요.",
+    "titleSaveButton": "제목 저장하기"
   }
 }
