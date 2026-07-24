@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { resolveConfirmTitle } from '../../lib/confirm-title';
+import { localizeCardContent, overrideCardTitle } from '../../lib/card-i18n';
 import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton, Chip, HeartDoodle, SoftCard, SuccessModal } from '../../components/ui';
@@ -26,6 +27,7 @@ type CardSummary = {
   estimated_time: string;
   estimated_budget: string;
   tags: string[];
+  content_i18n?: unknown;
 };
 
 const ROW_ICONS = [Calendar, Clock, MapPin, ShoppingBag] as const;
@@ -57,6 +59,7 @@ export default function ConfirmScreen() {
   const c = s.confirm;
 
   const [card, setCard] = useState<CardSummary | null>(null);
+  const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -67,8 +70,6 @@ export default function ConfirmScreen() {
   const [time, setTime] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
-  const [titleSheetOpen, setTitleSheetOpen] = useState(false);
-  const [draftTitle, setDraftTitle] = useState('');
   const [draftDate, setDraftDate] = useState(defaultIsoDate());
   const [draftTime, setDraftTime] = useState('PM 7:00');
   const [place, setPlace] = useState('');
@@ -78,43 +79,40 @@ export default function ConfirmScreen() {
     setLoading(true);
     const { data } = await supabase
       .from('date_cards')
-      .select('id, title, estimated_time, estimated_budget, tags, status, confirmed_date, confirmed_time, confirmed_place, confirmed_items')
+      .select('id, title, content_i18n, estimated_time, estimated_budget, tags, status, confirmed_date, confirmed_time, confirmed_place, confirmed_items')
       .eq('id', id)
       .maybeSingle();
-    setCard(data);
-    if (data) {
-      setDate(data.confirmed_date ?? '');
-      setTime(data.confirmed_time ?? '');
-      setPlace(data.confirmed_place ?? '');
-      setItems(data.confirmed_items ?? '');
+    // 화면 어디서나 보이는 제목(언어 오버레이 적용)과 편집 기본값을 일치시킨다.
+    const localized = data ? localizeCardContent(data, language) : data;
+    setCard(localized);
+    if (localized) {
+      setTitle(localized.title ?? '');
+      setDate(localized.confirmed_date ?? '');
+      setTime(localized.confirmed_time ?? '');
+      setPlace(localized.confirmed_place ?? '');
+      setItems(localized.confirmed_items ?? '');
     }
     // 이미 확정(status=confirmed)이면 읽기 상세로, 아직 미확정이면 바로 입력 모드로 연다.
     const confirmed = data?.status === 'confirmed';
     setIsPlan(confirmed);
     setEditing(!confirmed);
     setLoading(false);
-  }, [id]);
+  }, [id, language]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  function openTitleSheet() {
-    if (saving) return;
-    setDraftTitle(card?.title ?? '');
-    setTitleSheetOpen(true);
-  }
-
-  async function commitSave() {
+  async function handleSave() {
     if (saving) return;
     setSaving(true);
-    setTitleSheetOpen(false);
     const wasConfirmed = isPlan;
-    const finalTitle = resolveConfirmTitle(draftTitle, card?.title ?? '');
     try {
       const { data, error } = await supabase
         .from('date_cards')
         .update({
           status: 'confirmed',
-          title: finalTitle,
+          title: resolveConfirmTitle(title, card?.title ?? ''),
+          // 표시 경로가 content_i18n[언어].title 을 우선하므로 함께 덮어쓴다.
+          content_i18n: overrideCardTitle(card?.content_i18n, resolveConfirmTitle(title, card?.title ?? '')),
           confirmed_date: date.trim() || null,
           confirmed_time: time.trim() || null,
           confirmed_place: place.trim() || null,
@@ -260,7 +258,16 @@ export default function ConfirmScreen() {
 
           {card && (
             <SoftCard style={styles.cardPreview}>
-              <Text style={styles.cardTitle}>{card.title}</Text>
+              {/* 제목 박스 인라인 편집 — 비워두면 placeholder(원래 제목)로 폴백한다. */}
+              <Text style={styles.titleEditLabel}>{c.titleEditLabel}</Text>
+              <TextInput
+                style={styles.cardTitleInput}
+                value={title}
+                onChangeText={setTitle}
+                placeholder={card.title}
+                placeholderTextColor={C.textFaint}
+                returnKeyType="done"
+              />
               <CardMetaRow card={card} />
               <View style={styles.chipRow}>
                 {(card.tags ?? []).slice(0, 3).map((t, i) => (
@@ -318,7 +325,7 @@ export default function ConfirmScreen() {
           </View>
 
           <View style={styles.actions}>
-            <BigButton onPress={openTitleSheet} variant={saving ? 'disabled' : 'primary'}>
+            <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
               {saving ? c.saving : c.saveButton}
             </BigButton>
             <BigButton variant="text" onPress={() => (isPlan ? setEditing(false) : router.back())}>
@@ -343,28 +350,6 @@ export default function ConfirmScreen() {
       >
         <TimeWheelPicker value={draftTime} onChange={setDraftTime} />
       </PickerSheet>
-      <PickerSheet
-        visible={titleSheetOpen}
-        title={c.titleSheetTitle}
-        confirmLabel={c.titleSaveButton}
-        onCancel={() => setTitleSheetOpen(false)}
-        onConfirm={commitSave}
-      >
-        <Text style={styles.titleFieldLabel}>{c.titleFieldLabel}</Text>
-        <View style={[styles.titleInputWrap, draftTitle.trim().length > 0 && styles.titleInputWrapActive]}>
-          <TextInput
-            style={styles.titleInput}
-            value={draftTitle}
-            onChangeText={setDraftTitle}
-            placeholder={c.titlePlaceholder}
-            placeholderTextColor={C.textFaint}
-            returnKeyType="done"
-            onSubmitEditing={commitSave}
-            autoFocus
-          />
-        </View>
-        <Text style={styles.titleHelper}>{c.titleHelper}</Text>
-      </PickerSheet>
     </SafeAreaView>
   );
 }
@@ -384,6 +369,17 @@ const styles = StyleSheet.create({
 
   cardPreview: { marginBottom: SP.xl, backgroundColor: C.white },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.sm },
+  titleEditLabel: { fontSize: 11, fontWeight: '600', color: C.textMuted, marginBottom: SP.xs },
+  cardTitleInput: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: SP.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 0,
+    borderBottomWidth: 1.5,
+    borderBottomColor: C.pinkBorder,
+  },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.sm },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
   metaText: { fontSize: 12, color: C.grayFg },
@@ -422,19 +418,6 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', width: 72 },
   detailValue: { fontSize: 14, color: C.text, fontWeight: '600', flex: 1 },
   detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
-
-  titleFieldLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', marginBottom: SP.sm },
-  titleInputWrap: {
-    borderWidth: 1.5,
-    borderColor: C.pinkBorder,
-    backgroundColor: C.white,
-    borderRadius: R.md,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md + 1,
-  },
-  titleInputWrapActive: { borderColor: C.pink },
-  titleInput: { fontSize: 15, color: C.text, fontWeight: '600', paddingVertical: 0 },
-  titleHelper: { fontSize: 12, color: C.textSub, marginTop: SP.sm, lineHeight: 18 },
 
   actions: { gap: SP.xs + 2 },
   doneBtn: {

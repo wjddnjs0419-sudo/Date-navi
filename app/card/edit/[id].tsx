@@ -17,6 +17,7 @@ import {
   parseDurationHours,
 } from '../../../lib/course-draft';
 import { useI18n } from '../../../lib/i18n';
+import { localizeCardContent, overrideCardContent } from '../../../lib/card-i18n';
 
 // 표시용 텍스트(우리가 저장하는 "30,000원"/"KRW 30,000" 포함)에서 숫자만 뽑아 슬라이더 값으로 되돌린다.
 // 범위·단위가 섞인 레거시 AI 값은 파싱이 부정확할 수 있어 슬라이더 상한으로 클램프한다.
@@ -29,12 +30,13 @@ function parseBudgetKRW(text?: string): number {
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
+  const [contentI18n, setContentI18n] = useState<unknown>(null);
   const [timeHours, setTimeHours] = useState(0);
   const [budgetKRW, setBudgetKRW] = useState(0);
   const [refMode, setRefMode] = useState('');
@@ -44,13 +46,16 @@ export default function EditCardScreen() {
     useCallback(() => {
       let active = true;
       (async () => {
-        const { data } = await supabase
+        const { data: raw } = await supabase
           .from('date_cards')
-          .select('title, summary, estimated_time, estimated_budget, mode, steps')
+          .select('title, summary, content_i18n, estimated_time, estimated_budget, mode, steps')
           .eq('id', id)
           .maybeSingle();
         if (!active) return;
+        // 편집 기본값은 화면 어디서나 보이는(언어 오버레이 적용) 텍스트와 일치시킨다.
+        const data = raw ? localizeCardContent(raw, language) : raw;
         if (data) {
+          setContentI18n(data.content_i18n ?? null);
           setTitle(data.title ?? '');
           setSummary(data.summary ?? '');
           setTimeHours(Math.min(parseDurationHours(data.estimated_time ?? '') ?? 0, DURATION_MAX_HOURS));
@@ -61,7 +66,7 @@ export default function EditCardScreen() {
         setLoading(false);
       })();
       return () => { active = false; };
-    }, [id]),
+    }, [id, language]),
   );
 
   const canSave = title.trim().length > 0;
@@ -75,6 +80,8 @@ export default function EditCardScreen() {
         .update({
           title: title.trim(),
           summary: summary.trim(),
+          // 표시 경로가 content_i18n[언어] 텍스트를 우선하므로 제목·요약을 함께 덮어쓴다.
+          content_i18n: overrideCardContent(contentI18n, { title: title.trim(), summary: summary.trim() }),
           estimated_time: timeHours === 0 ? '' : t('course.duration.hoursLabel', { count: timeHours }),
           estimated_budget: budgetKRW === 0 ? '' : t('course.budget.amount', { amount: budgetKRW.toLocaleString() }),
         })

@@ -151,7 +151,12 @@
       "additionalStep": "Additional place",
       "send": "Send to partner",
       "save": "Save",
-      "savedMessage": "Course saved!"
+      "savedMessage": "Course saved!",
+      "titleSheetTitle": "Name this date",
+      "titleFieldLabel": "What should we call this date?",
+      "titlePlaceholder": "Enter a title",
+      "titleHelper": "Leave it as is to save with the location-based name.",
+      "titleSaveButton": "Save title"
     },
     "bucketlist": {
       "empty": "Enter an idea first",
