@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert,
+  View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert, Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,6 +16,15 @@ export default function NicknameScreen() {
   const { t } = useI18n();
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, () => setKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardOpen(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   async function handleNext() {
     const trimmed = nickname.trim();
@@ -82,7 +91,7 @@ export default function NicknameScreen() {
           </View>
 
           <View style={s.spacer}>
-            <Illustration name="mascot-heart-single" width={140} />
+            {!keyboardOpen && <Illustration name="mascot-heart-single" width={140} />}
           </View>
 
           <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
