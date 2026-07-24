@@ -367,7 +367,9 @@ export default function CoupleConnectScreen() {
 
       await AsyncStorage.removeItem(PENDING_INVITE_CODE_KEY);
       await logEvent('couple_connected');
-      await supabase.auth.refreshSession();
+      // refreshSession()을 부르면 루트 레이아웃의 onAuthStateChange(TOKEN_REFRESHED)가
+      // 전역 라우팅을 재실행해 방금 띄운 connected 화면을 preferences로 덮어쓴다.
+      // 커플 정보는 JWT 클레임이 아니라 DB에만 있으므로 세션 리프레시는 불필요하다.
       router.replace('/onboarding/connected' as any);
     } catch {
       Alert.alert(strings.common.error, t.alertJoinError);
