@@ -21,6 +21,7 @@ import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, Chip } f
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { ReactionType, REACTIONS, REACTION_ICONS } from '../../lib/reactions';
+import { ReactionPicker } from '../../components/ReactionPicker';
 
 export { REACTION_ICONS };
 export type { ReactionType };
@@ -343,30 +344,11 @@ export default function CardDetailScreen() {
           <Text style={styles.reactionTitle}>{s.card.reactionTitle}</Text>
           <Text style={styles.reactionSub}>{s.card.reactionSubtitle}</Text>
 
-          <View style={styles.reactionGrid}>
-            {REACTIONS.map(r => {
-              const selected = myReaction === r.type;
-              const ReactionIcon = REACTION_ICONS[r.type];
-              return (
-                <TouchableOpacity
-                  key={r.type}
-                  style={[
-                    styles.reactionBtn,
-                    { backgroundColor: selected ? r.bg : C.gray },
-                    selected && styles.reactionBtnSelected,
-                    selected && { borderColor: r.color },
-                  ]}
-                  onPress={() => handleReactionTap(r.type)}
-                  activeOpacity={0.75}
-                >
-                  <ReactionIcon size={26} color={selected ? r.color : C.textSub} strokeWidth={2} />
-                  <Text style={[styles.reactionLabel, selected && styles.reactionLabelSelected, selected && { color: r.color }]}>
-                    {s.card.reactionLabels[r.type].label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ReactionPicker
+            selected={myReaction}
+            onSelect={handleReactionTap}
+            labelFor={(type) => s.card.reactionLabels[type].label}
+          />
 
           {memoryDone ? (
             <View style={styles.memoryDoneBadge}>
@@ -423,25 +405,6 @@ const styles = StyleSheet.create({
 
   reactionTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: SP.xs },
   reactionSub: { fontSize: 13, color: C.textMuted, marginBottom: SP.lg },
-
-  reactionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SP.sm,
-    marginBottom: SP.xl,
-  },
-  reactionBtn: {
-    width: '47%',
-    borderRadius: R.lg,
-    paddingVertical: SP.lg,
-    alignItems: 'center',
-    gap: SP.xs,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  reactionBtnSelected: { borderWidth: 2 },
-  reactionLabel: { fontSize: 14, color: C.textSub, fontWeight: '500' },
-  reactionLabelSelected: { fontWeight: '700' },
 
   memoryBtn: {
     backgroundColor: C.ink,
