@@ -19,10 +19,14 @@ import { C, R, SP } from '../../constants/theme';
 import {
   COURSE_CATEGORIES,
   COURSE_MOODS,
+  DURATION_MAX_HOURS,
+  PER_PERSON_BUDGET_MAX_KRW,
+  PER_PERSON_BUDGET_STEP_KRW,
   courseDraftReducer,
   createInitialCourseDraft,
   parseCoursePreferences,
-  parseTotalBudgetKRW,
+  parseDurationHours,
+  parsePerPersonBudgetKRW,
   validateCourseDraft,
   type CourseCategory,
   type CourseDraftIssue,
@@ -35,17 +39,6 @@ import { createRecommendationRequestId } from '../../lib/recommendationIdentity'
 import { buildStructuredGeneratingParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { subscribePickedPlace } from '../../lib/place-pick-bridge';
-
-const DURATION_MAX_HOURS = 24;
-
-const BUDGET_MAX_KRW = 100_000;
-const BUDGET_STEP_KRW = 1_000;
-
-function parseDurationHours(duration?: string): number | undefined {
-  if (!duration) return undefined;
-  const match = /^(\d+)/.exec(duration);
-  return match ? Number(match[1]) : undefined;
-}
 
 const WALKING_OPTIONS: { value: WalkingLimit; labelKey: string }[] = [
   { value: 5, labelKey: 'course.walking.options.five' },
@@ -234,9 +227,9 @@ export default function CourseScreen() {
           <SectionTitle number={4} label={t('course.budget.label')} />
           <StepSlider
             min={0}
-            max={BUDGET_MAX_KRW}
-            step={BUDGET_STEP_KRW}
-            value={parseTotalBudgetKRW(draft.totalBudgetKRWInput) ?? 0}
+            max={PER_PERSON_BUDGET_MAX_KRW}
+            step={PER_PERSON_BUDGET_STEP_KRW}
+            value={parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput) ?? 0}
             onChange={(v) => dispatch({ type: 'setBudgetInput', value: v === 0 ? '' : String(v) })}
             formatValue={(v) => (v === 0 ? t('course.unselected') : t('course.budget.amount', { amount: v.toLocaleString() }))}
             accessibilityLabel={t('course.accessibility.budget')}

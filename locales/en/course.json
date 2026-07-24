@@ -37,9 +37,9 @@
       }
     },
     "budget": {
-      "label": "Total budget for two (KRW, optional)",
+      "label": "Budget per person (KRW, optional)",
       "amount": "KRW {{amount}}",
-      "hint": "Enter the total amount for both people, up to KRW 100,000."
+      "hint": "Enter the budget per person, up to KRW 100,000."
     },
     "moods": {
       "label": "Preferred moods (select any)",
@@ -72,7 +72,7 @@
       "step_count_invalid": "Build a course with two to four steps.",
       "duplicate_step_ids": "Two course steps have the same identifier. Please reopen this screen.",
       "invalid_step_category": "One of the course steps is not supported.",
-      "budget_invalid": "The total budget for two must be a number from KRW 1 to 10,000,000.",
+      "budget_invalid": "The budget per person must be a number from KRW 1 to 10,000,000.",
       "additional_request_too_long": "Keep the additional request to 500 characters or fewer.",
       "exclusion_conflict": "Your selected steps conflict with an exclusion: {{categories}}. Edit the text or the steps."
     },
@@ -84,7 +84,7 @@
       "category": "Select {{category}} for step {{number}}",
       "walking": "Select a maximum walk of {{option}}",
       "mood": "Select the {{mood}} mood",
-      "budget": "Enter the total budget for two in Korean won",
+      "budget": "Enter the per-person budget in Korean won",
       "duration": "Select total time",
       "additionalRequest": "Enter an additional request",
       "generate": "Build the date course"

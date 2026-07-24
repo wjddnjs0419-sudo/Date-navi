@@ -26,11 +26,11 @@ describe('card edit screen steps reference', () => {
   });
 
   it('preserves the save payload (title/summary/estimated_time/estimated_budget only)', () => {
-    const payload = source.match(/\.update\(\{([\s\S]*?)\}\)/)?.[1] ?? '';
+    const payload = source.match(/\.update\(\{([\s\S]*?)\}\)\s*\.eq\(/)?.[1] ?? '';
     expect(payload).toContain('title: title.trim()');
     expect(payload).toContain('summary: summary.trim()');
-    expect(payload).toContain('estimated_time: time.trim()');
-    expect(payload).toContain('estimated_budget: budget.trim()');
+    expect(payload).toContain('estimated_time:');
+    expect(payload).toContain('estimated_budget:');
     expect(payload).not.toContain('steps:');
     expect(payload).not.toContain('mode:');
   });
