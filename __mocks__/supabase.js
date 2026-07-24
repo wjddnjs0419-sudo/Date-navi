@@ -2,6 +2,7 @@ module.exports = {
   supabase: {
     auth: {
       getUser: jest.fn(),
+      signInWithIdToken: jest.fn(),
       getSession: jest.fn(),
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
     },
