@@ -447,8 +447,10 @@ export function BackBar({
   );
 }
 const backS = StyleSheet.create({
-  btn: { marginLeft: -8, padding: 4, alignSelf: 'flex-start' },
-  largeTouchTarget: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  // 우측 액션(공유·⋮ MoreMenu)과 동일하게 44×44 중앙정렬로 통일.
+  // marginLeft:-10 → 44 박스 안에서 중앙정렬된 24px 셰브론의 좌측이 콘텐츠 여백과 정렬.
+  btn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 },
+  largeTouchTarget: {},
 });
 
 // ─── ProgressDots ─────────────────────────────────────────────────────────────
