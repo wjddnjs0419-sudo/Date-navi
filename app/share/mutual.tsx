@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator,
@@ -146,6 +146,10 @@ export default function MutualScreen() {
   const totalCount = Object.values(sections).flat().length;
   const firstMutualId = sections.mutual[0]?.id ?? null;
 
+  // 단일 선택 라디오: 맨 위 mutual 카드를 기본 선택, 목록이 바뀌면 재설정
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => { setSelectedId(firstMutualId); }, [firstMutualId]);
+
   return (
     <SafeAreaView style={G.screen}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -178,9 +182,26 @@ export default function MutualScreen() {
                 {items.map(card => (
                   <SoftCard
                     key={card.id}
-                    style={[s.cardGap, { backgroundColor: style.bg }]}
+                    style={[s.cardGap, s.cardRelative, { backgroundColor: style.bg }]}
                     onPress={() => router.push(`/card/${card.id}` as any)}
                   >
+                    {key === 'mutual' && (
+                      <TouchableOpacity
+                        testID={`mutual-radio-${card.id}`}
+                        style={s.radio}
+                        onPress={() => setSelectedId(card.id)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: selectedId === card.id }}
+                        accessibilityLabel={t('share.mutual.selectCardLabel')}
+                        hitSlop={8}
+                      >
+                        <View style={[s.radioOuter, selectedId === card.id && s.radioOuterOn]}>
+                          {selectedId === card.id && (
+                            <View testID={`mutual-radio-${card.id}-selected`} style={s.radioInner} />
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    )}
                     <Text style={s.cardTitle}>{card.title}</Text>
                     {!!card.summary && (
                       <Text style={s.cardSummary} numberOfLines={2}>{card.summary}</Text>
@@ -243,9 +264,10 @@ export default function MutualScreen() {
 
       <View style={s.footer}>
         <BigButton
+          testID="mutual-confirm-cta"
           onPress={() => {
-            if (firstMutualId) {
-              router.push(`/card/confirm?id=${firstMutualId}` as any);
+            if (selectedId) {
+              router.push(`/card/confirm?id=${selectedId}` as any);
             } else {
               router.replace('/(tabs)/candidates' as any);
             }
@@ -268,11 +290,20 @@ const s = StyleSheet.create({
   loadingWrap: { alignItems: 'center', marginTop: 60 },
   sectionWrap: { marginTop: SP.xl + SP.xs },
   cardGap: { marginTop: SP.sm + 2 },
+  cardRelative: { position: 'relative' },
+  radio: { position: 'absolute', top: 12, right: 12, zIndex: 2 },
+  radioOuter: {
+    width: 22, height: 22, borderRadius: 11, borderWidth: 2,
+    borderColor: C.border, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: C.white,
+  },
+  radioOuterOn: { borderColor: C.pink },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.pink },
   bottomSpacer: { height: 120 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
   sectionDot: { width: 4, height: 16, borderRadius: 2 },
   sectionLabel: { fontSize: 13, fontWeight: '700', color: C.text },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text, paddingRight: 30 },
   cardSummary: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: SP.xs },
   stepsWrap: { marginTop: SP.md },
   metaRow: { flexDirection: 'row', gap: SP.md, marginTop: SP.sm },

@@ -18,6 +18,7 @@
       "myReactionLabel": "My reaction",
       "partnerReactionLabel": "Partner's reaction",
       "confirmCta": "Choose this for the date",
+      "selectCardLabel": "Select this date",
       "seeMoreCta": "See more similar candidates",
       "sectionLabels": {
         "mutual": "Candidates you both liked",

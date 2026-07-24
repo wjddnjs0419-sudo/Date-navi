@@ -22,7 +22,7 @@ const BTN_VARIANTS: Record<BtnVariant, { bg: string; fg: string }> = {
   disabled: { bg: C.disabledBg, fg: C.textLight },
 };
 export function BigButton({
-  children, variant = 'primary', onPress, style, disabled = false, accessibilityLabel,
+  children, variant = 'primary', onPress, style, disabled = false, accessibilityLabel, testID,
 }: {
   children: ReactNode;
   variant?: BtnVariant;
@@ -30,10 +30,12 @@ export function BigButton({
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
 }) {
   const m = BTN_VARIANTS[variant];
   return (
     <TouchableOpacity
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
