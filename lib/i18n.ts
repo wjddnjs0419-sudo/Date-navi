@@ -18,8 +18,8 @@ const resources = {
 if (!i18n.isInitialized) {
   void i18n.use(initReactI18next).init({
     resources,
-    lng: 'ko',
-    fallbackLng: 'ko',
+    lng: 'en',
+    fallbackLng: 'en',
     compatibilityJSON: 'v4',
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
@@ -67,9 +67,9 @@ function normalizeLanguage(value?: string | null): AppLanguage | null {
   return SUPPORTED_LANGUAGES.includes(code as AppLanguage) ? (code as AppLanguage) : null;
 }
 
-function detectInitialLanguage(): AppLanguage {
+export function detectInitialLanguage(): AppLanguage {
   const locale = getLocales()[0];
-  return normalizeLanguage(locale?.languageCode ?? locale?.languageTag) ?? 'ko';
+  return normalizeLanguage(locale?.languageCode ?? locale?.languageTag) ?? 'en';
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
