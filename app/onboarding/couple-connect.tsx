@@ -587,11 +587,10 @@ const s = StyleSheet.create({
   section: { marginTop: 26 },
   inviteCard: {
     marginTop: 24,
-    backgroundColor: C.cream,
     padding: 20,
     alignItems: 'center',
   },
-  inviteLabel: { fontSize: 11, color: C.creamFg, fontWeight: '700', letterSpacing: 0.4 },
+  inviteLabel: { fontSize: 11, color: C.pinkDeep, fontWeight: '700', letterSpacing: 0.4 },
   codeText: { fontSize: 34, fontWeight: '800', color: C.pinkDeep, letterSpacing: 4, marginTop: 8 },
   inviteMascot: { marginVertical: 12 },
   createBtn: { marginTop: 4, width: '100%' },
