@@ -29,21 +29,25 @@ function renderButton(element: React.ReactElement): TestNode {
 }
 
 describe('Phase 4 shared UI scope', () => {
-  it('retains the pre-Phase4 default dimensions of shared controls', () => {
+  it('keeps BackBar a uniform 44×44 target while OptionCardPicker and BigButton stay minimal by default', () => {
     const back = StyleSheet.flatten(renderButton(<BackBar />).props.style);
     const option = StyleSheet.flatten(renderButton(
       <OptionCardPicker options={[{ value: 'one', label: 'One' }]} value={undefined} onChange={jest.fn()} />,
     ).props.style);
     const big = StyleSheet.flatten(renderButton(<BigButton>Continue</BigButton>).props.style);
 
-    expect(back).toEqual(expect.objectContaining({ marginLeft: -8, padding: 4, alignSelf: 'flex-start' }));
-    expect(back.minWidth).toBeUndefined();
-    expect(back.minHeight).toBeUndefined();
+    // 31d63b6: BackBar is a fixed 44×44 box (HIG minimum tap target, aligned with the
+    // 44×44 share/⋮ header actions), so 44×44 is now its shared default — not an opt-in.
+    expect(back).toEqual(expect.objectContaining({
+      width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10,
+    }));
+    // OptionCardPicker and BigButton keep minimal defaults; enlargements stay opt-in.
     expect(option.minHeight).toBeUndefined();
     expect(big.minHeight).toBeUndefined();
   });
 
-  it('provides additive touch-target opt-ins without changing shared defaults', () => {
+  it('provides additive touch-target opt-ins for OptionCardPicker and BigButton', () => {
+    // BackBar is already 44×44; largeTouchTarget is a no-op kept for API compatibility.
     const back = StyleSheet.flatten(renderButton(<BackBar largeTouchTarget />).props.style);
     const option = StyleSheet.flatten(renderButton(
       <OptionCardPicker
@@ -57,7 +61,7 @@ describe('Phase 4 shared UI scope', () => {
       <BigButton style={styles.courseBigButton}>Continue</BigButton>,
     ).props.style);
 
-    expect(back).toEqual(expect.objectContaining({ minWidth: 44, minHeight: 44 }));
+    expect(back).toEqual(expect.objectContaining({ width: 44, height: 44 }));
     expect(option.minHeight).toBe(44);
     expect(big.minHeight).toBe(52);
   });
