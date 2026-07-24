@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -8,8 +9,11 @@ import { C } from '../constants/colors';
 const ROOT = process.cwd();
 const CATALOG = 'ios/DateNavi/Images.xcassets';
 
-function bytes(rel: string): Buffer {
-  return readFileSync(join(ROOT, rel));
+// PNG 원본(Buffer)을 그대로 toEqual로 비교하면, 어긋났을 때 Jest가 100만 원소짜리
+// 바이트 diff를 렌더링하느라 몇 분씩 멈춘다(`expo prebuild`가 이미지를 재인코딩하면 실제로 발생).
+// 해시로 비교하면 판정은 동일하면서 실패 메시지가 한 줄로 끝난다.
+function digest(rel: string): string {
+  return createHash('sha256').update(readFileSync(join(ROOT, rel))).digest('hex');
 }
 
 // ios/는 gitignore 대상(prebuild 산출물)이라 클론 직후엔 없을 수 있다. 그럴 땐 검사 대상이 없다.
@@ -17,15 +21,15 @@ const nativeProjectExists = existsSync(join(ROOT, CATALOG));
 
 (nativeProjectExists ? describe : describe.skip)('iOS native brand assets stay in sync with assets/', () => {
   it('app icon matches assets/icon.png', () => {
-    expect(bytes(`${CATALOG}/AppIcon.appiconset/App-Icon-1024x1024@1x.png`))
-      .toEqual(bytes('assets/icon.png'));
+    expect(digest(`${CATALOG}/AppIcon.appiconset/App-Icon-1024x1024@1x.png`))
+      .toBe(digest('assets/icon.png'));
   });
 
   it.each(['image.png', 'image@2x.png', 'image@3x.png'])(
     'splash image %s matches assets/splash-icon.png',
     (file) => {
-      expect(bytes(`${CATALOG}/SplashScreenLegacy.imageset/${file}`))
-        .toEqual(bytes('assets/splash-icon.png'));
+      expect(digest(`${CATALOG}/SplashScreenLegacy.imageset/${file}`))
+        .toBe(digest('assets/splash-icon.png'));
     },
   );
 
