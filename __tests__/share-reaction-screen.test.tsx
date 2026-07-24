@@ -11,6 +11,16 @@ jest.mock('../lib/i18n', () => ({
   useI18n: () => ({
     t: (key: string) => key,
     language: 'ko',
+    strings: {
+      card: {
+        reactionLabels: {
+          love: { emoji: '🔥', label: '완전 끌려' },
+          like: { emoji: '😊', label: '느낌은 좋아' },
+          burden: { emoji: '😅', label: '오늘은 부담돼' },
+          next_time: { emoji: '⏰', label: '다음에' },
+        },
+      },
+    },
   }),
 }));
 
@@ -62,20 +72,41 @@ const TestRenderer = require('react-test-renderer') as {
 const { act, create } = TestRenderer;
 
 const ReactionScreen = require('../app/share/reaction').default as typeof import('../app/share/reaction').default;
-const { CourseStepList, MetaChipRow, OptionCardPicker } = require('../components/ui') as typeof import('../components/ui');
+const { CourseStepList, MetaChipRow } = require('../components/ui') as typeof import('../components/ui');
+const { ReactionPicker } = require('../components/ReactionPicker') as typeof import('../components/ReactionPicker');
 
 describe('share/reaction screen', () => {
-  it('renders the reaction choices via the shared OptionCardPicker', async () => {
+  it('renders the 4 reaction choices via the shared ReactionPicker', async () => {
     let instance!: ReturnType<typeof create>;
     await act(async () => { instance = create(<ReactionScreen />); });
 
-    const picker = instance.root.findByType(OptionCardPicker);
-    expect(picker.props.options.length).toBe(8);
-    expect(picker.props.value).toBe('closer');
+    const picker = instance.root.findByType(ReactionPicker);
+    // 처음엔 아무 반응도 선택되지 않은 상태
+    expect(picker.props.selected).toBeNull();
+    expect(picker.props.labelFor('love')).toBe('완전 끌려');
 
-    act(() => { picker.props.onChange('full'); });
-    const updated = instance.root.findByType(OptionCardPicker);
-    expect(updated.props.value).toBe('full');
+    act(() => { picker.props.onSelect('love'); });
+    const updated = instance.root.findByType(ReactionPicker);
+    expect(updated.props.selected).toBe('love');
+  });
+
+  it('옛 8버튼 옵션을 렌더하지 않고 ReactionPicker를 쓴다', () => {
+    const fs = require('fs'); const path = require('path');
+    const src = fs.readFileSync(path.join(process.cwd(), 'app/share/reaction.tsx'), 'utf8');
+    expect(src).not.toContain('REACTION_OPTIONS');
+    expect(src).toContain('ReactionPicker');
+  });
+
+  it('한마디 입력란과 관련 i18n 키가 없다', () => {
+    const fs = require('fs'); const path = require('path');
+    const src = fs.readFileSync(path.join(process.cwd(), 'app/share/reaction.tsx'), 'utf8');
+    expect(src).not.toContain('noteLabel');
+    expect(src).not.toContain('notePlaceholder');
+    for (const lang of ['ko', 'en']) {
+      const share = fs.readFileSync(path.join(process.cwd(), `locales/${lang}/share.json`), 'utf8');
+      expect(share).not.toContain('noteLabel');
+      expect(share).not.toContain('notePlaceholder');
+    }
   });
 
   it('renders the shared course card via CourseStepList and MetaChipRow', async () => {

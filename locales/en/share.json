@@ -8,19 +8,7 @@
       "justNow": "Just now",
       "heading": "How about this date?",
       "chooseReaction": "Pick the reaction that fits best",
-      "noteLabel": "A note (optional)",
-      "notePlaceholder": "e.g. I like this, but next week might work better than this weekend.",
-      "submitCta": "Send reaction",
-      "options": {
-        "full": "Really into it",
-        "good": "Like it",
-        "niceFeel": "Feels good",
-        "closer": "Good if it's closer",
-        "burdenToday": "Feels like a lot today",
-        "nextTime": "Want to next time",
-        "ifMoneyComes": "Let's do it once we have the budget",
-        "notFarWalk": "Good if we don't walk far"
-      }
+      "submitCta": "Send reaction"
     },
     "mutual": {
       "heading": "Candidates you both liked",
@@ -30,6 +18,7 @@
       "myReactionLabel": "My reaction",
       "partnerReactionLabel": "Partner's reaction",
       "confirmCta": "Choose this for the date",
+      "selectCardLabel": "Select this date",
       "seeMoreCta": "See more similar candidates",
       "sectionLabels": {
         "mutual": "Candidates you both liked",

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, Share2, Flame, Smile, Meh, Heart } from 'lucide-react-native';
+import { Clock, Wallet, Share2, Heart } from 'lucide-react-native';
 import { C, SP, R, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
@@ -20,6 +20,11 @@ import type { FeelingInput } from '../../lib/ai';
 import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, Chip } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity } from '../../lib/recommendationIdentity';
+import { ReactionType, REACTIONS, REACTION_ICONS } from '../../lib/reactions';
+import { ReactionPicker } from '../../components/ReactionPicker';
+
+export { REACTION_ICONS };
+export type { ReactionType };
 
 type CardDetail = {
   id: string;
@@ -41,28 +46,10 @@ type CardDetail = {
   kakaoPlaceId?: string;
 };
 
-type ReactionType = 'love' | 'like' | 'burden' | 'next_time';
-
 // 재탭으로 반응을 해제할지 결정한다 — 같은 반응을 다시 누르면 해제.
 export function shouldUnreactOnTap(current: ReactionType | null, tapped: ReactionType): boolean {
   return current === tapped;
 }
-
-const REACTIONS: { type: ReactionType; color: string; bg: string }[] = [
-  { type: 'love', color: C.danger, bg: C.pinkLight },
-  { type: 'like', color: C.creamFg, bg: C.cream },
-  { type: 'burden', color: C.coolGray, bg: C.gray },
-  { type: 'next_time', color: C.lavenderFg, bg: C.lavender },
-];
-
-// 이모지 대신 아이콘 — 알림 본문처럼 텍스트뿐인 자리에서는 이모지를 그대로 쓴다.
-export const REACTION_ICONS: Record<ReactionType, typeof Clock> = {
-  love: Flame,
-  like: Smile,
-  burden: Meh,
-  next_time: Clock,
-};
-
 
 // 코스 스텝 라벨이 이미 화면에 있는 태그는 같은 말을 두 번 하는 셈이라 감춘다.
 export function visibleTags(tags: string[] | null | undefined, steps: CourseStep[]): string[] {
@@ -357,30 +344,11 @@ export default function CardDetailScreen() {
           <Text style={styles.reactionTitle}>{s.card.reactionTitle}</Text>
           <Text style={styles.reactionSub}>{s.card.reactionSubtitle}</Text>
 
-          <View style={styles.reactionGrid}>
-            {REACTIONS.map(r => {
-              const selected = myReaction === r.type;
-              const ReactionIcon = REACTION_ICONS[r.type];
-              return (
-                <TouchableOpacity
-                  key={r.type}
-                  style={[
-                    styles.reactionBtn,
-                    { backgroundColor: selected ? r.bg : C.gray },
-                    selected && styles.reactionBtnSelected,
-                    selected && { borderColor: r.color },
-                  ]}
-                  onPress={() => handleReactionTap(r.type)}
-                  activeOpacity={0.75}
-                >
-                  <ReactionIcon size={26} color={selected ? r.color : C.textSub} strokeWidth={2} />
-                  <Text style={[styles.reactionLabel, selected && styles.reactionLabelSelected, selected && { color: r.color }]}>
-                    {s.card.reactionLabels[r.type].label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ReactionPicker
+            selected={myReaction}
+            onSelect={handleReactionTap}
+            labelFor={(type) => s.card.reactionLabels[type].label}
+          />
 
           {memoryDone ? (
             <View style={styles.memoryDoneBadge}>
@@ -437,25 +405,6 @@ const styles = StyleSheet.create({
 
   reactionTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: SP.xs },
   reactionSub: { fontSize: 13, color: C.textMuted, marginBottom: SP.lg },
-
-  reactionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SP.sm,
-    marginBottom: SP.xl,
-  },
-  reactionBtn: {
-    width: '47%',
-    borderRadius: R.lg,
-    paddingVertical: SP.lg,
-    alignItems: 'center',
-    gap: SP.xs,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  reactionBtnSelected: { borderWidth: 2 },
-  reactionLabel: { fontSize: 14, color: C.textSub, fontWeight: '500' },
-  reactionLabelSelected: { fontWeight: '700' },
 
   memoryBtn: {
     backgroundColor: C.ink,
