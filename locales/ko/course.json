@@ -37,9 +37,9 @@
       }
     },
     "budget": {
-      "label": "2인 총예산 (KRW, 선택)",
+      "label": "1인 예산 (KRW, 선택)",
       "amount": "{{amount}}원",
-      "hint": "두 사람이 함께 쓸 전체 금액을 입력해주세요. 최대 100,000원"
+      "hint": "한 사람 기준 예산을 입력해주세요. 최대 100,000원"
     },
     "moods": {
       "label": "원하는 분위기 (복수 선택 가능)",
@@ -72,7 +72,7 @@
       "step_count_invalid": "코스는 2~4단계로 구성해주세요.",
       "duplicate_step_ids": "코스 단계 식별자가 겹쳤어요. 화면을 다시 열어주세요.",
       "invalid_step_category": "지원하지 않는 코스 단계가 있어요.",
-      "budget_invalid": "2인 총예산은 1원 이상 10,000,000원 이하의 숫자로 입력해주세요.",
+      "budget_invalid": "1인 예산은 1원 이상 10,000,000원 이하의 숫자로 입력해주세요.",
       "additional_request_too_long": "추가 요청은 500자 이하로 입력해주세요.",
       "exclusion_conflict": "선택한 단계와 제외 요청이 충돌해요: {{categories}}. 텍스트나 단계를 수정해주세요."
     },
@@ -84,7 +84,7 @@
       "category": "{{number}}단계 카테고리 {{category}} 선택",
       "walking": "최대 도보 시간 {{option}} 선택",
       "mood": "분위기 {{mood}} 선택",
-      "budget": "2인 총예산 원화 입력",
+      "budget": "1인 예산 원화 입력",
       "duration": "전체 시간 선택",
       "additionalRequest": "추가 요청 입력",
       "generate": "데이트 코스 만들기"

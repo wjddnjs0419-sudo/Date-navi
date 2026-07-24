@@ -75,10 +75,7 @@
       "descLabel": "Description",
       "descPlaceholder": "Describe what kind of date this is",
       "timeLabel": "Estimated time",
-      "noneOption": "None selected",
-      "existingValueOption": "Current value · {{time}}",
-      "budgetLabel": "Budget",
-      "budgetPlaceholder": "e.g. around $40",
+      "budgetLabel": "Budget per person",
       "stepsReferenceLabel": "Course steps (reference)",
       "saveCta": "Save",
       "saveError": "Something went wrong updating it."

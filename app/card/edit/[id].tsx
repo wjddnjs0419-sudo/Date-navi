@@ -7,25 +7,36 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { C, SP, R, G } from '../../../constants/theme';
-import { BackBar, BigButton, OptionCardPicker, CourseStepList } from '../../../components/ui';
+import { BackBar, BigButton, CourseStepList } from '../../../components/ui';
+import { StepSlider } from '../../../components/recommendation/step-slider';
 import { resolveDisplaySteps, type CourseStep } from '../../../lib/course';
+import {
+  DURATION_MAX_HOURS,
+  PER_PERSON_BUDGET_MAX_KRW,
+  PER_PERSON_BUDGET_STEP_KRW,
+  parseDurationHours,
+} from '../../../lib/course-draft';
 import { useI18n } from '../../../lib/i18n';
+
+// 표시용 텍스트(우리가 저장하는 "30,000원"/"KRW 30,000" 포함)에서 숫자만 뽑아 슬라이더 값으로 되돌린다.
+// 범위·단위가 섞인 레거시 AI 값은 파싱이 부정확할 수 있어 슬라이더 상한으로 클램프한다.
+function parseBudgetKRW(text?: string): number {
+  const digits = (text ?? '').replace(/[^0-9]/g, '');
+  if (!digits) return 0;
+  return Math.min(Number(digits), PER_PERSON_BUDGET_MAX_KRW);
+}
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useI18n();
-  const TIME_OPTIONS = [
-    t('card.new.timeOptions.oneToTwo'), t('card.new.timeOptions.twoToThree'),
-    t('card.new.timeOptions.halfDay'), t('card.new.timeOptions.fullDay'),
-  ];
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
-  const [time, setTime] = useState('');
-  const [budget, setBudget] = useState('');
+  const [timeHours, setTimeHours] = useState(0);
+  const [budgetKRW, setBudgetKRW] = useState(0);
   const [refMode, setRefMode] = useState('');
   const [refSteps, setRefSteps] = useState<CourseStep[]>([]);
 
@@ -42,8 +53,8 @@ export default function EditCardScreen() {
         if (data) {
           setTitle(data.title ?? '');
           setSummary(data.summary ?? '');
-          setTime(data.estimated_time ?? '');
-          setBudget(data.estimated_budget ?? '');
+          setTimeHours(Math.min(parseDurationHours(data.estimated_time ?? '') ?? 0, DURATION_MAX_HOURS));
+          setBudgetKRW(parseBudgetKRW(data.estimated_budget ?? ''));
           setRefMode(data.mode ?? '');
           setRefSteps(resolveDisplaySteps(data));
         }
@@ -54,11 +65,6 @@ export default function EditCardScreen() {
   );
 
   const canSave = title.trim().length > 0;
-  const timeOptions = [
-    { value: '', label: t('card.new.noneOption') },
-    ...(time && !TIME_OPTIONS.includes(time) ? [{ value: time, label: t('card.edit.existingValueOption', { time }) }] : []),
-    ...TIME_OPTIONS.map((opt) => ({ value: opt, label: opt })),
-  ];
 
   async function handleSave() {
     if (!canSave) return;
@@ -69,8 +75,8 @@ export default function EditCardScreen() {
         .update({
           title: title.trim(),
           summary: summary.trim(),
-          estimated_time: time.trim(),
-          estimated_budget: budget.trim(),
+          estimated_time: timeHours === 0 ? '' : t('course.duration.hoursLabel', { count: timeHours }),
+          estimated_budget: budgetKRW === 0 ? '' : t('course.budget.amount', { amount: budgetKRW.toLocaleString() }),
         })
         .eq('id', id);
       if (error) throw error;
@@ -128,23 +134,28 @@ export default function EditCardScreen() {
         </View>
 
         <Text style={s.label}>{t('card.edit.timeLabel')}</Text>
-        <OptionCardPicker
-          options={timeOptions}
-          value={time}
-          onChange={setTime}
+        <StepSlider
+          min={0}
+          max={DURATION_MAX_HOURS}
+          step={1}
+          value={timeHours}
+          onChange={setTimeHours}
+          formatValue={(hours) => (hours === 0 ? t('course.unselected') : t('course.duration.hoursLabel', { count: hours }))}
+          accessibilityLabel={t('card.edit.timeLabel')}
+          testID="card-edit-time-slider"
         />
 
         <Text style={s.label}>{t('card.edit.budgetLabel')}</Text>
-        <View style={s.inputWrap}>
-          <TextInput
-            style={s.input}
-            value={budget}
-            onChangeText={setBudget}
-            placeholder={t('card.edit.budgetPlaceholder')}
-            placeholderTextColor={C.textFaint}
-            maxLength={30}
-          />
-        </View>
+        <StepSlider
+          min={0}
+          max={PER_PERSON_BUDGET_MAX_KRW}
+          step={PER_PERSON_BUDGET_STEP_KRW}
+          value={budgetKRW}
+          onChange={setBudgetKRW}
+          formatValue={(v) => (v === 0 ? t('course.unselected') : t('course.budget.amount', { amount: v.toLocaleString() }))}
+          accessibilityLabel={t('card.edit.budgetLabel')}
+          testID="card-edit-budget-slider"
+        />
 
         {refMode === 'make_course' && refSteps.length > 0 && (
           <>

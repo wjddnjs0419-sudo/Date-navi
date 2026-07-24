@@ -5,6 +5,8 @@ import {
   courseDraftReducer,
   createInitialCourseDraft,
   parseCoursePreferences,
+  parseDurationHours,
+  parsePerPersonBudgetKRW,
   validateCourseDraft,
   type CourseCategory,
   type CourseDraft,
@@ -141,14 +143,41 @@ describe('structured course draft', () => {
     expect(parseCoursePreferences(text)).toEqual({});
   });
 
-  it.each(['-1', '0', 'abc', '10,000,001'])('rejects invalid optional two-person budgets: %s', (totalBudgetKRWInput) => {
+  it.each(['-1', '0', 'abc', '10,000,001'])('rejects invalid optional per-person budgets: %s', (perPersonBudgetKRWInput) => {
     const draft = {
       ...createInitialCourseDraft(idFactory('step-a', 'step-b')),
       location,
-      totalBudgetKRWInput,
+      perPersonBudgetKRWInput,
     };
 
     expect(validateCourseDraft(draft).issues).toContainEqual({ code: 'budget_invalid' });
+  });
+
+  it.each([
+    ['50,000', 50000],
+    ['30000', 30000],
+    ['', undefined],
+  ])('parses per-person budget %s', (input, expected) => {
+    expect(parsePerPersonBudgetKRW(input)).toBe(expected);
+  });
+
+  it.each([
+    ['2시간', 2],
+    ['2~3시간', 2],
+    ['2-3 hours', 2],
+    ['', undefined],
+    [undefined, undefined],
+  ])('parses leading hours from duration text %s', (input, expected) => {
+    expect(parseDurationHours(input)).toBe(expected);
+  });
+
+  it('doubles the per-person budget into the two-person total for the edge contract', () => {
+    const draft = {
+      ...createInitialCourseDraft(idFactory('step-a', 'step-b')),
+      location,
+      perPersonBudgetKRWInput: '50,000',
+    };
+    expect(buildStructuredCourseInput(draft, categoryLabels).totalBudgetKRW).toBe(100000);
   });
 
   it('rejects missing location, oversized requests, duplicate IDs, and unresolved exclusions', () => {
@@ -201,7 +230,7 @@ describe('structured course draft', () => {
       ...createInitialCourseDraft(idFactory('step-a', 'step-b')),
       location,
       maxWalkingMinutes: 10 as const,
-      totalBudgetKRWInput: '50,000',
+      perPersonBudgetKRWInput: '50,000',
       moods: ['romantic', 'quiet'] as const,
       duration: '2-3h',
       additionalRequest: '   ',
@@ -218,7 +247,7 @@ describe('structured course draft', () => {
         { id: 'step-b', category: 'cafe', label: '카페' },
       ],
       maxWalkingMinutes: 10,
-      totalBudgetKRW: 50000,
+      totalBudgetKRW: 100000,
       moods: ['romantic', 'quiet'],
       duration: '2-3h',
       additionalRequest: '사진 찍기 좋은 실내 장소',

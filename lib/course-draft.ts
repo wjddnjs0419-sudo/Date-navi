@@ -51,11 +51,16 @@ export type CourseDraftStep = {
   pin?: CoursePin;
 };
 
+// 예산·시간 슬라이더 공유 상수(코스 입력·후보 수정). 예산은 1인 기준.
+export const PER_PERSON_BUDGET_MAX_KRW = 100_000;
+export const PER_PERSON_BUDGET_STEP_KRW = 1_000;
+export const DURATION_MAX_HOURS = 24;
+
 export type CourseDraft = {
   location: RecommendationLocation | null;
   steps: readonly CourseDraftStep[];
   maxWalkingMinutes: WalkingLimit;
-  totalBudgetKRWInput: string;
+  perPersonBudgetKRWInput: string;
   moods: readonly CourseMood[];
   duration?: string;
   additionalRequest: string;
@@ -110,7 +115,7 @@ export function createInitialCourseDraft(nextId: () => string): CourseDraft {
       { id: secondId, category: 'cafe' },
     ],
     maxWalkingMinutes: undefined,
-    totalBudgetKRWInput: '',
+    perPersonBudgetKRWInput: '',
     moods: [],
     duration: undefined,
     additionalRequest: '',
@@ -161,7 +166,7 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
     case 'setWalkingLimit':
       return { ...draft, maxWalkingMinutes: action.minutes };
     case 'setBudgetInput':
-      return { ...draft, totalBudgetKRWInput: action.value };
+      return { ...draft, perPersonBudgetKRWInput: action.value };
     case 'toggleMood':
       return {
         ...draft,
@@ -282,13 +287,20 @@ export function parseCoursePreferences(text: string): ParsedPreferenceInput {
   return parsed;
 }
 
-export function parseTotalBudgetKRW(input: string): number | undefined {
+export function parsePerPersonBudgetKRW(input: string): number | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
   const normalized = trimmed.replaceAll(',', '');
   if (!/^[0-9]+$/.test(normalized)) return undefined;
   const value = Number(normalized);
   return Number.isSafeInteger(value) && value > 0 && value <= 10_000_000 ? value : undefined;
+}
+
+// "2~3시간"/"2-3 hours" 같은 자유 텍스트에서 선행 정수 시간만 뽑는다. 코스 입력·후보 수정 슬라이더가 공유.
+export function parseDurationHours(duration?: string): number | undefined {
+  if (!duration) return undefined;
+  const match = /^(\d+)/.exec(duration.trim());
+  return match ? Number(match[1]) : undefined;
 }
 
 export function validateCourseDraft(draft: CourseDraft): { valid: boolean; issues: CourseDraftIssue[] } {
@@ -301,7 +313,7 @@ export function validateCourseDraft(draft: CourseDraft): { valid: boolean; issue
   if (draft.steps.some((step) => !categorySet.has(step.category))) {
     issues.push({ code: 'invalid_step_category' });
   }
-  if (draft.totalBudgetKRWInput.trim() && parseTotalBudgetKRW(draft.totalBudgetKRWInput) === undefined) {
+  if (draft.perPersonBudgetKRWInput.trim() && parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput) === undefined) {
     issues.push({ code: 'budget_invalid' });
   }
   if (draft.additionalRequest.length > 500) issues.push({ code: 'additional_request_too_long' });
@@ -335,8 +347,9 @@ export function buildStructuredCourseInput(
       ...(step.pin ? { pinnedKakaoPlaceId: step.pin.kakaoPlaceId, pinnedName: step.pin.name } : {}),
     })),
     ...(draft.maxWalkingMinutes ? { maxWalkingMinutes: draft.maxWalkingMinutes } : {}),
-    ...(parseTotalBudgetKRW(draft.totalBudgetKRWInput) !== undefined
-      ? { totalBudgetKRW: parseTotalBudgetKRW(draft.totalBudgetKRWInput) }
+    // UI는 1인 기준으로 입력받고, 엣지 계약(twoPersonTotalBudgetKRW)에는 2인 총액으로 넘긴다.
+    ...(parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput) !== undefined
+      ? { totalBudgetKRW: parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput)! * 2 }
       : {}),
     ...(draft.moods.length > 0 ? { moods: [...draft.moods] } : {}),
     ...(draft.duration ? { duration: draft.duration } : {}),

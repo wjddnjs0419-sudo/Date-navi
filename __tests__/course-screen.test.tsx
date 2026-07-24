@@ -183,7 +183,8 @@ describe('structured course screen', () => {
 
     const request = mockPrepareRecommendationRequest.mock.calls[0][0];
     expect(request.duration).toBe('course.duration.hoursLabel');
-    expect(request.totalBudgetKRW).toBe(1_000);
+    // 슬라이더는 1인 기준(step 1,000)이고 엣지 계약엔 2인 총액으로 넘어간다: 1,000 × 2.
+    expect(request.totalBudgetKRW).toBe(2_000);
   });
 
   it('requires location, blocks a parsed conflict, and hands a valid draft to generating by requestId only', () => {
