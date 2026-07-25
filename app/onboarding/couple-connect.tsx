@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import * as ExpoLinking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
@@ -20,6 +19,7 @@ import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../../components/p
 import { useI18n } from '../../lib/i18n';
 import {
   PENDING_INVITE_CODE_KEY,
+  buildInviteUrl,
   formatInviteCode,
   inviteCodeBody,
   normalizeInviteCode,
@@ -298,10 +298,8 @@ export default function CoupleConnectScreen() {
     const code = formatInviteCode(couple?.code);
     if (!code) return;
 
-    const url = ExpoLinking.createURL('/onboarding/couple-connect', {
-      scheme: 'datenavi',
-      queryParams: { code },
-    });
+    // 공개 웹 랜딩 링크. OG 프리뷰가 뜨고, 앱이 있으면 유니버설 링크로 바로 열린다.
+    const url = buildInviteUrl(code, language);
     const message = `${t.shareMessage(code)}\n\n${url}`;
 
     await Share.share({

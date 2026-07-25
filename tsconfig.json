@@ -4,8 +4,13 @@
     "strict": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
-  "exclude": ["supabase/functions"]
+  "exclude": [
+    "supabase/functions",
+    "web"
+  ]
 }

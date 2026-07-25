@@ -1,5 +1,9 @@
 export const PENDING_INVITE_CODE_KEY = 'datenavi.pendingInviteCode';
 
+// 공유 링크는 커스텀 스킴(datenavi://) 대신 공개 웹 랜딩을 가리킨다. 랜딩이 OG 프리뷰를
+// 띄우고, 앱이 있으면 유니버설 링크로 바로 열고, 없으면 스토어로 안내한다.
+export const INVITE_WEB_BASE = 'https://date-navi.vercel.app';
+
 export function isCoupleRowLinked(
   row?: { status: string; partner_user_id: string | null } | null,
 ): boolean {
@@ -28,6 +32,13 @@ export function inviteCodeBody(value?: string | null) {
 export function formatInviteCode(value?: string | null) {
   if (!value) return '';
   return normalizeInviteCode(value.startsWith('DN-') ? value : `DN-${value}`);
+}
+
+// 공유용 초대 링크. 코드는 정규화하고, 초대자 언어(l)를 실어 랜딩·OG가 그 언어로 렌더한다.
+export function buildInviteUrl(code: string | null, language: 'ko' | 'en') {
+  const normalized = formatInviteCode(code);
+  if (!normalized) return '';
+  return `${INVITE_WEB_BASE}/invite?code=${normalized}&l=${language}`;
 }
 
 export function parseInviteCodeFromUrl(url?: string | null) {

@@ -54,6 +54,6 @@
     "alertOwnCodeDesc": "Share this code with your partner and have them enter it instead.",
     "alertJoinNetwork": "Please check your network connection.",
     "alertJoinError": "Something went wrong while connecting. Please try again.",
-    "shareMessage": "Connect with me on Date Navi.\nInvite code: {{code}}"
+    "shareMessage": "Let's connect as a couple on Date Navi and plan our dates together 💕 (Invite code: {{code}})"
   }
 }

@@ -17,7 +17,10 @@
       "bundleIdentifier": "com.datenavi.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "applinks:date-navi.vercel.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
