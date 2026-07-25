@@ -38,10 +38,12 @@ jest.mock('../lib/supabase', () => {
       {
         id: 'm1', card_id: 'card1', title: '성수동 감성 데이트', review: '카페가 특히 좋았어요',
         want_again: true, created_at: '2026-07-15T00:00:00Z', photo_url: null,
+        rating: 5, user_id: 'u1',
       },
       {
         id: 'm2', card_id: 'card2', title: '한강 피크닉', review: '그냥 그랬어요',
         want_again: false, created_at: '2026-07-10T00:00:00Z', photo_url: null,
+        rating: 3, user_id: 'partner',
       },
     ] as unknown[],
     cards: [
@@ -129,6 +131,20 @@ describe('추억 화면 목업 계약', () => {
     const txt = allText(tree);
     expect(txt).toContain('성수동 감성 데이트');
     expect(txt).toContain('한강 피크닉');
+  });
+
+  it('각 추억 카드에 작성자 배지(내/상대)와 별점을 렌더한다', async () => {
+    const tree = await render();
+    const txt = allText(tree);
+    expect(txt).toContain('memories.myReview');
+    expect(txt).toContain('memories.partnerReview');
+    const starIds = new Set(
+      (tree.root as any)
+        .findAll((n: any) => typeof n.props?.testID === 'string' && n.props.testID.startsWith('memory-stars-'))
+        .map((n: any) => n.props.testID),
+    );
+    expect(starIds.has('memory-stars-m1')).toBe(true);
+    expect(starIds.has('memory-stars-m2')).toBe(true);
   });
 
   it('베스트 탭을 누르면 want_again=true인 추억만 보여준다', async () => {

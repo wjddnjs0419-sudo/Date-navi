@@ -3,7 +3,6 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, Modal, Pressable, TextInput,
 } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
@@ -26,7 +25,8 @@ import { useI18n } from '../../lib/i18n';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { requestRecommendationResponse } from '../../lib/recommend-date';
 import { supabase } from '../../lib/supabase';
-import { buildKakaoMapUrl, buildNaverMapUrl, type ReplacementCandidate } from '../../lib/replacement-candidates';
+import { type ReplacementCandidate } from '../../lib/replacement-candidates';
+import { openPlaceInBrowser } from '../../lib/placeBrowser';
 import { buildStructuredCourseResultParams, parseStructuredCourseResultParams } from '../../lib/recommendation-route';
 import { omitOneShotRequestFields } from '../../lib/recommendation-request';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
@@ -586,8 +586,7 @@ export default function CourseResultScreen() {
                           <Text style={s.replacementName}>{candidate.name}</Text>
                           <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
                           <View style={s.externalActions}>
-                            <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildNaverMapUrl(candidate.name))}><Text style={s.externalLink}>{t('modeFlow.courseResult.naverReviews')}</Text></TouchableOpacity>
-                            <TouchableOpacity accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl(candidate))}><Text style={s.externalLink}>{t('modeFlow.courseResult.kakaoMap')}</Text></TouchableOpacity>
+                            <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity>
                           </View>
                         </View>
                         <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>

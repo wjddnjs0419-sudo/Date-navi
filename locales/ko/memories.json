@@ -37,6 +37,8 @@
     "untitled": "추억",
     "filterAll": "전체",
     "filterBest": "베스트",
-    "emptyBest": "베스트로 표시된 추억이 없어요"
+    "emptyBest": "베스트로 표시된 추억이 없어요",
+    "myReview": "내 리뷰",
+    "partnerReview": "상대 리뷰"
   }
 }

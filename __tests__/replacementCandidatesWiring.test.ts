@@ -19,15 +19,15 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(screen).toContain("attestationRequestId: request.requestId");
   });
 
-  it('offers external Naver/Kakao verification actions without scraping or persisting third-party review content', () => {
-    expect(screen).toContain('buildNaverMapUrl');
-    expect(screen).toContain('buildKakaoMapUrl');
-    expect(screen).toContain('WebBrowser.openBrowserAsync');
-    expect(screen).toContain('naverReviews');
-    expect(screen).toContain('kakaoMap');
+  it('offers a single Kakao place verification action via the branded in-app browser without scraping third-party reviews', () => {
+    expect(screen).toContain('openPlaceInBrowser');
+    expect(screen).toContain('placeReviews');
+    expect(screen).not.toContain('buildNaverMapUrl');
+    expect(screen).not.toContain('naverReviews');
     expect(screen).not.toMatch(/review.*scrap|scrap.*review|persist.*review/i);
-    expect(detail).toContain('WebBrowser.openBrowserAsync');
+    expect(detail).toContain('openPlaceInBrowser');
     expect(detail).toContain('detailNotice');
+    expect(detail).not.toContain('buildNaverMapUrl');
   });
 
   it('searches only the target step category instead of every category in the multi-step course', () => {

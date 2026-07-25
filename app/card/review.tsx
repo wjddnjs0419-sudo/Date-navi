@@ -13,6 +13,7 @@ import { Star, Camera } from 'lucide-react-native';
 import { C, SP, R } from '../../constants/theme';
 import { BackBar, BigButton } from '../../components/ui';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../lib/ratingFeedback';
+import { partnerHasReviewed } from '../../lib/reviewFlow';
 
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -112,8 +113,16 @@ export default function ReviewScreen() {
         photo_url: photoUrl,
       });
       if (error) throw error;
-      // 회고를 남기면 데이트는 완료 상태가 되어 계획 목록에서 빠진다.
-      await supabase.from('date_cards').update({ status: 'done' }).eq('id', id);
+      // 둘 다 리뷰했을 때만 데이트를 done으로 아카이브한다. 한 명만 리뷰하면
+      // 상대가 계획에서 자기 리뷰를 남길 수 있도록 confirmed 상태를 유지한다.
+      const { data: reviewers } = await supabase
+        .from('date_memories')
+        .select('user_id')
+        .eq('card_id', id);
+      const reviewerIds = (reviewers ?? []).map((row) => row.user_id as string);
+      if (partnerHasReviewed(reviewerIds, myUserId)) {
+        await supabase.from('date_cards').update({ status: 'done' }).eq('id', id);
+      }
       router.replace('/(tabs)/memories');
     } catch {
       Alert.alert(s.common.error, c.saveError);

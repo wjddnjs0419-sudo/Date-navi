@@ -9,12 +9,14 @@ import { supabase } from '../../../lib/supabase';
 import { Heart, RotateCcw } from 'lucide-react-native';
 import { C, SP, R, G } from '../../../constants/theme';
 import { BackBar, Badge, MoreMenu } from '../../../components/ui';
+import { StarRating } from '../../../components/StarRating';
 import { useI18n } from '../../../lib/i18n';
 
 type CardInfo = { title: string; summary: string };
 type Memory = {
   id: string; review: string | null; want_again: boolean; title: string | null;
   created_at: string; photo_url: string | null; user_id: string; card_id: string | null;
+  rating: number | null;
 };
 type Comment = { id: string; user_id: string; content: string; created_at: string };
 type Profile = { display_name: string; profile_photo_url: string | null };
@@ -92,7 +94,7 @@ export default function MemoryDetailScreen() {
 
         const { data: memRow } = await supabase
           .from('date_memories')
-          .select('id, review, want_again, title, created_at, photo_url, user_id, card_id')
+          .select('id, review, want_again, title, created_at, photo_url, user_id, card_id, rating')
           .eq('id', id)
           .maybeSingle();
         if (!active) return;
@@ -217,6 +219,11 @@ export default function MemoryDetailScreen() {
 
           <Badge tone="pink">{t('card.memory.badge')}</Badge>
           <Text style={s.title}>{card?.title ?? memory.title ?? t('memories.untitled')}</Text>
+          {memory.rating ? (
+            <View style={s.ratingRow}>
+              <StarRating rating={memory.rating} size={18} testID="memory-detail-stars" />
+            </View>
+          ) : null}
           {!!card?.summary && <Text style={s.summary}>{card.summary}</Text>}
 
           {/* 한줄평은 별도 섹션 없이 댓글 목록 맨 위에 일반 댓글처럼 노출한다. */}
@@ -289,6 +296,7 @@ const s = StyleSheet.create({
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
   },
   title: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: SP.sm + 2, lineHeight: 29 },
+  ratingRow: { marginTop: SP.sm },
   summary: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.xs + 2 },
   sectionLabel: { fontSize: 14, fontWeight: '700', color: C.text, marginTop: SP.xxl, marginBottom: SP.xs },
   empty: { fontSize: 13, color: C.textSub },

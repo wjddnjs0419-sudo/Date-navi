@@ -25,14 +25,14 @@ const textOf = (tree: ReturnType<typeof TR.create>) =>
   tree.root.findAllByType(Text).map((n: any) => n.props.children).flat().join(' ');
 
 describe('PlaceDetailScreen', () => {
-  it('renders the place name and both external-link actions', () => {
+  it('renders the place name and a single Kakao review/map action', () => {
     mockParams = { name: '성수 감성 카페', address: '서울 성동구', kakaoPlaceId: '123', mapUrl: 'http://k' };
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => { tree = TR.create(<PlaceDetailScreen />); });
     const txt = textOf(tree);
     expect(txt).toContain('성수 감성 카페');
-    expect(txt).toContain('modeFlow.courseResult.naverReviews');
-    expect(txt).toContain('modeFlow.courseResult.kakaoMap');
+    expect(txt).toContain('modeFlow.courseResult.placeReviews');
+    expect(txt).not.toContain('modeFlow.courseResult.naverReviews');
     TR.act(() => { tree.unmount(); });
   });
 

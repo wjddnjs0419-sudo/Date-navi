@@ -16,6 +16,14 @@ const place = (id: string, label = `장소 ${id}`): RecommendationLocation => ({
   kind: 'place',
 });
 
+const current = (): RecommendationLocation => ({
+  source: 'current',
+  label: '내 위치 사용 중',
+  latitude: 37.5665,
+  longitude: 126.978,
+  kind: 'current',
+});
+
 describe('recent locations', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
@@ -51,5 +59,26 @@ describe('recent locations', () => {
     await AsyncStorage.setItem(RECENT_LOCATIONS_KEY, '{not-json');
 
     await expect(loadRecentLocations()).resolves.toEqual([]);
+  });
+
+  it('never persists the current-location entry so denied GPS cannot be reused', async () => {
+    await saveRecentLocation(place('1'));
+    const returned = await saveRecentLocation(current());
+
+    expect(returned.some((item) => item.source === 'current')).toBe(false);
+    const reloaded = await loadRecentLocations();
+    expect(reloaded.some((item) => item.source === 'current')).toBe(false);
+    expect(reloaded.map((item) => item.kakaoPlaceId)).toEqual(['1']);
+  });
+
+  it('drops any previously stored current-location entries on load', async () => {
+    await AsyncStorage.setItem(
+      RECENT_LOCATIONS_KEY,
+      JSON.stringify([current(), place('1')]),
+    );
+
+    const recent = await loadRecentLocations();
+    expect(recent.some((item) => item.source === 'current')).toBe(false);
+    expect(recent.map((item) => item.kakaoPlaceId)).toEqual(['1']);
   });
 });

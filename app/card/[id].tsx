@@ -151,8 +151,8 @@ export default function CardDetailScreen() {
             .select('id')
             .eq('card_id', id)
             .eq('user_id', user.id)
-            .maybeSingle();
-          if (memData) setMemoryDone(true);
+            .limit(1);
+          if (memData?.length) setMemoryDone(true);
 
           const { data: rxData } = await supabase
             .from('reactions')

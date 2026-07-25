@@ -49,4 +49,12 @@ describe('planTabOf', () => {
   it('status=active인데 조율중 목록에 없으면 null(계획 화면에 안 보임)', () => {
     expect(planTabOf({ id: 'c2', status: 'active' }, coordinating)).toBeNull();
   });
+
+  it('내가 이미 리뷰한 confirmed 카드는 내 done 탭으로 간다(상대 리뷰 무관)', () => {
+    expect(planTabOf({ id: 'c5', status: 'confirmed' }, coordinating, new Set(['c5']))).toBe('done');
+  });
+
+  it('내가 아직 리뷰 안 한 confirmed 카드는 여전히 upcoming', () => {
+    expect(planTabOf({ id: 'c5', status: 'confirmed' }, coordinating, new Set())).toBe('upcoming');
+  });
 });

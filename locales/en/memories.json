@@ -37,6 +37,8 @@
     "untitled": "Memory",
     "filterAll": "All",
     "filterBest": "Best",
-    "emptyBest": "No favorite memories yet"
+    "emptyBest": "No favorite memories yet",
+    "myReview": "My review",
+    "partnerReview": "Partner's review"
   }
 }

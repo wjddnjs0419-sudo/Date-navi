@@ -71,7 +71,7 @@ jest.mock('../lib/supabase', () => ({
         };
       }
       if (table === 'date_memories') {
-        return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) };
+        return { select: () => ({ eq: () => ({ eq: () => ({ limit: async () => ({ data: [] }) }) }) }) };
       }
       if (table === 'reactions') {
         return {

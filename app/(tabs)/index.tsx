@@ -60,16 +60,23 @@ export default function HomeScreen() {
           setProfile(myProfile);
 
           if (myProfile.couple_id) {
-            // 다가오는 데이트(확정) 최신 3건.
+            // 내가 이미 리뷰한 데이트는 내 "다가오는 데이트"에서 제외한다(상대는 아직 볼 수 있음).
+            const { data: myMemories } = await supabase
+              .from('date_memories')
+              .select('card_id')
+              .eq('user_id', user.id);
+            const reviewedByMe = new Set(
+              (myMemories ?? []).map((row) => row.card_id).filter((cardId): cardId is string => !!cardId),
+            );
+            // 다가오는 데이트(확정, 내가 아직 리뷰 안 함) 최신 3건.
             const { data: planRows } = await supabase
               .from('date_cards')
               .select('id, title, confirmed_date, confirmed_time, confirmed_place')
               .eq('couple_id', myProfile.couple_id)
               .eq('status', 'confirmed')
               .order('confirmed_date', { ascending: true, nullsFirst: false })
-              .order('created_at', { ascending: false })
-              .limit(3);
-            setUpcoming(planRows ?? []);
+              .order('created_at', { ascending: false });
+            setUpcoming((planRows ?? []).filter((row) => !reviewedByMe.has(row.id)).slice(0, 3));
           }
         } catch {
           Alert.alert(t('common.error'), t('home.loadError'));

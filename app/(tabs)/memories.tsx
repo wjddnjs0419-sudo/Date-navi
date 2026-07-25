@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { Camera, Heart, Calendar, ChevronRight } from 'lucide-react-native';
 import { C, SP, R, G } from '../../constants/theme';
 import { Badge, Chip, BigButton, SwipeableCard } from '../../components/ui';
+import { StarRating } from '../../components/StarRating';
 import { Illustration } from '../../components/illustration';
 import { getCardStyle } from '../../lib/tagStyle';
 import { useI18n } from '../../lib/i18n';
@@ -17,6 +18,7 @@ import { resolveMemoryScope } from '../../lib/memories';
 type MemoryItem = {
   id: string; card_id: string | null; title: string | null; review: string;
   want_again: boolean; created_at: string; photo_url: string | null;
+  rating: number | null; user_id: string;
   card_title: string; card_mode: string;
   card_time: string; card_budget: string; card_tags: string[];
 };
@@ -49,6 +51,7 @@ export default function MemoriesScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const [items, setItems] = useState<MemoryItem[]>([]);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [relationshipDays, setRelationshipDays] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'best'>('all');
   // 최초 로드에만 스피너, 이후 재포커스는 기존 목록 유지한 채 조용히 갱신.
@@ -59,6 +62,7 @@ export default function MemoriesScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setMyUserId(user.id);
 
       const { data: profile } = await supabase
         .from('date_planner_profiles')
@@ -91,7 +95,7 @@ export default function MemoriesScreen() {
       const scope = resolveMemoryScope(profile?.couple_id, user.id);
       const { data: mems } = await supabase
         .from('date_memories')
-        .select('id, card_id, title, review, want_again, created_at, photo_url')
+        .select('id, card_id, title, review, want_again, created_at, photo_url, rating, user_id')
         .eq(scope.column, scope.value)
         .order('created_at', { ascending: false });
 
@@ -275,6 +279,14 @@ export default function MemoriesScreen() {
                         <Calendar size={12} color={C.textSub} strokeWidth={2} />
                         <Text style={s.dateText}>{formatDate(item.created_at)}</Text>
                       </View>
+                      <View style={s.authorRow}>
+                        <Badge tone={item.user_id === myUserId ? 'pink' : 'mint'}>
+                          {item.user_id === myUserId ? t('memories.myReview') : t('memories.partnerReview')}
+                        </Badge>
+                        {item.rating ? (
+                          <StarRating rating={item.rating} testID={`memory-stars-${item.id}`} />
+                        ) : null}
+                      </View>
                       {!!item.review && (
                         <Text style={s.reviewText} numberOfLines={2}>“{item.review}”</Text>
                       )}
@@ -384,6 +396,7 @@ const s = StyleSheet.create({
   thumbTile: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { flex: 1, minWidth: 0 },
   todayBadgeRow: { flexDirection: 'row', marginBottom: SP.xs },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginTop: SP.xs },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: SP.xs },
   dateText: { fontSize: 12, color: C.textSub },

@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { ExternalLink, MapPin } from 'lucide-react-native';
 import { BackBar } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
-import { buildKakaoMapUrl, buildNaverMapUrl } from '../../lib/replacement-candidates';
+import { openPlaceInBrowser } from '../../lib/placeBrowser';
 
 const value = (input: string | string[] | undefined) => Array.isArray(input) ? input[0] ?? '' : input ?? '';
 
@@ -45,20 +44,11 @@ export default function PlaceDetailScreen() {
 
         <TouchableOpacity
           accessibilityRole="link"
-          onPress={() => void WebBrowser.openBrowserAsync(buildNaverMapUrl(name))}
+          onPress={() => void openPlaceInBrowser({ kakaoPlaceId, mapUrl })}
           style={s.primary}
         >
           <ExternalLink size={18} color={C.white} />
-          <Text style={s.primaryText}>{t('modeFlow.courseResult.naverReviews')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityRole="link"
-          onPress={() => void WebBrowser.openBrowserAsync(buildKakaoMapUrl({ kakaoPlaceId, mapUrl }))}
-          style={s.secondary}
-        >
-          <ExternalLink size={18} color={C.pinkDeep} />
-          <Text style={s.secondaryText}>{t('modeFlow.courseResult.kakaoMap')}</Text>
+          <Text style={s.primaryText}>{t('modeFlow.courseResult.placeReviews')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity accessibilityRole="button" onPress={() => router.back()} style={s.back}>
@@ -100,13 +90,6 @@ const s = StyleSheet.create({
     backgroundColor: C.pink,
   },
   primaryText: { color: C.white, fontSize: 15, fontWeight: '800' },
-  secondary: {
-    flexDirection: 'row', gap: SP.sm,
-    minHeight: 52, borderRadius: R.md,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: C.pinkBorder,
-  },
-  secondaryText: { color: C.pinkDeep, fontSize: 15, fontWeight: '800' },
   back: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   backText: { color: C.textSub, fontSize: 14, fontWeight: '700' },
   error: { color: C.textSub, fontSize: 14 },

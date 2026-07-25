@@ -74,6 +74,7 @@ export default function ConfirmScreen() {
   const [draftTime, setDraftTime] = useState('PM 7:00');
   const [place, setPlace] = useState('');
   const [items, setItems] = useState('');
+  const [memoryDone, setMemoryDone] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,6 +93,19 @@ export default function ConfirmScreen() {
       setPlace(localized.confirmed_place ?? '');
       setItems(localized.confirmed_items ?? '');
     }
+    // 내가 이미 이 데이트를 리뷰했는지 확인해 중복 리뷰 진입을 막는다(카드 상세와 동일한 per-user 가드).
+    const { data: { user } } = await supabase.auth.getUser();
+    let reviewedByMe = false;
+    if (user) {
+      const { data: myMem } = await supabase
+        .from('date_memories')
+        .select('id')
+        .eq('card_id', id)
+        .eq('user_id', user.id)
+        .limit(1);
+      reviewedByMe = !!myMem?.length;
+    }
+    setMemoryDone(reviewedByMe);
     // 이미 확정(status=confirmed)이면 읽기 상세로, 아직 미확정이면 바로 입력 모드로 연다.
     const confirmed = data?.status === 'confirmed';
     setIsPlan(confirmed);
@@ -222,14 +236,21 @@ export default function ConfirmScreen() {
           )}
 
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.doneBtn}
-              onPress={() => router.push({ pathname: '/card/review', params: { id } })}
-              activeOpacity={0.85}
-            >
-              <Check size={14} color={C.white} strokeWidth={2.5} />
-              <Text style={styles.doneBtnText}>{c.reviewDone}</Text>
-            </TouchableOpacity>
+            {!memoryDone ? (
+              <TouchableOpacity
+                style={styles.doneBtn}
+                onPress={() => router.push({ pathname: '/card/review', params: { id } })}
+                activeOpacity={0.85}
+              >
+                <Check size={14} color={C.white} strokeWidth={2.5} />
+                <Text style={styles.doneBtnText}>{c.reviewDone}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.reviewedBadge}>
+                <Check size={14} color={C.mintFg} strokeWidth={2.5} />
+                <Text style={styles.reviewedText}>{s.card.memoryDone}</Text>
+              </View>
+            )}
             <BigButton variant="secondary" onPress={() => setEditing(true)}>{c.editPlan}</BigButton>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.7}>
               <Text style={styles.cancelBtnText}>{c.cancelPlan}</Text>
@@ -425,6 +446,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.pink, borderRadius: R.btn, paddingVertical: SP.lg,
   },
   doneBtnText: { color: C.white, fontSize: 14, fontWeight: '700' },
+  reviewedBadge: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs + 2,
+    backgroundColor: C.mint, borderRadius: R.btn, paddingVertical: SP.lg,
+  },
+  reviewedText: { color: C.mintFg, fontSize: 14, fontWeight: '700' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12 },
   cancelBtnText: { fontSize: 14, color: C.danger, fontWeight: '600' },
 });

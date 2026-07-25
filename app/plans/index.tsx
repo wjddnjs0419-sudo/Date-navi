@@ -49,7 +49,11 @@ export function computeCoordinatingIds(
 export function planTabOf(
   card: { id: string; status: string },
   coordinatingIds: Set<string>,
+  myReviewedIds: Set<string> = new Set(),
 ): PlanTab | null {
+  // 내가 이미 리뷰한 데이트는 (상대 리뷰 여부와 무관하게) 내 "완료" 탭으로 간다.
+  // 상대는 아직 리뷰 전이면 그 카드가 상대의 upcoming에 그대로 남아 리뷰할 수 있다.
+  if (myReviewedIds.has(card.id)) return 'done';
   if (card.status === 'done') return 'done';
   if (card.status === 'confirmed') return 'upcoming';
   if (card.status === 'active' && coordinatingIds.has(card.id)) return 'coordinating';
@@ -77,6 +81,7 @@ export default function PlansScreen() {
   const { t, language } = useI18n();
   const [plans, setPlans] = useState<PlanCard[]>([]);
   const [coordinatingIds, setCoordinatingIds] = useState<Set<string>>(new Set());
+  const [myReviewedIds, setMyReviewedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<PlanTab>('upcoming');
   const [loading, setLoading] = useState(true);
 
@@ -123,8 +128,18 @@ export default function PlansScreen() {
             }
           }
 
+          // 내가 이미 리뷰한 데이트는 내 "완료" 탭으로 분류한다(상대는 아직 upcoming에서 리뷰 가능).
+          const { data: myMemories } = await supabase
+            .from('date_memories')
+            .select('card_id')
+            .eq('user_id', user.id);
+          const reviewedByMe = new Set(
+            (myMemories ?? []).map((row) => row.card_id).filter((cardId): cardId is string => !!cardId),
+          );
+
           setPlans(cardRows);
           setCoordinatingIds(nextCoordinatingIds);
+          setMyReviewedIds(reviewedByMe);
         } finally {
           setLoading(false);
         }
@@ -135,11 +150,11 @@ export default function PlansScreen() {
   const byTab = useMemo(() => {
     const result: Record<PlanTab, PlanCard[]> = { upcoming: [], coordinating: [], done: [] };
     for (const p of plans) {
-      const tab = planTabOf(p, coordinatingIds);
+      const tab = planTabOf(p, coordinatingIds, myReviewedIds);
       if (tab) result[tab].push(p);
     }
     return result;
-  }, [plans, coordinatingIds]);
+  }, [plans, coordinatingIds, myReviewedIds]);
 
   const groups = useMemo(() => groupByMonth(byTab[activeTab]), [byTab, activeTab]);
 

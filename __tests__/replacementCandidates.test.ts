@@ -1,6 +1,5 @@
 import {
   buildKakaoMapUrl,
-  buildNaverMapUrl,
   rankReplacementCandidates,
 } from '../lib/replacement-candidates';
 import type { RecommendationCourseStep } from '../shared/recommendation/contracts';
@@ -57,8 +56,7 @@ describe('replacement candidate ranking and external verification links', () => 
     expect([...result.top, ...result.additional]).toHaveLength(1);
   });
 
-  it('makes user-facing Naver map and Kakao map URLs without asserting third-party review facts', () => {
-    expect(buildNaverMapUrl('Cafe & Bar')).toBe('https://map.naver.com/p/search/Cafe%20%26%20Bar');
+  it('makes a user-facing Kakao map URL without asserting third-party review facts', () => {
     expect(buildKakaoMapUrl({ kakaoPlaceId: '123', mapUrl: '' })).toBe('https://place.map.kakao.com/123');
   });
 
