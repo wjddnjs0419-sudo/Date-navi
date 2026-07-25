@@ -21,11 +21,4 @@ describe('dead-space screens get the shared bg-park full-bleed treatment', () =>
       /<Illustration name="bg-park" resizeMode="cover"[\s\S]*?<\/SafeAreaView>/,
     );
   });
-
-  it('mode-flow/place-detail renders bg-park outside SafeAreaView', () => {
-    const source = read('app/mode-flow/place-detail.tsx');
-    expect(source).toMatch(
-      /<Illustration name="bg-park" resizeMode="cover"[\s\S]*?<\/SafeAreaView>/,
-    );
-  });
 });

@@ -5,7 +5,6 @@ describe('Phase 10 replacement/detail wiring', () => {
   const root = join(__dirname, '..');
   const edge = readFileSync(join(root, 'supabase/functions/replacement-candidates/index.ts'), 'utf8');
   const screen = readFileSync(join(root, 'app/mode-flow/course-result.tsx'), 'utf8');
-  const detail = readFileSync(join(root, 'app/mode-flow/place-detail.tsx'), 'utf8');
 
   it('keeps candidate lookup authenticated and bounded, then makes selection travel through recommend-date attestation', () => {
     expect(edge).toContain("request.method === 'OPTIONS'");
@@ -19,15 +18,14 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(screen).toContain("attestationRequestId: request.requestId");
   });
 
-  it('offers a single Kakao place verification action via the branded in-app browser without scraping third-party reviews', () => {
+  it('opens Kakao place pages (reviews/map) directly in the branded in-app browser without scraping third-party reviews', () => {
     expect(screen).toContain('openPlaceInBrowser');
     expect(screen).toContain('placeReviews');
     expect(screen).not.toContain('buildNaverMapUrl');
     expect(screen).not.toContain('naverReviews');
+    // 상세 진입도 중간 화면 없이 바로 카카오 place로 연결(place-detail 경유 제거).
+    expect(screen).not.toContain("pathname: '/mode-flow/place-detail'");
     expect(screen).not.toMatch(/review.*scrap|scrap.*review|persist.*review/i);
-    expect(detail).toContain('openPlaceInBrowser');
-    expect(detail).toContain('detailNotice');
-    expect(detail).not.toContain('buildNaverMapUrl');
   });
 
   it('searches only the target step category instead of every category in the multi-step course', () => {

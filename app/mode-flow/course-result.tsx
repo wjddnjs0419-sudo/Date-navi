@@ -127,6 +127,11 @@ export default function CourseResultScreen() {
     try {
       const next = await mutateRecommendationSession(snapshot.sessionId, action, payload);
       setSnapshot(next);
+      // 확정만으로는 후보 저장이 아니다. 저장/보내기 전까지 카드를 draft로 두어
+      // candidates(status='active')에 뜨지 않게 한다. 저장/보내기 시 active로 승격된다.
+      if (action === 'confirm' && next.confirmedCardId) {
+        await supabase.from('date_cards').update({ status: 'draft' }).eq('id', next.confirmedCardId);
+      }
       if (next.requestId !== routeParams?.requestId) {
         router.replace({ pathname: '/mode-flow/course-result', params: buildStructuredCourseResultParams(next.requestId, next.sessionId) } as any);
       }
@@ -318,6 +323,10 @@ export default function CourseResultScreen() {
       // 읽기(openTitleSheet)는 snapshot.confirmedCardId 로 제목을 가져왔으므로 쓰기도 같은 id 를 쓴다.
       // 재확정 시 next.confirmedCardId 가 비어 update 가 조용히 스킵되던 버그를 막는다.
       const cardId = snapshot.confirmedCardId ?? next.confirmedCardId;
+      // 저장/보내기 = 명시적 저장 의사. draft로 두었던 카드를 active로 승격해 후보로 노출한다.
+      if (cardId) {
+        await supabase.from('date_cards').update({ status: 'active' }).eq('id', cardId);
+      }
       const finalTitle = resolveConfirmTitle(draftTitle, defaultTitle);
       if (cardId && finalTitle !== defaultTitle) {
         // 화면은 content_i18n[언어].title 을 title 위에 덮어쓰므로(localizeCardContent),
@@ -514,8 +523,8 @@ export default function CourseResultScreen() {
                   {step.reason ? <Text numberOfLines={2} style={s.timelineReason}>{step.reason}</Text> : null}
                   <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
                   <View style={s.cardActions}>
-                    <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/mode-flow/place-detail', params: { name: step.placeName, address: step.roadAddress || step.address, mapUrl: step.mapUrl, kakaoPlaceId: step.currentKakaoPlaceId } } as any)} style={s.cardActionBtn}>
-                      <Text style={s.cardActionText}>{t('modeFlow.courseResult.detailBtn')}</Text>
+                    <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId, mapUrl: step.mapUrl })} style={s.cardActionBtn}>
+                      <Text style={s.cardActionText}>{t('modeFlow.courseResult.placeReviews')}</Text>
                     </TouchableOpacity>
                     {snapshot.status !== 'confirmed' && (
                       <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked} onPress={() => void loadReplacementCandidates(step.stepId)} style={[s.cardActionBtn, step.locked && s.cardActionBtnDisabled]}>
