@@ -76,10 +76,12 @@ export async function GET(req: Request) {
 function renderNamedFirstLine(line: string, name: string) {
   const idx = line.indexOf(name);
   if (idx !== 0) return line;
+  // 영어는 이름 뒤에 공백이 온다("Claudia invited"). flex는 span 사이/앞 공백을 트림하므로
+  // 나머지 조각에 whiteSpace:'pre'를 줘 선행 공백을 보존한다. (한글 "지원님이"는 공백이 없어 무해)
   return (
     <span style={{ display: 'flex' }}>
       <span style={{ color: ACCENT }}>{name}</span>
-      <span>{line.slice(name.length)}</span>
+      <span style={{ whiteSpace: 'pre' }}>{line.slice(name.length)}</span>
     </span>
   );
 }
