@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { fetchInviterName } from '@/lib/invite';
 import { resolveLang, STRINGS } from '@/lib/i18n';
@@ -8,10 +8,10 @@ import { resolveLang, STRINGS } from '@/lib/i18n';
 // (ImageResponse가 content-type: image/png 를 자동 설정한다.)
 export const runtime = 'nodejs';
 
-// 번들 자산을 파일시스템에서 읽는다. new URL(..., import.meta.url) 로 모듈 기준 경로를 잡으면
-// Next 빌드 트레이서가 해당 파일을 서버리스 번들에 포함한다(next.config outputFileTracingIncludes 로 이중 보강).
+// 번들 자산을 프로젝트 루트 기준으로 읽는다. Vercel 서버리스에서 process.cwd() 는 프로젝트
+// 루트를 가리키고, next.config 의 outputFileTracingIncludes 가 이 파일들을 번들에 포함시킨다.
 function asset(relative: string): Buffer {
-  return readFileSync(fileURLToPath(new URL(relative, import.meta.url)));
+  return readFileSync(join(process.cwd(), relative));
 }
 
 const OG = { w: 1200, h: 630 };
@@ -26,8 +26,8 @@ export async function GET(req: Request) {
   const t = STRINGS[lang];
 
   const name = code ? await fetchInviterName(code) : null;
-  const fontData = asset('../../../assets/Pretendard-Bold.subset.otf');
-  const mascotBuf = asset('../../../public/mascot.png');
+  const fontData = asset('assets/Pretendard-Bold.subset.otf');
+  const mascotBuf = asset('public/mascot.png');
 
   const headline = name ? t.headlineNamed(name) : t.headlineAnon;
   const mascotSrc = `data:image/png;base64,${mascotBuf.toString('base64')}`;
