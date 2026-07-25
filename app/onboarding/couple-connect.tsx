@@ -300,12 +300,13 @@ export default function CoupleConnectScreen() {
 
     // 공개 웹 랜딩 링크. OG 프리뷰가 뜨고, 앱이 있으면 유니버설 링크로 바로 열린다.
     const url = buildInviteUrl(code, language);
+    // URL은 message 텍스트에만 담는다. message와 별도 url 필드를 함께 넘기면 카카오톡이
+    // 둘을 각각 항목으로 보고 프리뷰 카드를 두 번 만든다(SMS는 어차피 텍스트 URL이 필요).
     const message = `${t.shareMessage(code)}\n\n${url}`;
 
     await Share.share({
       title: 'Date Navi',
       message,
-      url,
     });
   }
 
