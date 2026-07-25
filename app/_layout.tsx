@@ -10,7 +10,8 @@ import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
 import { resolveOnboardingDestination } from '../lib/onboarding-routing';
 import * as Notifications from 'expo-notifications';
-import { registerPushToken, buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
+import { buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
+import { ensureStartupPermissions } from '../lib/startupPermissions';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
 import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
 
@@ -73,6 +74,7 @@ export default function RootLayout() {
       try {
         await rememberInviteUrl(await ExpoLinking.getInitialURL());
         const { data: { session } } = await supabase.auth.getSession();
+        if (session) void ensureStartupPermissions();
         await routeForSession(session);
       } finally {
         await SplashScreen.hideAsync();
@@ -95,7 +97,7 @@ export default function RootLayout() {
         setTimeout(() => {
           void routeForSession(session);
         }, 0);
-        if (event === 'SIGNED_IN') void registerPushToken();
+        if (event === 'SIGNED_IN') void ensureStartupPermissions();
       }
     });
 

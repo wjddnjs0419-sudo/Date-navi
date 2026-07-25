@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Image,
+  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView,
   Dimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
-import { Bell, ChevronRight } from 'lucide-react-native';
+import { Bell, ChevronRight, Settings } from 'lucide-react-native';
 import { C, SP, R, G } from '../../constants/theme';
 import { Wordmark } from '../../components/brand';
 import { Illustration } from '../../components/illustration';
@@ -19,7 +19,7 @@ import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { DATE_MODE_ROUTES } from '../../lib/dateModes';
 import { daysUntilIso } from '../../lib/time';
 
-type Profile = { display_name: string; couple_id: string | null; profile_photo_url: string | null };
+type Profile = { display_name: string; couple_id: string | null };
 type UpcomingPlan = {
   id: string; title: string;
   confirmed_date: string | null; confirmed_time: string | null; confirmed_place: string | null;
@@ -53,7 +53,7 @@ export default function HomeScreen() {
 
           const { data: myProfile } = await supabase
             .from('date_planner_profiles')
-            .select('display_name, couple_id, profile_photo_url')
+            .select('display_name, couple_id')
             .eq('user_id', user.id)
             .maybeSingle();
           if (!myProfile) return;
@@ -102,7 +102,6 @@ export default function HomeScreen() {
     month: today.getMonth() + 1,
     day: today.getDate(),
   });
-  const firstName = profile?.display_name?.charAt(0) ?? '?';
 
   const coursePreview = [
     { category: 'meal' as const, label: t('home.coursePreview.meal') },
@@ -128,7 +127,7 @@ export default function HomeScreen() {
           contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* 헤더: 워드마크 + 알림 + 아바타 */}
+          {/* 헤더: 워드마크 + 알림 + 설정 */}
           <View style={s.headerRow}>
             <Wordmark size="sm" />
             <View style={s.headerActions}>
@@ -141,15 +140,11 @@ export default function HomeScreen() {
                 {hasNotif && <View style={s.notifDot} />}
               </TouchableOpacity>
               <TouchableOpacity
-                style={s.avatarBtn}
+                style={s.bellBtn}
                 onPress={() => router.push('/settings' as any)}
                 accessibilityLabel={t('home.accessibility.settings')}
               >
-                {profile?.profile_photo_url ? (
-                  <Image source={{ uri: profile.profile_photo_url }} style={s.avatarImage} />
-                ) : (
-                  <Text style={s.avatarText}>{firstName}</Text>
-                )}
+                <Settings size={18} color={C.textSub} />
               </TouchableOpacity>
             </View>
           </View>
@@ -256,12 +251,6 @@ const s = StyleSheet.create({
     position: 'absolute', top: 10, right: 10,
     width: 8, height: 8, borderRadius: 4, backgroundColor: C.pink,
   },
-  avatarBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: C.pinkMid, alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { fontSize: 14, fontWeight: '700', color: C.white },
-  avatarImage: { width: 44, height: 44, borderRadius: 22 },
 
   hero: {
     flexDirection: 'row', alignItems: 'flex-start',

@@ -30,8 +30,12 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('lucide-react-native', () => {
+  const ReactLocal = require('react');
   const { View } = require('react-native');
-  return new Proxy({}, { get: () => View });
+  return new Proxy({}, {
+    get: (_target, name) => (props: Record<string, unknown>) =>
+      ReactLocal.createElement(View, { ...props, testID: `lucide-${String(name)}` }),
+  });
 });
 
 // 커플 연결 + 확정 데이트 1건. 홈은 이 최소 데이터로 새 레이아웃을 렌더한다.
@@ -117,5 +121,21 @@ describe('홈 화면 목업 계약', () => {
     const txt = tree.root.findAllByType(Text).map((n) => n.props.children).flat().join(' ');
     expect(txt).not.toContain('home.partnerReactionsTitle');
     expect(txt).not.toContain('home.mutualTitle');
+  });
+
+  it('설정 진입 버튼은 아바타가 아니라 톱니(Settings) 아이콘이다', async () => {
+    const { Image, TouchableOpacity, View } = require('react-native') as typeof import('react-native');
+    const tree = await render();
+
+    type Subtree = { props: any; findAllByType: (t: unknown) => Subtree[] };
+    const settingsBtn = (tree.root.findAllByType(TouchableOpacity) as unknown as Subtree[])
+      .filter((n) => n.props.accessibilityLabel === 'home.accessibility.settings');
+    expect(settingsBtn.length).toBe(1);
+
+    // 버튼 안에는 톱니 아이콘만 있고, 아바타 사진/이니셜은 없다.
+    const icons = settingsBtn[0].findAllByType(View).filter((n) => n.props.testID === 'lucide-Settings');
+    expect(icons.length).toBe(1);
+    expect(settingsBtn[0].findAllByType(Image).length).toBe(0);
+    expect(settingsBtn[0].findAllByType(Text).length).toBe(0);
   });
 });

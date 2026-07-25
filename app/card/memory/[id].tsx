@@ -11,6 +11,7 @@ import { C, SP, R, G } from '../../../constants/theme';
 import { BackBar, Badge, MoreMenu } from '../../../components/ui';
 import { StarRating } from '../../../components/StarRating';
 import { useI18n } from '../../../lib/i18n';
+import { removeStorageObjectByUrl } from '../../../lib/storageCleanup';
 
 type CardInfo = { title: string; summary: string };
 type Memory = {
@@ -136,9 +137,10 @@ export default function MemoryDetailScreen() {
       {
         text: t('common.delete'), style: 'destructive',
         onPress: async () => {
-          const { data, error } = await supabase.from('date_memories').delete().eq('id', id).select('id');
+          const { data, error } = await supabase.from('date_memories').delete().eq('id', id).select('id, photo_url');
           if (error) { Alert.alert(t('common.error'), t('memories.deleteAlertError')); return; }
           if (!data?.length) { Alert.alert(t('common.notice'), t('memories.deleteAlertForbidden')); return; }
+          void removeStorageObjectByUrl(data[0].photo_url);
           router.back();
         },
       },

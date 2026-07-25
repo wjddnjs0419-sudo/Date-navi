@@ -32,3 +32,12 @@ export async function registerPushToken(): Promise<void> {
     platform: 'ios',
   });
 }
+
+// 로그아웃 직전에 호출한다. signOut 후에는 RLS 때문에 본인 행을 지울 수 없으므로
+// 반드시 세션이 살아있을 때 계정-기기 매핑을 제거해 다음 로그인 계정으로 오발송을 막는다.
+export async function unregisterPushToken(): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from('push_tokens').delete().eq('user_id', user.id);
+}

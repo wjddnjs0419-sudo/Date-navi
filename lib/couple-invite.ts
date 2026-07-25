@@ -41,6 +41,21 @@ export function buildInviteUrl(code: string | null, language: 'ko' | 'en') {
   return `${INVITE_WEB_BASE}/invite?code=${normalized}&l=${language}`;
 }
 
+// 공유 시트에 넘길 페이로드. URL은 message 텍스트에만 싣는다 — 실기기 확인 결과(2026-07-26):
+// 카카오는 텍스트 안 URL만 프리뷰하고 별도 url 아이템은 무시(url만 주면 OG 카드 없음),
+// WhatsApp 익스텐션은 url 아이템만 프리뷰. 기본 공유 시트로는 양립 불가라 주 타깃인
+// 카카오를 택했다(WhatsApp은 프리뷰 없이 링크만 동작). 양쪽에 다 실으면 카카오 카드 2개.
+// 완벽 해결은 카카오 SDK 네이티브 공유 — 출시 후 개선 항목.
+export function buildInviteShareContent(
+  code: string | null,
+  language: 'ko' | 'en',
+  shareMessage: string,
+): { title: string; message: string } | null {
+  const url = buildInviteUrl(code, language);
+  if (!url) return null;
+  return { title: 'Date Navi', message: `${shareMessage}\n\n${url}` };
+}
+
 export function parseInviteCodeFromUrl(url?: string | null) {
   if (!url) return '';
 

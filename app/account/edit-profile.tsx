@@ -13,6 +13,7 @@ import { C } from '../../constants/colors';
 import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -124,6 +125,8 @@ export default function EditProfileScreen() {
         );
       if (saveError) throw saveError;
 
+      // 새 URL이 저장됐으니 옛 아바타 오브젝트는 고아 — 지운다.
+      if (photoUrl && photoUrl !== publicUrl) void removeStorageObjectByUrl(photoUrl);
       setPhotoUrl(publicUrl);
     } catch {
       Alert.alert(t('common.error'), t('card.memory.photoUploadError'));

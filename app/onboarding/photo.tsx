@@ -12,6 +12,7 @@ import { G } from '../../constants/theme';
 import { BackBar, BigButton, ProgressDots } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
+import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
 
 export default function PhotoScreen() {
   const router = useRouter();
@@ -88,6 +89,8 @@ export default function PhotoScreen() {
         );
       if (saveError) throw saveError;
 
+      // 새 URL이 저장됐으니 옛 아바타 오브젝트(같은 화면에서 재선택 포함)는 고아 — 지운다.
+      if (photoUrl && photoUrl !== pub.publicUrl) void removeStorageObjectByUrl(photoUrl);
       setPhotoUrl(pub.publicUrl);
     } catch {
       Alert.alert(t('common.error'), t('onboarding.photo.uploadError'));

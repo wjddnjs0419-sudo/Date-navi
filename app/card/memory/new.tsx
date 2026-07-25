@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Image,
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
+  ActivityIndicator, Alert, TouchableOpacity, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -14,6 +14,7 @@ import { C, SP, R } from '../../../constants/theme';
 import { BackBar, BigButton } from '../../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../components/illustration';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../lib/ratingFeedback';
+import { removeStorageObjectByUrl } from '../../../lib/storageCleanup';
 
 export default function NewMemoryScreen() {
   const router = useRouter();
@@ -87,6 +88,8 @@ export default function NewMemoryScreen() {
       if (uploadError) throw uploadError;
 
       const { data: pub } = supabase.storage.from('memories').getPublicUrl(path);
+      // 저장 전 재선택이면 이전 업로드는 아무 데서도 참조되지 않는 고아 — 즉시 지운다.
+      if (photoUrl) void removeStorageObjectByUrl(photoUrl);
       setPhotoUrl(pub.publicUrl);
     } catch {
       Alert.alert(s.common.error, s.card.memory.photoUploadError);
@@ -139,8 +142,7 @@ export default function NewMemoryScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
-        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.flex1} contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -222,8 +224,7 @@ export default function NewMemoryScreen() {
           <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
             {saving ? s.common.saving : c.saveButton}
           </BigButton>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }

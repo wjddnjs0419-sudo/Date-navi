@@ -14,6 +14,7 @@ import { getCardStyle } from '../../lib/tagStyle';
 import { useI18n } from '../../lib/i18n';
 import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
 import { resolveMemoryScope } from '../../lib/memories';
+import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
 
 type MemoryItem = {
   id: string; card_id: string | null; title: string | null; review: string;
@@ -135,9 +136,10 @@ export default function MemoriesScreen() {
       {
         text: t('common.delete'), style: 'destructive',
         onPress: async () => {
-          const { data, error } = await supabase.from('date_memories').delete().eq('id', memoryId).select('id');
+          const { data, error } = await supabase.from('date_memories').delete().eq('id', memoryId).select('id, photo_url');
           if (error) { Alert.alert(t('common.error'), t('memories.deleteAlertError')); return; }
           if (!data?.length) { Alert.alert(t('common.notice'), t('memories.deleteAlertForbidden')); return; }
+          void removeStorageObjectByUrl(data[0].photo_url);
           loadMemories();
         },
       },

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -264,8 +264,7 @@ export default function ConfirmScreen() {
   // ── 입력/수정 모드 ──────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
-        <ScrollView style={styles.flex1} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.flex1} contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
           <BackBar />
 
           <View style={styles.headingBlock}>
@@ -353,8 +352,7 @@ export default function ConfirmScreen() {
               {isPlan ? c.back : c.keepButton}
             </BigButton>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
       <PickerSheet
         visible={datePickerOpen}
         title={c.dateLabel}

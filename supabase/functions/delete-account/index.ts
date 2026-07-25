@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { removeUserStorageObjects } from '../_shared/account-storage-cleanup.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +50,10 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // deleteUser는 storage 오브젝트를 cascade하지 않는다 — avatar·추억 사진을 비운다.
+    // 반드시 삭제 성공 후에 실행: deleteUser가 실패했는데 사진부터 날리면 안 된다.
+    await removeUserStorageObjects(adminClient.storage, user.id);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

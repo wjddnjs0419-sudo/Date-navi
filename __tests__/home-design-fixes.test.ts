@@ -34,7 +34,7 @@ describe('홈 화면 디자인 QA (UI RENEW 코스카드 레이아웃)', () => {
 
   it('알림/설정 아이콘 버튼에 accessibilityLabel이 있다', () => {
     expect(source).toMatch(/bellBtn[\s\S]{0,400}accessibilityLabel=\{t\('home\.accessibility\.notifications'\)\}/);
-    expect(source).toMatch(/avatarBtn[\s\S]{0,400}accessibilityLabel=\{t\('home\.accessibility\.settings'\)\}/);
+    expect(source).toMatch(/onPress=\{\(\) => router\.push\('\/settings'[\s\S]{0,200}accessibilityLabel=\{t\('home\.accessibility\.settings'\)\}/);
   });
 
   it('스타일 정의에 하드코딩 hex 색상이 없다 (토큰만 사용)', () => {

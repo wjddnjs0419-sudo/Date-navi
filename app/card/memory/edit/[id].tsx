@@ -15,6 +15,7 @@ import { BackBar, BigButton, HeartDoodle } from '../../../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../../components/illustration';
 import { useI18n } from '../../../../lib/i18n';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../../lib/ratingFeedback';
+import { removeStorageObjectByUrl } from '../../../../lib/storageCleanup';
 
 export default function EditMemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +31,8 @@ export default function EditMemoryScreen() {
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // 저장 성공 시 옛 사진 오브젝트를 지우기 위해 로드 시점의 URL을 기억한다.
+  const [initialPhotoUrl, setInitialPhotoUrl] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -48,6 +51,7 @@ export default function EditMemoryScreen() {
           setReviewText(data.review ?? '');
           setRating(data.rating ?? 0);
           setPhotoUrl(data.photo_url);
+          setInitialPhotoUrl(data.photo_url);
         }
         setLoading(false);
       })();
@@ -94,6 +98,9 @@ export default function EditMemoryScreen() {
       if (uploadError) throw uploadError;
 
       const { data: pub } = supabase.storage.from('memories').getPublicUrl(path);
+      // 같은 편집 세션에서 여러 번 교체하면 중간 업로드가 고아가 되므로 즉시 지운다.
+      // (원본은 저장 성공 전까지 보존 — 저장 없이 나가면 DB가 계속 원본을 가리킨다.)
+      if (photoUrl && photoUrl !== initialPhotoUrl) void removeStorageObjectByUrl(photoUrl);
       setPhotoUrl(pub.publicUrl);
     } catch {
       Alert.alert(strings.common.error, strings.card.memory.photoUploadError);
@@ -122,6 +129,8 @@ export default function EditMemoryScreen() {
         .select('id');
       if (error) throw error;
       if (!data?.length) { Alert.alert(strings.common.notice, strings.card.memory.editForbidden); return; }
+      // 사진이 교체된 채 저장됐으면 옛 오브젝트를 정리한다.
+      if (initialPhotoUrl && initialPhotoUrl !== photoUrl) void removeStorageObjectByUrl(initialPhotoUrl);
       router.back();
     } catch {
       Alert.alert(strings.common.error, strings.card.memory.saveError);

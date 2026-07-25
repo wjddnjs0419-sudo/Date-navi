@@ -217,4 +217,15 @@ describe('structured course screen', () => {
     expect(request.courseSteps).toHaveLength(2);
     expect(request.additionalRequest).toBeUndefined();
   });
+
+  it('scrolls the focused input above the keyboard automatically (KAV는 공간만 만들고 스크롤은 안 해줘서 부족 — 실기기 확인)', () => {
+    const { KeyboardAvoidingView, ScrollView } = require('react-native') as typeof import('react-native');
+    let renderer!: TestRendererInstance;
+    act(() => { renderer = create(<CourseScreen />); });
+
+    const scrolls = renderer.root.findAllByType(ScrollView);
+    expect(scrolls).toHaveLength(1);
+    expect(scrolls[0].props.automaticallyAdjustKeyboardInsets).toBe(true);
+    expect(renderer.root.findAllByType(KeyboardAvoidingView)).toHaveLength(0);
+  });
 });

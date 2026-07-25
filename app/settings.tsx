@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import * as ExpoLocation from 'expo-location';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
+import { registerPushToken, unregisterPushToken } from '../lib/push';
 import {
   User, Users, Bell, Globe, Shield, Info,
   HelpCircle, FileText, Trash2, ChevronRight, MapPin,
@@ -137,6 +138,11 @@ export default function SettingsScreen() {
   );
 
   async function handleLogout() {
+    try {
+      await unregisterPushToken();
+    } catch {
+      // 토큰 정리가 실패해도 로그아웃은 진행한다.
+    }
     await supabase.auth.signOut();
     router.replace('/(auth)' as any);
   }
@@ -183,6 +189,7 @@ export default function SettingsScreen() {
     if (status === 'undetermined' && canAskAgain) {
       const res = await Notifications.requestPermissionsAsync();
       if (res.status === 'granted') {
+        void registerPushToken();
         Alert.alert(t.notificationOnTitle, t.notificationOnBody);
       } else {
         Alert.alert(t.notificationOffTitle, t.notificationOffBody, [
