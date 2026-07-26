@@ -1,5 +1,6 @@
 // lib/placeReview.ts
-// 리뷰 화면 장소별 등급의 별점 유도 규칙(스펙 §5). UI에서 분리된 순수 로직.
+// 리뷰 화면 장소별 등급의 별점 유도 규칙(스펙 §5). UI 렌더링에서 분리된 로직.
+import type { PriceLevel } from '../shared/recommendation/place-price';
 import { Rating, deriveWantAgain } from './ratingFeedback';
 
 export type PlaceSatisfaction = 'good' | 'bad';
@@ -22,7 +23,7 @@ export type PlaceFeedbackInput = {
   sessionId: string;
   stepId: string;
   satisfaction: PlaceSatisfaction | undefined;
-  priceLevel: 1 | 2 | 3 | null;
+  priceLevel: PriceLevel | null;
 };
 
 export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {

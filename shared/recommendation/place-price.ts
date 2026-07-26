@@ -1,6 +1,8 @@
 // shared/recommendation/place-price.ts
-// 장소 가격 두 계층(추정/관측)의 순수 계산. 스펙 §2·§5-1 참조.
-// DB·네트워크 의존 없음 — Edge와 SQL 재계산 로직이 같은 규칙을 공유하도록 단일 소스.
+// 장소 가격 두 계층(추정/관측)의 순수 계산. 스펙 §2·§5-1 참조. DB·네트워크 의존 없음.
+// observedBoundsFromAnswers는 아직 SQL recompute_place_observed_price와 규칙이 다르다
+// (SQL은 보간 percentile_cont, 여기는 비보간 표본 선택). 어느 쪽을 단일 소스로 삼을지는
+// 마이그레이션 작성 시점의 결정 사항이며, 그때까지 이 함수의 프로덕션 소비자는 없다.
 
 export const PRICE_LEVEL = { cheap: 1, normal: 2, expensive: 3 } as const;
 export type PriceLevel = (typeof PRICE_LEVEL)[keyof typeof PRICE_LEVEL];
@@ -12,8 +14,12 @@ export type PriceAnswer = { priceLevel: PriceLevel; anchorKRW: number };
 export type ObservedBounds = { minKRW: number | null; maxKRW: number | null; contradictory: boolean };
 
 export function priceAnchorKRW(totalBudgetKRW: number | null | undefined, stepCount: number): number | null {
-  if (!totalBudgetKRW || totalBudgetKRW <= 0 || stepCount <= 0) return null;
-  return Math.round(totalBudgetKRW / stepCount);
+  if (!totalBudgetKRW || !Number.isFinite(totalBudgetKRW) || totalBudgetKRW <= 0) return null;
+  if (!Number.isFinite(stepCount) || stepCount <= 0) return null;
+  const anchor = Math.round(totalBudgetKRW / stepCount);
+  // 0원 앵커는 모든 장소를 예산 초과로 만든다. 몫이 0으로 반올림될 만큼
+  // 작은 예산은 앵커가 없는 것과 같게 다룬다(점수 0).
+  return anchor > 0 ? anchor : null;
 }
 
 // 보간하지 않고 실제 표본값을 고른다. 보간은 이상치를 부분적으로 섞어 들여
@@ -77,5 +83,7 @@ export function budgetScoreFor(range: PriceRange, shareKRW: number | null): numb
 export function shrunkPositiveRate(input: {
   positives: number; total: number; priorRate: number; priorStrength: number;
 }): number {
-  return (input.positives + input.priorRate * input.priorStrength) / (input.total + input.priorStrength);
+  const denominator = input.total + input.priorStrength;
+  if (denominator <= 0) return input.priorRate;
+  return (input.positives + input.priorRate * input.priorStrength) / denominator;
 }
