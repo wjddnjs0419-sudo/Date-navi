@@ -6,7 +6,11 @@ import {
   haversineDistanceMeters,
   rankPlaceCandidates,
 } from '../supabase/functions/_shared/recommendation-ranking';
-import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
+import {
+  EMPTY_RECOMMENDATION_HISTORY,
+  type RecommendationHistoryContext,
+} from '../shared/recommendation/recommendation-history';
+import { buildDeterministicCandidateCourse } from '../supabase/functions/_shared/recommendation-course-selection';
 
 const request = (steps = ['meal', 'cafe']): RecommendationRequest => ({
   requestId: 'request-ranking',
@@ -30,7 +34,12 @@ const CATEGORY_FACTS: Record<string, { group: string; name: string }> = {
   AT4: { group: '관광명소', name: '관광명소 > 전망대' },
 };
 
-const place = (id: string, categoryCode: string, longitude = 127.001): EvidencedKakaoPlace => ({
+const place = (
+  id: string,
+  categoryCode: string,
+  longitude = 127.001,
+  overrides: Partial<EvidencedKakaoPlace> = {},
+): EvidencedKakaoPlace => ({
   kakaoPlaceId: id,
   name: `Place ${id}`,
   categoryGroupCode: categoryCode,
@@ -47,6 +56,7 @@ const place = (id: string, categoryCode: string, longitude = 127.001): Evidenced
     page: 1,
     categoryCode,
   }],
+  ...overrides,
 });
 
 describe('recommend-date deterministic ranking', () => {
@@ -83,6 +93,68 @@ describe('recommend-date deterministic ranking', () => {
     expect(ranked.candidates.find((candidate) => candidate.kakaoPlaceId === 'older-recent-meal')?.scoreBreakdown.diversity)
       .toBe(-30);
     expect(ranked.reintroducedPlaceIds).toEqual(['older-recent-meal']);
+  });
+
+  it('keeps a required-intent reintroduction in the limited final pool and emits its cooldown', () => {
+    const intentRequest: RecommendationRequest = {
+      ...request(['meal', 'cafe', 'culture']),
+      additionalRequest: '무조건 삼겹살이어야 해',
+      language: 'en',
+    };
+    const history: RecommendationHistoryContext = {
+      ...recentHistory,
+      recentHardPlaceIds: ['recent-pork'],
+      recentExposure: { 'recent-pork': { lastSeenAt: '2026-07-24T00:00:00.000Z', sessionDistance: 2 } },
+    };
+    const ranked = rankPlaceCandidates([
+      place('fresh-meal', 'FD6'),
+      place('recent-pork', 'FD6', 127.001, { name: '삼겹살 식당' }),
+      place('fresh-cafe', 'CE7'),
+      place('fresh-culture', 'CT1'),
+    ], intentRequest, { history, limit: 3 });
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toContain('recent-pork');
+    expect(ranked.candidates.find((candidate) => candidate.kakaoPlaceId === 'recent-pork')?.scoreBreakdown.diversity)
+      .toBe(-30);
+    expect(ranked.reintroducedPlaceIds).toEqual(['recent-pork']);
+
+    const course = buildDeterministicCandidateCourse({
+      request: intentRequest,
+      candidates: ranked.candidates,
+      reintroducedPlaceIds: ranked.reintroducedPlaceIds,
+      generatedAt: '2026-07-26T00:00:00.000Z',
+    });
+    expect(course.course.steps.map((step) => step.kakaoPlaceId)).toContain('recent-pork');
+    expect(course.course.relaxedConstraints).toEqual([{
+      constraint: 'recentPlaceCooldown',
+      reason: 'There were not enough new place options, so we included some recently recommended places.',
+    }]);
+  });
+
+  it('treats an explicit empty history exactly like omitted history for Control candidates', () => {
+    const input = [place('meal', 'FD6'), place('cafe', 'CE7')];
+    const omitted = rankPlaceCandidates(input, request());
+    const explicitEmpty = rankPlaceCandidates(input, request(), { history: EMPTY_RECOMMENDATION_HISTORY });
+
+    expect(explicitEmpty).toEqual(omitted);
+    expect(JSON.stringify(explicitEmpty.candidates)).toBe(JSON.stringify(omitted.candidates));
+  });
+
+  it('keeps normal score ordering when non-exclusion history does not require a cooldown', () => {
+    const ranked = rankPlaceCandidates([
+      place('low-score-meal', 'FD6', 127.05),
+      place('high-score-meal', 'FD6', 127.001),
+      place('cafe', 'CE7', 127.001),
+    ], { ...request(), maxWalkingMinutes: undefined }, {
+      limit: 2,
+      history: {
+        recentHardPlaceIds: [], recentExposure: {}, negativeActions: {}, qualifiedPairs: [],
+        feedback: { unrelated: { revisit: true, quiet: 0, noisy: 0, photos: 0, crowded: 0 } },
+      },
+    });
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toContain('high-score-meal');
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).not.toContain('low-score-meal');
   });
 
   it('preserves a direct pin from recent history without recording a cooldown reintroduction', () => {

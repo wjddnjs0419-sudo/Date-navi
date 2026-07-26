@@ -59,9 +59,39 @@ describe('recommendation history policy', () => {
     expect(behaviorScoreFor('overloaded', clamped, {
       now: NOW, quietPreferred: true, photoFriendlyPreferred: true,
     })).toBe(-31);
+
+    const lowerClamped: RecommendationHistoryContext = {
+      ...history,
+      negativeActions: {
+        lower: { replacedCount: 1, deletedCount: 0, lastNegativeAt: '2026-07-01T00:00:00.000Z' },
+      },
+      feedback: {
+        lower: { revisit: false, quiet: 0, noisy: 1, photos: 0, crowded: 1 },
+      },
+    };
+    expect(behaviorScoreFor('lower', lowerClamped, { now: NOW, quietPreferred: true })).toBe(-40);
+  });
+
+  it('applies each feedback signal only when its matching request preference is present', () => {
+    const independent: RecommendationHistoryContext = {
+      ...history,
+      feedback: {
+        revisit: { revisit: true, quiet: 0, noisy: 0, photos: 0, crowded: 0 },
+        quiet: { revisit: false, quiet: 1, noisy: 0, photos: 0, crowded: 0 },
+        photos: { revisit: false, quiet: 0, noisy: 0, photos: 1, crowded: 0 },
+        noisy: { revisit: false, quiet: 0, noisy: 1, photos: 0, crowded: 0 },
+        crowded: { revisit: false, quiet: 0, noisy: 0, photos: 0, crowded: 1 },
+      },
+    };
+    expect(behaviorScoreFor('revisit', independent, { now: NOW })).toBe(5);
+    expect(behaviorScoreFor('quiet', independent, { now: NOW, quietPreferred: true })).toBe(5);
+    expect(behaviorScoreFor('photos', independent, { now: NOW, photoFriendlyPreferred: true })).toBe(5);
+    expect(behaviorScoreFor('noisy', independent, { now: NOW, quietPreferred: true })).toBe(-8);
+    expect(behaviorScoreFor('crowded', independent, { now: NOW, quietPreferred: true })).toBe(-8);
   });
 
   it('adds at most six qualified-pair points across adjacent places', () => {
+    expect(pairBonusForAdjacentPlaces('liked', ['neighbour-a'], history)).toBe(3);
     expect(pairBonusForAdjacentPlaces('liked', ['neighbour-a', 'neighbour-b', 'neighbour-c'], history)).toBe(6);
     expect(pairBonusForAdjacentPlaces('liked', ['unqualified'], history)).toBe(0);
     expect(pairBonusForAdjacentPlaces('liked', ['neighbour-a'], {

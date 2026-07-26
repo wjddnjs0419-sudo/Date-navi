@@ -82,10 +82,10 @@ const totalScore = (breakdown: CandidateScoreBreakdown) => Object.values(breakdo
 
 type FeasibilityPlace = Pick<EvidencedKakaoPlace, 'kakaoPlaceId' | 'latitude' | 'longitude'>;
 
-function canAssignEveryStep(
+function findFeasibleAssignment(
   places: readonly EvidencedKakaoPlace[],
   request: RecommendationRequest,
-): boolean {
+): FeasibilityPlace[] | undefined {
   const locks = new Map((request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
   const intentByStepId = new Map(effectiveStepIntents(request).map((intent) => [intent.stepId, intent]));
   const choices: FeasibilityPlace[][] = request.courseSteps.map((step) => {
@@ -100,22 +100,36 @@ function canAssignEveryStep(
       && (intent?.strength !== 'required' || placeMatchesStepIntent(place, intent))
     ));
   });
-  if (choices.some((choice) => choice.length === 0)) return false;
+  if (choices.some((choice) => choice.length === 0)) return undefined;
   const walkingLimitMeters = request.maxWalkingMinutes === undefined ? undefined : request.maxWalkingMinutes * 80;
   const used = new Set<string>();
-  const visit = (stepIndex: number, previous?: FeasibilityPlace): boolean => {
-    if (stepIndex === choices.length) return true;
+  const assignment: FeasibilityPlace[] = [];
+  const visit = (stepIndex: number, previous?: FeasibilityPlace): FeasibilityPlace[] | undefined => {
+    if (stepIndex === choices.length) return [...assignment];
     for (const candidate of choices[stepIndex]) {
       if (used.has(candidate.kakaoPlaceId)) continue;
       if (previous && walkingLimitMeters !== undefined
         && haversineDistanceMeters(previous, candidate) > walkingLimitMeters) continue;
       used.add(candidate.kakaoPlaceId);
-      if (visit(stepIndex + 1, candidate)) return true;
+      assignment.push(candidate);
+      const result = visit(stepIndex + 1, candidate);
+      if (result) return result;
+      assignment.pop();
       used.delete(candidate.kakaoPlaceId);
     }
-    return false;
+    return undefined;
   };
   return visit(0);
+}
+
+function hasHistorySignals(history: RecommendationHistoryContext | undefined): history is RecommendationHistoryContext {
+  return Boolean(history && (
+    history.recentHardPlaceIds.length > 0
+    || Object.keys(history.recentExposure).length > 0
+    || Object.keys(history.negativeActions).length > 0
+    || Object.keys(history.feedback).length > 0
+    || history.qualifiedPairs.length > 0
+  ));
 }
 
 export function rankPlaceCandidates(
@@ -134,7 +148,7 @@ export function rankPlaceCandidates(
     && ![...excludedCategories].some((category) => verifiedPlaceMatchesCategory(place, category))
   ));
 
-  const history = options.history;
+  const history = hasHistorySignals(options.history) ? options.history : undefined;
   const recentHardPlaceIds = new Set(history?.recentHardPlaceIds ?? []);
   const pinnedPlaceIds = new Set(
     request.courseSteps
@@ -148,7 +162,7 @@ export function rankPlaceCandidates(
     ? eligiblePlaces.filter((place) => !recentHardPlaceIds.has(place.kakaoPlaceId) || pinnedPlaceIds.has(place.kakaoPlaceId))
     : eligiblePlaces;
   const reintroducedPlaceIds: string[] = [];
-  if (history && !canAssignEveryStep(policyPlaces, request)) {
+  if (history && !findFeasibleAssignment(policyPlaces, request)) {
     const oldestFirst = [...hardExcluded].sort((a, b) => (
       (history.recentExposure[b.kakaoPlaceId]?.sessionDistance ?? 0)
       - (history.recentExposure[a.kakaoPlaceId]?.sessionDistance ?? 0)
@@ -157,7 +171,7 @@ export function rankPlaceCandidates(
     for (const place of oldestFirst) {
       policyPlaces = [...policyPlaces, place];
       if (!reintroducedPlaceIds.includes(place.kakaoPlaceId)) reintroducedPlaceIds.push(place.kakaoPlaceId);
-      if (canAssignEveryStep(policyPlaces, request)) break;
+      if (findFeasibleAssignment(policyPlaces, request)) break;
     }
   }
   const reintroducedPlaceIdSet = new Set(reintroducedPlaceIds);
@@ -239,22 +253,51 @@ export function rankPlaceCandidates(
   const selectedIds = new Set<string>();
   const limit = Math.max(0, options.limit ?? 20);
 
+  const appendSelected = (place: typeof scored[number], categoryRecall = false) => {
+    const selectedPlace = categoryRecall
+      ? {
+        ...place,
+        scoreBreakdown: {
+          ...place.scoreBreakdown,
+          ...(history
+            ? { categoryRecall: RANKING_SCORE_WEIGHTS.categoryRecall }
+            : { diversity: RANKING_SCORE_WEIGHTS.categoryRecall }),
+        },
+      }
+      : place;
+    selected.push(selectedPlace);
+    selectedIds.add(selectedPlace.kakaoPlaceId);
+  };
+
+  if (history) {
+    const assignment = findFeasibleAssignment(ranked, request);
+    for (const assignedPlace of assignment ?? []) {
+      if (selected.length >= limit || selectedIds.has(assignedPlace.kakaoPlaceId)) continue;
+      const scoredPlace = ranked.find((place) => place.kakaoPlaceId === assignedPlace.kakaoPlaceId);
+      if (scoredPlace) appendSelected(scoredPlace);
+    }
+  }
+
   for (const category of requiredCategories) {
+    const alreadySelected = history
+      ? selected.find((place) => verifiedPlaceMatchesCategory(place, category))
+      : undefined;
+    if (alreadySelected) {
+      const index = selected.indexOf(alreadySelected);
+      selected[index] = {
+        ...alreadySelected,
+        scoreBreakdown: {
+          ...alreadySelected.scoreBreakdown,
+          categoryRecall: RANKING_SCORE_WEIGHTS.categoryRecall,
+        },
+      };
+      continue;
+    }
     const representative = ranked.find((place) => (
       !selectedIds.has(place.kakaoPlaceId) && verifiedPlaceMatchesCategory(place, category)
     ));
     if (!representative || selected.length >= limit) continue;
-    const recalled = {
-      ...representative,
-      scoreBreakdown: {
-        ...representative.scoreBreakdown,
-        ...(history
-          ? { categoryRecall: RANKING_SCORE_WEIGHTS.categoryRecall }
-          : { diversity: RANKING_SCORE_WEIGHTS.categoryRecall }),
-      },
-    };
-    selected.push(recalled);
-    selectedIds.add(recalled.kakaoPlaceId);
+    appendSelected(representative, true);
   }
   // 입력 시점 지정 장소(핀)는 카테고리를 이기므로 저점수일 때 카테고리 recall이 보호하지 못한다.
   // 일반 score fill(절단) 이전에 강제 포함해 유효한 핀이 후보 상한에서 잘려 STEP_PIN_UNAVAILABLE로
@@ -263,16 +306,14 @@ export function rankPlaceCandidates(
     for (const place of ranked) {
       if (selected.length >= limit) break;
       if (pinnedPlaceIds.has(place.kakaoPlaceId) && !selectedIds.has(place.kakaoPlaceId)) {
-        selected.push(place);
-        selectedIds.add(place.kakaoPlaceId);
+        appendSelected(place);
       }
     }
   }
   for (const place of ranked) {
     if (selected.length >= limit) break;
     if (!selectedIds.has(place.kakaoPlaceId)) {
-      selected.push(place);
-      selectedIds.add(place.kakaoPlaceId);
+      appendSelected(place);
     }
   }
 
@@ -285,11 +326,12 @@ export function rankPlaceCandidates(
     category,
     candidates.filter((candidate) => verifiedPlaceMatchesCategory(candidate, category)).length,
   ]));
+  if (!history) return { candidates, recallByCategory };
   return {
     candidates,
     recallByCategory,
     recentHistoryExcludedCount: hardExcluded.length,
-    reintroducedPlaceIds,
+    reintroducedPlaceIds: reintroducedPlaceIds.filter((placeId) => selectedIds.has(placeId)),
   };
 }
 
