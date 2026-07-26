@@ -27,7 +27,8 @@ export type PlaceFeedbackInput = {
 };
 
 export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {
-  p_session_id: string; p_step_id: string; p_visited: boolean; p_tags: string[]; p_price_level: number | null;
+  p_session_id: string; p_step_id: string; p_visited: boolean; p_tags: string[];
+  p_price_level: number | null; p_satisfaction: boolean | null;
 } | null {
   if (input.satisfaction === undefined && input.priceLevel === null) return null;
   return {
@@ -36,5 +37,7 @@ export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {
     p_visited: true,
     p_tags: input.satisfaction === 'good' ? ['revisit'] : [],
     p_price_level: input.priceLevel,
+    // 태그 유무로 만족도를 역추적하면 무응답이 부정으로 집계된다. 명시적으로 구별해 보낸다.
+    p_satisfaction: input.satisfaction === undefined ? null : input.satisfaction === 'good',
   };
 }

@@ -49,11 +49,18 @@ export type PlacePriceFields = {
   estimatedMaxKRW: number | null;
   observedMinKRW: number | null;
   observedMaxKRW: number | null;
+  observedSampleCount: number;
 };
 export type PriceRange = { source: 'observed' | 'estimated' | 'unknown'; minKRW: number | null; maxKRW: number | null };
 
+// 관측이 추정을 덮으려면 이 정도 표본은 있어야 한다. 그 아래에서는 안쪽 백분위가
+// 실효 극단값으로 퇴화해(N=2면 하한=최솟값·상한=최댓값) 구간이 지나치게 넓어지고,
+// 그 넓은 구간이 멀쩡한 AI 추정을 밀어내면 정보가 오히려 줄어든다.
+export const OBSERVED_MIN_SAMPLE_COUNT = 3;
+
 export function pickPriceRange(place: PlacePriceFields): PriceRange {
-  if (place.observedMinKRW !== null || place.observedMaxKRW !== null) {
+  const observedUsable = place.observedSampleCount >= OBSERVED_MIN_SAMPLE_COUNT;
+  if (observedUsable && (place.observedMinKRW !== null || place.observedMaxKRW !== null)) {
     return { source: 'observed', minKRW: place.observedMinKRW, maxKRW: place.observedMaxKRW };
   }
   if (place.estimatedMinKRW !== null || place.estimatedMaxKRW !== null) {

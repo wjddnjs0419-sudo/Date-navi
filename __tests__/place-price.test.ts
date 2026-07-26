@@ -6,6 +6,7 @@ import {
   budgetScoreFor,
   shrunkPositiveRate,
   PRICE_LEVEL,
+  OBSERVED_MIN_SAMPLE_COUNT,
 } from '../shared/recommendation/place-price';
 
 describe('priceAnchorKRW', () => {
@@ -77,17 +78,32 @@ describe('pickPriceRange (소비 규칙: 관측 > 추정 > 모름)', () => {
   const base = {
     estimatedMinKRW: 8000, estimatedMaxKRW: 12000,
     observedMinKRW: null as number | null, observedMaxKRW: null as number | null,
+    observedSampleCount: 0,
   };
   it('관측이 하나라도 있으면 관측만 쓴다', () => {
-    expect(pickPriceRange({ ...base, observedMinKRW: 15000 }))
+    expect(pickPriceRange({ ...base, observedMinKRW: 15000, observedSampleCount: 3 }))
       .toEqual({ source: 'observed', minKRW: 15000, maxKRW: null });
   });
   it('관측 없으면 추정', () => {
     expect(pickPriceRange(base)).toEqual({ source: 'estimated', minKRW: 8000, maxKRW: 12000 });
   });
   it('둘 다 없으면 unknown', () => {
-    expect(pickPriceRange({ estimatedMinKRW: null, estimatedMaxKRW: null, observedMinKRW: null, observedMaxKRW: null }))
+    expect(pickPriceRange({ ...base, estimatedMinKRW: null, estimatedMaxKRW: null }))
       .toEqual({ source: 'unknown', minKRW: null, maxKRW: null });
+  });
+  it('표본 3건 미만의 관측은 추정을 덮지 못한다 — 안쪽 백분위가 성립하지 않는 구간', () => {
+    expect(pickPriceRange({ ...base, observedMinKRW: 5000, observedMaxKRW: 90000, observedSampleCount: 2 }))
+      .toEqual({ source: 'estimated', minKRW: 8000, maxKRW: 12000 });
+  });
+  it('표본 미달이고 추정도 없으면 unknown — 넓은 관측을 대신 쓰지 않는다', () => {
+    expect(pickPriceRange({
+      ...base, estimatedMinKRW: null, estimatedMaxKRW: null,
+      observedMinKRW: 5000, observedMaxKRW: 90000, observedSampleCount: 2,
+    })).toEqual({ source: 'unknown', minKRW: null, maxKRW: null });
+  });
+  it('정확히 3건이면 관측을 쓴다(경계)', () => {
+    expect(pickPriceRange({ ...base, observedMinKRW: 15000, observedSampleCount: OBSERVED_MIN_SAMPLE_COUNT }))
+      .toEqual({ source: 'observed', minKRW: 15000, maxKRW: null });
   });
 });
 

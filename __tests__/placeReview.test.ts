@@ -31,11 +31,25 @@ describe('togglePlaceSatisfaction', () => {
 describe('placeFeedbackRpcArgs', () => {
   it('긍정은 revisit 태그로 저장된다(소비 측 behaviorScoreFor 배선)', () => {
     expect(placeFeedbackRpcArgs({ sessionId: 'sess', stepId: 's1', satisfaction: 'good', priceLevel: 2 }))
-      .toEqual({ p_session_id: 'sess', p_step_id: 's1', p_visited: true, p_tags: ['revisit'], p_price_level: 2 });
+      .toEqual({
+        p_session_id: 'sess', p_step_id: 's1', p_visited: true,
+        p_tags: ['revisit'], p_price_level: 2, p_satisfaction: true,
+      });
   });
   it('부정은 revisit 없는 방문 기록이다', () => {
     expect(placeFeedbackRpcArgs({ sessionId: 'sess', stepId: 's1', satisfaction: 'bad', priceLevel: null }))
-      .toEqual({ p_session_id: 'sess', p_step_id: 's1', p_visited: true, p_tags: [], p_price_level: null });
+      .toEqual({
+        p_session_id: 'sess', p_step_id: 's1', p_visited: true,
+        p_tags: [], p_price_level: null, p_satisfaction: false,
+      });
+  });
+  it('가격만 답한 경우 만족도는 무응답으로 남는다 — 부정으로 집계되지 않는다', () => {
+    // revisit 태그 유무만으로는 "별로였다"와 구별되지 않아 만족도 비율이 잘못 깎인다.
+    expect(placeFeedbackRpcArgs({ sessionId: 'sess', stepId: 's1', satisfaction: undefined, priceLevel: 3 }))
+      .toEqual({
+        p_session_id: 'sess', p_step_id: 's1', p_visited: true,
+        p_tags: [], p_price_level: 3, p_satisfaction: null,
+      });
   });
   it('만족도도 가격도 없으면 보낼 것이 없다 → null', () => {
     expect(placeFeedbackRpcArgs({ sessionId: 'sess', stepId: 's1', satisfaction: undefined, priceLevel: null }))

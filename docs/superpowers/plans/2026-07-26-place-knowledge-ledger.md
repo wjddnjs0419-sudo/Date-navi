@@ -17,6 +17,11 @@
 - 랭킹 `budget: 0` 하드코딩 위치: [recommendation-ranking.ts:232](supabase/functions/_shared/recommendation-ranking.ts#L232).
 - `recommendation-ranking.ts`는 `replacement-candidates`도 공유 → 배포 시 recommend-date·generate-ai·replacement-candidates 세 함수 모두 재배포(메모리: 공유 스키마 변경 = 전 함수 재배포 사고 이력).
 
+**Phase 1 실행 중 확정된 결정(2026-07-26, 코드 리뷰 반영. 1·2는 사용자 승인, 3은 사용자 질의에 답하며 정리):**
+1. **관측 구간 계산은 비보간 표본 선택이 정본이다.** 계획 원안의 보간 백분위는 자기 테스트를 실패시켰다(하한 후보 [5000, 5200, 90000]의 0.75분위가 47600으로 튀어 상한 12000과 모순). `shared/recommendation/place-price.ts`의 `samplePercentile`이 규칙을 고정하며, **Task 4의 SQL이 이 규칙을 따라간다**(아래 SQL 반영 완료). `percentile_cont`도 `percentile_disc`도 이 규칙과 다르므로 `array_agg` 첨자로 직접 계산한다.
+2. **관측이 추정을 덮으려면 표본 3건 이상**(`OBSERVED_MIN_SAMPLE_COUNT`). 미만이면 추정을 유지하고, 추정도 없으면 unknown. 임계치는 소비 시점(`pickPriceRange`)에만 적용하고 DB에는 관측을 그대로 저장한다 — 임계치를 나중에 바꿔도 재계산이 필요 없게.
+3. **만족도 무응답과 부정 응답을 구별한다.** `revisit` 태그 유무로 역추적하면 "별로였다"와 "말 안 했다"가 같은 모양이 되어, 가격만 답한 사용자가 만족도까지 깎는다. `place_feedback`에 만족도 컬럼(nullable: null=무응답)을 두고 집계는 non-null만 센다. **Task 4 마이그레이션과 Task 11 리뷰 UI·Task 2의 `placeFeedbackRpcArgs`가 함께 반영해야 한다.**
+
 **승인 게이트(사용자 확인 후 진행):**
 1. Task 6·13 이전 — 원격 마이그레이션 적용(특히 pg_cron 활성화·삭제 스케줄 시작).
 2. Task 14 이전 — Edge 3함수 재배포.
@@ -474,10 +479,23 @@ describe('places 원장 마이그레이션', () => {
     expect(migration).toContain('price_level between 1 and 3');
   });
 
-  it('피드백 RPC는 커플 멤버를 허용하고 price_level을 받는다', () => {
+  it('피드백 RPC는 커플 멤버를 허용하고 price_level·satisfaction을 받는다', () => {
     expect(migration).toContain('drop function if exists public.record_recommendation_place_feedback(text,text,boolean,text[])');
     expect(migration).toContain('p_price_level smallint default null');
+    expect(migration).toContain('p_satisfaction boolean default null');
     expect(migration).toContain('public.is_couple_member(v_session.couple_id)');
+  });
+
+  it('만족도는 무응답(null)과 부정(false)을 구별하는 별도 컬럼이다', () => {
+    expect(migration).toContain('add column if not exists satisfaction boolean');
+    // revisit 태그로 역추적하면 "말 안 함"이 "별로였음"으로 집계된다.
+    expect(migration).toContain('satisfaction=excluded.satisfaction');
+  });
+
+  it('관측 구간은 보간 백분위를 쓰지 않는다 — place-price.ts와 같은 표본 선택 규칙', () => {
+    expect(migration).not.toContain('percentile_cont');
+    expect(migration).toContain("lowers[floor((array_length(lowers, 1) - 1) * 0.75)::integer + 1]");
+    expect(migration).toContain("uppers[ceil((array_length(uppers, 1) - 1) * 0.25)::integer + 1]");
   });
 
   it('관측 재계산 실패는 피드백 저장을 실패시키지 않는다', () => {
@@ -541,8 +559,17 @@ alter table public.place_feedback
   check (price_level is null or price_level between 1 and 3);
 comment on column public.place_feedback.price_level is '1=저렴, 2=보통, 3=비쌈. 행동으로 드러나지 않아 직접 묻는 유일한 항목.';
 
+-- 무응답(null)과 부정(false)을 구별한다. revisit 태그 유무로 역추적하면 "별로였다"와
+-- "만족도는 말 안 하고 가격만 답했다"가 같은 모양이 되어, 후자가 만족도를 깎는다.
+alter table public.place_feedback add column if not exists satisfaction boolean;
+comment on column public.place_feedback.satisfaction is
+  'null=무응답(집계 제외), true=좋았음, false=별로. 만족도 비율은 non-null만 분모로 센다.';
+
 -- 관측 범위 재계산: 커플 단위 중복 제거 후, 예산÷장소수 앵커의 부등식들을 안쪽 백분위로 좁힌다.
--- 백분위 0.25와 모순 시 추정 복귀는 shared/recommendation/place-price.ts와 동일 규칙(단일 소스는 TS 테스트).
+-- 백분위 선택과 모순 시 폐기는 shared/recommendation/place-price.ts와 동일 규칙(정본은 TS 테스트).
+-- percentile_cont(보간)은 쓸 수 없다 — 이상치를 부분적으로 섞어 구간을 붕괴시킨다.
+-- percentile_disc도 규칙이 다르므로(N=3, f=0.75에서 최댓값 선택) 인덱스를 직접 계산한다:
+-- 하한은 floor((n-1)*0.75), 상한은 ceil((n-1)*0.25) — 둘 다 이상치 반대 방향.
 create or replace function public.recompute_place_observed_price(p_kakao_place_id text)
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare
@@ -563,14 +590,22 @@ begin
       and (rs.original_request ->> 'totalBudgetKRW') ~ '^[0-9]+$'
     order by pf.couple_id, pf.updated_at desc
   ),
-  bounds as (
+  sorted as (
     select
-      round((percentile_cont(0.75) within group (order by anchor_krw)
-        filter (where price_level = 3))::numeric)::integer as min_krw,
-      round((percentile_cont(0.25) within group (order by anchor_krw)
-        filter (where price_level = 1))::numeric)::integer as max_krw,
+      array_agg(anchor_krw order by anchor_krw) filter (where price_level = 3) as lowers,
+      array_agg(anchor_krw order by anchor_krw) filter (where price_level = 1) as uppers,
       count(*)::integer as sample_count
     from couple_answers
+  ),
+  bounds as (
+    -- postgres 배열은 1-based라 TS의 0-based 인덱스에 +1.
+    select
+      case when lowers is null then null
+        else lowers[floor((array_length(lowers, 1) - 1) * 0.75)::integer + 1] end as min_krw,
+      case when uppers is null then null
+        else uppers[ceil((array_length(uppers, 1) - 1) * 0.25)::integer + 1] end as max_krw,
+      sample_count
+    from sorted
   )
   select
     case when b.min_krw is not null and b.max_krw is not null and b.min_krw > b.max_krw then null else b.min_krw end,
@@ -594,7 +629,8 @@ revoke all on function public.recompute_place_observed_price(text) from public;
 drop function if exists public.record_recommendation_place_feedback(text,text,boolean,text[]);
 create or replace function public.record_recommendation_place_feedback(
   p_session_id text, p_step_id text, p_visited boolean,
-  p_tags text[] default '{}'::text[], p_price_level smallint default null
+  p_tags text[] default '{}'::text[], p_price_level smallint default null,
+  p_satisfaction boolean default null
 )
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare v_owner uuid := auth.uid(); v_session public.recommendation_sessions%rowtype; v_place text;
@@ -614,10 +650,11 @@ begin
     or (p_price_level is not null and p_price_level not between 1 and 3) then
     raise invalid_parameter_value using message = 'invalid_candidate';
   end if;
-  insert into public.place_feedback(session_id,step_id,kakao_place_id,owner_user_id,couple_id,visited,tags,price_level)
-    values (p_session_id,p_step_id,v_place,v_owner,v_session.couple_id,p_visited,coalesce(p_tags,'{}'::text[]),p_price_level)
+  insert into public.place_feedback(session_id,step_id,kakao_place_id,owner_user_id,couple_id,visited,tags,price_level,satisfaction)
+    values (p_session_id,p_step_id,v_place,v_owner,v_session.couple_id,p_visited,coalesce(p_tags,'{}'::text[]),p_price_level,p_satisfaction)
     on conflict (session_id,step_id,owner_user_id) do update
-      set visited=excluded.visited,tags=excluded.tags,price_level=excluded.price_level,updated_at=now();
+      set visited=excluded.visited,tags=excluded.tags,price_level=excluded.price_level,
+          satisfaction=excluded.satisfaction,updated_at=now();
   perform public.write_recommendation_step_event(p_session_id,p_step_id,
     case when p_visited then 'place_visited' else 'feedback_submitted' end,v_place,v_place);
   -- 부가 기록(관측 범위 갱신)은 원본 쓰기를 절대 되돌리지 않는다(스펙 오류 처리).
@@ -627,8 +664,8 @@ begin
   end;
 end;
 $$;
-revoke all on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint) from public;
-grant execute on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint) to authenticated;
+revoke all on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint,boolean) from public;
+grant execute on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint,boolean) to authenticated;
 
 -- 리뷰 화면이 카드에서 코스 장소 목록을 읽는 통로. 세션 select RLS가 owner 전용이라
 -- 파트너는 직접 조회가 불가능하므로 security definer + 커플 멤버 검사로 연다.
