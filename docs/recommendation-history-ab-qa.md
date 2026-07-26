@@ -2,6 +2,26 @@
 
 `RECOMMENDATION_HISTORY_EXPERIMENT=off`가 기본값이다. `ab50`은 이 문서의 QA와 출시 가드레일이 승인된 뒤에만 사용한다.
 
+## 현재 배포 상태 (2026-07-26)
+
+프로덕션에 `ab50`으로 활성화돼 있다. 마이그레이션 `recommendation_history_ab_metrics`
+적용 완료, Edge `recommend-date` v18 / `replacement-candidates` v11 배포 완료.
+
+> **측정 한계 — 결과 해석 전 반드시 읽을 것.**
+> `recommendation_course_step_event_trigger()`가 `tg_op`를 소문자(`'insert'`)로
+> 비교하는데 PL/pgSQL의 `TG_OP`는 대문자라, 이 트리거는 **한 번도 이벤트를 쓴 적이
+> 없다**. 따라서 `place_replaced`·`place_deleted`에 의존하는
+> **behavior score(부정 행동 페널티)는 모든 사용자에게 0이고**,
+> `replacementTop3PickRate`는 분모가 없어 항상 `null`이다.
+> 지금 유효한 것은 노출 이력 기반 다양성 지표(`sameAreaRepeatRate`,
+> `recentHistoryExcludedCount`, `recentCooldownRelaxedRate`,
+> `replacementTop3RepeatRate`, `replacementEmptyRate`,
+> `courseGenerationFailureRate`)뿐이다.
+> 트리거를 대문자로 고치는 것만으로는 안 된다 —
+> `recommendation_step_events`의 `(session_id, step_id)` FK가 non-deferrable이라
+> `after delete` 분기가 부모 삭제 후 insert를 시도해 **스텝 삭제가 FK 위반으로
+> 실패**한다.
+
 ## 분석 입력과 출력
 
 구조화 로그와 DB에서 익명화된 export JSON을 만든 뒤 다음처럼 실행한다.
