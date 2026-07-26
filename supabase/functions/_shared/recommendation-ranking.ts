@@ -9,13 +9,19 @@ import {
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
 import { effectiveStepIntents, effectiveExcludedIntents } from './step-intent.ts';
+import { placeMatchesStepIntent } from './step-intent.ts';
+import {
+  behaviorScoreFor,
+  diversityScoreFor,
+  type RecommendationHistoryContext,
+} from '../../../shared/recommendation/recommendation-history.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
   explicitKeywordEvidence: 20,
   distanceMax: 20,
   routeFitMax: 10,
-  diversityRecall: 5,
+  categoryRecall: 5,
   exclusionPenalty: -100,
   stepIntentExact: 35,
   stepIntentNameMatch: 20,
@@ -33,6 +39,7 @@ export type CandidateScoreBreakdown = {
   diversity: number;
   behavior: number;
   penalty: number;
+  categoryRecall?: number;
 };
 
 export type PlaceCandidate = EvidencedKakaoPlace & {
@@ -45,6 +52,10 @@ export type PlaceCandidate = EvidencedKakaoPlace & {
 export type RankedRecommendationSearch = {
   candidates: PlaceCandidate[];
   recallByCategory: Record<string, number>;
+  /** Optional for pre-history search fixtures and legacy caller compatibility. */
+  recentHistoryExcludedCount?: number;
+  /** Optional for pre-history search fixtures and legacy caller compatibility. */
+  reintroducedPlaceIds?: string[];
 };
 
 type Coordinate = { latitude: number; longitude: number };
@@ -67,12 +78,50 @@ function isExplicitKeywordEvidence(evidence: SearchEvidence): boolean {
 }
 
 const totalScore = (breakdown: CandidateScoreBreakdown) => Object.values(breakdown)
-  .reduce((sum, value) => sum + value, 0);
+  .reduce<number>((sum, value) => sum + (value ?? 0), 0);
+
+type FeasibilityPlace = Pick<EvidencedKakaoPlace, 'kakaoPlaceId' | 'latitude' | 'longitude'>;
+
+function canAssignEveryStep(
+  places: readonly EvidencedKakaoPlace[],
+  request: RecommendationRequest,
+): boolean {
+  const locks = new Map((request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
+  const intentByStepId = new Map(effectiveStepIntents(request).map((intent) => [intent.stepId, intent]));
+  const choices: FeasibilityPlace[][] = request.courseSteps.map((step) => {
+    const lock = locks.get(step.id);
+    if (lock) return [{ kakaoPlaceId: lock.kakaoPlaceId, latitude: lock.latitude, longitude: lock.longitude }];
+    if (step.pinnedKakaoPlaceId) {
+      return places.filter((place) => place.kakaoPlaceId === step.pinnedKakaoPlaceId);
+    }
+    const intent = intentByStepId.get(step.id);
+    return places.filter((place) => (
+      verifiedPlaceMatchesCategory(place, step.category)
+      && (intent?.strength !== 'required' || placeMatchesStepIntent(place, intent))
+    ));
+  });
+  if (choices.some((choice) => choice.length === 0)) return false;
+  const walkingLimitMeters = request.maxWalkingMinutes === undefined ? undefined : request.maxWalkingMinutes * 80;
+  const used = new Set<string>();
+  const visit = (stepIndex: number, previous?: FeasibilityPlace): boolean => {
+    if (stepIndex === choices.length) return true;
+    for (const candidate of choices[stepIndex]) {
+      if (used.has(candidate.kakaoPlaceId)) continue;
+      if (previous && walkingLimitMeters !== undefined
+        && haversineDistanceMeters(previous, candidate) > walkingLimitMeters) continue;
+      used.add(candidate.kakaoPlaceId);
+      if (visit(stepIndex + 1, candidate)) return true;
+      used.delete(candidate.kakaoPlaceId);
+    }
+    return false;
+  };
+  return visit(0);
+}
 
 export function rankPlaceCandidates(
   places: readonly EvidencedKakaoPlace[],
   request: RecommendationRequest,
-  options: { limit?: number } = {},
+  options: { limit?: number; history?: RecommendationHistoryContext } = {},
 ): RankedRecommendationSearch {
   const requiredCategories = [...new Set(request.courseSteps.map((step) => (
     normalizeRecommendationCategory(step.category)
@@ -85,11 +134,39 @@ export function rankPlaceCandidates(
     && ![...excludedCategories].some((category) => verifiedPlaceMatchesCategory(place, category))
   ));
 
+  const history = options.history;
+  const recentHardPlaceIds = new Set(history?.recentHardPlaceIds ?? []);
+  const pinnedPlaceIds = new Set(
+    request.courseSteps
+      .map((step) => step.pinnedKakaoPlaceId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  );
+  const hardExcluded = history
+    ? eligiblePlaces.filter((place) => recentHardPlaceIds.has(place.kakaoPlaceId) && !pinnedPlaceIds.has(place.kakaoPlaceId))
+    : [];
+  let policyPlaces = history
+    ? eligiblePlaces.filter((place) => !recentHardPlaceIds.has(place.kakaoPlaceId) || pinnedPlaceIds.has(place.kakaoPlaceId))
+    : eligiblePlaces;
+  const reintroducedPlaceIds: string[] = [];
+  if (history && !canAssignEveryStep(policyPlaces, request)) {
+    const oldestFirst = [...hardExcluded].sort((a, b) => (
+      (history.recentExposure[b.kakaoPlaceId]?.sessionDistance ?? 0)
+      - (history.recentExposure[a.kakaoPlaceId]?.sessionDistance ?? 0)
+      || a.kakaoPlaceId.localeCompare(b.kakaoPlaceId)
+    ));
+    for (const place of oldestFirst) {
+      policyPlaces = [...policyPlaces, place];
+      if (!reintroducedPlaceIds.includes(place.kakaoPlaceId)) reintroducedPlaceIds.push(place.kakaoPlaceId);
+      if (canAssignEveryStep(policyPlaces, request)) break;
+    }
+  }
+  const reintroducedPlaceIdSet = new Set(reintroducedPlaceIds);
+
   const routeFitFor = (place: EvidencedKakaoPlace): number => {
     if (requiredCategories.length < 2) return 0;
     const ownCategories = requiredCategories.filter((category) => verifiedPlaceMatchesCategory(place, category));
     const otherRequiredCategories = requiredCategories.filter((category) => !ownCategories.includes(category));
-    const adjacentOptions = eligiblePlaces.filter((other) => (
+    const adjacentOptions = policyPlaces.filter((other) => (
       other.kakaoPlaceId !== place.kakaoPlaceId
       && otherRequiredCategories.some((category) => verifiedPlaceMatchesCategory(other, category))
     ));
@@ -127,7 +204,7 @@ export function rankPlaceCandidates(
     return boost;
   };
 
-  const scored = eligiblePlaces.map((place) => {
+  const scored = policyPlaces.map((place) => {
     const distanceFromSearchCenterMeters = haversineDistanceMeters(request.location, place);
     const requiredMatch = requiredCategories.some((category) => verifiedPlaceMatchesCategory(place, category));
     const explicitKeywordMatch = place.matchedSearchEvidence.some(isExplicitKeywordEvidence);
@@ -141,8 +218,13 @@ export function rankPlaceCandidates(
       budget: 0,
       preference: 0,
       routeFit: routeFitFor(place),
-      diversity: 0,
-      behavior: 0,
+      diversity: history ? diversityScoreFor(place.kakaoPlaceId, history, {
+        reintroduced: reintroducedPlaceIdSet.has(place.kakaoPlaceId),
+      }) : 0,
+      behavior: history ? behaviorScoreFor(place.kakaoPlaceId, history, {
+        quietPreferred: request.quietPreferred ?? request.parsedPreferences?.quietPreferred,
+        photoFriendlyPreferred: request.photoFriendlyPreferred ?? request.parsedPreferences?.photoFriendlyPreferred,
+      }) : 0,
       penalty: 0,
     };
     return { ...place, distanceFromSearchCenterMeters, scoreBreakdown };
@@ -166,7 +248,9 @@ export function rankPlaceCandidates(
       ...representative,
       scoreBreakdown: {
         ...representative.scoreBreakdown,
-        diversity: RANKING_SCORE_WEIGHTS.diversityRecall,
+        ...(history
+          ? { categoryRecall: RANKING_SCORE_WEIGHTS.categoryRecall }
+          : { diversity: RANKING_SCORE_WEIGHTS.categoryRecall }),
       },
     };
     selected.push(recalled);
@@ -175,11 +259,6 @@ export function rankPlaceCandidates(
   // 입력 시점 지정 장소(핀)는 카테고리를 이기므로 저점수일 때 카테고리 recall이 보호하지 못한다.
   // 일반 score fill(절단) 이전에 강제 포함해 유효한 핀이 후보 상한에서 잘려 STEP_PIN_UNAVAILABLE로
   // 오판되는 것을 막는다. 핀은 최대 4개라 상한을 넘기지 않는다.
-  const pinnedPlaceIds = new Set(
-    request.courseSteps
-      .map((step) => step.pinnedKakaoPlaceId)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0),
-  );
   if (pinnedPlaceIds.size > 0) {
     for (const place of ranked) {
       if (selected.length >= limit) break;
@@ -206,7 +285,12 @@ export function rankPlaceCandidates(
     category,
     candidates.filter((candidate) => verifiedPlaceMatchesCategory(candidate, category)).length,
   ]));
-  return { candidates, recallByCategory };
+  return {
+    candidates,
+    recallByCategory,
+    recentHistoryExcludedCount: hardExcluded.length,
+    reintroducedPlaceIds,
+  };
 }
 
 export type StraightLineRouteMetadata = {

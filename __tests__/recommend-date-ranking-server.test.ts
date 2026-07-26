@@ -6,6 +6,7 @@ import {
   haversineDistanceMeters,
   rankPlaceCandidates,
 } from '../supabase/functions/_shared/recommendation-ranking';
+import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
 
 const request = (steps = ['meal', 'cafe']): RecommendationRequest => ({
   requestId: 'request-ranking',
@@ -49,13 +50,66 @@ const place = (id: string, categoryCode: string, longitude = 127.001): Evidenced
 });
 
 describe('recommend-date deterministic ranking', () => {
+  const recentHistory: RecommendationHistoryContext = {
+    recentHardPlaceIds: ['recent-meal', 'older-recent-meal'],
+    recentExposure: {
+      'recent-meal': { lastSeenAt: '2026-07-25T00:00:00.000Z', sessionDistance: 1 },
+      'older-recent-meal': { lastSeenAt: '2026-07-24T00:00:00.000Z', sessionDistance: 2 },
+    },
+    negativeActions: {}, feedback: {}, qualifiedPairs: [],
+  };
+
+  it('excludes recent unpinned places when the fresh pool can satisfy every step', () => {
+    const ranked = rankPlaceCandidates([
+      place('recent-meal', 'FD6'),
+      place('fresh-meal', 'FD6'),
+      place('fresh-cafe', 'CE7'),
+    ], request(), { history: recentHistory });
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toEqual(['fresh-meal', 'fresh-cafe']);
+    expect(ranked.recentHistoryExcludedCount).toBe(1);
+    expect(ranked.reintroducedPlaceIds).toEqual([]);
+  });
+
+  it('reintroduces the oldest recent place only when it makes the step assignment feasible', () => {
+    const ranked = rankPlaceCandidates([
+      place('recent-meal', 'FD6'),
+      place('older-recent-meal', 'FD6'),
+      place('fresh-cafe', 'CE7'),
+    ], request(), { history: recentHistory });
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toContain('older-recent-meal');
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).not.toContain('recent-meal');
+    expect(ranked.candidates.find((candidate) => candidate.kakaoPlaceId === 'older-recent-meal')?.scoreBreakdown.diversity)
+      .toBe(-30);
+    expect(ranked.reintroducedPlaceIds).toEqual(['older-recent-meal']);
+  });
+
+  it('preserves a direct pin from recent history without recording a cooldown reintroduction', () => {
+    const pinnedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'step-0', category: 'meal', label: 'meal', pinnedKakaoPlaceId: 'recent-meal', pinnedName: 'Place recent-meal' },
+        { id: 'step-1', category: 'cafe', label: 'cafe' },
+      ],
+    };
+    const ranked = rankPlaceCandidates([
+      place('recent-meal', 'FD6'), place('fresh-cafe', 'CE7'),
+    ], pinnedRequest, { history: recentHistory });
+
+    expect(ranked.candidates.map((candidate) => candidate.kakaoPlaceId)).toContain('recent-meal');
+    expect(ranked.reintroducedPlaceIds).toEqual([]);
+    expect(ranked.candidates.find((candidate) => candidate.kakaoPlaceId === 'recent-meal')?.scoreBreakdown.diversity)
+      .toBe(0);
+  });
+
   it('publishes fixed scoring weights without unsupported budget or behavior guesses', () => {
     expect(RANKING_SCORE_WEIGHTS).toEqual({
       requiredCategory: 40,
       explicitKeywordEvidence: 20,
       distanceMax: 20,
       routeFitMax: 10,
-      diversityRecall: 5,
+      categoryRecall: 5,
       exclusionPenalty: -100,
       stepIntentExact: 35,
       stepIntentNameMatch: 20,

@@ -18,6 +18,7 @@ import {
   rankPlaceCandidates,
   type RankedRecommendationSearch,
 } from './recommendation-ranking.ts';
+import type { RecommendationHistoryContext } from '../../../shared/recommendation/recommendation-history.ts';
 
 export type RecommendationSearchPipelineResult = RankedRecommendationSearch & {
   searchMetadata: KakaoSearchMetadata;
@@ -30,6 +31,7 @@ export async function searchAndRankRecommendation(
     fetcher?: KakaoFetch;
     cacheStore?: KakaoSearchCacheStore;
     cacheMetrics?: KakaoCacheMetrics;
+    history?: RecommendationHistoryContext;
   },
 ): Promise<RecommendationSearchPipelineResult> {
   const plan = buildKakaoSearchPlan(request);
@@ -74,7 +76,10 @@ export async function searchAndRankRecommendation(
     if (matched.length > 0) places = [...places, ...matched];
   }
   return {
-    ...rankPlaceCandidates(places, request, { limit: KAKAO_SEARCH_LIMITS.maxUniqueCandidates }),
+    ...rankPlaceCandidates(places, request, {
+      limit: KAKAO_SEARCH_LIMITS.maxUniqueCandidates,
+      history: dependencies.history,
+    }),
     searchMetadata: search.metadata,
   };
 }
