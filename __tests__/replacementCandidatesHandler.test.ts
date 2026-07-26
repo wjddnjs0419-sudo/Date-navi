@@ -43,7 +43,7 @@ const session = (metadata: unknown = treatmentMetadata) => ({
 
 function dependencies(overrides: Record<string, unknown> = {}) {
   return {
-    experimentEnabled: true,
+    experimentMode: 'treatment' as const,
     authenticate: jest.fn(async () => ({ id: 'user-1' })),
     loadSession: jest.fn(async () => session()),
     loadSteps: jest.fn(async () => rows),
@@ -62,7 +62,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
 
 describe('replacement candidates handler', () => {
   it('forces stored Treatment to effective Control without loading history when the experiment is disabled', async () => {
-    const deps = dependencies({ experimentEnabled: false });
+    const deps = dependencies({ experimentMode: 'off' });
 
     const result = await handleReplacementCandidates({
       method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
@@ -92,7 +92,7 @@ describe('replacement candidates handler', () => {
 
   it('does not return category-mismatched candidates from the executable handler response', async () => {
     const deps = dependencies({
-      experimentEnabled: false,
+      experimentMode: 'off',
       searchCandidates: jest.fn(async () => ({ candidates: [candidate('restaurant', 'FD6'), candidate('cafe', 'CE7')] })),
     });
 
@@ -103,5 +103,18 @@ describe('replacement candidates handler', () => {
 
     expect([...body.top, ...body.additional].map((entry) => entry.kakaoPlaceId)).toEqual(['place-cafe']);
     expect(body.top[0].scoreBreakdown).toBeUndefined();
+  });
+
+  it('stores the exact displayed ranks behind an opaque server attestation', async () => {
+    const stageCandidateList = jest.fn(async () => 'replacement-list-001');
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, dependencies({ experimentMode: 'off', stageCandidateList }));
+
+    expect(stageCandidateList).toHaveBeenCalledWith(expect.objectContaining({
+      ownerUserId: 'user-1', sessionId: 'session-1', baseRequestId: 'request-1', targetStepId: 'cafe',
+      candidates: [{ kakaoPlaceId: 'place-cafe', displayRank: 1 }],
+    }));
+    expect(result).toMatchObject({ status: 200, body: { candidateListAttestationId: 'replacement-list-001' } });
   });
 });

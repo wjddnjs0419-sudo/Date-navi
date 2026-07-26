@@ -201,6 +201,26 @@ function isCurrentCouple(
     && (couple.ownerUserId === authenticatedUserId || couple.partnerUserId === authenticatedUserId));
 }
 
+/**
+ * Resolves only the server-owned experiment assignment unit. An unlinked
+ * lookup uses the authenticated user; a failed lookup remains distinguishable
+ * so callers can fail closed instead of splitting a linked pair by accident.
+ */
+export async function loadRecommendationHistoryAssignmentScope(input: {
+  authenticatedUserId: string;
+  queries: Pick<RecommendationHistoryQueryAdapter, 'getProfile' | 'getCouple'>;
+}): Promise<{ coupleId?: string; status: 'loaded' | 'failed' }> {
+  try {
+    const profile = await input.queries.getProfile(input.authenticatedUserId);
+    const couple = profile?.coupleId ? await input.queries.getCouple(profile.coupleId) : null;
+    return isCurrentCouple(profile, couple, input.authenticatedUserId)
+      ? { coupleId: profile.coupleId, status: 'loaded' }
+      : { status: 'loaded' };
+  } catch {
+    return { status: 'failed' };
+  }
+}
+
 export async function loadRecommendationHistory(input: {
   authenticatedUserId: string;
   currentLocation: Coordinate;

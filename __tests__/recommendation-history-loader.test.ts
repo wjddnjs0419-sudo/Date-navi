@@ -1,5 +1,6 @@
 import {
   loadRecommendationHistory,
+  loadRecommendationHistoryAssignmentScope,
   type RecommendationHistoryQueryAdapter,
 } from '../supabase/functions/_shared/recommendation-history';
 import { EMPTY_RECOMMENDATION_HISTORY } from '../shared/recommendation/recommendation-history';
@@ -61,6 +62,27 @@ function adapter(overrides: Partial<RecommendationHistoryQueryAdapter> = {}): Re
 }
 
 describe('recommendation history loader', () => {
+  it('returns a couple assignment key only for the authenticated member of a linked current couple', async () => {
+    await expect(loadRecommendationHistoryAssignmentScope({
+      authenticatedUserId: 'user-001',
+      queries: adapter(),
+    })).resolves.toEqual({ coupleId: 'couple-current', status: 'loaded' });
+
+    await expect(loadRecommendationHistoryAssignmentScope({
+      authenticatedUserId: 'user-001',
+      queries: adapter({
+        getCouple: jest.fn(async () => ({
+          id: 'couple-current', ownerUserId: 'someone-else', partnerUserId: 'another-user', status: 'linked',
+        })),
+      }),
+    })).resolves.toEqual({ status: 'loaded' });
+
+    await expect(loadRecommendationHistoryAssignmentScope({
+      authenticatedUserId: 'user-001',
+      queries: adapter({ getProfile: jest.fn(async () => { throw new Error('unavailable'); }) }),
+    })).resolves.toEqual({ status: 'failed' });
+  });
+
   it('uses only the current linked couple scope, including partner-owned sessions', async () => {
     const queries = adapter();
 

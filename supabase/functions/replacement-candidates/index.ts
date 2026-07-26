@@ -6,6 +6,7 @@ import {
   loadRecommendationHistory,
 } from '../_shared/recommendation-history.ts';
 import { handleReplacementCandidates } from '../_shared/replacement-candidates-handler.ts';
+import { historyExperimentLogKey } from '../../../shared/recommendation/history-experiment.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,14 +24,17 @@ Deno.serve(async (request) => {
     }
   }
   const authorization = request.headers.get('Authorization');
-  const historyExperimentEnabled = Deno.env.get('RECOMMENDATION_HISTORY_DIVERSITY_TREATMENT') === 'true';
+  const configuredExperimentMode = Deno.env.get('RECOMMENDATION_HISTORY_EXPERIMENT');
+  const historyExperimentMode = configuredExperimentMode === 'ab50' || configuredExperimentMode === 'treatment'
+    ? configuredExperimentMode
+    : 'off';
   const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
   const result = await handleReplacementCandidates({
     method: request.method,
     authorization,
     body,
   }, {
-    experimentEnabled: historyExperimentEnabled,
+    experimentMode: historyExperimentMode,
     authenticate: async (token) => {
       const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
         global: { headers: { Authorization: token } },
@@ -77,9 +81,30 @@ Deno.serve(async (request) => {
         cacheMetrics,
       });
     },
+    stageCandidateList: async ({ ownerUserId, sessionId, baseRequestId, targetStepId, candidates }) => {
+      const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const requestId = crypto.randomUUID();
+      const { error } = await client.from('recommendation_generation_attestations').insert({
+        request_id: requestId,
+        session_id: sessionId,
+        owner_user_id: ownerUserId,
+        request_json: { type: 'replacement_candidate_list', baseRequestId, targetStepId },
+        response_json: { candidateRanks: candidates },
+      });
+      if (error) throw error;
+      return requestId;
+    },
   });
   if (result.metrics) {
-    console.error(JSON.stringify({ event: 'replacement_candidates_served', ...result.metrics }));
+    const sessionId = body && typeof body === 'object' && !Array.isArray(body)
+      && typeof (body as { sessionId?: unknown }).sessionId === 'string'
+      ? (body as { sessionId: string }).sessionId
+      : undefined;
+    console.error(JSON.stringify({
+      event: 'replacement_candidates_served',
+      ...result.metrics,
+      ...(sessionId ? { sessionKey: historyExperimentLogKey(sessionId) } : {}),
+    }));
   }
   if (result.status === 204) return new Response(null, { status: 204, headers: corsHeaders });
   return new Response(JSON.stringify(result.body), {

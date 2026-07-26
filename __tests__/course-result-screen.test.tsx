@@ -291,6 +291,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [{
           candidateId: 'c-new', kakaoPlaceId: 'k-new', name: '새로운 식당', address: 'addr', roadAddress: 'road',
           mapUrl: 'https://place.map.kakao.com/k-new', latitude: 37.55, longitude: 127.05, score: 10, contextScore: 10,
@@ -321,6 +322,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [{
           candidateId: 'c-list-001', kakaoPlaceId: 'k-new', name: '새로운 식당', address: 'addr', roadAddress: 'road',
           mapUrl: 'https://place.map.kakao.com/k-new', latitude: 37.55, longitude: 127.05, score: 10, contextScore: 10,
@@ -364,7 +366,7 @@ describe('course result screen', () => {
   it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
-      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      data: { targetStepId: 'step-meal', candidateListAttestationId: 'replacement-list-001', top: [], additional: [] },
       error: null,
     });
     act(() => { instance = create(<CourseResultScreen />); });
@@ -385,7 +387,7 @@ describe('course result screen', () => {
   it('re-shows the replacement sheet when the screen regains focus after an unfinished search trip, and still completes the replace once a place is picked', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
-      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      data: { targetStepId: 'step-meal', candidateListAttestationId: 'replacement-list-001', top: [], additional: [] },
       error: null,
     });
     act(() => { instance = create(<CourseResultScreen />); });
@@ -416,6 +418,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [
           { kakaoPlaceId: 'k-top-1', name: '동선 1', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 1 },
           { kakaoPlaceId: 'k-top-2', name: '동선 2', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 2 },
@@ -450,6 +453,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [{ kakaoPlaceId: 'k-top', name: 'Top', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 1 }],
         additional: [],
       },

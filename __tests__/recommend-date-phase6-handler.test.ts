@@ -6,6 +6,7 @@ import {
 } from '../supabase/functions/_shared/recommend-date-handler';
 import { buildRecommendationPrompt } from '../supabase/functions/_shared/recommendation-prompt';
 import type { RecommendationSearchPipelineResult } from '../supabase/functions/_shared/recommendation-search-pipeline';
+import { EMPTY_RECOMMENDATION_HISTORY } from '../shared/recommendation/recommendation-history';
 
 const request = (language: 'ko' | 'en' = 'ko'): RecommendationRequest => ({
   requestId: `phase6-${language}`,
@@ -132,7 +133,10 @@ describe('recommend-date Phase 6 handler boundary', () => {
     await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: input }, deps);
 
     // 핸들러가 resolvedStepIntents/resolvedExcludedIntents(내부 부착 필드)를 더해 넘기므로 상위 집합으로 검증.
-    expect(deps.searchCandidates).toHaveBeenCalledWith(expect.objectContaining({ ...input, resolvedStepIntents: [], resolvedExcludedIntents: [] }));
+    expect(deps.searchCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ ...input, resolvedStepIntents: [], resolvedExcludedIntents: [] }),
+      EMPTY_RECOMMENDATION_HISTORY,
+    );
     expect(deps.generateSelection).toHaveBeenCalledWith(expect.objectContaining({
       prompt: buildRecommendationPrompt(input, searchResult.candidates),
     }));

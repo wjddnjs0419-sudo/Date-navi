@@ -108,6 +108,7 @@ export default function CourseResultScreen() {
   const [editError, setEditError] = useState('');
   const [replacementTargetId, setReplacementTargetId] = useState<string | null>(null);
   const [replacementCandidates, setReplacementCandidates] = useState<ReplacementCandidateGroups>(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
+  const [replacementCandidateListAttestationId, setReplacementCandidateListAttestationId] = useState<string | null>(null);
   const [replacementTab, setReplacementTab] = useState<'recommend' | 'search'>('recommend');
   const [actionSheetStepId, setActionSheetStepId] = useState<string | null>(null);
   // "Search a place"로 이동하는 동안 대상 스텝(replacementTargetId)은 유지한 채
@@ -214,13 +215,15 @@ export default function CourseResultScreen() {
       const { data, error } = await supabase.functions.invoke('replacement-candidates', {
         body: { sessionId: snapshot.sessionId, targetStepId },
       });
-      if (error || !data || data.targetStepId !== targetStepId || !Array.isArray(data.top) || !Array.isArray(data.additional)) throw error ?? new Error('Invalid candidates');
+      if (error || !data || data.targetStepId !== targetStepId || typeof data.candidateListAttestationId !== 'string'
+        || !Array.isArray(data.top) || !Array.isArray(data.additional)) throw error ?? new Error('Invalid candidates');
       setReplacementTab('recommend');
       setReplacementTargetId(targetStepId);
       setReplacementCandidates({
         top: data.top.slice(0, 3) as ReplacementCandidate[],
         additional: data.additional.slice(0, 12) as ReplacementCandidate[],
       });
+      setReplacementCandidateListAttestationId(data.candidateListAttestationId);
     } catch {
       setEditError(t('modeFlow.courseResult.editError'));
     } finally {
@@ -238,7 +241,14 @@ export default function CourseResultScreen() {
         requestId: createRecommendationRequestId(),
         sessionId: snapshot.sessionId,
         baseRequestId: snapshot.requestId,
-        replacement: { stepId: targetStepId, kakaoPlaceId, ...(pickedName ? { pickedName } : {}) },
+        replacement: {
+          stepId: targetStepId,
+          kakaoPlaceId,
+          ...(pickedName ? { pickedName } : {}),
+          ...(!pickedName && replacementCandidateListAttestationId
+            ? { candidateListAttestationId: replacementCandidateListAttestationId }
+            : {}),
+        },
         lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map(toLockedStep),
         excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.map((step) => step.currentKakaoPlaceId)])],
       };
@@ -249,6 +259,7 @@ export default function CourseResultScreen() {
       setSnapshot(next);
       setReplacementTargetId(null);
       setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
+      setReplacementCandidateListAttestationId(null);
       router.replace({ pathname: '/mode-flow/course-result', params: buildStructuredCourseResultParams(next.requestId, next.sessionId) } as any);
     } catch {
       setEditError(t('modeFlow.courseResult.editError'));
@@ -380,6 +391,7 @@ export default function CourseResultScreen() {
   function closeReplacementPanel() {
     setReplacementTargetId(null);
     setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
+    setReplacementCandidateListAttestationId(null);
   }
 
   // 직접 검색 탭에서 고른 장소는 브리지로 돌아온다. 열려 있는 교체 대상 스텝에

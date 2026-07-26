@@ -17,7 +17,7 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(handler).toContain('const additional = ranked.additional.map(toReplacementCandidateDisplay)');
     expect(handler).not.toContain('limit: 15');
     expect(screen).toContain("'replacement-candidates'");
-    expect(screen).toContain('replacement: { stepId: targetStepId, kakaoPlaceId, ...(pickedName ? { pickedName } : {}) }');
+    expect(screen).toContain('candidateListAttestationId: replacementCandidateListAttestationId');
     expect(screen).toContain("attestationRequestId: request.requestId");
   });
 
@@ -57,9 +57,9 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(handler).not.toContain('scoreBreakdown: ranked');
   });
 
-  it('reads the operational history experiment kill switch before allowing stored Treatment to load history', () => {
-    expect(edge).toContain("Deno.env.get('RECOMMENDATION_HISTORY_DIVERSITY_TREATMENT') === 'true'");
-    expect(edge).toContain('experimentEnabled: historyExperimentEnabled');
+  it('reads the shared operational experiment mode before allowing a stored Treatment arm to load history', () => {
+    expect(edge).toContain("Deno.env.get('RECOMMENDATION_HISTORY_EXPERIMENT')");
+    expect(edge).toContain('experimentMode: historyExperimentMode');
   });
 
 });

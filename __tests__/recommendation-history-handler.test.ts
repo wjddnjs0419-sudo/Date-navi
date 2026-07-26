@@ -51,14 +51,46 @@ const history: RecommendationHistoryContext = {
 };
 
 describe('recommend-date history integration', () => {
-  it('keeps the legacy control response unchanged when the Edge selects control', async () => {
+  it('records an assigned Control arm without attempting the history loader', async () => {
+    const loadHistory = jest.fn(async () => ({
+      context: history, status: 'loaded' as const, recentHistoryExcludedCount: 1,
+    }));
     const result = await handleRecommendDate(
       { method: 'POST', authorization: 'Bearer token', body: request },
-      dependencies({ historyExperiment: { assignedVariant: 'control', assignmentUnit: 'user' } }),
+      dependencies({
+        loadHistory,
+        historyExperiment: {
+          mode: 'ab50',
+          resolveAssignmentContext: async () => ({
+            coupleId: 'couple-control-001',
+            persistedAssignedVariant: 'control',
+          }),
+        },
+      }),
     );
 
     expect(result.status).toBe(200);
-    expect((result.body as any).metadata.historyExperiment).toBeUndefined();
+    expect(loadHistory).not.toHaveBeenCalled();
+    expect((result.body as any).metadata.historyExperiment).toEqual({
+      name: 'history-diversity-v1', assignedVariant: 'control', effectiveVariant: 'control', assignmentUnit: 'couple',
+      historyLoad: 'not_attempted', recentHistoryExcludedCount: 0, recentCooldownRelaxed: false,
+    });
+  });
+
+  it('fails closed to Control when the pair assignment scope cannot be loaded', async () => {
+    const loadHistory = jest.fn(async () => ({ context: history, status: 'loaded' as const, recentHistoryExcludedCount: 1 }));
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request },
+      dependencies({
+        loadHistory,
+        historyExperiment: { mode: 'treatment', resolveAssignmentContext: async () => ({ assignmentScopeFailed: true }) },
+      }),
+    );
+
+    expect(loadHistory).not.toHaveBeenCalled();
+    expect((result.body as any).metadata.historyExperiment).toMatchObject({
+      assignedVariant: 'control', effectiveVariant: 'control', historyLoad: 'not_attempted',
+    });
   });
 
   it('passes only server-loaded treatment history into ranking and returns aggregate metadata', async () => {
@@ -75,7 +107,10 @@ describe('recommend-date history integration', () => {
       dependencies({
         searchCandidates,
         loadHistory,
-        historyExperiment: { assignedVariant: 'treatment', assignmentUnit: 'user' },
+        historyExperiment: {
+          mode: 'treatment',
+          resolveAssignmentContext: async () => ({ coupleId: 'couple-001' }),
+        },
       }),
     );
 
@@ -84,7 +119,7 @@ describe('recommend-date history integration', () => {
       authenticatedUserId: 'user-001', request: expect.objectContaining({ requestId: request.requestId }),
     }));
     expect((result.body as any).metadata.historyExperiment).toEqual({
-      name: 'history-diversity-v1', assignedVariant: 'treatment', effectiveVariant: 'treatment', assignmentUnit: 'user',
+      name: 'history-diversity-v1', assignedVariant: 'treatment', effectiveVariant: 'treatment', assignmentUnit: 'couple',
       historyLoad: 'loaded', recentHistoryExcludedCount: 0, recentCooldownRelaxed: false,
     });
     expect(JSON.stringify(result.body)).not.toContain('old-place');
@@ -101,7 +136,10 @@ describe('recommend-date history integration', () => {
       dependencies({
         searchCandidates,
         loadHistory: async () => { throw new Error('private database detail'); },
-        historyExperiment: { assignedVariant: 'treatment', assignmentUnit: 'couple' },
+        historyExperiment: {
+          mode: 'treatment',
+          resolveAssignmentContext: async () => ({ coupleId: 'couple-001' }),
+        },
       }),
     );
 
@@ -110,5 +148,79 @@ describe('recommend-date history integration', () => {
       name: 'history-diversity-v1', assignedVariant: 'treatment', effectiveVariant: 'control', assignmentUnit: 'couple',
       historyLoad: 'failed', fallbackReason: 'history_load_failed', recentHistoryExcludedCount: 0, recentCooldownRelaxed: false,
     });
+  });
+
+  it('keeps the assigned arm and opaque session correlation on a post-assignment failure', async () => {
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request },
+      dependencies({
+        historyExperiment: { mode: 'treatment', resolveAssignmentContext: async () => ({ coupleId: 'couple-001' }) },
+        loadHistory: async () => ({ context: history, status: 'loaded' as const, recentHistoryExcludedCount: 1 }),
+        searchCandidates: async () => { throw new Error('timeout'); },
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: 504,
+      observability: { sessionId: 'history-request', historyExperiment: { assignedVariant: 'treatment', effectiveVariant: 'treatment' } },
+    });
+  });
+
+  it('keeps a session’s server-attested assignment across regeneration', async () => {
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: { ...request, sessionId: 'session-001' } },
+      dependencies({
+        loadHistory: async () => ({ context: history, status: 'loaded' as const, recentHistoryExcludedCount: 1 }),
+        historyExperiment: {
+          mode: 'ab50',
+          resolveAssignmentContext: async (input) => {
+            expect(input).toMatchObject({ authenticatedUserId: 'user-001', request: { sessionId: 'session-001' } });
+            return { coupleId: 'couple-rehashed-now', persistedAssignedVariant: 'treatment' };
+          },
+        },
+      }),
+    );
+
+    expect((result.body as any).metadata.historyExperiment).toMatchObject({
+      assignedVariant: 'treatment', effectiveVariant: 'treatment', assignmentUnit: 'couple',
+    });
+  });
+
+  it('attests the rank from the exact server-issued replacement list, not a later search order', async () => {
+    const result = await handleRecommendDate(
+      {
+        method: 'POST',
+        authorization: 'Bearer token',
+        body: {
+          ...request,
+          sessionId: 'session-001',
+          replacement: { stepId: 'cafe', kakaoPlaceId: 'selected-cafe', candidateListAttestationId: 'list-attestation-001' },
+          lockedSteps: [{
+            stepId: 'meal', candidateId: 'meal-candidate', kakaoPlaceId: 'meal-place', name: 'meal-place',
+            address: '서울', roadAddress: '서울', mapUrl: '', latitude: 37.5444, longitude: 127.0374, locked: false,
+          }],
+        },
+      },
+      dependencies({
+        loadReplacementCandidateRank: async (input) => {
+          expect(input).toEqual({
+            authenticatedUserId: 'user-001', sessionId: 'session-001', targetStepId: 'cafe',
+            kakaoPlaceId: 'selected-cafe', candidateListAttestationId: 'list-attestation-001',
+          });
+          return 3;
+        },
+        searchCandidates: async () => ({
+          ...search,
+          candidates: [
+            candidate('meal-candidate', 'meal-place', 'FD6'),
+            { ...candidate('selected-cafe-candidate', 'selected-cafe', 'CE7'), score: 40 },
+            { ...candidate('higher-cafe-candidate', 'higher-cafe', 'CE7'), score: 80 },
+          ],
+        }),
+      }),
+    );
+
+    expect(result.status).toBe(200);
+    expect((result.body as any).metadata.replacementCandidateRank).toBe(3);
   });
 });

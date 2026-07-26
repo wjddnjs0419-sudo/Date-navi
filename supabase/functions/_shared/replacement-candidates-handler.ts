@@ -5,6 +5,7 @@ import {
   toReplacementCandidateDisplay,
 } from '../../../shared/recommendation/replacement-candidates.ts';
 import { EMPTY_RECOMMENDATION_HISTORY, type RecommendationHistoryContext } from '../../../shared/recommendation/recommendation-history.ts';
+import type { HistoryExperimentMode } from '../../../shared/recommendation/history-experiment.ts';
 import { recommendationRequestSchema, type RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
 import type { RecommendationCourseStep } from '../../../shared/recommendation/contracts.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
@@ -36,7 +37,7 @@ export type ReplacementCourseStepRow = {
 
 export type ReplacementCandidatesHandlerDependencies = {
   /** Operational kill switch. A disabled experiment always uses Control/empty history. */
-  experimentEnabled: boolean;
+  experimentMode: HistoryExperimentMode;
   authenticate: (authorization: string) => Promise<{ id: string } | null>;
   loadSession: (sessionId: string) => Promise<{
     originalRequest: unknown;
@@ -50,6 +51,14 @@ export type ReplacementCandidatesHandlerDependencies = {
     activeSessionId: string;
   }) => Promise<RecommendationHistoryLoad>;
   searchCandidates: (request: RecommendationRequest) => Promise<{ candidates: PlaceCandidate[] }>;
+  /** Stores the exact displayed ranks privately for the later recommend-date attestation. */
+  stageCandidateList?: (input: {
+    ownerUserId: string;
+    sessionId: string;
+    baseRequestId: string;
+    targetStepId: string;
+    candidates: Array<{ kakaoPlaceId: string; displayRank: number }>;
+  }) => Promise<string>;
   now?: () => number;
 };
 
@@ -122,9 +131,9 @@ export async function handleReplacementCandidates(
   };
   const startedAt = (dependencies.now ?? Date.now)();
   // Disabling the experiment intentionally overrides a persisted Treatment arm.
-  const assignedVariant = dependencies.experimentEnabled
-    ? storedReplacementHistoryVariant(session?.metadata)
-    : 'control';
+  const assignedVariant = dependencies.experimentMode === 'off'
+    ? 'control'
+    : storedReplacementHistoryVariant(session?.metadata);
   let effectiveVariant: 'control' | 'treatment' = 'control';
   let loaderStatus: ReplacementCandidatesMetrics['loaderStatus'] = 'not_attempted';
   let history: RecommendationHistoryContext = EMPTY_RECOMMENDATION_HISTORY;
@@ -177,12 +186,29 @@ export async function handleReplacementCandidates(
   });
   const top = ranked.top.map(toReplacementCandidateDisplay);
   const additional = ranked.additional.map(toReplacementCandidateDisplay);
+  let candidateListAttestationId: string | undefined;
+  if (dependencies.stageCandidateList) {
+    try {
+      candidateListAttestationId = await dependencies.stageCandidateList({
+        ownerUserId: user.id,
+        sessionId: parsed.data.sessionId,
+        baseRequestId: baseRequest.data.requestId,
+        targetStepId: target.step_id,
+        candidates: [...top, ...additional].map((candidate) => ({
+          kakaoPlaceId: candidate.kakaoPlaceId,
+          displayRank: candidate.displayRank,
+        })),
+      });
+    } catch {
+      return result(503, { error: 'OPERATION_FAILED' });
+    }
+  }
   const topThreeRepeatCount = effectiveVariant === 'treatment'
     ? ranked.top.filter((candidate) => history.recentHardPlaceIds.includes(candidate.kakaoPlaceId)).length
     : 0;
   return {
     status: 200,
-    body: { targetStepId: target.step_id, top, additional },
+    body: { targetStepId: target.step_id, top, additional, ...(candidateListAttestationId ? { candidateListAttestationId } : {}) },
     metrics: {
       assignedVariant,
       effectiveVariant,

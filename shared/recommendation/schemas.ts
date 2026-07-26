@@ -98,6 +98,9 @@ export const recommendationRequestSchema = hardConstraintsSchema
       stepId: boundedText(80),
       kakaoPlaceId: boundedText(120),
       pickedName: boundedText(120).optional(),
+      // Opaque, short-lived server record for the exact replacement list the
+      // user saw. The Edge verifies it; the client never supplies a rank.
+      candidateListAttestationId: boundedText(120).optional(),
     }).strict().optional(),
   })
   .strict()
@@ -278,6 +281,7 @@ export const recommendDateMetadataSchema = z.object({
   route: recommendDateRouteMetadataSchema,
   stepIntent: stepIntentMetadataSchema.optional(),
   historyExperiment: historyExperimentMetadataSchema.optional(),
+  replacementCandidateRank: z.number().int().min(1).max(15).optional(),
 }).strict();
 
 const ROUTE_DISTANCE_TOLERANCE_METERS = 0.5;
