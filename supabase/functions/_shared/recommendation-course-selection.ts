@@ -15,6 +15,10 @@ import {
 } from './recommendation-ranking.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import {
+  pairBonusForAdjacentPlaces,
+  type RecommendationHistoryContext,
+} from '../../../shared/recommendation/recommendation-history.ts';
 
 export const MAX_CANDIDATE_POOL_SIZE = 40;
 
@@ -83,6 +87,8 @@ type CourseBuildInput = {
   candidates: readonly PlaceCandidate[];
   selection: unknown;
   generatedAt: string;
+  reintroducedPlaceIds?: readonly string[];
+  history?: RecommendationHistoryContext;
 };
 
 type BuiltCandidateCourse = {
@@ -117,6 +123,27 @@ function walkingRelaxation(request: RecommendationRequest, route: StraightLineRo
     reason: request.language === 'ko'
       ? `${request.maxWalkingMinutes}분 기준 직선거리 휴리스틱을 넘는 구간이 있어 이 조건을 완화했어요.`
       : `One segment exceeds the ${request.maxWalkingMinutes}-minute straight-line heuristic, so this constraint was relaxed.`,
+  }];
+}
+
+function recentPlaceCooldownRelaxation(
+  request: RecommendationRequest,
+  selected: readonly PlaceCandidate[],
+  reintroducedPlaceIds: readonly string[] | undefined,
+) {
+  const reintroduced = new Set(reintroducedPlaceIds ?? []);
+  const lockedStepIds = new Set((request.lockedSteps ?? []).map((lock) => lock.stepId));
+  const usedReintroducedPlace = selected.some((candidate, index) => (
+    reintroduced.has(candidate.kakaoPlaceId)
+    && !request.courseSteps[index]?.pinnedKakaoPlaceId
+    && !lockedStepIds.has(request.courseSteps[index]?.id)
+  ));
+  if (!usedReintroducedPlace) return [];
+  return [{
+    constraint: 'recentPlaceCooldown',
+    reason: request.language === 'ko'
+      ? '새 장소 후보가 부족해 최근 추천 장소를 일부 다시 포함했어요.'
+      : 'There were not enough new place options, so we included some recently recommended places.',
   }];
 }
 
@@ -246,7 +273,10 @@ export function buildCandidateOnlyCourse(input: CourseBuildInput): BuiltCandidat
       // RPC rejects the response for flag drift on steps the user never locked.
       locked: pinnedLockedFlag(locks.get(input.request.courseSteps[index].id)),
     })),
-    relaxedConstraints: walkingRelaxation(input.request, route),
+    relaxedConstraints: [
+      ...walkingRelaxation(input.request, route),
+      ...recentPlaceCooldownRelaxation(input.request, selected, input.reintroducedPlaceIds),
+    ],
     generatedAt: input.generatedAt,
   });
   return { course, cards: [buildCompatibilityCard(input.request, selected)], route };
@@ -297,6 +327,13 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
     score: number;
     stableIds: string;
   };
+  const pairBonusForRoute = (route: readonly PlaceCandidate[]) => {
+    if (!input.history) return 0;
+    const bonus = route.slice(1).reduce((sum, candidate, index) => (
+      sum + pairBonusForAdjacentPlaces(route[index].kakaoPlaceId, [candidate.kakaoPlaceId], input.history!)
+    ), 0);
+    return Math.min(6, bonus);
+  };
   let best: AssessedRoute | undefined;
   const compareRoute = (a: AssessedRoute, b: AssessedRoute) => {
     const withinA = a.metadata.walkingLimitAssessment !== 'provisional_exceeded' ? 0 : 1;
@@ -314,7 +351,7 @@ export function buildDeterministicCandidateCourse(input: DeterministicCourseInpu
       const assessed: AssessedRoute = {
         route: [...route],
         metadata: calculateStraightLineRouteMetadata(route, input.request.maxWalkingMinutes),
-        score: route.reduce((sum, candidate) => sum + candidate.score, 0),
+        score: route.reduce((sum, candidate) => sum + candidate.score, 0) + pairBonusForRoute(route),
         stableIds: route.map((candidate) => candidate.kakaoPlaceId).join('|'),
       };
       if (!best || compareRoute(assessed, best) < 0) best = assessed;

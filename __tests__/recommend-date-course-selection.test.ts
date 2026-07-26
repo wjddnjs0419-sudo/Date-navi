@@ -11,6 +11,7 @@ import {
   MAX_CANDIDATE_POOL_SIZE,
 } from '../supabase/functions/_shared/recommendation-course-selection';
 import type { PlaceCandidate } from '../supabase/functions/_shared/recommendation-ranking';
+import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
 
 const lockedStep = (
   stepId: string,
@@ -319,6 +320,69 @@ describe('candidate-only course validation and assembly', () => {
 });
 
 describe('deterministic candidate-only fallback', () => {
+  const pairHistory: RecommendationHistoryContext = {
+    recentHardPlaceIds: [], recentExposure: {}, negativeActions: {}, feedback: {},
+    qualifiedPairs: [{ sourceKakaoPlaceId: 'meal-z-pair-id', targetKakaoPlaceId: 'cafe-z-pair-id' }],
+  };
+
+  it('uses a qualified adjacent pair only after category and walking validation', () => {
+    const result = buildDeterministicCandidateCourse({
+      request: request({ maxWalkingMinutes: 5 }),
+      candidates: [
+        candidate('meal-a-plain', 'meal-a-plain-id', 'FD6', 127, 60),
+        candidate('meal-z-pair', 'meal-z-pair-id', 'FD6', 127, 60),
+        candidate('cafe-a-plain', 'cafe-a-plain-id', 'CE7', 127.001, 60),
+        candidate('cafe-z-pair', 'cafe-z-pair-id', 'CE7', 127.001, 60),
+      ],
+      history: pairHistory,
+      generatedAt: '2026-07-26T00:00:00.000Z',
+    });
+
+    expect(result.course.steps.map((step) => step.kakaoPlaceId)).toEqual(['meal-z-pair-id', 'cafe-z-pair-id']);
+  });
+
+  it.each([
+    ['ko', '새 장소 후보가 부족해 최근 추천 장소를 일부 다시 포함했어요.'],
+    ['en', 'There were not enough new place options, so we included some recently recommended places.'],
+  ] as const)('adds one localized cooldown only when a reintroduced place is selected in %s', (language, reason) => {
+    const result = buildDeterministicCandidateCourse({
+      request: request({ language }),
+      candidates: [
+        candidate('meal-reintroduced', 'meal-reintroduced-id', 'FD6', 127, 60),
+        candidate('cafe-fresh', 'cafe-fresh-id', 'CE7', 127.001, 60),
+      ],
+      reintroducedPlaceIds: ['meal-reintroduced-id'],
+      generatedAt: '2026-07-26T00:00:00.000Z',
+    });
+
+    expect(result.course.relaxedConstraints).toEqual([{
+      constraint: 'recentPlaceCooldown', reason,
+    }]);
+  });
+
+  it('does not add a cooldown for a direct pin or a fully fresh selected route', () => {
+    const directPin = buildDeterministicCandidateCourse({
+      request: request({ courseSteps: [
+        { id: 'meal-step', category: 'meal', label: 'Meal', pinnedKakaoPlaceId: 'meal-recent-id', pinnedName: 'Place meal-recent-id' },
+        { id: 'cafe-step', category: 'cafe', label: 'Cafe' },
+      ] }),
+      candidates: [
+        candidate('meal-recent', 'meal-recent-id', 'FD6', 127, 60),
+        candidate('cafe-fresh', 'cafe-fresh-id', 'CE7', 127.001, 60),
+      ],
+      reintroducedPlaceIds: ['meal-recent-id'],
+      generatedAt: '2026-07-26T00:00:00.000Z',
+    });
+    const fresh = buildDeterministicCandidateCourse({
+      request: request(),
+      candidates: [candidates[0], candidates[2]],
+      generatedAt: '2026-07-26T00:00:00.000Z',
+    });
+
+    expect(directPin.course.relaxedConstraints).toEqual([]);
+    expect(fresh.course.relaxedConstraints).toEqual([]);
+  });
+
   it('publishes the handler candidate bound and uses constant-memory full-pool traversal', () => {
     const source = readFileSync(join(
       process.cwd(), 'supabase/functions/_shared/recommendation-course-selection.ts',

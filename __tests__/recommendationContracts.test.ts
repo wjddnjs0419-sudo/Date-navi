@@ -1,5 +1,6 @@
 import {
   deserializeRecommendationRequest,
+  recommendDateMetadataSchema,
   recommendationCourseSchema,
   recommendationRequestSchema,
   serializeRecommendationRequest,
@@ -194,6 +195,76 @@ describe('RecommendationCourse contracts', () => {
     const result = recommendationCourseSchema.safeParse({
       ...course,
       steps: [course.steps[0], { ...course.steps[1], kakaoPlaceId: 'place-meal' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('recommend-date history experiment metadata contract', () => {
+  const metadata = {
+    fallbackUsed: false,
+    selectionSource: 'ai' as const,
+    selectionReason: 'none' as const,
+    search: {
+      requestCount: 2,
+      successfulCount: 2,
+      failedCount: 0,
+      rateLimitedCount: 0,
+      timeoutCount: 0,
+      candidateCount: 4,
+    },
+    route: {
+      distanceMethod: 'haversine_straight_line' as const,
+      adjacentDistanceMeters: [120],
+      totalDistanceMeters: 120,
+      walkingHeuristicMetersPerMinute: 80 as const,
+      walkingLimitAssessment: 'provisional_within' as const,
+      hardConstraintValidated: false as const,
+    },
+  };
+
+  it('accepts a legacy response metadata object without history experiment fields', () => {
+    expect(recommendDateMetadataSchema.safeParse(metadata).success).toBe(true);
+  });
+
+  it('accepts a server-attested history experiment summary without raw history identifiers', () => {
+    const result = recommendDateMetadataSchema.safeParse({
+      ...metadata,
+      historyExperiment: {
+        name: 'history-diversity-v1',
+        assignedVariant: 'treatment',
+        effectiveVariant: 'treatment',
+        assignmentUnit: 'couple',
+        historyLoad: 'loaded',
+        recentHistoryExcludedCount: 2,
+        recentCooldownRelaxed: false,
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    ['invalid variant', { assignedVariant: 'preview' }],
+    ['raw place identifier', { placeIds: ['place-secret'] }],
+    ['negative excluded count', { recentHistoryExcludedCount: -1 }],
+    ['failed-load treatment', { effectiveVariant: 'treatment', historyLoad: 'failed', fallbackReason: 'history_load_failed' }],
+    ['control assigned to treatment', { assignedVariant: 'control', effectiveVariant: 'treatment' }],
+    ['fallback reason without a failed load', { historyLoad: 'loaded', fallbackReason: 'history_load_failed' }],
+  ])('rejects history experiment metadata with %s', (_case, override) => {
+    const result = recommendDateMetadataSchema.safeParse({
+      ...metadata,
+      historyExperiment: {
+        name: 'history-diversity-v1',
+        assignedVariant: 'treatment',
+        effectiveVariant: 'control',
+        assignmentUnit: 'user',
+        historyLoad: 'loaded',
+        recentHistoryExcludedCount: 0,
+        recentCooldownRelaxed: false,
+        ...override,
+      },
     });
 
     expect(result.success).toBe(false);

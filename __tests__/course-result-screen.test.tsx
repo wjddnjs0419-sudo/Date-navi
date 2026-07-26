@@ -7,6 +7,11 @@ const mockMutateRecommendationSession = jest.fn();
 const mockLoadRecommendationSession = jest.fn();
 const mockSupabaseFunctionsInvoke = jest.fn();
 let mockCapturedFocusEffect: (() => void) | null = null;
+let mockLanguage: 'ko' | 'en' = 'ko';
+const mockTranslations = {
+  ko: require('../locales/ko/modeFlow.json').modeFlow.courseResult,
+  en: require('../locales/en/modeFlow.json').modeFlow.courseResult,
+};
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ requestId: 'request-1', sessionId: 'session-1' }),
@@ -17,7 +22,14 @@ jest.mock('expo-router', () => ({
 jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(async () => ({})) }));
 
 jest.mock('../lib/i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({
+    language: mockLanguage,
+    t: (key: string) => {
+      if (key === 'modeFlow.courseResult.replacementNotice') return mockTranslations[mockLanguage].replacementNotice;
+      if (key === 'modeFlow.courseResult.topPick') return mockTranslations[mockLanguage].topPick;
+      return key;
+    },
+  }),
 }));
 
 jest.mock('../lib/supabase', () => ({
@@ -127,6 +139,7 @@ type TestRendererInstance = {
     findByProps: (props: Record<string, unknown>) => TestNode;
     findAllByProps: (props: Record<string, unknown>) => TestNode[];
     findAllByType: (type: unknown) => TestNode[];
+    findAll: (predicate: (node: TestNode) => boolean) => TestNode[];
   };
   unmount: () => void;
 };
@@ -145,6 +158,14 @@ function findSheet(instance: TestRendererInstance): TestNode {
   return (instance.root as any).findByType(StepActionSheet);
 }
 
+function findHostNodes(instance: TestRendererInstance, testID: string): TestNode[] {
+  return instance.root.findAll((node) => typeof node.type === 'string' && node.props.testID === testID);
+}
+
+function findHostNodesWithin(node: TestNode, testID: string): TestNode[] {
+  return (node as any).findAll((child: TestNode) => typeof child.type === 'string' && child.props.testID === testID);
+}
+
 describe('course result screen', () => {
   // TestRendererInstance created by each test; unmounted below so a test that leaves the
   // replacement panel open (e.g. after a mocked failure) doesn't leak its subscribePickedPlace
@@ -159,6 +180,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockClear();
     mockRequestRecommendationResponse.mockClear();
     mockCapturedFocusEffect = null;
+    mockLanguage = 'ko';
   });
 
   afterEach(() => {
@@ -269,6 +291,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [{
           candidateId: 'c-new', kakaoPlaceId: 'k-new', name: '새로운 식당', address: 'addr', roadAddress: 'road',
           mapUrl: 'https://place.map.kakao.com/k-new', latitude: 37.55, longitude: 127.05, score: 10, contextScore: 10,
@@ -299,6 +322,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
       data: {
         targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
         top: [{
           candidateId: 'c-list-001', kakaoPlaceId: 'k-new', name: '새로운 식당', address: 'addr', roadAddress: 'road',
           mapUrl: 'https://place.map.kakao.com/k-new', latitude: 37.55, longitude: 127.05, score: 10, contextScore: 10,
@@ -342,7 +366,7 @@ describe('course result screen', () => {
   it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
-      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      data: { targetStepId: 'step-meal', candidateListAttestationId: 'replacement-list-001', top: [], additional: [] },
       error: null,
     });
     act(() => { instance = create(<CourseResultScreen />); });
@@ -363,7 +387,7 @@ describe('course result screen', () => {
   it('re-shows the replacement sheet when the screen regains focus after an unfinished search trip, and still completes the replace once a place is picked', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
-      data: { targetStepId: 'step-meal', top: [], additional: [] },
+      data: { targetStepId: 'step-meal', candidateListAttestationId: 'replacement-list-001', top: [], additional: [] },
       error: null,
     });
     act(() => { instance = create(<CourseResultScreen />); });
@@ -387,6 +411,85 @@ describe('course result screen', () => {
     expect(mockRequestRecommendationResponse).toHaveBeenCalledTimes(1);
     const sentRequest = mockRequestRecommendationResponse.mock.calls[0][0] as { replacement: { stepId: string; kakaoPlaceId: string } };
     expect(sentRequest.replacement).toMatchObject({ stepId: 'step-meal', kakaoPlaceId: 'k-searched' });
+  });
+
+  it('renders server-provided top and additional replacement groups explicitly instead of inferring Top 3 from a flattened index', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
+        top: [
+          { kakaoPlaceId: 'k-top-1', name: '동선 1', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 1 },
+          { kakaoPlaceId: 'k-top-2', name: '동선 2', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 2 },
+        ],
+        additional: [
+          { kakaoPlaceId: 'k-additional', name: '추가 후보', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 3 },
+        ],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    const topGroup = findHostNodes(instance, 'course-replacement-top-group');
+    const additionalGroup = findHostNodes(instance, 'course-replacement-additional-group');
+    expect(topGroup).toHaveLength(1);
+    expect(additionalGroup).toHaveLength(1);
+    expect(findHostNodesWithin(topGroup[0], 'course-replacement-pick-k-top-1')).toHaveLength(1);
+    expect(findHostNodesWithin(additionalGroup[0], 'course-replacement-pick-k-additional')).toHaveLength(1);
+  });
+
+  it.each([
+    ['ko', '현재 코스 동선과 최근 추천 이력을 반영한 상위 3개예요. 외부 후기·지도는 직접 확인해주세요.', '동선 추천'],
+    ['en', 'These top three consider the current route and your recent recommendations. Check external reviews and maps directly.', 'Route fit'],
+  ] as const)('renders the approved %s route-fit copy without rating or review-quality claims', async (language, notice, label) => {
+    mockLanguage = language;
+    const snapshot = buildSnapshot();
+    snapshot.request = { ...snapshot.request, language };
+    (globalThis as any).__mockSnapshot = snapshot;
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
+        top: [{ kakaoPlaceId: 'k-top', name: 'Top', address: 'addr', roadAddress: 'road', mapUrl: '', latitude: 37.55, longitude: 127.05, displayRank: 1 }],
+        additional: [],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    expect(instance.root.findAllByProps({ children: notice }).length).toBeGreaterThan(0);
+    expect(instance.root.findAllByProps({ children: label }).length).toBeGreaterThan(0);
+    expect(notice).not.toMatch(/rating|review quality|평점|후기 품질/i);
+  });
+
+  it('shows a recent-place cooldown explanation in the existing expanded conditions panel', () => {
+    const snapshot = buildSnapshot();
+    snapshot.response = {
+      ...snapshot.response,
+      course: {
+        ...snapshot.response.course,
+        relaxedConstraints: [{
+          constraint: 'recentPlaceCooldown',
+          reason: '새 장소 후보가 부족해 최근 추천 장소를 일부 다시 포함했어요.',
+        }],
+      },
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    const toggle = instance.root.findAll((node) => (
+      node.props.accessibilityState?.expanded === false && typeof node.props.onPress === 'function'
+    ))[0];
+    act(() => { toggle.props.onPress(); });
+
+    expect(instance.root.findAllByProps({ children: '새 장소 후보가 부족해 최근 추천 장소를 일부 다시 포함했어요.' }).length).toBeGreaterThan(0);
   });
 
   it('솔로(coupleId 없음)가 확정을 누르면 서버 mutate 대신 커플 연결 안내를 띄운다', async () => {

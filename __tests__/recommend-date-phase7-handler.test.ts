@@ -98,7 +98,7 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
 
-    expect(result).toEqual({ status, body: { error: createRecommendationError(code) } });
+    expect({ status: result.status, body: result.body }).toEqual({ status, body: { error: createRecommendationError(code) } });
     expect(JSON.stringify(result.body)).not.toMatch(/query_|outcomes|provider detail|private/i);
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
@@ -111,8 +111,10 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
       searchCandidates: jest.fn(async () => ({ candidates: found, recallByCategory, searchMetadata: metadata() })),
     });
 
-    await expect(handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps))
-      .resolves.toEqual({ status: 422, body: { error: createRecommendationError('INSUFFICIENT_CANDIDATES') } });
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+
+    expect({ status: result.status, body: result.body })
+      .toEqual({ status: 422, body: { error: createRecommendationError('INSUFFICIENT_CANDIDATES') } });
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 
@@ -129,7 +131,7 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: intentRequest }, deps);
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: result.body }).toEqual({
       status: 422,
       body: {
         error: {
@@ -169,7 +171,7 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: cultureRequest }, deps);
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: result.body }).toEqual({
       status: 422,
       body: {
         error: {

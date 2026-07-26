@@ -113,4 +113,19 @@ describe('recommend date card i18n texts', () => {
       i18n: { ko: { title: '제목', summary: '요약', why_recommended: '이유' } },
     }).success).toBe(false);
   });
+
+  it.each([
+    ['ko', '새 장소 후보가 부족해 최근 추천 장소를 일부 다시 포함했어요.'],
+    ['en', 'There were not enough new place options, so we included some recently recommended places.'],
+  ] as const)('adds the approved %s recent-place cooldown explanation to a reintroduced course', (language, reason) => {
+    const result = buildCandidateOnlyCourse({
+      request: request({ language }),
+      candidates,
+      selection,
+      generatedAt: '2026-07-17T00:00:00.000Z',
+      reintroducedPlaceIds: ['meal-near-id'],
+    });
+
+    expect(result.course.relaxedConstraints).toContainEqual({ constraint: 'recentPlaceCooldown', reason });
+  });
 });

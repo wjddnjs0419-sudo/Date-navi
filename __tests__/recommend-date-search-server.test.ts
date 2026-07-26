@@ -10,6 +10,7 @@ import {
   type KakaoSearchOutcome,
 } from '../supabase/functions/_shared/recommendation-search';
 import { searchAndRankRecommendation } from '../supabase/functions/_shared/recommendation-search-pipeline';
+import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
 
 const request = (steps = ['meal', 'cafe', 'meal']): RecommendationRequest => ({
   requestId: 'request-search',
@@ -115,6 +116,25 @@ describe('recommend-date deterministic Kakao search plan', () => {
 });
 
 describe('recommend-date Kakao fetch adapter and evidence', () => {
+  it('passes the normalized history policy to ranking while exposing only final candidates', async () => {
+    const history: RecommendationHistoryContext = {
+      recentHardPlaceIds: ['recent'],
+      recentExposure: { recent: { lastSeenAt: '2026-07-25T00:00:00.000Z', sessionDistance: 1 } },
+      negativeActions: {}, feedback: {}, qualifiedPairs: [],
+    };
+    const fetcher = jest.fn(async () => response(200, {
+      documents: [document('recent'), document('fresh-a'), document('fresh-b')],
+    })) as KakaoFetch;
+
+    const result = await searchAndRankRecommendation(request(['cafe', 'cafe']), {
+      kakaoRestApiKey: 'secret-key', fetcher, history,
+    });
+
+    expect(result.candidates.map((candidate) => candidate.kakaoPlaceId)).not.toContain('recent');
+    expect(result.recentHistoryExcludedCount).toBe(1);
+    expect(JSON.stringify(result.candidates)).not.toContain('recentHardPlaceIds');
+  });
+
   it('builds category URL, server-only authorization, center, size, and pagination', async () => {
     const fetcher = jest.fn(async () => response(200, { documents: [document('1')] })) as KakaoFetch;
     const query = buildKakaoSearchPlan(request())[0];

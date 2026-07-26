@@ -29,8 +29,20 @@ import {
   CourseSelectionError,
 } from './recommendation-course-selection.ts';
 import { placeMatchesStepIntent } from './step-intent.ts';
+import { effectiveStepIntents } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
+import {
+  EMPTY_RECOMMENDATION_HISTORY,
+  type RecommendationHistoryContext,
+} from '../../../shared/recommendation/recommendation-history.ts';
+import {
+  resolveHistoryExperiment,
+  type HistoryExperimentMode,
+  type HistoryExperimentResolution,
+  type HistoryExperimentVariant,
+} from '../../../shared/recommendation/history-experiment.ts';
+import type { RecommendationHistoryLoad } from './recommendation-history.ts';
 
 // 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
 // AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
@@ -55,7 +67,33 @@ export type RecommendDateRequest = {
 
 export type RecommendDateDependencies = {
   authenticate: (authorization: string) => Promise<{ id: string } | null>;
-  searchCandidates: (request: RecommendationRequest) => Promise<RecommendationSearchPipelineResult>;
+  searchCandidates: (
+    request: RecommendationRequest,
+    history: RecommendationHistoryContext,
+  ) => Promise<RecommendationSearchPipelineResult>;
+  /** Server-only history dependency. No request field can select an experiment arm or inject history. */
+  loadHistory?: (input: {
+    authenticatedUserId: string;
+    request: RecommendationRequest;
+  }) => Promise<RecommendationHistoryLoad>;
+  historyExperiment?: {
+    mode: HistoryExperimentMode;
+    resolveAssignmentContext?: (input: {
+      authenticatedUserId: string;
+      request: RecommendationRequest;
+    }) => Promise<{
+      coupleId?: string | null;
+      persistedAssignedVariant?: HistoryExperimentVariant;
+      assignmentScopeFailed?: boolean;
+    }>;
+  };
+  loadReplacementCandidateRank?: (input: {
+    authenticatedUserId: string;
+    sessionId: string;
+    targetStepId: string;
+    kakaoPlaceId: string;
+    candidateListAttestationId: string;
+  }) => Promise<number | undefined>;
   generateSelection: (input: {
     authorization: string;
     prompt: string;
@@ -80,11 +118,16 @@ export type CourseValidationFailureStage =
   | 'course_build'
   | 'response_schema'
   | 'request_response_validation'
+  | 'replacement_rank_attestation'
   | 'stage_attestation';
 
 export type RecommendDateHandlerResult = {
   status: number;
   body: unknown;
+  observability?: {
+    sessionId: string;
+    historyExperiment?: HistoryExperimentResolution;
+  };
 };
 
 const errorResult = (
@@ -173,18 +216,60 @@ export async function handleRecommendDate(
     resolvedExcludedIntents: resolved.excludedIntents,
   };
 
+  let history = EMPTY_RECOMMENDATION_HISTORY;
+  let historyExperimentMetadata: HistoryExperimentResolution | undefined;
+  if (dependencies.historyExperiment && dependencies.historyExperiment.mode !== 'off') {
+    let assignmentContext: { coupleId?: string | null; persistedAssignedVariant?: HistoryExperimentVariant; assignmentScopeFailed?: boolean } = {};
+    try {
+      assignmentContext = await dependencies.historyExperiment.resolveAssignmentContext?.({
+        authenticatedUserId: authenticatedUser.id,
+        request: intentAwareRequest,
+      }) ?? {};
+    } catch {
+      // A scope lookup may only narrow a pair assignment to the authenticated user.
+    }
+    const resolve = (historyLoadStatus: HistoryExperimentResolution['historyLoad']) => resolveHistoryExperiment({
+      mode: dependencies.historyExperiment!.mode,
+      userId: authenticatedUser.id,
+      coupleId: assignmentContext.coupleId,
+      persistedAssignedVariant: assignmentContext.persistedAssignedVariant,
+      historyLoadStatus,
+    });
+    historyExperimentMetadata = assignmentContext.assignmentScopeFailed
+      ? { assignedVariant: 'control', effectiveVariant: 'control', assignmentUnit: 'user', historyLoad: 'not_attempted' }
+      : resolve('not_attempted');
+    if (historyExperimentMetadata.assignedVariant === 'treatment') {
+      try {
+        const loaded = dependencies.loadHistory
+          ? await dependencies.loadHistory({ authenticatedUserId: authenticatedUser.id, request: intentAwareRequest })
+          : { context: EMPTY_RECOMMENDATION_HISTORY, status: 'failed' as const, recentHistoryExcludedCount: 0 };
+        if (loaded.status === 'loaded') history = loaded.context;
+        historyExperimentMetadata = resolve(loaded.status);
+      } catch {
+        historyExperimentMetadata = resolve('failed');
+      }
+    }
+  }
+  const withHistory = (result: RecommendDateHandlerResult): RecommendDateHandlerResult => ({
+    ...result,
+    observability: {
+      sessionId: serverRequest.sessionId ?? serverRequest.requestId,
+      ...(historyExperimentMetadata ? { historyExperiment: historyExperimentMetadata } : {}),
+    },
+  });
+
   let search: RecommendationSearchPipelineResult;
   try {
-    search = await dependencies.searchCandidates(intentAwareRequest);
+    search = await dependencies.searchCandidates(intentAwareRequest, history);
   } catch {
-    return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
+    return withHistory(errorResult(504, 'PLACE_SEARCH_TIMEOUT'));
   }
 
   if (search.searchMetadata.allSearchesFailed && search.searchMetadata.rateLimitedCount > 0) {
-    return errorResult(429, 'PLACE_SEARCH_RATE_LIMITED');
+    return withHistory(errorResult(429, 'PLACE_SEARCH_RATE_LIMITED'));
   }
   if (search.searchMetadata.allSearchesFailed && search.searchMetadata.timeoutCount > 0) {
-    return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
+    return withHistory(errorResult(504, 'PLACE_SEARCH_TIMEOUT'));
   }
   // 이번 호출에서 실제로 핀 장소를 다시 골라야 하는 스텝만 핀으로 취급한다. 잠긴 스텝은 락이
   // 자리(장소 사실)를 그대로 운반하고, 교체 대상 스텝은 핀에서 떠나는 중이며, 핀 장소가
@@ -211,7 +296,7 @@ export async function handleRecommendDate(
   for (const step of effectiveCourseSteps) {
     if (step.pinnedKakaoPlaceId
       && !search.candidates.some((candidate) => candidate.kakaoPlaceId === step.pinnedKakaoPlaceId)) {
-      return errorResult(422, 'STEP_PIN_UNAVAILABLE');
+      return withHistory(errorResult(422, 'STEP_PIN_UNAVAILABLE'));
     }
   }
   // 핀 스텝은 카테고리를 이기므로(pin wins) 카테고리 충족 게이트에서 제외한다.
@@ -220,7 +305,7 @@ export async function handleRecommendDate(
     || search.candidates.some((candidate) => candidateMatchesCategory(candidate, step.category))
   ));
   if (search.candidates.length === 0 || !hasEveryRequiredCategory) {
-    return errorResult(422, 'INSUFFICIENT_CANDIDATES');
+    return withHistory(errorResult(422, 'INSUFFICIENT_CANDIDATES'));
   }
   const requiredStepIntents = resolved.stepIntents
     .filter((intent) => intent.strength === 'required' && !pinnedStepIds.has(intent.stepId));
@@ -235,7 +320,7 @@ export async function handleRecommendDate(
   ));
   if (unsatisfiedIntents.length > 0) {
     // 완화 UI(Phase 3)가 어떤 조건을 못 맞췄는지 알 수 있도록 실패한 intent를 함께 실어 보낸다.
-    return {
+    return withHistory({
       status: 422,
       body: {
         error: {
@@ -246,7 +331,7 @@ export async function handleRecommendDate(
           })),
         },
       },
-    };
+    });
   }
 
   const generatedAt = dependencies.now?.() ?? new Date().toISOString();
@@ -261,11 +346,13 @@ export async function handleRecommendDate(
       if (targetIndex < 0 || !forced || !candidateMatchesCategory(forced, serverRequest.courseSteps[targetIndex].category)
         || locked.has(serverRequest.replacement.stepId)
         || serverRequest.courseSteps.some((step) => step.id !== serverRequest.replacement?.stepId && !locked.has(step.id))) {
-        return errorResult(422, 'COURSE_VALIDATION_FAILED');
+        return withHistory(errorResult(422, 'COURSE_VALIDATION_FAILED'));
       }
       built = buildCandidateOnlyCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         selection: {
           steps: serverRequest.courseSteps.map((step) => ({
             stepId: step.id,
@@ -282,6 +369,8 @@ export async function handleRecommendDate(
       built = buildCandidateOnlyCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         selection: {
           steps: forcePinnedCandidateIds(
             serverRequest.courseSteps.map((step) => ({ stepId: step.id, candidateId: '' })),
@@ -322,6 +411,8 @@ export async function handleRecommendDate(
             built = buildCandidateOnlyCourse({
               request: { ...serverRequest, courseSteps: effectiveCourseSteps },
               candidates: search.candidates,
+              history,
+              reintroducedPlaceIds: search.reintroducedPlaceIds,
               selection,
               generatedAt,
             });
@@ -344,19 +435,38 @@ export async function handleRecommendDate(
       built = buildDeterministicCandidateCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         generatedAt,
       });
     }
   } catch (error) {
     if (error instanceof CourseSelectionError) {
       if (error.code === 'COURSE_VALIDATION_FAILED') {
-        return courseValidationFailure(dependencies, 'course_build');
+        return withHistory(courseValidationFailure(dependencies, 'course_build'));
       }
-      return errorResult(422, error.code);
+      return withHistory(errorResult(422, error.code));
     }
-    return courseValidationFailure(dependencies, 'course_build');
+    return withHistory(courseValidationFailure(dependencies, 'course_build'));
   }
 
+  let verifiedReplacementCandidateRank: number | undefined;
+  if (serverRequest.replacement?.candidateListAttestationId && serverRequest.sessionId) {
+    try {
+      verifiedReplacementCandidateRank = await dependencies.loadReplacementCandidateRank?.({
+        authenticatedUserId: authenticatedUser.id,
+        sessionId: serverRequest.sessionId,
+        targetStepId: serverRequest.replacement.stepId,
+        kakaoPlaceId: serverRequest.replacement.kakaoPlaceId,
+        candidateListAttestationId: serverRequest.replacement.candidateListAttestationId,
+      });
+    } catch {
+      return withHistory(courseValidationFailure(dependencies, 'replacement_rank_attestation'));
+    }
+    if (verifiedReplacementCandidateRank === undefined) {
+      return withHistory(courseValidationFailure(dependencies, 'replacement_rank_attestation'));
+    }
+  }
   const response = recommendDateResponseSchema.safeParse({
     requestId: parsedRequest.data.requestId,
     course: built.course,
@@ -374,6 +484,17 @@ export async function handleRecommendDate(
         candidateCount: search.candidates.length,
       },
       route: built.route,
+      ...(historyExperimentMetadata ? {
+        historyExperiment: {
+          name: 'history-diversity-v1' as const,
+          ...historyExperimentMetadata,
+          recentHistoryExcludedCount: search.recentHistoryExcludedCount ?? 0,
+          recentCooldownRelaxed: built.course.relaxedConstraints.some((constraint) => (
+            constraint.constraint === 'recentPlaceCooldown'
+          )),
+        },
+      } : {}),
+      ...(verifiedReplacementCandidateRank === undefined ? {} : { replacementCandidateRank: verifiedReplacementCandidateRank }),
       ...(resolved.source !== 'none' || resolved.unsupported.length > 0 || resolved.conflicts.length > 0
         ? {
           stepIntent: {
@@ -393,18 +514,18 @@ export async function handleRecommendDate(
         : {}),
     },
   });
-  if (!response.success) return courseValidationFailure(dependencies, 'response_schema');
+  if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
   try {
     validateRecommendDateResponseForRequest(serverRequest, response.data);
   } catch {
-    return courseValidationFailure(dependencies, 'request_response_validation');
+    return withHistory(courseValidationFailure(dependencies, 'request_response_validation'));
   }
   if (dependencies.stageAttestation) {
     try {
       await dependencies.stageAttestation({ ownerUserId: authenticatedUser.id, request: serverRequest, response: response.data });
     } catch {
-      return courseValidationFailure(dependencies, 'stage_attestation');
+      return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
     }
   }
-  return { status: 200, body: response.data };
+  return withHistory({ status: 200, body: response.data });
 }

@@ -113,7 +113,7 @@ describe('recommend-date server prompt', () => {
       } as any),
     );
 
-    expect(result).toEqual({
+    expect({ status: result.status, body: result.body }).toEqual({
       status: 422,
       body: { error: { ...createRecommendationError('COURSE_VALIDATION_FAILED'), failureStage: 'stage_attestation' } },
     });
@@ -250,6 +250,17 @@ describe('recommend-date Deno source boundary', () => {
 
     expect(source).toContain("import { invokeGenerateAiSelection } from '../_shared/recommend-date-downstream.ts'");
     expect(source).toContain('generateSelection: (input) => invokeGenerateAiSelection({');
+  });
+
+  // 세션 행이 없는 최초 생성 실패도 arm별 실패율에 잡히려면, sessionKey join이 아니라
+  // 로그 자체의 experiment-active marker로 집계 대상을 판별할 수 있어야 한다.
+  it('marks every history-outcome log with whether the experiment was resolved for the request', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'supabase/functions/recommend-date/index.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('experimentActive: Boolean(historyMetadata)');
   });
 });
 
