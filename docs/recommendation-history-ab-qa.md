@@ -4,8 +4,22 @@
 
 ## 현재 배포 상태 (2026-07-26)
 
-프로덕션에 `ab50`으로 활성화돼 있다. 마이그레이션 `recommendation_history_ab_metrics`
-적용 완료, Edge `recommend-date` v18 / `replacement-candidates` v11 배포 완료.
+**앱스토어 출시를 앞두고 `treatment`(전원 적용)로 운영한다.** A/B 인프라는 그대로
+두되 50:50 분할은 하지 않는다. 출시 시점에 절반의 사용자에게 구버전 동작을 주는 것이
+손해라는 판단이다. 나중에 `ab50`으로 되돌리면 즉시 실험이 재개된다.
+
+이 상태에서는 control 표본이 쌓이지 않으므로 **arm 간 비교 분석은 나오지 않는다.**
+`scripts/eval-recommendation-history-ab.ts`는 treatment 단일 arm의 절대값
+(제외 수, 완화율, 교체 픽률 등) 모니터링 용도로만 쓴다.
+
+마이그레이션 `recommendation_history_ab_metrics`,
+`fix_step_event_trigger_tg_op_case`, `step_event_actor_fallback_to_session_owner`
+적용 완료. Edge `recommend-date` / `replacement-candidates` 배포 완료
+(secret 변경 시마다 버전이 자동 증가한다).
+
+> **주의.** `treatment` 모드에서도 세션 metadata에 이미 박힌 arm은 유지된다.
+> `ab50` 기간에 control로 배정된 기존 세션을 재생성하면 그 세션은 control로 남는다.
+> 신규 코스 생성은 모두 treatment다.
 
 이벤트 기록 트리거는 `tg_op`를 소문자와 비교해 **한 번도 발화한 적이 없었고**,
 `20260726120000_fix_step_event_trigger_tg_op_case`에서 수정했다. 대소문자만으로는
