@@ -31,6 +31,11 @@ import {
 import { placeMatchesStepIntent } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
+import {
+  EMPTY_RECOMMENDATION_HISTORY,
+  type RecommendationHistoryContext,
+} from '../../../shared/recommendation/recommendation-history.ts';
+import type { RecommendationHistoryLoad } from './recommendation-history.ts';
 
 // 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
 // AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
@@ -55,7 +60,19 @@ export type RecommendDateRequest = {
 
 export type RecommendDateDependencies = {
   authenticate: (authorization: string) => Promise<{ id: string } | null>;
-  searchCandidates: (request: RecommendationRequest) => Promise<RecommendationSearchPipelineResult>;
+  searchCandidates: (
+    request: RecommendationRequest,
+    history: RecommendationHistoryContext,
+  ) => Promise<RecommendationSearchPipelineResult>;
+  /** Server-only history dependency. No request field can select an experiment arm or inject history. */
+  loadHistory?: (input: {
+    authenticatedUserId: string;
+    request: RecommendationRequest;
+  }) => Promise<RecommendationHistoryLoad>;
+  historyExperiment?: {
+    assignedVariant: 'control' | 'treatment';
+    assignmentUnit: 'couple' | 'user';
+  };
   generateSelection: (input: {
     authorization: string;
     prompt: string;
@@ -173,9 +190,47 @@ export async function handleRecommendDate(
     resolvedExcludedIntents: resolved.excludedIntents,
   };
 
+  let history = EMPTY_RECOMMENDATION_HISTORY;
+  let historyExperiment: {
+    assignedVariant: 'control' | 'treatment';
+    effectiveVariant: 'control' | 'treatment';
+    assignmentUnit: 'couple' | 'user';
+    historyLoad: 'not_attempted' | 'loaded' | 'failed';
+    fallbackReason?: 'history_load_failed';
+  } | undefined;
+  if (dependencies.historyExperiment?.assignedVariant === 'treatment') {
+    historyExperiment = {
+      assignedVariant: dependencies.historyExperiment.assignedVariant,
+      effectiveVariant: 'control',
+      assignmentUnit: dependencies.historyExperiment.assignmentUnit,
+      historyLoad: 'not_attempted',
+    };
+    try {
+      const loaded = dependencies.loadHistory
+        ? await dependencies.loadHistory({ authenticatedUserId: authenticatedUser.id, request: intentAwareRequest })
+        : { context: EMPTY_RECOMMENDATION_HISTORY, status: 'failed' as const, recentHistoryExcludedCount: 0 };
+      if (loaded.status === 'loaded') {
+        history = loaded.context;
+        historyExperiment = { ...historyExperiment, effectiveVariant: 'treatment', historyLoad: 'loaded' };
+      } else {
+        historyExperiment = {
+          ...historyExperiment,
+          historyLoad: 'failed',
+          fallbackReason: 'history_load_failed',
+        };
+      }
+    } catch {
+      historyExperiment = {
+        ...historyExperiment,
+        historyLoad: 'failed',
+        fallbackReason: 'history_load_failed',
+      };
+    }
+  }
+
   let search: RecommendationSearchPipelineResult;
   try {
-    search = await dependencies.searchCandidates(intentAwareRequest);
+    search = await dependencies.searchCandidates(intentAwareRequest, history);
   } catch {
     return errorResult(504, 'PLACE_SEARCH_TIMEOUT');
   }
@@ -266,6 +321,8 @@ export async function handleRecommendDate(
       built = buildCandidateOnlyCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         selection: {
           steps: serverRequest.courseSteps.map((step) => ({
             stepId: step.id,
@@ -282,6 +339,8 @@ export async function handleRecommendDate(
       built = buildCandidateOnlyCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         selection: {
           steps: forcePinnedCandidateIds(
             serverRequest.courseSteps.map((step) => ({ stepId: step.id, candidateId: '' })),
@@ -322,6 +381,8 @@ export async function handleRecommendDate(
             built = buildCandidateOnlyCourse({
               request: { ...serverRequest, courseSteps: effectiveCourseSteps },
               candidates: search.candidates,
+              history,
+              reintroducedPlaceIds: search.reintroducedPlaceIds,
               selection,
               generatedAt,
             });
@@ -344,6 +405,8 @@ export async function handleRecommendDate(
       built = buildDeterministicCandidateCourse({
         request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
         candidates: search.candidates,
+        history,
+        reintroducedPlaceIds: search.reintroducedPlaceIds,
         generatedAt,
       });
     }
@@ -374,6 +437,16 @@ export async function handleRecommendDate(
         candidateCount: search.candidates.length,
       },
       route: built.route,
+      ...(historyExperiment ? {
+        historyExperiment: {
+          name: 'history-diversity-v1' as const,
+          ...historyExperiment,
+          recentHistoryExcludedCount: search.recentHistoryExcludedCount ?? 0,
+          recentCooldownRelaxed: built.course.relaxedConstraints.some((constraint) => (
+            constraint.constraint === 'recentPlaceCooldown'
+          )),
+        },
+      } : {}),
       ...(resolved.source !== 'none' || resolved.unsupported.length > 0 || resolved.conflicts.length > 0
         ? {
           stepIntent: {

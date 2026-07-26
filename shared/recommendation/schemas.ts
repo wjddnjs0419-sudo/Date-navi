@@ -236,6 +236,40 @@ export const stepIntentMetadataSchema = z.object({
   conflicts: z.array(z.object({ description: boundedText(280) })),
 }).strict();
 
+export const historyExperimentMetadataSchema = z.object({
+  name: z.literal('history-diversity-v1'),
+  assignedVariant: z.enum(['control', 'treatment']),
+  effectiveVariant: z.enum(['control', 'treatment']),
+  assignmentUnit: z.enum(['couple', 'user']),
+  historyLoad: z.enum(['not_attempted', 'loaded', 'failed']),
+  fallbackReason: z.literal('history_load_failed').optional(),
+  recentHistoryExcludedCount: z.number().int().nonnegative(),
+  recentCooldownRelaxed: z.boolean(),
+}).strict().superRefine((metadata, ctx) => {
+  if (metadata.effectiveVariant === 'treatment' && metadata.assignedVariant !== 'treatment') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['effectiveVariant'],
+      message: 'Only a treatment assignment may use the treatment variant.',
+    });
+  }
+  if (metadata.fallbackReason === 'history_load_failed'
+    && (metadata.historyLoad !== 'failed' || metadata.effectiveVariant !== 'control')) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['fallbackReason'],
+      message: 'A history-load fallback requires a failed load and the control variant.',
+    });
+  }
+  if (metadata.historyLoad === 'failed' && metadata.fallbackReason !== 'history_load_failed') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['fallbackReason'],
+      message: 'A failed history load requires its fallback reason.',
+    });
+  }
+});
+
 export const recommendDateMetadataSchema = z.object({
   fallbackUsed: z.boolean(),
   selectionSource: z.enum(['ai', 'deterministic_fallback']),
@@ -243,6 +277,7 @@ export const recommendDateMetadataSchema = z.object({
   search: recommendDateSearchMetadataSchema,
   route: recommendDateRouteMetadataSchema,
   stepIntent: stepIntentMetadataSchema.optional(),
+  historyExperiment: historyExperimentMetadataSchema.optional(),
 }).strict();
 
 const ROUTE_DISTANCE_TOLERANCE_METERS = 0.5;
