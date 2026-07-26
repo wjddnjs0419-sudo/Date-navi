@@ -1,6 +1,8 @@
 export {
   buildKakaoMapUrl,
   rankReplacementCandidates,
-  type ReplacementCandidate,
+  storedReplacementHistoryVariant,
+  toReplacementCandidateDisplay,
+  type ReplacementCandidateDisplay as ReplacementCandidate,
   type ReplacementCandidateSource,
 } from '../shared/recommendation/replacement-candidates';
