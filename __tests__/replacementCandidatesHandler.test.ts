@@ -1,0 +1,107 @@
+import { handleReplacementCandidates } from '../supabase/functions/_shared/replacement-candidates-handler';
+import type { PlaceCandidate } from '../supabase/functions/_shared/recommendation-ranking';
+
+const treatmentMetadata = {
+  historyExperiment: {
+    name: 'history-diversity-v1', assignedVariant: 'treatment', effectiveVariant: 'treatment', assignmentUnit: 'user',
+    historyLoad: 'loaded', recentHistoryExcludedCount: 1, recentCooldownRelaxed: false,
+  },
+};
+
+const candidate = (id: string, categoryGroupCode: string): PlaceCandidate => ({
+  candidateId: `candidate-${id}`,
+  kakaoPlaceId: `place-${id}`,
+  name: `Place ${id}`,
+  categoryGroupCode,
+  categoryGroupName: categoryGroupCode === 'CE7' ? 'Cafe' : 'Restaurant',
+  categoryName: categoryGroupCode === 'CE7' ? 'Cafe' : 'Restaurant',
+  address: 'Seoul', roadAddress: 'Seoul road', latitude: 37.55, longitude: 127.011,
+  mapUrl: `https://place.map.kakao.com/place-${id}`,
+  matchedSearchEvidence: [], distanceFromSearchCenterMeters: 100, score: 50,
+  scoreBreakdown: { intent: 40, distance: 10, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: 0 },
+});
+
+const rows = [
+  {
+    step_id: 'meal', step_order: 1, category: 'meal', label: 'Meal', current_kakao_place_id: 'current-meal', current_candidate_id: 'current-meal-candidate',
+    place_name: 'Current meal', address: 'Seoul', road_address: 'Seoul road', map_url: '', latitude: 37.55, longitude: 127.010, reason: 'ok', locked: false,
+  },
+  {
+    step_id: 'cafe', step_order: 2, category: 'cafe', label: 'Cafe', current_kakao_place_id: 'current-cafe', current_candidate_id: 'current-cafe-candidate',
+    place_name: 'Current cafe', address: 'Seoul', road_address: 'Seoul road', map_url: '', latitude: 37.55, longitude: 127.012, reason: 'ok', locked: false,
+  },
+];
+
+const session = (metadata: unknown = treatmentMetadata) => ({
+  originalRequest: {
+    requestId: 'request-1', mode: 'course', language: 'en',
+    location: { source: 'kakao', label: 'Seoul', latitude: 37.55, longitude: 127.011, kind: 'landmark' },
+    courseSteps: [{ id: 'meal', category: 'meal', label: 'Meal' }, { id: 'cafe', category: 'cafe', label: 'Cafe' }],
+  },
+  metadata,
+});
+
+function dependencies(overrides: Record<string, unknown> = {}) {
+  return {
+    experimentEnabled: true,
+    authenticate: jest.fn(async () => ({ id: 'user-1' })),
+    loadSession: jest.fn(async () => session()),
+    loadSteps: jest.fn(async () => rows),
+    loadHistory: jest.fn(async () => ({
+      status: 'loaded' as const,
+      context: {
+        recentHardPlaceIds: ['place-old'], recentExposure: {}, negativeActions: {}, feedback: {}, qualifiedPairs: [],
+      },
+      recentHistoryExcludedCount: 1,
+    })),
+    searchCandidates: jest.fn(async () => ({ candidates: [candidate('cafe', 'CE7')] })),
+    now: () => 100,
+    ...overrides,
+  };
+}
+
+describe('replacement candidates handler', () => {
+  it('forces stored Treatment to effective Control without loading history when the experiment is disabled', async () => {
+    const deps = dependencies({ experimentEnabled: false });
+
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, deps);
+
+    expect(deps.loadHistory).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: 200,
+      metrics: { assignedVariant: 'control', effectiveVariant: 'control', loaderStatus: 'not_attempted' },
+    });
+  });
+
+  it('keeps a Control response available when a stored Treatment history load fails and excludes the active session from that load', async () => {
+    const deps = dependencies({ loadHistory: jest.fn(async () => { throw new Error('database unavailable'); }) });
+
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, deps);
+
+    expect(deps.loadHistory).toHaveBeenCalledWith(expect.objectContaining({ activeSessionId: 'session-1' }));
+    expect(result).toMatchObject({
+      status: 200,
+      metrics: { assignedVariant: 'treatment', effectiveVariant: 'control', loaderStatus: 'failed' },
+      body: { targetStepId: 'cafe' },
+    });
+  });
+
+  it('does not return category-mismatched candidates from the executable handler response', async () => {
+    const deps = dependencies({
+      experimentEnabled: false,
+      searchCandidates: jest.fn(async () => ({ candidates: [candidate('restaurant', 'FD6'), candidate('cafe', 'CE7')] })),
+    });
+
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, deps);
+    const body = result.body as { top: Array<{ kakaoPlaceId: string; scoreBreakdown?: unknown }>; additional: Array<{ kakaoPlaceId: string }> };
+
+    expect([...body.top, ...body.additional].map((entry) => entry.kakaoPlaceId)).toEqual(['place-cafe']);
+    expect(body.top[0].scoreBreakdown).toBeUndefined();
+  });
+});

@@ -5,6 +5,7 @@ describe('kakao search cache edge wiring', () => {
   const root = join(__dirname, '..');
   const recommendDate = readFileSync(join(root, 'supabase/functions/recommend-date/index.ts'), 'utf8');
   const replacement = readFileSync(join(root, 'supabase/functions/replacement-candidates/index.ts'), 'utf8');
+  const replacementHandler = readFileSync(join(root, 'supabase/functions/_shared/replacement-candidates-handler.ts'), 'utf8');
 
   it('routes recommend-date search through the service-role cache store and logs lookup metrics', () => {
     expect(recommendDate).toContain('createSupabaseKakaoSearchCacheStore');
@@ -19,13 +20,13 @@ describe('kakao search cache edge wiring', () => {
     expect(replacement).toContain('SUPABASE_SERVICE_ROLE_KEY');
     expect(replacement).toContain('cacheStore');
     expect(replacement).toContain('replacement_candidates_served');
-    expect(replacement).toContain('poolSize');
+    expect(replacementHandler).toContain('poolSize');
   });
 
   it('keeps the replacement sheet fully deterministic — no AI curation call', () => {
     expect(replacement).not.toContain('invokeGenerateAiSelection');
     expect(replacement).not.toContain('buildReplacementSelectionPrompt');
     expect(replacement).not.toContain('selectCuratedReplacementCandidates');
-    expect(replacement).toContain('rankReplacementCandidates');
+    expect(replacementHandler).toContain('rankReplacementCandidates');
   });
 });
