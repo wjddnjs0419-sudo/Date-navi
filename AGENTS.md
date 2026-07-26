@@ -186,3 +186,5 @@ handleGenerateAiOptions()
 - `react-test-renderer`에서 `<View testID="x">`/`<Animated.View testID="x">`는 forwardRef 컴포넌트(+`Animated.View`는 `AnimatedComponent` 레이어까지) 노드와 실제 호스트 노드가 testID를 함께 갖는다 — `root.findAll(n => n.props.testID === 'x')`로 "요소 1개"를 검증하면 View는 2개, Animated.View는 3개가 매칭돼 항상 깨진다. 호스트 노드만 세려면 `typeof n.type === 'string'` 조건을 함께 걸 것.
 - 기존 DI fixture가 구조적 반환 타입을 구성하면 새 응답 필드는 optional로 도입하거나 모든 fixture를 함께 갱신할 것 — 필수 필드 추가만으로 `tsc` 전체가 실패한다.
 - `pg_get_functiondef` 기반 in-place 함수 패치의 self-check는 반드시 **실제 주입되는 문자열**을 marker로 쓸 것 — 주입 코드에 없는 설명용 문구(`'... consumption failed'`)를 `position(... in lower(v_definition))`으로 재확인하면 마이그레이션이 항상 injection failed로 raise된다. marker는 idempotency 가드와 동일 문자열이어야 하고, `lower()` 비교이므로 소문자로 쓸 것.
+- PL/pgSQL 트리거에서 `TG_OP`는 항상 대문자(`'INSERT'`/`'UPDATE'`/`'DELETE'`)다 — `tg_op = 'insert'`로 비교하면 컴파일·실행 모두 조용히 성공하면서 어떤 분기도 타지 않아 몇 달간 무발화 상태가 된다. 감사 트리거를 추가하면 반드시 실제 INSERT/UPDATE/DELETE를 돌려 행이 쌓이는지 확인할 것.
+- 삭제 이벤트를 기록하는 감사 테이블에 대상 테이블로의 `on delete cascade` FK를 걸지 말 것 — `after delete`는 부모가 이미 없어 FK 위반으로 원본 삭제를 깨뜨리고, `before delete`로 옮겨도 이어지는 cascade가 방금 넣은 행을 지운다. 상위(세션 등) FK만 남길 것.

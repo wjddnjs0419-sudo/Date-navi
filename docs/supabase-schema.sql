@@ -432,9 +432,8 @@ create table if not exists public.recommendation_step_events (
   actor_user_id uuid not null references auth.users(id) on delete cascade,
   metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata) = 'object'),
   created_at timestamptz not null default now(),
-  foreign key (session_id, step_id)
-    references public.recommendation_course_steps(session_id, step_id)
-    on delete cascade,
+  -- 스텝으로의 복합 FK는 두지 않는다. cascade가 place_deleted 이벤트를 지워버려
+  -- 삭제 기록 자체가 불가능해진다. 정리는 세션 FK가 담당한다.
   check (candidate_rank is null or candidate_rank > 0)
 );
 
@@ -1323,24 +1322,39 @@ begin
 end;
 $history_ab_metrics$;
 
+-- actor_user_id는 not null이다. 서비스 롤 컨텍스트에는 auth.uid()가 없으므로
+-- 세션 소유자로 채운다. 그러지 않으면 감사 기록 실패가 원본 쓰기를 통째로 되돌린다.
+create or replace function public.write_recommendation_step_event(
+  p_session_id text, p_step_id text, p_event_type text,
+  p_previous_place text default null, p_next_place text default null, p_candidate_rank integer default null)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  insert into public.recommendation_step_events(
+    session_id, step_id, event_type, previous_kakao_place_id, next_kakao_place_id, candidate_rank, actor_user_id)
+  values (
+    p_session_id, p_step_id, p_event_type, p_previous_place, p_next_place, p_candidate_rank,
+    coalesce(auth.uid(), (select owner_user_id from public.recommendation_sessions where id = p_session_id)));
+end;
+$$;
+
 create or replace function public.recommendation_course_step_event_trigger()
 returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_action text := current_setting('app.recommendation_event_action', true);
   v_candidate_rank integer := nullif(current_setting('app.recommendation_candidate_rank', true), '')::integer;
 begin
-  if tg_op = 'insert' and v_action is null and not exists (
+  if tg_op = 'INSERT' and v_action is null and not exists (
     select 1 from public.recommendation_step_events
     where session_id = new.session_id and step_id = new.step_id and event_type = 'initial_recommendation'
   ) then
     perform public.write_recommendation_step_event(new.session_id, new.step_id, 'initial_recommendation', null, new.current_kakao_place_id);
-  elsif tg_op = 'insert' and v_action = 'add' then
+  elsif tg_op = 'INSERT' and v_action = 'add' then
     perform public.write_recommendation_step_event(new.session_id, new.step_id, 'place_added', null, new.current_kakao_place_id);
-  elsif tg_op = 'update' and v_action in ('lock', 'unlock') and old.locked is distinct from new.locked then
+  elsif tg_op = 'UPDATE' and v_action in ('lock', 'unlock') and old.locked is distinct from new.locked then
     perform public.write_recommendation_step_event(new.session_id, new.step_id, case when new.locked then 'place_locked' else 'place_unlocked' end, old.current_kakao_place_id, new.current_kakao_place_id);
-  elsif tg_op = 'update' and v_action = 'replace' and old.current_kakao_place_id is distinct from new.current_kakao_place_id then
+  elsif tg_op = 'UPDATE' and v_action = 'replace' and old.current_kakao_place_id is distinct from new.current_kakao_place_id then
     perform public.write_recommendation_step_event(new.session_id, new.step_id, 'place_replaced', old.current_kakao_place_id, new.current_kakao_place_id, v_candidate_rank);
-  elsif tg_op = 'delete' and v_action = 'delete' then
+  elsif tg_op = 'DELETE' and v_action = 'delete' then
     perform public.write_recommendation_step_event(old.session_id, old.step_id, 'place_deleted', old.current_kakao_place_id, null);
   end if;
   return coalesce(new, old);

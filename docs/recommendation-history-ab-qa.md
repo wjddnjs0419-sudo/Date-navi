@@ -7,20 +7,23 @@
 프로덕션에 `ab50`으로 활성화돼 있다. 마이그레이션 `recommendation_history_ab_metrics`
 적용 완료, Edge `recommend-date` v18 / `replacement-candidates` v11 배포 완료.
 
-> **측정 한계 — 결과 해석 전 반드시 읽을 것.**
-> `recommendation_course_step_event_trigger()`가 `tg_op`를 소문자(`'insert'`)로
-> 비교하는데 PL/pgSQL의 `TG_OP`는 대문자라, 이 트리거는 **한 번도 이벤트를 쓴 적이
-> 없다**. 따라서 `place_replaced`·`place_deleted`에 의존하는
-> **behavior score(부정 행동 페널티)는 모든 사용자에게 0이고**,
-> `replacementTop3PickRate`는 분모가 없어 항상 `null`이다.
-> 지금 유효한 것은 노출 이력 기반 다양성 지표(`sameAreaRepeatRate`,
-> `recentHistoryExcludedCount`, `recentCooldownRelaxedRate`,
-> `replacementTop3RepeatRate`, `replacementEmptyRate`,
-> `courseGenerationFailureRate`)뿐이다.
-> 트리거를 대문자로 고치는 것만으로는 안 된다 —
-> `recommendation_step_events`의 `(session_id, step_id)` FK가 non-deferrable이라
-> `after delete` 분기가 부모 삭제 후 insert를 시도해 **스텝 삭제가 FK 위반으로
-> 실패**한다.
+이벤트 기록 트리거는 `tg_op`를 소문자와 비교해 **한 번도 발화한 적이 없었고**,
+`20260726120000_fix_step_event_trigger_tg_op_case`에서 수정했다. 대소문자만으로는
+부족해 `recommendation_step_events`의 `(session_id, step_id)` 복합 FK도 제거했다.
+그 FK가 cascade라 `after delete`는 FK 위반으로 삭제를 깨뜨리고 `before delete`는
+방금 넣은 행이 cascade로 지워졌다. 정리는 세션 FK가 담당한다.
+
+트리거가 살아나면서 이벤트 기록 실패가 곧 원본 쓰기 실패가 되므로,
+`write_recommendation_step_event`의 `actor_user_id`는 `auth.uid()`가 없을 때
+세션 소유자로 폴백한다.
+
+프로덕션에서 롤백되는 트랜잭션으로 검증했다 — 사용자 JWT 컨텍스트와 서비스 롤
+컨텍스트 모두에서 `initial_recommendation`·`place_replaced`·`place_deleted`가
+기록되고 스텝 삭제가 성공한다.
+
+> **해석 주의.** behavior score와 `replacementTop3PickRate`는 트리거 수정
+> **이후에 생성된 세션에만** 유효하다. 그 이전 데이터에는 부정 행동 이벤트가
+> 존재하지 않으므로, 수정 시점을 기준으로 관찰창을 자르고 분석할 것.
 
 ## 분석 입력과 출력
 
