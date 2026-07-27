@@ -15,6 +15,12 @@ import {
   diversityScoreFor,
   type RecommendationHistoryContext,
 } from '../../../shared/recommendation/recommendation-history.ts';
+import {
+  budgetScoreFor,
+  pickPriceRange,
+  priceAnchorKRW,
+  type PlacePriceFields,
+} from '../../../shared/recommendation/place-price.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
@@ -135,7 +141,12 @@ function hasHistorySignals(history: RecommendationHistoryContext | undefined): h
 export function rankPlaceCandidates(
   places: readonly EvidencedKakaoPlace[],
   request: RecommendationRequest,
-  options: { limit?: number; history?: RecommendationHistoryContext } = {},
+  options: {
+    limit?: number;
+    history?: RecommendationHistoryContext;
+    /** 장소 원장 가격(추정/관측). 없는 장소는 점수 0 — 하드 필터가 아니다. */
+    prices?: ReadonlyMap<string, PlacePriceFields>;
+  } = {},
 ): RankedRecommendationSearch {
   const requiredCategories = [...new Set(request.courseSteps.map((step) => (
     normalizeRecommendationCategory(step.category)
@@ -218,6 +229,13 @@ export function rankPlaceCandidates(
     return boost;
   };
 
+  // 후보 랭킹 시점엔 코스가 아직 조립 전이라 합계를 못 낸다. 균등 분할 몫 대 단가로 근사한다.
+  const budgetShareKRW = priceAnchorKRW(request.totalBudgetKRW, request.courseSteps.length);
+  const budgetScoreOf = (kakaoPlaceId: string) => {
+    const price = options.prices?.get(kakaoPlaceId);
+    return price ? budgetScoreFor(pickPriceRange(price), budgetShareKRW) : 0;
+  };
+
   const scored = policyPlaces.map((place) => {
     const distanceFromSearchCenterMeters = haversineDistanceMeters(request.location, place);
     const requiredMatch = requiredCategories.some((category) => verifiedPlaceMatchesCategory(place, category));
@@ -229,7 +247,7 @@ export function rankPlaceCandidates(
         + intentBoostFor(place)
         + negatedPenaltyFor(place),
       distance: Math.max(0, RANKING_SCORE_WEIGHTS.distanceMax - Math.floor(distanceFromSearchCenterMeters / 250)),
-      budget: 0,
+      budget: budgetScoreOf(place.kakaoPlaceId),
       preference: 0,
       routeFit: routeFitFor(place),
       diversity: history ? diversityScoreFor(place.kakaoPlaceId, history, {

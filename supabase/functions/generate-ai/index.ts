@@ -183,6 +183,14 @@ const LOGGED_ACTIONS = new Set(
   Object.entries(ACTION_CONFIG).filter(([, cfg]) => cfg.logged).map(([key]) => key),
 );
 
+// 파싱 결과를 레거시 _usage 봉투 없이 그대로 돌려주는 액션들 — 엄격 스키마 소비자 전용.
+const RAW_PASSTHROUGH_ACTIONS = new Set([
+  'recommend_date_select',
+  'replacement_select',
+  'parse_step_intents',
+  'estimate_place_price',
+]);
+
 type LogParams = {
   userId: string;
   action: string;
@@ -329,8 +337,7 @@ Deno.serve(async (req) => {
       latencyMs: Date.now() - startedAt,
     });
 
-    if (action === 'recommend_date_select' || action === 'replacement_select' || action === 'parse_step_intents'
-      || action === 'estimate_place_price') return json(parsed);
+    if (typeof action === 'string' && RAW_PASSTHROUGH_ACTIONS.has(action)) return json(parsed);
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);
