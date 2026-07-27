@@ -211,7 +211,8 @@ describe('placePriceFieldsFromRows', () => {
         estimated_max_krw: 9000,
         observed_min_krw: null,
         observed_max_krw: null,
-        observed_sample_count: null,
+        observed_min_sample_count: null,
+        observed_max_sample_count: 4,
       },
     ]);
 
@@ -220,7 +221,8 @@ describe('placePriceFieldsFromRows', () => {
       estimatedMaxKRW: 9000,
       observedMinKRW: null,
       observedMaxKRW: null,
-      observedSampleCount: 0,
+      observedMinSampleCount: 0,
+      observedMaxSampleCount: 4,
     });
   });
 
@@ -251,6 +253,8 @@ describe('lookupPlacePrices', () => {
         observed_min_krw: null,
         observed_max_krw: null,
         observed_sample_count: 3,
+        observed_min_sample_count: 3,
+        observed_max_sample_count: 0,
       }],
       error: null,
     });
@@ -258,7 +262,7 @@ describe('lookupPlacePrices', () => {
     const map = await lookupPlacePrices({ client: client as never, kakaoPlaceIds: ['k1'] });
 
     expect(map.get('k1')?.estimatedMinKRW).toBe(1000);
-    expect(map.get('k1')?.observedSampleCount).toBe(3);
+    expect(map.get('k1')?.observedMinSampleCount).toBe(3);
   });
 
   // supabase-js는 던지지 않는다 — error를 버리면 예산 기능이 무증상으로 정지한다.

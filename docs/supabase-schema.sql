@@ -1439,6 +1439,10 @@ create table if not exists public.places (
   observed_min_krw integer check (observed_min_krw >= 0),
   observed_max_krw integer check (observed_max_krw >= 0),
   observed_sample_count integer not null default 0 check (observed_sample_count >= 0),
+  -- 임계치는 "구간을 만든 답변 수"에 건다 — 전체 응답 수는 보통(2) 답변까지 세어
+  -- 비쌈 1건을 통과시킨다(20260727140000).
+  observed_min_sample_count integer not null default 0 check (observed_min_sample_count >= 0),
+  observed_max_sample_count integer not null default 0 check (observed_max_sample_count >= 0),
   first_seen_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -1472,6 +1476,7 @@ create or replace function public.recompute_place_observed_price(p_kakao_place_i
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_min integer; v_max integer; v_samples integer;
+  v_min_samples integer; v_max_samples integer;
 begin
   with couple_answers as (
     -- 커플당 최신 가격 답변 1건 = 1표본. 예산이 있는 세션만 앵커를 만들 수 있다.
@@ -1502,20 +1507,24 @@ begin
         else lowers[floor((array_length(lowers, 1) - 1) * 0.75)::integer + 1] end as min_krw,
       case when uppers is null then null
         else uppers[ceil((array_length(uppers, 1) - 1) * 0.25)::integer + 1] end as max_krw,
-      sample_count
+      sample_count,
+      coalesce(array_length(lowers, 1), 0) as min_sample_count,
+      coalesce(array_length(uppers, 1), 0) as max_sample_count
     from sorted
   )
   select
     case when b.min_krw is not null and b.max_krw is not null and b.min_krw > b.max_krw then null else b.min_krw end,
     case when b.min_krw is not null and b.max_krw is not null and b.min_krw > b.max_krw then null else b.max_krw end,
-    b.sample_count
-  into v_min, v_max, v_samples
+    b.sample_count, b.min_sample_count, b.max_sample_count
+  into v_min, v_max, v_samples, v_min_samples, v_max_samples
   from bounds b;
 
   update public.places set
     observed_min_krw = v_min,
     observed_max_krw = v_max,
     observed_sample_count = coalesce(v_samples, 0),
+    observed_min_sample_count = coalesce(v_min_samples, 0),
+    observed_max_sample_count = coalesce(v_max_samples, 0),
     updated_at = now()
   where kakao_place_id = p_kakao_place_id;
 end;

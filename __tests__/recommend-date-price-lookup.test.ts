@@ -49,7 +49,8 @@ const priceFields = (over: Partial<PlacePriceFields> = {}): PlacePriceFields => 
   estimatedMaxKRW: null,
   observedMinKRW: null,
   observedMaxKRW: null,
-  observedSampleCount: 0,
+  observedMinSampleCount: 0,
+  observedMaxSampleCount: 0,
   ...over,
 });
 

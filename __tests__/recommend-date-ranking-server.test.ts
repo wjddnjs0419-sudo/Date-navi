@@ -444,7 +444,8 @@ describe('rankPlaceCandidates — budget 점수', () => {
     estimatedMaxKRW: null,
     observedMinKRW: null,
     observedMaxKRW: null,
-    observedSampleCount: 0,
+    observedMinSampleCount: 0,
+  observedMaxSampleCount: 0,
     ...over,
   });
   const budgetOf = (ranked: ReturnType<typeof rankPlaceCandidates>, id: string) => (
@@ -484,7 +485,7 @@ describe('rankPlaceCandidates — budget 점수', () => {
       limit: 10,
       prices: new Map([['a', priceFields({
         estimatedMinKRW: 1000, estimatedMaxKRW: 2000,
-        observedMinKRW: 50000, observedSampleCount: 3,
+        observedMinKRW: 50000, observedMinSampleCount: 3,
       })]]),
     });
 
@@ -496,7 +497,7 @@ describe('rankPlaceCandidates — budget 점수', () => {
       limit: 10,
       prices: new Map([['a', priceFields({
         estimatedMinKRW: 1000, estimatedMaxKRW: 2000,
-        observedMinKRW: 50000, observedSampleCount: 2,
+        observedMinKRW: 50000, observedMinSampleCount: 2,
       })]]),
     });
 

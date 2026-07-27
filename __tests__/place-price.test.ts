@@ -78,10 +78,10 @@ describe('pickPriceRange (소비 규칙: 관측 > 추정 > 모름)', () => {
   const base = {
     estimatedMinKRW: 8000, estimatedMaxKRW: 12000,
     observedMinKRW: null as number | null, observedMaxKRW: null as number | null,
-    observedSampleCount: 0,
+    observedMinSampleCount: 0, observedMaxSampleCount: 0,
   };
   it('관측이 하나라도 있으면 관측만 쓴다', () => {
-    expect(pickPriceRange({ ...base, observedMinKRW: 15000, observedSampleCount: 3 }))
+    expect(pickPriceRange({ ...base, observedMinKRW: 15000, observedMinSampleCount: 3 }))
       .toEqual({ source: 'observed', minKRW: 15000, maxKRW: null });
   });
   it('관측 없으면 추정', () => {
@@ -92,18 +92,36 @@ describe('pickPriceRange (소비 규칙: 관측 > 추정 > 모름)', () => {
       .toEqual({ source: 'unknown', minKRW: null, maxKRW: null });
   });
   it('표본 3건 미만의 관측은 추정을 덮지 못한다 — 안쪽 백분위가 성립하지 않는 구간', () => {
-    expect(pickPriceRange({ ...base, observedMinKRW: 5000, observedMaxKRW: 90000, observedSampleCount: 2 }))
-      .toEqual({ source: 'estimated', minKRW: 8000, maxKRW: 12000 });
+    expect(pickPriceRange({
+      ...base, observedMinKRW: 5000, observedMaxKRW: 90000,
+      observedMinSampleCount: 2, observedMaxSampleCount: 2,
+    })).toEqual({ source: 'estimated', minKRW: 8000, maxKRW: 12000 });
   });
   it('표본 미달이고 추정도 없으면 unknown — 넓은 관측을 대신 쓰지 않는다', () => {
     expect(pickPriceRange({
       ...base, estimatedMinKRW: null, estimatedMaxKRW: null,
-      observedMinKRW: 5000, observedMaxKRW: 90000, observedSampleCount: 2,
+      observedMinKRW: 5000, observedMaxKRW: 90000,
+      observedMinSampleCount: 2, observedMaxSampleCount: 2,
     })).toEqual({ source: 'unknown', minKRW: null, maxKRW: null });
   });
   it('정확히 3건이면 관측을 쓴다(경계)', () => {
-    expect(pickPriceRange({ ...base, observedMinKRW: 15000, observedSampleCount: OBSERVED_MIN_SAMPLE_COUNT }))
-      .toEqual({ source: 'observed', minKRW: 15000, maxKRW: null });
+    expect(pickPriceRange({
+      ...base, observedMinKRW: 15000, observedMinSampleCount: OBSERVED_MIN_SAMPLE_COUNT,
+    })).toEqual({ source: 'observed', minKRW: 15000, maxKRW: null });
+  });
+  // 임계치는 구간을 만든 답변 수에 걸려야 한다. 전체 응답 수로 세면 "보통" 2건이
+  // "비쌈" 1건을 통과시켜, 한 사람의 앵커가 하한이 된다.
+  it('하한과 상한은 각자의 표본 수로 판정된다 — 한쪽이 미달이면 그쪽만 버린다', () => {
+    expect(pickPriceRange({
+      ...base, observedMinKRW: 50000, observedMaxKRW: 90000,
+      observedMinSampleCount: 1, observedMaxSampleCount: 4,
+    })).toEqual({ source: 'observed', minKRW: null, maxKRW: 90000 });
+  });
+  it('구간을 만든 답변이 부족하면 다른 쪽 표본이 많아도 그 경계는 못 쓴다', () => {
+    expect(pickPriceRange({
+      ...base, observedMinKRW: 50000,
+      observedMinSampleCount: 2, observedMaxSampleCount: 9,
+    })).toEqual({ source: 'estimated', minKRW: 8000, maxKRW: 12000 });
   });
 });
 

@@ -48,19 +48,25 @@ export type PlacePriceFields = {
   estimatedMaxKRW: number | null;
   observedMinKRW: number | null;
   observedMaxKRW: number | null;
-  observedSampleCount: number;
+  /** 하한을 만든 "비쌈" 답변 수. 전체 응답 수가 아니다 — 아래 임계치 주석 참조. */
+  observedMinSampleCount: number;
+  /** 상한을 만든 "저렴" 답변 수. */
+  observedMaxSampleCount: number;
 };
 export type PriceRange = { source: 'observed' | 'estimated' | 'unknown'; minKRW: number | null; maxKRW: number | null };
 
 // 관측이 추정을 덮으려면 이 정도 표본은 있어야 한다. 그 아래에서는 안쪽 백분위가
 // 실효 극단값으로 퇴화해(N=2면 하한=최솟값·상한=최댓값) 구간이 지나치게 넓어지고,
 // 그 넓은 구간이 멀쩡한 AI 추정을 밀어내면 정보가 오히려 줄어든다.
+// 퇴화는 경계마다 따로 일어나므로 임계치도 경계별로 건다 — 전체 응답 수로 세면
+// "보통" 답변이 "비쌈" 1건을 통과시켜 한 사람의 앵커가 하한이 된다.
 export const OBSERVED_MIN_SAMPLE_COUNT = 3;
 
 export function pickPriceRange(place: PlacePriceFields): PriceRange {
-  const observedUsable = place.observedSampleCount >= OBSERVED_MIN_SAMPLE_COUNT;
-  if (observedUsable && (place.observedMinKRW !== null || place.observedMaxKRW !== null)) {
-    return { source: 'observed', minKRW: place.observedMinKRW, maxKRW: place.observedMaxKRW };
+  const observedMin = place.observedMinSampleCount >= OBSERVED_MIN_SAMPLE_COUNT ? place.observedMinKRW : null;
+  const observedMax = place.observedMaxSampleCount >= OBSERVED_MIN_SAMPLE_COUNT ? place.observedMaxKRW : null;
+  if (observedMin !== null || observedMax !== null) {
+    return { source: 'observed', minKRW: observedMin, maxKRW: observedMax };
   }
   if (place.estimatedMinKRW !== null || place.estimatedMaxKRW !== null) {
     return { source: 'estimated', minKRW: place.estimatedMinKRW, maxKRW: place.estimatedMaxKRW };

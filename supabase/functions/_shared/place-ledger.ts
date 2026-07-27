@@ -35,7 +35,8 @@ export type PlacePriceRow = {
   estimated_max_krw: number | null;
   observed_min_krw: number | null;
   observed_max_krw: number | null;
-  observed_sample_count: number | null;
+  observed_min_sample_count: number | null;
+  observed_max_sample_count: number | null;
 };
 
 type PriceLookupClient = {
@@ -47,7 +48,8 @@ type PriceLookupClient = {
 };
 
 export const PLACE_PRICE_COLUMNS =
-  'kakao_place_id, estimated_min_krw, estimated_max_krw, observed_min_krw, observed_max_krw, observed_sample_count';
+  'kakao_place_id, estimated_min_krw, estimated_max_krw, observed_min_krw, observed_max_krw, '
+  + 'observed_min_sample_count, observed_max_sample_count';
 
 export function placePriceFieldsFromRows(rows: readonly PlacePriceRow[] | null): Map<string, PlacePriceFields> {
   return new Map((rows ?? []).map((row) => [row.kakao_place_id, {
@@ -55,7 +57,8 @@ export function placePriceFieldsFromRows(rows: readonly PlacePriceRow[] | null):
     estimatedMaxKRW: row.estimated_max_krw,
     observedMinKRW: row.observed_min_krw,
     observedMaxKRW: row.observed_max_krw,
-    observedSampleCount: row.observed_sample_count ?? 0,
+    observedMinSampleCount: row.observed_min_sample_count ?? 0,
+    observedMaxSampleCount: row.observed_max_sample_count ?? 0,
   }]));
 }
 
