@@ -819,7 +819,7 @@ select count(distinct session_id) from public.recommendation_course_steps where 
 - Modify: `supabase/functions/generate-ai/index.ts` (ACTION_CONFIG + 응답 분기)
 - Test: `__tests__/place-price-prompt.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/place-price-prompt.test.ts
@@ -862,8 +862,8 @@ describe('parsePlacePriceEstimate', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL.
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — FAIL.
+- [x] **Step 3: 구현**
 
 ```ts
 // supabase/functions/_shared/place-price-prompt.ts
@@ -926,8 +926,8 @@ const PLACE_PRICE_SCHEMA = {
       || action === 'parse_step_intents' || action === 'estimate_place_price') return json(parsed);
 ```
 
-- [ ] **Step 4: 테스트 PASS + `npm run validate` 클린.**
-- [ ] **Step 5: 커밋** — `git commit -m "feat(edge): estimate_place_price 액션 + 프롬프트·파서"`
+- [x] **Step 4: 테스트 PASS + `npm run validate` 클린.**
+- [x] **Step 5: 커밋** — `git commit -m "feat(edge): estimate_place_price 액션 + 프롬프트·파서"`
 
 ---
 
@@ -937,7 +937,7 @@ const PLACE_PRICE_SCHEMA = {
 - Create: `supabase/functions/_shared/place-ledger.ts`
 - Test: `__tests__/place-ledger.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성** (가짜 client/AI로 순수하게 검증 — 기존 `recommend-date-server.test.ts`의 fake 주입 패턴)
+- [x] **Step 1: 실패하는 테스트 작성** (가짜 client/AI로 순수하게 검증 — 기존 `recommend-date-server.test.ts`의 fake 주입 패턴)
 
 ```ts
 // __tests__/place-ledger.test.ts
@@ -1020,8 +1020,8 @@ describe('recordPlaceKnowledge', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL.
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — FAIL.
+- [x] **Step 3: 구현**
 
 ```ts
 // supabase/functions/_shared/place-ledger.ts
@@ -1108,8 +1108,8 @@ export async function recordPlaceKnowledge(input: {
 
   **참고:** upsert의 `on conflict`는 supabase-js가 PK 기준 merge duplicates로 처리하므로 `first_seen_at`은 default가 최초 1회만 적용되도록 upsert payload에서 제외한다(위 코드가 이미 그렇게 함 — supabase-js upsert는 명시 컬럼만 갱신).
 
-- [ ] **Step 4: 테스트 PASS.**
-- [ ] **Step 5: 커밋** — `git commit -m "feat(edge): 장소 원장 upsert·미추정 장소 백그라운드 추정 모듈"`
+- [x] **Step 4: 테스트 PASS.**
+- [x] **Step 5: 커밋** — `git commit -m "feat(edge): 장소 원장 upsert·미추정 장소 백그라운드 추정 모듈"`
 
 ---
 
@@ -1120,7 +1120,7 @@ export async function recordPlaceKnowledge(input: {
 - Modify: `supabase/functions/recommend-date/index.ts` (dep 구현 + `EdgeRuntime.waitUntil`)
 - Test: `__tests__/recommend-date-server.test.ts`에 케이스 추가
 
-- [ ] **Step 1: 실패하는 테스트 작성** — 기존 recommend-date-server 테스트의 성공 생성 픽스처를 재사용해, deps에 `recordPlaceKnowledge` spy를 넣고 다음을 검증:
+- [x] **Step 1: 실패하는 테스트 작성** — 기존 recommend-date-server 테스트의 성공 생성 픽스처를 재사용해, deps에 `recordPlaceKnowledge` spy를 넣고 다음을 검증:
 
 ```ts
 it('성공 생성 후 선정된 스텝 장소들의 전체 카카오 필드로 recordPlaceKnowledge를 호출한다', async () => {
@@ -1147,8 +1147,8 @@ it('recordPlaceKnowledge가 던져도 응답은 성공한다', async () => {
 
   (픽스처 이름은 파일 내 실제 명칭을 따른다 — 성공 경로 테스트가 이미 존재한다.)
 
-- [ ] **Step 2: 실패 확인** — FAIL(dep 없음).
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — FAIL(dep 없음).
+- [x] **Step 3: 구현**
   - `RecommendDateDependencies`에 추가:
 
 ```ts
@@ -1200,8 +1200,8 @@ it('recordPlaceKnowledge가 던져도 응답은 성공한다', async () => {
     },
 ```
 
-- [ ] **Step 4: 전체 recommend-date 테스트 PASS + `npm run validate` 클린.**
-- [ ] **Step 5: 커밋** — `git commit -m "feat(edge): 코스 응답 후 백그라운드 장소 원장 기록·가격 추정 배선"`
+- [x] **Step 4: 전체 recommend-date 테스트 PASS + `npm run validate` 클린.**
+- [x] **Step 5: 커밋** — `git commit -m "feat(edge): 코스 응답 후 백그라운드 장소 원장 기록·가격 추정 배선"`
 
 ---
 
@@ -1213,7 +1213,7 @@ it('recordPlaceKnowledge가 던져도 응답은 성공한다', async () => {
 - Modify: `supabase/functions/recommend-date/index.ts` (`priceLookup` 구현)
 - Test: `__tests__/recommend-date-ranking-server.test.ts`에 케이스 추가
 
-- [ ] **Step 1: 실패하는 테스트 작성** (기존 랭킹 테스트의 place/request 픽스처 헬퍼 재사용)
+- [x] **Step 1: 실패하는 테스트 작성** (기존 랭킹 테스트의 place/request 픽스처 헬퍼 재사용)
 
 ```ts
 describe('budget 점수', () => {
@@ -1251,8 +1251,8 @@ describe('budget 점수', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL(options.prices 없음).
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — FAIL(options.prices 없음).
+- [x] **Step 3: 구현**
   - `recommendation-ranking.ts`:
 
 ```ts
@@ -1304,8 +1304,8 @@ import { pickPriceRange, budgetScoreFor, priceAnchorKRW, type PlacePriceFields }
 
   **설계 메모:** 스펙의 "코스 합계 대 예산 비교"는 후보 랭킹 단계에서는 코스가 아직 조립 전이므로, 균등 분할 몫(예산÷장소수) 대 후보 단가 비교로 근사한다(스펙 §5-1 앵커 정정과 동일 논리). 하드 필터가 없어서 "후보 0개 → 완화" 케이스는 구조적으로 발생하지 않는다.
 
-- [ ] **Step 4: 전체 테스트 + `npm run validate` 클린.**
-- [ ] **Step 5: 커밋** — `git commit -m "feat(edge): 랭킹 budget 점수 배선(관측>추정>모름, 예산÷장소수 앵커)"`
+- [x] **Step 4: 전체 테스트 + `npm run validate` 클린.**
+- [x] **Step 5: 커밋** — `git commit -m "feat(edge): 랭킹 budget 점수 배선(관측>추정>모름, 예산÷장소수 앵커)"`
 
 ---
 

@@ -1,8 +1,7 @@
 // shared/recommendation/place-price.ts
 // 장소 가격 두 계층(추정/관측)의 순수 계산. 스펙 §2·§5-1 참조. DB·네트워크 의존 없음.
-// observedBoundsFromAnswers는 아직 SQL recompute_place_observed_price와 규칙이 다르다
-// (SQL은 보간 percentile_cont, 여기는 비보간 표본 선택). 어느 쪽을 단일 소스로 삼을지는
-// 마이그레이션 작성 시점의 결정 사항이며, 그때까지 이 함수의 프로덕션 소비자는 없다.
+// observedBoundsFromAnswers의 비보간 표본 선택이 정본이고, SQL recompute_place_observed_price가
+// 같은 규칙을 array_agg 첨자로 따라간다. pickPriceRange·budgetScoreFor는 랭킹에서 소비된다.
 
 export const PRICE_LEVEL = { cheap: 1, normal: 2, expensive: 3 } as const;
 export type PriceLevel = (typeof PRICE_LEVEL)[keyof typeof PRICE_LEVEL];

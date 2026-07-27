@@ -1,4 +1,6 @@
 import {
+  lookupPlacePrices,
+  placePriceFieldsFromRows,
   recordPlaceKnowledge,
   type PlaceLedgerCandidate,
   type PlaceLedgerRow,
@@ -164,6 +166,30 @@ describe('recordPlaceKnowledge', () => {
     ).resolves.toBeUndefined();
   });
 
+  // 전 경로가 예외를 삼키므로, 성공/실패는 로그로만 드러난다.
+  it('추정 성공·실패 건수를 요약 로그로 남긴다', async () => {
+    const db = fakeDb();
+    db.setExisting([
+      { kakao_place_id: 'k1', estimated_at: null },
+      { kakao_place_id: 'k2', estimated_at: null },
+    ]);
+    await recordPlaceKnowledge({
+      client: db.client as never,
+      places: [place, { ...place, kakaoPlaceId: 'k2' }],
+      estimate: async (candidate) => {
+        if (candidate.kakaoPlaceId === 'k2') throw new Error('ai down');
+        return { minKRW: 1, maxKRW: 2 };
+      },
+      model: 'm',
+    });
+
+    const summary = errorSpy.mock.calls
+      .map((call) => String(call[0]))
+      .find((line) => line.includes('place_ledger_recorded'));
+    expect(summary).toBeDefined();
+    expect(JSON.parse(summary!)).toMatchObject({ upserted: 2, estimated: 1, estimateFailed: 1 });
+  });
+
   it('장소가 없으면 아무것도 쓰지 않는다', async () => {
     const db = fakeDb();
     await recordPlaceKnowledge({
@@ -173,5 +199,87 @@ describe('recordPlaceKnowledge', () => {
       model: 'm',
     });
     expect(db.upserts).toHaveLength(0);
+  });
+});
+
+describe('placePriceFieldsFromRows', () => {
+  it('원장 행을 스네이크→카멜로 옮기고 표본 수 null은 0으로 본다', () => {
+    const map = placePriceFieldsFromRows([
+      {
+        kakao_place_id: 'k1',
+        estimated_min_krw: 4000,
+        estimated_max_krw: 9000,
+        observed_min_krw: null,
+        observed_max_krw: null,
+        observed_sample_count: null,
+      },
+    ]);
+
+    expect(map.get('k1')).toEqual({
+      estimatedMinKRW: 4000,
+      estimatedMaxKRW: 9000,
+      observedMinKRW: null,
+      observedMaxKRW: null,
+      observedSampleCount: 0,
+    });
+  });
+
+  it('행이 없으면 빈 맵', () => {
+    expect(placePriceFieldsFromRows(null).size).toBe(0);
+  });
+});
+
+describe('lookupPlacePrices', () => {
+  let errorSpy: jest.SpyInstance;
+  beforeEach(() => {
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    errorSpy.mockRestore();
+  });
+
+  const clientReturning = (result: { data: unknown; error: unknown }) => ({
+    from: () => ({ select: () => ({ in: async () => result }) }),
+  });
+
+  it('조회 결과를 가격 필드 맵으로 돌려준다', async () => {
+    const client = clientReturning({
+      data: [{
+        kakao_place_id: 'k1',
+        estimated_min_krw: 1000,
+        estimated_max_krw: 2000,
+        observed_min_krw: null,
+        observed_max_krw: null,
+        observed_sample_count: 3,
+      }],
+      error: null,
+    });
+
+    const map = await lookupPlacePrices({ client: client as never, kakaoPlaceIds: ['k1'] });
+
+    expect(map.get('k1')?.estimatedMinKRW).toBe(1000);
+    expect(map.get('k1')?.observedSampleCount).toBe(3);
+  });
+
+  // supabase-js는 던지지 않는다 — error를 버리면 예산 기능이 무증상으로 정지한다.
+  it('조회 오류는 빈 맵 + 구조화 로그로 드러난다', async () => {
+    const client = clientReturning({ data: null, error: { message: 'permission denied' } });
+
+    const map = await lookupPlacePrices({ client: client as never, kakaoPlaceIds: ['k1'] });
+
+    expect(map.size).toBe(0);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('place_price_lookup_failed'));
+  });
+
+  it('조회할 id가 없으면 DB를 때리지 않는다', async () => {
+    let called = 0;
+    const client = {
+      from: () => ({ select: () => ({ in: async () => { called += 1; return { data: [], error: null }; } }) }),
+    };
+
+    const map = await lookupPlacePrices({ client: client as never, kakaoPlaceIds: [] });
+
+    expect(map.size).toBe(0);
+    expect(called).toBe(0);
   });
 });

@@ -9,7 +9,7 @@ import {
   loadRecommendationHistoryAssignmentScope,
   loadRecommendationHistory,
 } from '../_shared/recommendation-history.ts';
-import { recordPlaceKnowledge } from '../_shared/place-ledger.ts';
+import { lookupPlacePrices, recordPlaceKnowledge } from '../_shared/place-ledger.ts';
 import {
   buildPlacePriceEstimationPrompt,
   parsePlacePriceEstimate,
@@ -73,19 +73,7 @@ Deno.serve(async (request) => {
         cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
         cacheMetrics,
         history,
-        priceLookup: async (ids) => {
-          const { data } = await serviceClient
-            .from('places')
-            .select('kakao_place_id, estimated_min_krw, estimated_max_krw, observed_min_krw, observed_max_krw, observed_sample_count')
-            .in('kakao_place_id', ids);
-          return new Map((data ?? []).map((row) => [row.kakao_place_id, {
-            estimatedMinKRW: row.estimated_min_krw,
-            estimatedMaxKRW: row.estimated_max_krw,
-            observedMinKRW: row.observed_min_krw,
-            observedMaxKRW: row.observed_max_krw,
-            observedSampleCount: row.observed_sample_count ?? 0,
-          }]));
-        },
+        priceLookup: (ids) => lookupPlacePrices({ client: serviceClient as never, kakaoPlaceIds: ids }),
       });
       console.error(JSON.stringify({
         event: 'kakao_cache_lookup',
