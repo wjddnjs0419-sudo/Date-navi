@@ -18,12 +18,12 @@ import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
 import {
   PlaceSatisfaction, initialPlaceSatisfactions, togglePlaceSatisfaction, placeFeedbackRpcArgs,
 } from '../../lib/placeReview';
-import type { PriceLevel } from '../../shared/recommendation/place-price';
+import { PRICE_LEVEL, type PriceLevel } from '../../shared/recommendation/place-price';
 
 const PRICE_CHIPS = [
-  { level: 1, labelKey: 'priceCheap' },
-  { level: 2, labelKey: 'priceNormal' },
-  { level: 3, labelKey: 'priceExpensive' },
+  { level: PRICE_LEVEL.cheap, labelKey: 'priceCheap' },
+  { level: PRICE_LEVEL.normal, labelKey: 'priceNormal' },
+  { level: PRICE_LEVEL.expensive, labelKey: 'priceExpensive' },
 ] as const satisfies readonly { level: PriceLevel; labelKey: 'priceCheap' | 'priceNormal' | 'priceExpensive' }[];
 
 type CoursePlace = {
