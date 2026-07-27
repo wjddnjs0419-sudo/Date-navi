@@ -158,6 +158,8 @@ handleGenerateAiOptions()
 
 ## 🚫 Anti-Patterns & Lessons Learned
 
+- Anthropic structured output 스키마에 `integer` + `minimum`/`maximum` 금지 — 400 ("For 'integer' type, properties maximum, minimum are not supported"). 범위는 파서(zod)에서 검증한다.
+- 사용자가 손으로 고른 장소(교체·핀)는 `rankPlaceCandidates`의 `limit` 컷에서 보호할 것 — 잘리면 서버가 그 장소를 못 찾아 422(교체)·STEP_PIN_UNAVAILABLE(핀)로 나온다.
 - `.map(toOption)` 사용 금지 — array index가 두 번째 인자로 넘어가 타입 충돌 발생. 항상 `.map((row) => toOption(row))`로 래핑.
 - `gemini-1.5-flash` 모델 사용 금지 — deprecated. `gemini-2.0-flash` 사용.
 - 회원가입 폼에 mock 기본값(`"지우"`, `"jiwoo@example.com"`) pre-fill 금지 — Supabase 모드에서 실제 사용자 데이터처럼 혼동 유발.

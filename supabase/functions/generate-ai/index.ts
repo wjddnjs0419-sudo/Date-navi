@@ -153,6 +153,19 @@ const REPLACEMENT_SELECT_SCHEMA = {
   additionalProperties: false,
 };
 
+// 장소 원장 가격 추정: 1인 기준 원 단위 범위. 장소당 1회만 호출되므로 temperature 0.
+const PLACE_PRICE_SCHEMA = {
+  type: 'object',
+  properties: {
+    // Anthropic structured output은 integer에 minimum/maximum을 받지 않는다(400).
+    // 범위(0~1,000,000)와 min<=max는 parsePlacePriceEstimate의 zod가 검증한다.
+    minKRW: { type: 'integer' },
+    maxKRW: { type: 'integer' },
+  },
+  required: ['minKRW', 'maxKRW'],
+  additionalProperties: false,
+};
+
 // logged: 프롬프트/응답 로깅 대상 여부 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
 const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean }> = {
   cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8, logged: true },
@@ -162,6 +175,7 @@ const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; tempera
   recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
   replacement_select: { schema: REPLACEMENT_SELECT_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
   parse_step_intents: { schema: PARSE_STEP_INTENTS_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
+  estimate_place_price: { schema: PLACE_PRICE_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -170,6 +184,14 @@ const MODEL = 'claude-haiku-4-5';
 const LOGGED_ACTIONS = new Set(
   Object.entries(ACTION_CONFIG).filter(([, cfg]) => cfg.logged).map(([key]) => key),
 );
+
+// 파싱 결과를 레거시 _usage 봉투 없이 그대로 돌려주는 액션들 — 엄격 스키마 소비자 전용.
+const RAW_PASSTHROUGH_ACTIONS = new Set([
+  'recommend_date_select',
+  'replacement_select',
+  'parse_step_intents',
+  'estimate_place_price',
+]);
 
 type LogParams = {
   userId: string;
@@ -317,7 +339,7 @@ Deno.serve(async (req) => {
       latencyMs: Date.now() - startedAt,
     });
 
-    if (action === 'recommend_date_select' || action === 'replacement_select' || action === 'parse_step_intents') return json(parsed);
+    if (typeof action === 'string' && RAW_PASSTHROUGH_ACTIONS.has(action)) return json(parsed);
     return json({ ...parsed, _usage: { input_tokens: data.usage?.input_tokens, output_tokens: data.usage?.output_tokens } });
   } catch (err) {
     console.error('generate-ai error', err);

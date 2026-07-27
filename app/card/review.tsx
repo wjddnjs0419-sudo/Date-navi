@@ -15,6 +15,8 @@ import { BackBar, BigButton } from '../../components/ui';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../lib/ratingFeedback';
 import { partnerHasReviewed } from '../../lib/reviewFlow';
 import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
+import { usePlaceFeedback } from '../../lib/usePlaceFeedback';
+import { PlaceFeedbackSection } from '../../components/PlaceFeedbackSection';
 
 export default function ReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +32,10 @@ export default function ReviewScreen() {
   const [reviewText, setReviewText] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const {
+    places, satisfactions, prices, load: loadPlaces,
+    applyRatingDefaults, tapSatisfaction, tapPrice, submit: submitPlaceFeedback,
+  } = usePlaceFeedback();
 
   useFocusEffect(
     useCallback(() => {
@@ -44,10 +50,17 @@ export default function ReviewScreen() {
           .eq('user_id', user.id)
           .maybeSingle();
         if (profile?.couple_id) setCoupleId(profile.couple_id);
+        // 코스 카드가 아니거나 조회 실패면 빈 배열 — 장소 섹션은 렌더되지 않는다.
+        await loadPlaces(id);
         setLoading(false);
       })();
-    }, []),
+    }, [id, loadPlaces]),
   );
+
+  function handleRating(n: number) {
+    setRating(n);
+    applyRatingDefaults(n);
+  }
 
   async function handlePickPhoto() {
     if (uploadingPhoto) return;
@@ -116,6 +129,10 @@ export default function ReviewScreen() {
         photo_url: photoUrl,
       });
       if (error) throw error;
+
+      // 장소별 등급은 선택 사항 — 실패해도 별점 저장 성공 흐름을 막지 않는다.
+      await submitPlaceFeedback();
+
       // 둘 다 리뷰했을 때만 데이트를 done으로 아카이브한다. 한 명만 리뷰하면
       // 상대가 계획에서 자기 리뷰를 남길 수 있도록 confirmed 상태를 유지한다.
       const { data: reviewers } = await supabase
@@ -166,7 +183,7 @@ export default function ReviewScreen() {
                 testID={`review-star-${n}`}
                 accessibilityRole="button"
                 accessibilityLabel={`${n}점`}
-                onPress={() => setRating(n)}
+                onPress={() => handleRating(n)}
                 style={styles.starBtn}
                 activeOpacity={1}
               >
@@ -186,6 +203,15 @@ export default function ReviewScreen() {
               <Text style={[styles.feedbackLabel, { color: feedbackTone.fg }]}>{c.ratingFeedback[feedbackKey]}</Text>
             </View>
           )}
+
+          <PlaceFeedbackSection
+            places={places}
+            satisfactions={satisfactions}
+            prices={prices}
+            strings={c.placeSection}
+            onSatisfaction={tapSatisfaction}
+            onPrice={tapPrice}
+          />
 
           <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>{c.reviewLabel}</Text>
           <TextInput
@@ -253,6 +279,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   feedbackLabel: { fontSize: 13, fontWeight: '600' },
+
 
   reviewInput: {
     backgroundColor: C.white,

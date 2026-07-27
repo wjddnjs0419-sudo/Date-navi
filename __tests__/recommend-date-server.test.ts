@@ -385,3 +385,37 @@ describe('recommend-date dependency-injected handler', () => {
     });
   });
 });
+
+describe('recommend-date 장소 원장 기록', () => {
+  it('성공 생성 후 선정된 스텝 장소들의 전체 카카오 필드로 recordPlaceKnowledge를 호출한다', async () => {
+    const recorded: { places: { kakaoPlaceId: string; categoryName: string }[] }[] = [];
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request() },
+      dependencies({ recordPlaceKnowledge: (input) => { recorded.push(input); } }),
+    );
+
+    expect(result.status).toBe(200);
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0].places.map((place) => place.kakaoPlaceId).sort()).toEqual(['cafe-place', 'meal-place']);
+    // 원장은 Kakao 세분 카테고리를 필요로 한다 — 응답 스텝에는 없고 후보 풀에만 있다.
+    expect(recorded[0].places.every((place) => typeof place.categoryName === 'string' && place.categoryName.length > 0)).toBe(true);
+  });
+
+  it('recordPlaceKnowledge가 던져도 응답은 성공한다 — 부가 기록이 원본 흐름을 막지 않는다', async () => {
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request() },
+      dependencies({ recordPlaceKnowledge: () => { throw new Error('boom'); } }),
+    );
+
+    expect(result.status).toBe(200);
+  });
+
+  it('dep이 없으면 아무 일도 일어나지 않는다 — 기존 호출자 호환', async () => {
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request() },
+      dependencies(),
+    );
+
+    expect(result.status).toBe(200);
+  });
+});

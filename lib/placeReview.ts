@@ -1,0 +1,43 @@
+// lib/placeReview.ts
+// 리뷰 화면 장소별 등급의 별점 유도 규칙(스펙 §5). UI 렌더링에서 분리된 로직.
+import type { PriceLevel } from '../shared/recommendation/place-price';
+import { Rating, deriveWantAgain } from './ratingFeedback';
+
+export type PlaceSatisfaction = 'good' | 'bad';
+
+// 긍정은 자동 전파(가점이라 틀려도 피해가 작다), 감점은 명시적 탭만.
+export function initialPlaceSatisfactions(
+  rating: Rating, stepIds: readonly string[],
+): Record<string, PlaceSatisfaction> {
+  if (!deriveWantAgain(rating)) return {};
+  return Object.fromEntries(stepIds.map((id) => [id, 'good' as const]));
+}
+
+export function togglePlaceSatisfaction(
+  current: PlaceSatisfaction | undefined, tapped: PlaceSatisfaction,
+): PlaceSatisfaction | undefined {
+  return current === tapped ? undefined : tapped;
+}
+
+export type PlaceFeedbackInput = {
+  sessionId: string;
+  stepId: string;
+  satisfaction: PlaceSatisfaction | undefined;
+  priceLevel: PriceLevel | null;
+};
+
+export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {
+  p_session_id: string; p_step_id: string; p_visited: boolean; p_tags: string[];
+  p_price_level: number | null; p_satisfaction: boolean | null;
+} | null {
+  if (input.satisfaction === undefined && input.priceLevel === null) return null;
+  return {
+    p_session_id: input.sessionId,
+    p_step_id: input.stepId,
+    p_visited: true,
+    p_tags: input.satisfaction === 'good' ? ['revisit'] : [],
+    p_price_level: input.priceLevel,
+    // 태그 유무로 만족도를 역추적하면 무응답이 부정으로 집계된다. 명시적으로 구별해 보낸다.
+    p_satisfaction: input.satisfaction === undefined ? null : input.satisfaction === 'good',
+  };
+}

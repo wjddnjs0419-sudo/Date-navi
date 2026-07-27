@@ -19,6 +19,7 @@ import {
   type RankedRecommendationSearch,
 } from './recommendation-ranking.ts';
 import type { RecommendationHistoryContext } from '../../../shared/recommendation/recommendation-history.ts';
+import type { PlacePriceFields } from '../../../shared/recommendation/place-price.ts';
 
 export type RecommendationSearchPipelineResult = RankedRecommendationSearch & {
   searchMetadata: KakaoSearchMetadata;
@@ -32,6 +33,8 @@ export async function searchAndRankRecommendation(
     cacheStore?: KakaoSearchCacheStore;
     cacheMetrics?: KakaoCacheMetrics;
     history?: RecommendationHistoryContext;
+    /** 장소 원장 가격 조회. 예산이 있을 때만 호출한다 — 쓰지 않을 값을 위해 DB를 때리지 않는다. */
+    priceLookup?: (kakaoPlaceIds: string[]) => Promise<ReadonlyMap<string, PlacePriceFields>>;
   },
 ): Promise<RecommendationSearchPipelineResult> {
   const plan = buildKakaoSearchPlan(request);
@@ -75,10 +78,19 @@ export async function searchAndRankRecommendation(
       .filter((p) => p.kakaoPlaceId === pick.kakaoPlaceId);
     if (matched.length > 0) places = [...places, ...matched];
   }
+  let prices: ReadonlyMap<string, PlacePriceFields> | undefined;
+  if (dependencies.priceLookup && request.totalBudgetKRW) {
+    try {
+      prices = await dependencies.priceLookup(places.map((place) => place.kakaoPlaceId));
+    } catch {
+      prices = undefined; // 가격 조회 실패는 추천을 막지 않는다
+    }
+  }
   return {
     ...rankPlaceCandidates(places, request, {
       limit: KAKAO_SEARCH_LIMITS.maxUniqueCandidates,
       history: dependencies.history,
+      prices,
     }),
     searchMetadata: search.metadata,
   };

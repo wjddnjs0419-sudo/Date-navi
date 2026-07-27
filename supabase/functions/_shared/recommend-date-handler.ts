@@ -32,6 +32,7 @@ import { placeMatchesStepIntent } from './step-intent.ts';
 import { effectiveStepIntents } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
+import { buildCandidatePoolSnapshots } from './candidate-pool-snapshot.ts';
 import {
   EMPTY_RECOMMENDATION_HISTORY,
   type RecommendationHistoryContext,
@@ -111,6 +112,8 @@ export type RecommendDateDependencies = {
     response: import('../../../shared/recommendation/schemas.ts').RecommendDateResponse;
   }) => Promise<void>;
   onCourseValidationFailure?: (stage: CourseValidationFailureStage) => void;
+  /** 응답과 무관한 부가 기록(장소 원장). 던져도 무시된다 — 원본 흐름을 절대 실패시키지 않는다. */
+  recordPlaceKnowledge?: (input: { places: PlaceCandidate[] }) => void;
   now?: () => string;
 };
 
@@ -471,6 +474,16 @@ export async function handleRecommendDate(
     requestId: parsedRequest.data.requestId,
     course: built.course,
     cards: built.cards,
+    candidatePool: buildCandidatePoolSnapshots({
+      candidates: search.candidates,
+      selectedKakaoPlaceIds: built.course.steps.map((step) => step.kakaoPlaceId),
+      forcedKakaoPlaceId: serverRequest.replacement?.kakaoPlaceId,
+      pinnedKakaoPlaceIds: [
+        ...serverRequest.courseSteps.map((step) => step.pinnedKakaoPlaceId),
+        ...(serverRequest.lockedSteps ?? []).map((step) => step.kakaoPlaceId),
+      ].filter((id): id is string => Boolean(id)),
+      reintroducedPlaceIds: search.reintroducedPlaceIds,
+    }),
     metadata: {
       fallbackUsed,
       selectionSource: fallbackUsed ? 'deterministic_fallback' : 'ai',
@@ -515,6 +528,7 @@ export async function handleRecommendDate(
     },
   });
   if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
+  if (!response.data.candidatePool) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
   try {
     validateRecommendDateResponseForRequest(serverRequest, response.data);
   } catch {
@@ -527,5 +541,16 @@ export async function handleRecommendDate(
       return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
     }
   }
-  return withHistory({ status: 200, body: response.data });
+  if (dependencies.recordPlaceKnowledge) {
+    try {
+      // 응답 스텝에는 Kakao 세분 카테고리가 없다 — 후보 풀에서 kakaoPlaceId로 역참조한다.
+      // 후보 풀에 없는 스텝(이전 세션에서 잠긴 장소)은 그때 이미 기록됐으므로 건너뛴다.
+      const selectedPlaceIds = new Set(response.data.course.steps.map((step) => step.kakaoPlaceId));
+      dependencies.recordPlaceKnowledge({
+        places: search.candidates.filter((candidate) => selectedPlaceIds.has(candidate.kakaoPlaceId)),
+      });
+    } catch { /* 부가 기록은 응답을 막지 않는다 */ }
+  }
+  const { candidatePool: _candidatePool, ...publicResponse } = response.data;
+  return withHistory({ status: 200, body: publicResponse });
 }

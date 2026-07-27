@@ -1364,3 +1364,352 @@ $$;
 drop trigger if exists recommendation_course_step_event_audit on public.recommendation_course_steps;
 create trigger recommendation_course_step_event_audit after insert or update or delete on public.recommendation_course_steps
   for each row execute function public.recommendation_course_step_event_trigger();
+
+-- 20260727100000_ai_log_daily_stats.sql
+-- AI 로그 30일 삭제 전에 아키텍처 지표 추세를 영구 보존하는 일별 집계.
+-- 삭제 스케줄(pg_cron)보다 반드시 먼저 배포되어야 한다 — 반대면 첫 실행에서 이력이 사라진다.
+
+create table if not exists public.ai_recommendation_log_daily_stats (
+  stat_date date not null,
+  action text not null,
+  call_count integer not null check (call_count >= 0),
+  error_count integer not null check (error_count >= 0),
+  avg_latency_ms integer,
+  p95_latency_ms integer,
+  avg_input_tokens integer,
+  avg_output_tokens integer,
+  aggregated_at timestamptz not null default now(),
+  primary key (stat_date, action)
+);
+comment on table public.ai_recommendation_log_daily_stats is
+  'ai_recommendation_logs 삭제 전 일별 집계. 개인정보 없음, 영구 보존. service_role 전용.';
+
+alter table public.ai_recommendation_log_daily_stats enable row level security;
+revoke all on public.ai_recommendation_log_daily_stats from authenticated;
+revoke all on public.ai_recommendation_log_daily_stats from anon;
+
+-- 멱등: 원본에 아직 남아 있는 날짜만 다시 계산해 upsert. 이미 삭제된 날짜의 집계는 건드리지 않는다.
+create or replace function public.aggregate_ai_recommendation_log_daily_stats()
+returns void language sql security definer set search_path = public, pg_temp as $$
+  insert into public.ai_recommendation_log_daily_stats
+    (stat_date, action, call_count, error_count, avg_latency_ms, p95_latency_ms, avg_input_tokens, avg_output_tokens, aggregated_at)
+  select
+    created_at::date,
+    action,
+    count(*),
+    count(*) filter (where status = 'error'),
+    round(avg(latency_ms))::integer,
+    round((percentile_cont(0.95) within group (order by latency_ms))::numeric)::integer,
+    round(avg(input_tokens))::integer,
+    round(avg(output_tokens))::integer,
+    now()
+  from public.ai_recommendation_logs
+  group by 1, 2
+  on conflict (stat_date, action) do update set
+    call_count = excluded.call_count,
+    error_count = excluded.error_count,
+    avg_latency_ms = excluded.avg_latency_ms,
+    p95_latency_ms = excluded.p95_latency_ms,
+    avg_input_tokens = excluded.avg_input_tokens,
+    avg_output_tokens = excluded.avg_output_tokens,
+    aggregated_at = excluded.aggregated_at;
+$$;
+revoke all on function public.aggregate_ai_recommendation_log_daily_stats() from public;
+
+-- 20260727110000_places_ledger.sql
+-- 장소 지식 원장: 세션 수명과 무관하게 살아남는 장소별 신원 스냅샷 + 가격 두 계층.
+-- 추정(AI)과 관측(리뷰)은 절대 같은 컬럼에 섞지 않는다(스펙 §2).
+
+create table if not exists public.places (
+  kakao_place_id text primary key check (length(btrim(kakao_place_id)) > 0),
+  place_name text not null check (length(btrim(place_name)) > 0),
+  address text not null default '',
+  road_address text not null default '',
+  map_url text not null default '',
+  category_group_code text not null default '',
+  category_name text not null default '',
+  latitude double precision not null check (latitude between -90 and 90),
+  longitude double precision not null check (longitude between -180 and 180),
+  -- 추정 계층(AI, 1인 기준 원 단위 범위)
+  estimated_min_krw integer check (estimated_min_krw >= 0),
+  estimated_max_krw integer check (estimated_max_krw >= 0),
+  estimated_at timestamptz,
+  estimate_model text,
+  -- 관측 계층(리뷰 유래)
+  observed_min_krw integer check (observed_min_krw >= 0),
+  observed_max_krw integer check (observed_max_krw >= 0),
+  observed_sample_count integer not null default 0 check (observed_sample_count >= 0),
+  -- 임계치는 "구간을 만든 답변 수"에 건다 — 전체 응답 수는 보통(2) 답변까지 세어
+  -- 비쌈 1건을 통과시킨다(20260727140000).
+  observed_min_sample_count integer not null default 0 check (observed_min_sample_count >= 0),
+  observed_max_sample_count integer not null default 0 check (observed_max_sample_count >= 0),
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (estimated_min_krw is null or estimated_max_krw is null or estimated_min_krw <= estimated_max_krw),
+  check (observed_min_krw is null or observed_max_krw is null or observed_min_krw <= observed_max_krw)
+);
+comment on table public.places is
+  '장소 지식 원장. 신원 스냅샷은 표시용 최소한이며 오래되면 재조회 갱신. service_role 전용.';
+
+alter table public.places enable row level security;
+revoke all on public.places from authenticated;
+revoke all on public.places from anon;
+
+alter table public.place_feedback
+  add column if not exists price_level smallint
+  check (price_level is null or price_level between 1 and 3);
+comment on column public.place_feedback.price_level is '1=저렴, 2=보통, 3=비쌈. 행동으로 드러나지 않아 직접 묻는 유일한 항목.';
+
+-- 무응답(null)과 부정(false)을 구별한다. revisit 태그 유무로 역추적하면 "별로였다"와
+-- "만족도는 말 안 하고 가격만 답했다"가 같은 모양이 되어, 후자가 만족도를 깎는다.
+alter table public.place_feedback add column if not exists satisfaction boolean;
+comment on column public.place_feedback.satisfaction is
+  'null=무응답(집계 제외), true=좋았음, false=별로. 만족도 비율은 non-null만 분모로 센다.';
+
+-- 관측 범위 재계산: 커플 단위 중복 제거 후, 예산÷장소수 앵커의 부등식들을 안쪽 백분위로 좁힌다.
+-- 백분위 선택과 모순 시 폐기는 shared/recommendation/place-price.ts와 동일 규칙(정본은 TS 테스트).
+-- 보간형 백분위 집계는 쓸 수 없다 — 이상치를 부분적으로 섞어 구간을 붕괴시킨다.
+-- 비보간형(disc) 집계도 규칙이 다르므로(N=3, f=0.75에서 최댓값 선택) 인덱스를 직접 계산한다:
+-- 하한은 floor((n-1)*0.75), 상한은 ceil((n-1)*0.25) — 둘 다 이상치 반대 방향.
+-- ⚠️ 아래 0.75 / 0.25는 shared/recommendation/place-price.ts의
+-- OBSERVED_BOUND_INNER_PERCENTILE(=0.25)과 같은 값이다. SQL이 TS 상수를 import할 수 없어
+-- 두 곳에 산다 — 한쪽만 바꾸면 TS 테스트는 통과하고 DB 계산만 조용히 달라진다.
+create or replace function public.recompute_place_observed_price(p_kakao_place_id text)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_min integer; v_max integer; v_samples integer;
+  v_min_samples integer; v_max_samples integer;
+begin
+  with couple_answers as (
+    -- 커플당 최신 가격 답변 1건 = 1표본. 예산이 있는 세션만 앵커를 만들 수 있다.
+    select distinct on (pf.couple_id)
+      pf.price_level,
+      round(((rs.original_request ->> 'totalBudgetKRW')::numeric)
+        / greatest((select count(*) from public.recommendation_course_steps cs where cs.session_id = pf.session_id), 1)
+      )::integer as anchor_krw
+    from public.place_feedback pf
+    join public.recommendation_sessions rs on rs.id = pf.session_id
+    where pf.kakao_place_id = p_kakao_place_id
+      and pf.price_level is not null
+      and pf.couple_id is not null
+      and (rs.original_request ->> 'totalBudgetKRW') ~ '^[0-9]+$'
+    order by pf.couple_id, pf.updated_at desc
+  ),
+  sorted as (
+    select
+      array_agg(anchor_krw order by anchor_krw) filter (where price_level = 3) as lowers,
+      array_agg(anchor_krw order by anchor_krw) filter (where price_level = 1) as uppers,
+      count(*)::integer as sample_count
+    from couple_answers
+  ),
+  bounds as (
+    -- postgres 배열은 1-based라 TS의 0-based 인덱스에 +1.
+    select
+      case when lowers is null then null
+        else lowers[floor((array_length(lowers, 1) - 1) * 0.75)::integer + 1] end as min_krw,
+      case when uppers is null then null
+        else uppers[ceil((array_length(uppers, 1) - 1) * 0.25)::integer + 1] end as max_krw,
+      sample_count,
+      coalesce(array_length(lowers, 1), 0) as min_sample_count,
+      coalesce(array_length(uppers, 1), 0) as max_sample_count
+    from sorted
+  )
+  select
+    case when b.min_krw is not null and b.max_krw is not null and b.min_krw > b.max_krw then null else b.min_krw end,
+    case when b.min_krw is not null and b.max_krw is not null and b.min_krw > b.max_krw then null else b.max_krw end,
+    b.sample_count, b.min_sample_count, b.max_sample_count
+  into v_min, v_max, v_samples, v_min_samples, v_max_samples
+  from bounds b;
+
+  update public.places set
+    observed_min_krw = v_min,
+    observed_max_krw = v_max,
+    observed_sample_count = coalesce(v_samples, 0),
+    observed_min_sample_count = coalesce(v_min_samples, 0),
+    observed_max_sample_count = coalesce(v_max_samples, 0),
+    updated_at = now()
+  where kakao_place_id = p_kakao_place_id;
+end;
+$$;
+revoke all on function public.recompute_place_observed_price(text) from public;
+
+-- 기존 owner 전용 4-인자 버전을 6-인자(가격·만족도 포함, 커플 멤버 허용)로 교체.
+-- 같은 이름의 다른 인자 수 함수가 남으면 PostgREST rpc 해석이 모호해지므로 명시적으로 drop.
+drop function if exists public.record_recommendation_place_feedback(text,text,boolean,text[]);
+create or replace function public.record_recommendation_place_feedback(
+  p_session_id text, p_step_id text, p_visited boolean,
+  p_tags text[] default '{}'::text[], p_price_level smallint default null,
+  p_satisfaction boolean default null
+)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_owner uuid := auth.uid(); v_session public.recommendation_sessions%rowtype; v_place text;
+begin
+  if v_owner is null then raise insufficient_privilege using message = 'not authenticated'; end if;
+  select * into v_session from public.recommendation_sessions where id = p_session_id;
+  -- 리뷰는 커플 활동이다: 세션 생성자뿐 아니라 커플 상대도 장소 등급을 남길 수 있어야 한다.
+  if not found or v_session.status <> 'confirmed'
+    or (v_session.owner_user_id <> v_owner
+      and (v_session.couple_id is null or not public.is_couple_member(v_session.couple_id))) then
+    raise check_violation using message = 'constraint_violation';
+  end if;
+  select current_kakao_place_id into v_place from public.recommendation_course_steps
+    where session_id = p_session_id and step_id = p_step_id;
+  if v_place is null
+    or coalesce(p_tags, '{}'::text[]) <@ array['conversation','quiet','noisy','value','expensive','photos','revisit','crowded']::text[] is false
+    or (p_price_level is not null and p_price_level not between 1 and 3) then
+    raise invalid_parameter_value using message = 'invalid_candidate';
+  end if;
+  insert into public.place_feedback(session_id,step_id,kakao_place_id,owner_user_id,couple_id,visited,tags,price_level,satisfaction)
+    values (p_session_id,p_step_id,v_place,v_owner,v_session.couple_id,p_visited,coalesce(p_tags,'{}'::text[]),p_price_level,p_satisfaction)
+    on conflict (session_id,step_id,owner_user_id) do update
+      set visited=excluded.visited,tags=excluded.tags,price_level=excluded.price_level,
+          satisfaction=excluded.satisfaction,updated_at=now();
+  perform public.write_recommendation_step_event(p_session_id,p_step_id,
+    case when p_visited then 'place_visited' else 'feedback_submitted' end,v_place,v_place);
+  -- 부가 기록(관측 범위 갱신)은 원본 쓰기를 절대 되돌리지 않는다(스펙 오류 처리).
+  begin
+    perform public.recompute_place_observed_price(v_place);
+  exception when others then null;
+  end;
+end;
+$$;
+revoke all on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint,boolean) from public;
+grant execute on function public.record_recommendation_place_feedback(text,text,boolean,text[],smallint,boolean) to authenticated;
+
+-- 리뷰 화면이 카드에서 코스 장소 목록을 읽는 통로. 세션 select RLS가 owner 전용이라
+-- 파트너는 직접 조회가 불가능하므로 security definer + 커플 멤버 검사로 연다.
+create or replace function public.get_course_places_for_review(p_card_id text)
+returns table (session_id text, step_id text, step_order smallint, place_name text, kakao_place_id text)
+language sql security definer set search_path = public, pg_temp stable as $$
+  select cs.session_id, cs.step_id, cs.step_order, cs.place_name, cs.current_kakao_place_id
+  from public.recommendation_sessions rs
+  join public.recommendation_course_steps cs on cs.session_id = rs.id
+  where rs.confirmed_card_id = p_card_id
+    and rs.status = 'confirmed'
+    and (rs.owner_user_id = auth.uid()
+      or (rs.couple_id is not null and public.is_couple_member(rs.couple_id)))
+  order by cs.step_order;
+$$;
+revoke all on function public.get_course_places_for_review(text) from public;
+grant execute on function public.get_course_places_for_review(text) to authenticated;
+
+-- generate-ai의 새 액션 로깅 허용. 허용 목록은 실 DB 실측(5종) + 코드가 이미 쓰지만
+-- 제약에 없어 로그 insert가 실패하던 parse_step_intents + 신규 estimate_place_price.
+alter table public.ai_recommendation_logs drop constraint if exists ai_recommendation_logs_action_check;
+alter table public.ai_recommendation_logs add constraint ai_recommendation_logs_action_check
+  check (action in ('cards','feeling_select','course_select','recommend_date_select','replacement_select','parse_step_intents','estimate_place_price'));
+
+-- 20260727120000_place_behavior_stats_view.sql
+-- 장소 행동 통계. 테이블+트리거가 아니라 뷰인 이유: 같은 날 발견한 tg_op 소문자 비교
+-- 사고처럼 트리거는 조용히 0을 세도 아무도 모른다. 뷰는 매번 재계산되어 틀리면 즉시
+-- 드러나고 검증할 상태가 없다. 51곳 규모에서 성능은 고려 대상이 아니며 느려지면 실체화한다.
+-- 이번 범위에서는 뷰만 만들고 소비하지 않는다 — 임계치 확정은 다음 작업.
+
+-- security_invoker: 뷰가 정의자 권한으로 RLS를 우회하지 않게 한다(advisor security_definer_view 경고 회피).
+-- 소비자는 service_role뿐이고 service_role은 RLS를 통과하므로 결과는 동일하다.
+create or replace view public.place_behavior_stats
+with (security_invoker = true) as
+with exposures as (
+  select cs.current_kakao_place_id as kakao_place_id, cs.session_id, rs.couple_id, rs.status
+  from public.recommendation_course_steps cs
+  join public.recommendation_sessions rs on rs.id = cs.session_id
+),
+events as (
+  select previous_kakao_place_id as kakao_place_id, event_type
+  from public.recommendation_step_events
+  where event_type in ('place_replaced', 'place_deleted')
+    and previous_kakao_place_id is not null
+)
+select
+  e.kakao_place_id,
+  count(distinct e.session_id) as exposure_session_count,
+  count(distinct e.couple_id) filter (where e.couple_id is not null) as distinct_couple_count,
+  count(distinct e.session_id) filter (where e.status = 'confirmed') as confirmed_session_count,
+  count(distinct e.couple_id) filter (where e.status = 'confirmed' and e.couple_id is not null) as confirmed_couple_count,
+  (select count(*) from events ev where ev.kakao_place_id = e.kakao_place_id and ev.event_type = 'place_replaced') as replaced_count,
+  (select count(*) from events ev where ev.kakao_place_id = e.kakao_place_id and ev.event_type = 'place_deleted') as deleted_count
+from exposures e
+group by e.kakao_place_id;
+
+revoke all on public.place_behavior_stats from authenticated;
+revoke all on public.place_behavior_stats from anon;
+
+-- 20260727130000_lock_service_role_only_functions.sql
+-- 원장 마이그레이션 적용 후 실측에서 드러난 갭 수정.
+-- `revoke all on function ... from public`은 이 프로젝트에서 충분하지 않다:
+-- anon·authenticated 롤에 함수 실행 권한이 직접 부여되어 있어, revoke 후에도
+-- has_function_privilege('authenticated', ..., 'execute') = true 였다.
+-- 서비스 롤만 호출해야 하는 두 함수를 명시적으로 회수한다.
+-- (record_recommendation_place_feedback·get_course_places_for_review는 클라이언트가
+--  직접 호출하는 통로이므로 그대로 둔다.)
+
+revoke all on function public.aggregate_ai_recommendation_log_daily_stats() from anon, authenticated;
+revoke all on function public.recompute_place_observed_price(text) from anon, authenticated;
+
+-- ============================================================================
+-- 20260727150000_pg_cron_ai_retention.sql
+-- AI 로그 보존: 일별 집계 → 만료 삭제를 pg_cron으로 하루 한 번(03:30 KST).
+-- 순서는 스케줄 설정이 아니라 함수 본문으로 보장한다.
+-- ============================================================================
+
+create extension if not exists pg_cron;
+
+create or replace function public.run_ai_retention()
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public.aggregate_ai_recommendation_log_daily_stats();
+  perform public.purge_expired_ai_data();
+end;
+$$;
+revoke all on function public.run_ai_retention() from public;
+revoke all on function public.run_ai_retention() from anon, authenticated;
+revoke all on function public.purge_expired_ai_data() from anon, authenticated;
+
+select cron.unschedule(jobid) from cron.job where jobname = 'ai-retention-daily';
+select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai_retention()$$);
+
+-- 20260727160000_candidate_pool_snapshots.sql
+-- New sessions preserve the complete ranked pool; legacy course-step pools stay readable.
+create or replace function public.validate_candidate_pool_snapshot(p_pool jsonb)
+returns boolean language plpgsql immutable set search_path = public, pg_temp as $$
+declare v_item jsonb;
+begin
+  if jsonb_typeof(p_pool) <> 'array' or jsonb_array_length(p_pool) not between 2 and 40 then return false; end if;
+  if (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'candidateId') from jsonb_array_elements(p_pool))
+    or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'kakaoPlaceId') from jsonb_array_elements(p_pool))
+    or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'rank') from jsonb_array_elements(p_pool)) then return false; end if;
+  for v_item in select value from jsonb_array_elements(p_pool) loop
+    if jsonb_typeof(v_item) <> 'object' or nullif(btrim(v_item ->> 'candidateId'), '') is null or nullif(btrim(v_item ->> 'kakaoPlaceId'), '') is null or nullif(btrim(v_item ->> 'category'), '') is null
+      or jsonb_typeof(v_item -> 'rank') is distinct from 'number' or (v_item ->> 'rank') !~ '^[1-9][0-9]*$' or jsonb_typeof(v_item -> 'totalScore') is distinct from 'number' or jsonb_typeof(v_item -> 'scoreBreakdown') is distinct from 'object'
+      or not ((v_item -> 'scoreBreakdown') ?& array['intent','distance','budget','preference','routeFit','diversity','behavior','penalty'])
+      or exists (select 1 from jsonb_each(v_item -> 'scoreBreakdown') where key <> all(array['intent','distance','budget','preference','routeFit','diversity','behavior','penalty','categoryRecall']) or jsonb_typeof(value) <> 'number')
+      or jsonb_typeof(v_item -> 'distanceFromSearchCenterMeters') is distinct from 'number' or (v_item ->> 'distanceFromSearchCenterMeters')::numeric < 0 or jsonb_typeof(v_item -> 'priceAtRanking') is distinct from 'object'
+      or coalesce(v_item -> 'priceAtRanking' ->> 'source', '') not in ('observed','estimated','unknown') or jsonb_typeof(v_item -> 'priceAtRanking' -> 'minKRW') is distinct from 'number' and jsonb_typeof(v_item -> 'priceAtRanking' -> 'minKRW') is distinct from 'null' or jsonb_typeof(v_item -> 'priceAtRanking' -> 'maxKRW') is distinct from 'number' and jsonb_typeof(v_item -> 'priceAtRanking' -> 'maxKRW') is distinct from 'null'
+      or exists (select 1 from jsonb_each(v_item -> 'priceAtRanking') where key <> all(array['source','minKRW','maxKRW']))
+      or jsonb_typeof(v_item -> 'selectedInitially') is distinct from 'boolean' or jsonb_typeof(v_item -> 'forced') is distinct from 'boolean' or jsonb_typeof(v_item -> 'pinned') is distinct from 'boolean' or jsonb_typeof(v_item -> 'reintroducedByHistory') is distinct from 'boolean'
+      or abs((v_item ->> 'totalScore')::numeric - (select sum(value::text::numeric) from jsonb_each(v_item -> 'scoreBreakdown'))) > 0.000001 then return false;
+    end if;
+  end loop;
+  return not exists (select 1 from jsonb_array_elements(p_pool) with ordinality as elements(value, ordinal) where (value ->> 'rank')::integer <> ordinal);
+end;
+$$;
+revoke all on function public.validate_candidate_pool_snapshot(jsonb) from public, anon, authenticated;
+
+-- The versioned migration replaces persist_recommendation_session(text) with the same
+-- guarded implementation, additionally requiring validate_candidate_pool_snapshot(v_response -> 'candidatePool')
+-- and inserting v_response -> 'candidatePool' in place of course.steps. Keep the deployed
+-- migration as the executable source because this canonical file's earlier definition is retained for history.
+
+do $$
+declare v_definition text;
+begin
+  select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure) into v_definition;
+  if position('candidate_pool = candidate_pool,' in lower(v_definition)) = 0 then
+    v_definition := replace(v_definition, 'candidate_pool = case when v_uses_attestation then v_response #> ''{course,steps}'' else candidate_pool end,', 'candidate_pool = candidate_pool,');
+    execute v_definition;
+  end if;
+  select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure) into v_definition;
+  if position('candidate_pool = candidate_pool,' in lower(v_definition)) = 0 then raise exception 'candidate pool immutability injection failed'; end if;
+end;
+$$;

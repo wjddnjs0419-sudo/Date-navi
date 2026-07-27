@@ -9,6 +9,12 @@ import {
   loadRecommendationHistoryAssignmentScope,
   loadRecommendationHistory,
 } from '../_shared/recommendation-history.ts';
+import { lookupPlacePrices, recordPlaceKnowledge } from '../_shared/place-ledger.ts';
+import {
+  buildPlacePriceEstimationPrompt,
+  parsePlacePriceEstimate,
+  PLACE_PRICE_PROMPT_VERSION,
+} from '../_shared/place-price-prompt.ts';
 import {
   persistedHistoryExperimentVariant,
   historyExperimentLogKey,
@@ -20,6 +26,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+// generate-ai가 실제로 쓰는 모델과 같아야 estimate_model 기록이 진실이 된다.
+const PLACE_PRICE_ESTIMATE_MODEL = 'claude-haiku-4-5';
 
 function historyExperimentMode(value: string | undefined): HistoryExperimentMode {
   return value === 'ab50' || value === 'treatment' ? value : 'off';
@@ -64,6 +73,7 @@ Deno.serve(async (request) => {
         cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
         cacheMetrics,
         history,
+        priceLookup: (ids) => lookupPlacePrices({ client: serviceClient as never, kakaoPlaceIds: ids }),
       });
       console.error(JSON.stringify({
         event: 'kakao_cache_lookup',
@@ -181,6 +191,35 @@ Deno.serve(async (request) => {
     },
     onCourseValidationFailure: (stage) => {
       console.error(JSON.stringify({ event: 'recommend_date_course_validation_failed', stage }));
+    },
+    recordPlaceKnowledge: ({ places }) => {
+      const serviceClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const authorization = request.headers.get('Authorization') ?? '';
+      // 응답 이후 실행 — 원장 기록·가격 추정이 사용자 대기 시간에 들어가지 않는다.
+      // @ts-ignore Supabase Edge Runtime 전역
+      EdgeRuntime.waitUntil(recordPlaceKnowledge({
+        client: serviceClient as never,
+        places,
+        model: PLACE_PRICE_ESTIMATE_MODEL,
+        estimate: async (place) => {
+          const raw = await invokeGenerateAiSelection({
+            supabaseUrl: Deno.env.get('SUPABASE_URL')!,
+            anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
+            authorization,
+            action: 'estimate_place_price',
+            prompt: buildPlacePriceEstimationPrompt({
+              placeName: place.name,
+              categoryName: place.categoryName,
+              address: place.address,
+            }),
+            promptVersion: PLACE_PRICE_PROMPT_VERSION,
+          }, { timeoutMs: 8_000 });
+          return parsePlacePriceEstimate(raw);
+        },
+      }));
     },
   });
 

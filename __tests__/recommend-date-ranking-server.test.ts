@@ -11,6 +11,7 @@ import {
   type RecommendationHistoryContext,
 } from '../shared/recommendation/recommendation-history';
 import { buildDeterministicCandidateCourse } from '../supabase/functions/_shared/recommendation-course-selection';
+import type { PlacePriceFields } from '../shared/recommendation/place-price';
 
 const request = (steps = ['meal', 'cafe']): RecommendationRequest => ({
   requestId: 'request-ranking',
@@ -432,5 +433,104 @@ describe('recommend-date straight-line route and constraint metadata', () => {
     expect(metadata.walkingHeuristicMetersPerMinute).toBe(80);
     expect(metadata.walkingLimitAssessment).toMatch(/^provisional_/);
     expect(metadata.hardConstraintValidated).toBe(false);
+  });
+});
+
+describe('rankPlaceCandidates — budget 점수', () => {
+  const placeA = place('a', 'FD6');
+  const placeB = place('b', 'CE7');
+  const priceFields = (over: Partial<PlacePriceFields> = {}): PlacePriceFields => ({
+    estimatedMinKRW: null,
+    estimatedMaxKRW: null,
+    observedMinKRW: null,
+    observedMaxKRW: null,
+    observedMinSampleCount: 0,
+  observedMaxSampleCount: 0,
+    ...over,
+  });
+  const budgetOf = (ranked: ReturnType<typeof rankPlaceCandidates>, id: string) => (
+    ranked.candidates.find((candidate) => candidate.kakaoPlaceId === id)!.scoreBreakdown.budget
+  );
+
+  it('예산과 가격이 모두 있으면 몫 이내 장소가 가점, 몫을 크게 넘는 장소가 감점을 받는다', () => {
+    const ranked = rankPlaceCandidates([placeA, placeB], { ...request(), totalBudgetKRW: 30000 }, {
+      limit: 10,
+      prices: new Map([
+        ['a', priceFields({ estimatedMinKRW: 5000, estimatedMaxKRW: 9000 })],
+        ['b', priceFields({ estimatedMinKRW: 40000, estimatedMaxKRW: 60000 })],
+      ]),
+    });
+
+    expect(budgetOf(ranked, 'a')).toBeGreaterThan(0);
+    expect(budgetOf(ranked, 'b')).toBeLessThan(0);
+  });
+
+  it('예산이 없으면 전원 0 — 예산 미입력 사용자는 영향 없다', () => {
+    const ranked = rankPlaceCandidates([placeA], request(), {
+      limit: 10,
+      prices: new Map([['a', priceFields({ estimatedMinKRW: 999999, estimatedMaxKRW: 999999 })]]),
+    });
+
+    expect(budgetOf(ranked, 'a')).toBe(0);
+  });
+
+  it('가격을 모르는 장소는 0 — 하드 필터가 없어 후보 0개 절벽이 생기지 않는다', () => {
+    const ranked = rankPlaceCandidates([placeA], { ...request(), totalBudgetKRW: 30000 }, { limit: 10 });
+
+    expect(budgetOf(ranked, 'a')).toBe(0);
+  });
+
+  it('표본이 충분한 관측이 있으면 추정을 무시한다', () => {
+    const ranked = rankPlaceCandidates([placeA], { ...request(), totalBudgetKRW: 30000 }, {
+      limit: 10,
+      prices: new Map([['a', priceFields({
+        estimatedMinKRW: 1000, estimatedMaxKRW: 2000,
+        observedMinKRW: 50000, observedMinSampleCount: 3,
+      })]]),
+    });
+
+    expect(budgetOf(ranked, 'a')).toBeLessThan(0);
+  });
+
+  it('표본이 임계치 미만인 관측은 추정을 밀어내지 못한다', () => {
+    const ranked = rankPlaceCandidates([placeA], { ...request(), totalBudgetKRW: 30000 }, {
+      limit: 10,
+      prices: new Map([['a', priceFields({
+        estimatedMinKRW: 1000, estimatedMaxKRW: 2000,
+        observedMinKRW: 50000, observedMinSampleCount: 2,
+      })]]),
+    });
+
+    expect(budgetOf(ranked, 'a')).toBeGreaterThan(0);
+  });
+});
+
+// 실기기 사고: 교체 시트에서 고른 장소가 랭킹 하위로 밀리면 limit 컷에 잘려
+// 후보 풀에서 사라지고, 핸들러가 forced를 못 찾아 422(COURSE_VALIDATION_FAILED)를 낸다.
+// 사용자에겐 "어떤 장소는 교체되고 어떤 장소는 오류"로 보인다.
+describe('수동 지정 장소는 랭킹 컷에서 보호된다', () => {
+  const farLowScore = (id: string) => place(id, 'FD6', 127.5); // 멀어서 distance 점수 최하
+
+  it('replacement로 고른 장소는 limit을 넘겨도 후보에 남는다', () => {
+    const others = ['a', 'b', 'c'].map((id) => place(id, 'FD6'));
+    const picked = farLowScore('picked');
+    const ranked = rankPlaceCandidates([...others, picked], {
+      ...request(['meal']),
+      replacement: { stepId: 'step-0', kakaoPlaceId: 'picked', pickedName: 'Place picked' },
+    } as RecommendationRequest, { limit: 2 });
+
+    expect(ranked.candidates.map((c) => c.kakaoPlaceId)).toContain('picked');
+  });
+
+  it('스텝 핀으로 지정한 장소도 limit을 넘겨도 후보에 남는다', () => {
+    const others = ['a', 'b', 'c'].map((id) => place(id, 'FD6'));
+    const pinned = farLowScore('pinned');
+    const base = request(['meal']);
+    const ranked = rankPlaceCandidates([...others, pinned], {
+      ...base,
+      courseSteps: [{ ...base.courseSteps[0], pinnedKakaoPlaceId: 'pinned', pinnedName: 'Place pinned' }],
+    }, { limit: 2 });
+
+    expect(ranked.candidates.map((c) => c.kakaoPlaceId)).toContain('pinned');
   });
 });

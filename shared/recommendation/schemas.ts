@@ -284,6 +284,42 @@ export const recommendDateMetadataSchema = z.object({
   replacementCandidateRank: z.number().int().min(1).max(15).optional(),
 }).strict();
 
+const candidateScoreBreakdownSchema = z.object({
+  intent: z.number().finite(), distance: z.number().finite(), budget: z.number().finite(), preference: z.number().finite(),
+  routeFit: z.number().finite(), diversity: z.number().finite(), behavior: z.number().finite(), penalty: z.number().finite(),
+  categoryRecall: z.number().finite().optional(),
+}).strict();
+
+export const candidatePoolSnapshotSchema = z.object({
+  candidateId: boundedText(120),
+  kakaoPlaceId: boundedText(120),
+  category: boundedText(300),
+  rank: z.number().int().positive(),
+  totalScore: z.number().finite(),
+  scoreBreakdown: candidateScoreBreakdownSchema,
+  distanceFromSearchCenterMeters: z.number().finite().nonnegative(),
+  priceAtRanking: z.object({
+    source: z.enum(['observed', 'estimated', 'unknown']),
+    minKRW: z.number().int().nonnegative().nullable(),
+    maxKRW: z.number().int().nonnegative().nullable(),
+  }).strict(),
+  selectedInitially: z.boolean(), forced: z.boolean(), pinned: z.boolean(), reintroducedByHistory: z.boolean(),
+}).strict();
+
+export const candidatePoolSnapshotsSchema = z.array(candidatePoolSnapshotSchema).max(40).superRefine((snapshots, ctx) => {
+  const unique = (values: string[], field: string) => {
+    if (new Set(values).size !== values.length) ctx.addIssue({ code: 'custom', path: [field], message: `${field} must be unique.` });
+  };
+  unique(snapshots.map((snapshot) => snapshot.candidateId), 'candidateId');
+  unique(snapshots.map((snapshot) => snapshot.kakaoPlaceId), 'kakaoPlaceId');
+  unique(snapshots.map((snapshot) => String(snapshot.rank)), 'rank');
+  snapshots.forEach((snapshot, index) => {
+    if (snapshot.rank !== index + 1) ctx.addIssue({ code: 'custom', path: [index, 'rank'], message: 'Ranks must be consecutive and one-based.' });
+    const total = Object.values(snapshot.scoreBreakdown).reduce<number>((sum, value) => sum + (value ?? 0), 0);
+    if (snapshot.totalScore !== total) ctx.addIssue({ code: 'custom', path: [index, 'totalScore'], message: 'totalScore must equal scoreBreakdown.' });
+  });
+});
+
 const ROUTE_DISTANCE_TOLERANCE_METERS = 0.5;
 
 const haversineDistanceMeters = (
@@ -305,6 +341,8 @@ export const recommendDateResponseSchema = z.object({
   course: recommendationCourseSchema,
   cards: z.array(recommendDateCardSchema).min(1),
   metadata: recommendDateMetadataSchema,
+  // Edge attaches this only to the private attestation; app clients never consume it.
+  candidatePool: candidatePoolSnapshotsSchema.optional(),
 }).strict().superRefine((response, ctx) => {
   const issue = (path: (string | number)[], message: string) => {
     ctx.addIssue({ code: 'custom', path, message });

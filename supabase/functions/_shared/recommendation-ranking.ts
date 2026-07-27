@@ -15,6 +15,12 @@ import {
   diversityScoreFor,
   type RecommendationHistoryContext,
 } from '../../../shared/recommendation/recommendation-history.ts';
+import {
+  budgetScoreFor,
+  pickPriceRange,
+  priceAnchorKRW,
+  type PlacePriceFields,
+} from '../../../shared/recommendation/place-price.ts';
 
 export const RANKING_SCORE_WEIGHTS = {
   requiredCategory: 40,
@@ -47,6 +53,8 @@ export type PlaceCandidate = EvidencedKakaoPlace & {
   distanceFromSearchCenterMeters: number;
   score: number;
   scoreBreakdown: CandidateScoreBreakdown;
+  /** Immutable price selection made during ranking; omitted only by legacy fixtures/callers. */
+  priceAtRanking?: ReturnType<typeof pickPriceRange>;
 };
 
 export type RankedRecommendationSearch = {
@@ -135,7 +143,12 @@ function hasHistorySignals(history: RecommendationHistoryContext | undefined): h
 export function rankPlaceCandidates(
   places: readonly EvidencedKakaoPlace[],
   request: RecommendationRequest,
-  options: { limit?: number; history?: RecommendationHistoryContext } = {},
+  options: {
+    limit?: number;
+    history?: RecommendationHistoryContext;
+    /** 장소 원장 가격(추정/관측). 없는 장소는 점수 0 — 하드 필터가 아니다. */
+    prices?: ReadonlyMap<string, PlacePriceFields>;
+  } = {},
 ): RankedRecommendationSearch {
   const requiredCategories = [...new Set(request.courseSteps.map((step) => (
     normalizeRecommendationCategory(step.category)
@@ -218,6 +231,13 @@ export function rankPlaceCandidates(
     return boost;
   };
 
+  // 후보 랭킹 시점엔 코스가 아직 조립 전이라 합계를 못 낸다. 균등 분할 몫 대 단가로 근사한다.
+  const budgetShareKRW = priceAnchorKRW(request.totalBudgetKRW, request.courseSteps.length);
+  const budgetScoreOf = (kakaoPlaceId: string) => {
+    const price = options.prices?.get(kakaoPlaceId);
+    return price ? budgetScoreFor(pickPriceRange(price), budgetShareKRW) : 0;
+  };
+
   const scored = policyPlaces.map((place) => {
     const distanceFromSearchCenterMeters = haversineDistanceMeters(request.location, place);
     const requiredMatch = requiredCategories.some((category) => verifiedPlaceMatchesCategory(place, category));
@@ -229,7 +249,7 @@ export function rankPlaceCandidates(
         + intentBoostFor(place)
         + negatedPenaltyFor(place),
       distance: Math.max(0, RANKING_SCORE_WEIGHTS.distanceMax - Math.floor(distanceFromSearchCenterMeters / 250)),
-      budget: 0,
+      budget: budgetScoreOf(place.kakaoPlaceId),
       preference: 0,
       routeFit: routeFitFor(place),
       diversity: history ? diversityScoreFor(place.kakaoPlaceId, history, {
@@ -299,15 +319,30 @@ export function rankPlaceCandidates(
     if (!representative || selected.length >= limit) continue;
     appendSelected(representative, true);
   }
-  // 입력 시점 지정 장소(핀)는 카테고리를 이기므로 저점수일 때 카테고리 recall이 보호하지 못한다.
-  // 일반 score fill(절단) 이전에 강제 포함해 유효한 핀이 후보 상한에서 잘려 STEP_PIN_UNAVAILABLE로
-  // 오판되는 것을 막는다. 핀은 최대 4개라 상한을 넘기지 않는다.
-  if (pinnedPlaceIds.size > 0) {
+  // 사용자가 손으로 고른 장소(입력 시점 핀 + 교체 시트 선택)는 카테고리를 이기므로
+  // 저점수일 때 카테고리 recall이 보호하지 못한다. 일반 score fill(절단) 이전에 강제 포함해
+  // 후보 상한에서 잘리는 것을 막는다 — 잘리면 핀은 STEP_PIN_UNAVAILABLE, 교체는
+  // COURSE_VALIDATION_FAILED(422)로 나와 "어떤 장소만 교체 실패"처럼 보인다.
+  const manualPlaceIds = new Set(pinnedPlaceIds);
+  if (request.replacement?.kakaoPlaceId) manualPlaceIds.add(request.replacement.kakaoPlaceId);
+  if (manualPlaceIds.size > 0) {
     for (const place of ranked) {
-      if (selected.length >= limit) break;
-      if (pinnedPlaceIds.has(place.kakaoPlaceId) && !selectedIds.has(place.kakaoPlaceId)) {
-        appendSelected(place);
+      if (!manualPlaceIds.has(place.kakaoPlaceId) || selectedIds.has(place.kakaoPlaceId)) continue;
+      if (selected.length >= limit) {
+        // 상한이 이미 찼으면 점수 최하 비수동 후보를 밀어낸다. 수동 지정은 최대 4개 + 교체 1개라
+        // 후보 풀을 잠식하지 않는다.
+        let victim = -1;
+        for (let i = 0; i < selected.length; i += 1) {
+          if (manualPlaceIds.has(selected[i].kakaoPlaceId)) continue;
+          if (victim < 0 || totalScore(selected[i].scoreBreakdown) < totalScore(selected[victim].scoreBreakdown)) {
+            victim = i;
+          }
+        }
+        if (victim < 0) continue;
+        selectedIds.delete(selected[victim].kakaoPlaceId);
+        selected.splice(victim, 1);
       }
+      appendSelected(place);
     }
   }
   for (const place of ranked) {
@@ -321,6 +356,9 @@ export function rankPlaceCandidates(
     ...place,
     candidateId: `candidate_${String(index + 1).padStart(3, '0')}`,
     score: totalScore(place.scoreBreakdown),
+    priceAtRanking: options.prices?.get(place.kakaoPlaceId)
+      ? pickPriceRange(options.prices.get(place.kakaoPlaceId)!)
+      : { source: 'unknown', minKRW: null, maxKRW: null },
   }));
   const recallByCategory = Object.fromEntries(requiredCategories.map((category) => [
     category,
