@@ -31,5 +31,12 @@ describe('AI 보존 cron 마이그레이션', () => {
 
   it('보존 함수는 익명·로그인 사용자가 호출할 수 없다', () => {
     expect(migration).toContain('revoke all on function public.run_ai_retention() from public');
+    expect(migration).toContain('revoke all on function public.run_ai_retention() from anon, authenticated');
+  });
+
+  // revoke from public만으로는 authenticated 실행 권한이 남는다는 것을 이미 실측했다
+  // (20260727130000). cron에 배선하는 김에 삭제 함수 자체도 같이 잠근다.
+  it('cron이 호출하는 삭제 함수도 익명·로그인 사용자에게서 회수한다', () => {
+    expect(migration).toContain('revoke all on function public.purge_expired_ai_data() from anon, authenticated');
   });
 });

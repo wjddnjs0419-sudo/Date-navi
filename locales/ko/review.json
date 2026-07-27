@@ -20,7 +20,8 @@
       "bad": "별로예요",
       "priceCheap": "저렴",
       "priceNormal": "보통",
-      "priceExpensive": "비쌈"
+      "priceExpensive": "비쌈",
+      "toggleHint": "다시 누르면 선택이 해제돼요."
     },
     "saveButton": "추억으로 저장",
     "saveError": "저장에 실패했어요. 다시 시도해주세요.",

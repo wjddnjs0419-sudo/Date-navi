@@ -16,6 +16,11 @@ $$;
 revoke all on function public.run_ai_retention() from public;
 revoke all on function public.run_ai_retention() from anon, authenticated;
 
+-- 삭제 함수는 생성 당시 `from public`만 회수해 authenticated 실행 권한이 남아 있다
+-- (20260727130000에서 같은 함정을 실측). 로그인 사용자가 직접 호출하면 집계 없이
+-- 30일 초과 이력이 지워지므로 여기서 함께 잠근다.
+revoke all on function public.purge_expired_ai_data() from anon, authenticated;
+
 -- 03:30 KST(= 18:30 UTC) 매일. 중복 등록 방지를 위해 기존 잡을 먼저 내린다.
 select cron.unschedule(jobid) from cron.job where jobname = 'ai-retention-daily';
 select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai_retention()$$);

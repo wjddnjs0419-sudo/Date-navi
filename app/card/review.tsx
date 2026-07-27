@@ -68,8 +68,11 @@ export default function ReviewScreen() {
           .maybeSingle();
         if (profile?.couple_id) setCoupleId(profile.couple_id);
         // 코스 카드가 아니거나 조회 실패면 빈 배열 — 장소 섹션은 렌더되지 않는다.
-        const { data: coursePlaces } = await supabase
+        // 다만 rpc는 실패해도 reject하지 않으므로, error를 열어보지 않으면
+        // 권한·시그니처 불일치로 수집이 영구 0건이어도 아무 흔적이 남지 않는다.
+        const { data: coursePlaces, error: placesError } = await supabase
           .rpc('get_course_places_for_review', { p_card_id: id });
+        if (placesError) console.warn('[review] course_places lookup failed', placesError);
         setPlaces(Array.isArray(coursePlaces) ? (coursePlaces as CoursePlace[]) : []);
         setLoading(false);
       })();
@@ -79,7 +82,12 @@ export default function ReviewScreen() {
   function handleRating(n: number) {
     setRating(n);
     setPlaceSatisfactions((prev) => {
-      const derived = initialPlaceSatisfactions(n as Rating, places.map((p) => p.step_id));
+      // 사용자가 만진 스텝은 유도 기본값 밖으로 뺀다. prev에서 골라 덮어쓰기만 하면
+      // "해제(=무응답)"가 undefined라 다시 좋아요로 되살아난다.
+      const derived = initialPlaceSatisfactions(
+        n as Rating,
+        places.map((p) => p.step_id).filter((stepId) => !touchedRef.current.has(stepId)),
+      );
       const kept = Object.fromEntries(
         [...touchedRef.current]
           .filter((stepId) => prev[stepId] !== undefined)
@@ -186,8 +194,12 @@ export default function ReviewScreen() {
           priceLevel: placePrices[entry.step_id] ?? null,
         }))
         .filter((args): args is NonNullable<typeof args> => args !== null);
-      await Promise.allSettled(feedbackCalls.map((args) =>
+      const feedbackResults = await Promise.allSettled(feedbackCalls.map((args) =>
         supabase.rpc('record_recommendation_place_feedback', args)));
+      for (const result of feedbackResults) {
+        const failure = result.status === 'rejected' ? result.reason : result.value?.error;
+        if (failure) console.warn('[review] place_feedback rpc failed', failure);
+      }
 
       // 둘 다 리뷰했을 때만 데이트를 done으로 아카이브한다. 한 명만 리뷰하면
       // 상대가 계획에서 자기 리뷰를 남길 수 있도록 confirmed 상태를 유지한다.
@@ -276,6 +288,7 @@ export default function ReviewScreen() {
                           testID={`place-${kind}-${place.step_id}`}
                           accessibilityRole="button"
                           accessibilityState={{ selected }}
+                          accessibilityHint={c.placeSection.toggleHint}
                           accessibilityLabel={`${place.place_name} ${c.placeSection[kind]}`}
                           onPress={() => handleSatisfactionTap(place.step_id, kind)}
                           style={[styles.chip, selected && styles.chipOn]}
@@ -297,6 +310,7 @@ export default function ReviewScreen() {
                           testID={`place-price-${place.step_id}-${chip.level}`}
                           accessibilityRole="button"
                           accessibilityState={{ selected }}
+                          accessibilityHint={c.placeSection.toggleHint}
                           accessibilityLabel={`${place.place_name} ${c.placeSection[chip.labelKey]}`}
                           onPress={() => handlePriceTap(place.step_id, chip.level)}
                           style={[styles.chip, styles.priceChip, selected && styles.chipOn]}

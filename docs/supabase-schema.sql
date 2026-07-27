@@ -1661,6 +1661,7 @@ end;
 $$;
 revoke all on function public.run_ai_retention() from public;
 revoke all on function public.run_ai_retention() from anon, authenticated;
+revoke all on function public.purge_expired_ai_data() from anon, authenticated;
 
 select cron.unschedule(jobid) from cron.job where jobname = 'ai-retention-daily';
 select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai_retention()$$);

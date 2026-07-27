@@ -138,6 +138,43 @@ describe('리뷰 화면 — 장소별 등급', () => {
     expect(byTestId(tree, 'place-good-s2')!.props.accessibilityState?.selected).toBe(true);
   });
 
+  it('사용자가 유도 기본값을 해제한 장소는 별점을 다시 눌러도 되살아나지 않는다', async () => {
+    const tree = await render();
+    await pressStar(tree, 5);
+    // 재탭 = 해제(무응답으로 두겠다는 명시적 의사).
+    await TR.act(async () => { byTestId(tree, 'place-good-s1')!.props.onPress(); });
+    await pressStar(tree, 4);
+    expect(byTestId(tree, 'place-good-s1')!.props.accessibilityState?.selected).toBeFalsy();
+    expect(byTestId(tree, 'place-good-s2')!.props.accessibilityState?.selected).toBe(true);
+
+    const saveBtn = tree.root.findAllByType(require('../components/ui').BigButton)[0];
+    await TR.act(async () => { saveBtn.props.onPress(); });
+    const feedbackCalls = mockRpc.mock.calls.filter(([name]) => name === 'record_recommendation_place_feedback');
+    expect(feedbackCalls).toHaveLength(1);
+    expect(feedbackCalls[0][1]).toEqual(expect.objectContaining({ p_step_id: 's2', p_tags: ['revisit'] }));
+  });
+
+  it('피드백 rpc가 error를 돌려주면 조용히 넘기지 않고 경고 로그를 남긴다', async () => {
+    // supabase-js의 rpc는 실패해도 reject하지 않는다 — error를 열어보지 않으면 영구 무음이 된다.
+    setRpc(placeRows, { message: 'boom' });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const tree = await render();
+    await pressStar(tree, 5);
+    const saveBtn = tree.root.findAllByType(require('../components/ui').BigButton)[0];
+    await TR.act(async () => { saveBtn.props.onPress(); });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('place_feedback'), expect.anything());
+    warn.mockRestore();
+  });
+
+  it('코스 장소 조회가 error를 돌려주면 경고 로그를 남기고 섹션은 접는다', async () => {
+    mockRpc.mockImplementation(async () => ({ data: null, error: { message: 'nope' } }));
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const tree = await render();
+    expect(byTestId(tree, 'place-good-s1')).toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('course_places'), expect.anything());
+    warn.mockRestore();
+  });
+
   it('저장 시 등급 있는 장소마다 피드백 rpc가 호출되고, rpc 실패해도 별점 저장은 성공 흐름을 탄다', async () => {
     setRpc(placeRows, { message: 'boom' });
     const tree = await render();

@@ -20,7 +20,8 @@
       "bad": "Not great",
       "priceCheap": "Cheap",
       "priceNormal": "Fair",
-      "priceExpensive": "Pricey"
+      "priceExpensive": "Pricey",
+      "toggleHint": "Tap again to clear this choice."
     },
     "saveButton": "Save as memory",
     "saveError": "Could not save. Please try again.",

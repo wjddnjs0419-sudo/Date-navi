@@ -38,9 +38,18 @@ async function kakaoCategory(name: string, id: string) {
     `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(name)}&size=15`,
     { headers: { Authorization: `KakaoAK ${KAKAO_REST_API_KEY}` } },
   );
+  if (!response.ok) {
+    console.error(`kakao ${response.status} — ${name}`);
+    return { categoryName: '', categoryGroupCode: '', resolved: false };
+  }
   const body = await response.json() as { documents?: { id: string; category_name?: string; category_group_code?: string }[] };
   const doc = (body.documents ?? []).find((d) => d.id === id);
-  return { categoryName: doc?.category_name ?? '', categoryGroupCode: doc?.category_group_code ?? '' };
+  // 카테고리가 비면 프롬프트 입력이 부실해져 검증 표본 자체가 오염된다 — 표에 드러낸다.
+  return {
+    categoryName: doc?.category_name ?? '',
+    categoryGroupCode: doc?.category_group_code ?? '',
+    resolved: Boolean(doc),
+  };
 }
 
 async function estimate(prompt: string): Promise<unknown> {
@@ -81,8 +90,10 @@ async function main() {
 
   const rows = ['| 장소 | 카테고리 | 추정(1인) | 판정 |', '|---|---|---|---|'];
   let failures = 0;
+  let unresolvedCategories = 0;
   for (const [id, step] of byId) {
     const category = await kakaoCategory(step.place_name!, id);
+    if (!category.resolved) unresolvedCategories += 1;
     const raw = await estimate(buildPlacePriceEstimationPrompt({
       placeName: step.place_name!,
       categoryName: category.categoryName,
@@ -104,6 +115,9 @@ async function main() {
         estimated_max_krw: parsed.maxKRW,
         estimated_at: new Date().toISOString(),
         estimate_model: MODEL,
+        // Edge의 upsert(_shared/place-ledger.ts)와 같은 갱신 시점을 남긴다.
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }], { onConflict: 'kakao_place_id' });
       if (upsertError) console.error(`upsert 실패 ${step.place_name}: ${upsertError.message}`);
     } else {
@@ -115,7 +129,15 @@ async function main() {
   }
 
   console.log(rows.join('\n'));
-  console.log(`\nprompt version: ${PLACE_PRICE_PROMPT_VERSION} · model: ${MODEL} · 파싱 실패 ${failures}건`);
+  console.log(
+    `\nprompt version: ${PLACE_PRICE_PROMPT_VERSION} · model: ${MODEL}`
+    + ` · 파싱 실패 ${failures}건 · 카테고리 미해결 ${unresolvedCategories}건`,
+  );
+  // 목적이 품질 검증이라 재실행 시에도 전 장소를 다시 추정한다(프롬프트 수정 후 재비교).
+  return failures;
 }
 
-void main();
+main().then((failures) => { if (failures > 0) process.exitCode = 1; }).catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
