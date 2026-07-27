@@ -1643,3 +1643,24 @@ revoke all on public.place_behavior_stats from anon;
 
 revoke all on function public.aggregate_ai_recommendation_log_daily_stats() from anon, authenticated;
 revoke all on function public.recompute_place_observed_price(text) from anon, authenticated;
+
+-- ============================================================================
+-- 20260727150000_pg_cron_ai_retention.sql
+-- AI 로그 보존: 일별 집계 → 만료 삭제를 pg_cron으로 하루 한 번(03:30 KST).
+-- 순서는 스케줄 설정이 아니라 함수 본문으로 보장한다.
+-- ============================================================================
+
+create extension if not exists pg_cron;
+
+create or replace function public.run_ai_retention()
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  perform public.aggregate_ai_recommendation_log_daily_stats();
+  perform public.purge_expired_ai_data();
+end;
+$$;
+revoke all on function public.run_ai_retention() from public;
+revoke all on function public.run_ai_retention() from anon, authenticated;
+
+select cron.unschedule(jobid) from cron.job where jobname = 'ai-retention-daily';
+select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai_retention()$$);
