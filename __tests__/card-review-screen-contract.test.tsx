@@ -39,6 +39,9 @@ jest.mock('../lib/i18n', () => {
 jest.mock('../lib/supabase', () => ({
   supabase: {
     auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
+    // 장소별 등급 섹션(Task 11)은 코스 장소 조회 결과가 비면 렌더되지 않는다 —
+    // 이 스위트는 별점 바 계약만 보므로 빈 결과로 둔다.
+    rpc: async () => ({ data: [], error: null }),
     from: (table: string) => {
       if (table === 'date_planner_profiles') {
         return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { couple_id: 'c1' } }) }) }) };

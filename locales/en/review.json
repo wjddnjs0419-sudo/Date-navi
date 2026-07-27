@@ -13,6 +13,15 @@
     },
     "reviewLabel": "One-line review",
     "reviewPlaceholder": "What would you say in one line?",
+    "placeSection": {
+      "title": "How were the places on this course?",
+      "sub": "Only flag the ones that fell short. Sharing prices improves future picks.",
+      "good": "Liked it",
+      "bad": "Not great",
+      "priceCheap": "Cheap",
+      "priceNormal": "Fair",
+      "priceExpensive": "Pricey"
+    },
     "saveButton": "Save as memory",
     "saveError": "Could not save. Please try again.",
     "missingCoupleError": "Could not load couple info."
