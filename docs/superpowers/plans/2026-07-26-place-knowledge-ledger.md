@@ -35,7 +35,7 @@
 - Create: `shared/recommendation/place-price.ts`
 - Test: `__tests__/place-price.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/place-price.test.ts
@@ -143,9 +143,9 @@ describe('shrunkPositiveRate (축소 보정)', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — `npx jest __tests__/place-price.test.ts` → FAIL(모듈 없음).
+- [x] **Step 2: 실패 확인** — `npx jest __tests__/place-price.test.ts` → FAIL(모듈 없음).
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 ```ts
 // shared/recommendation/place-price.ts
@@ -231,8 +231,8 @@ export function shrunkPositiveRate(input: {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — `npx jest __tests__/place-price.test.ts` → PASS.
-- [ ] **Step 5: 커밋** — `git add shared/recommendation/place-price.ts __tests__/place-price.test.ts && git commit -m "feat: 장소 가격 두 계층 순수 로직(앵커·구간 좁히기·소비 규칙·축소 보정)"`
+- [x] **Step 4: 통과 확인** — `npx jest __tests__/place-price.test.ts` → PASS.
+- [x] **Step 5: 커밋** — `git add shared/recommendation/place-price.ts __tests__/place-price.test.ts && git commit -m "feat: 장소 가격 두 계층 순수 로직(앵커·구간 좁히기·소비 규칙·축소 보정)"`
 
 ---
 
@@ -242,7 +242,7 @@ export function shrunkPositiveRate(input: {
 - Create: `lib/placeReview.ts`
 - Test: `__tests__/placeReview.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/placeReview.test.ts
@@ -292,8 +292,8 @@ describe('placeFeedbackRpcArgs', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — `npx jest __tests__/placeReview.test.ts` → FAIL.
-- [ ] **Step 3: 구현**
+- [x] **Step 2: 실패 확인** — `npx jest __tests__/placeReview.test.ts` → FAIL.
+- [x] **Step 3: 구현**
 
 ```ts
 // lib/placeReview.ts
@@ -337,8 +337,8 @@ export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — PASS.
-- [ ] **Step 5: 커밋** — `git commit -m "feat: 리뷰 장소별 등급 별점 유도 규칙(비대칭 전파)"`
+- [x] **Step 4: 통과 확인** — PASS.
+- [x] **Step 5: 커밋** — `git commit -m "feat: 리뷰 장소별 등급 별점 유도 규칙(비대칭 전파)"`
 
 ---
 
@@ -349,7 +349,7 @@ export function placeFeedbackRpcArgs(input: PlaceFeedbackInput): {
 - Modify: `docs/supabase-schema.sql` (동일 내용 append — 기존 관례)
 - Test: `__tests__/aiLogDailyStatsMigration.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`recommendationHistoryAbMetricsMigration.test.ts`의 파일 내용 검증 패턴)
+- [x] **Step 1: 실패하는 테스트 작성** (`recommendationHistoryAbMetricsMigration.test.ts`의 파일 내용 검증 패턴)
 
 ```ts
 // __tests__/aiLogDailyStatsMigration.test.ts
@@ -379,8 +379,8 @@ describe('AI 로그 일별 집계 마이그레이션', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL(파일 없음).
-- [ ] **Step 3: 마이그레이션 SQL 작성**
+- [x] **Step 2: 실패 확인** — FAIL(파일 없음).
+- [x] **Step 3: 마이그레이션 SQL 작성**
 
 ```sql
 -- supabase/migrations/20260727100000_ai_log_daily_stats.sql
@@ -438,9 +438,9 @@ revoke all on function public.aggregate_ai_recommendation_log_daily_stats() from
 commit;
 ```
 
-- [ ] **Step 4: `docs/supabase-schema.sql` 끝에 같은 내용 append** (begin/commit 제외한 본문).
-- [ ] **Step 5: 통과 확인** — `npx jest __tests__/aiLogDailyStatsMigration.test.ts` → PASS.
-- [ ] **Step 6: 커밋** — `git commit -m "feat(db): AI 로그 일별 집계 테이블·함수(삭제 스케줄 선행 조건)"`
+- [x] **Step 4: `docs/supabase-schema.sql` 끝에 같은 내용 append** (begin/commit 제외한 본문).
+- [x] **Step 5: 통과 확인** — `npx jest __tests__/aiLogDailyStatsMigration.test.ts` → PASS.
+- [x] **Step 6: 커밋** — `git commit -m "feat(db): AI 로그 일별 집계 테이블·함수(삭제 스케줄 선행 조건)"`
 
 ---
 
@@ -451,7 +451,7 @@ commit;
 - Modify: `docs/supabase-schema.sql`
 - Test: `__tests__/placesLedgerMigration.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/placesLedgerMigration.test.ts
@@ -513,8 +513,8 @@ describe('places 원장 마이그레이션', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL.
-- [ ] **Step 3: 마이그레이션 SQL 작성**
+- [x] **Step 2: 실패 확인** — FAIL.
+- [x] **Step 3: 마이그레이션 SQL 작성**
 
 ```sql
 -- supabase/migrations/20260727110000_places_ledger.sql
@@ -694,9 +694,9 @@ commit;
 
   **주의:** action check의 기존 허용 목록은 적용 전에 실 DB에서 확인한다(`select pg_get_constraintdef(oid) from pg_constraint where conname='ai_recommendation_logs_action_check'`). 위 목록은 마이그레이션 파일 이력 기준 추정이므로 실측과 다르면 실측 + `estimate_place_price`로 쓴다.
 
-- [ ] **Step 4: `docs/supabase-schema.sql` append.**
-- [ ] **Step 5: 통과 확인** — PASS.
-- [ ] **Step 6: 커밋** — `git commit -m "feat(db): places 원장 + place_feedback.price_level + 커플 멤버 리뷰 RPC"`
+- [x] **Step 4: `docs/supabase-schema.sql` append.**
+- [x] **Step 5: 통과 확인** — PASS.
+- [x] **Step 6: 커밋** — `git commit -m "feat(db): places 원장 + place_feedback.price_level + 커플 멤버 리뷰 RPC"`
 
 ---
 
@@ -707,7 +707,7 @@ commit;
 - Modify: `docs/supabase-schema.sql`
 - Test: `__tests__/placeBehaviorStatsMigration.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/placeBehaviorStatsMigration.test.ts
@@ -737,8 +737,8 @@ describe('place_behavior_stats 뷰 마이그레이션', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — FAIL.
-- [ ] **Step 3: SQL 작성**
+- [x] **Step 2: 실패 확인** — FAIL.
+- [x] **Step 3: SQL 작성**
 
 ```sql
 -- supabase/migrations/20260727120000_place_behavior_stats_view.sql
@@ -779,16 +779,16 @@ commit;
 
   **참고(스펙 편차 1건):** 스펙 마이그레이션 순서 3번의 "커플 중복 제거 테이블"은 만들지 않는다. 뷰는 원본(`recommendation_sessions.couple_id`)에서 `count(distinct couple_id)`로 직접 중복 제거가 가능해 별도 상태 테이블이 불필요하다(YAGNI — 상태 테이블은 정확히 트리거 방식의 실패 모드를 다시 들여온다). `place_pair_stat_couples`가 테이블인 이유는 그쪽이 트리거 누적형이기 때문.
 
-- [ ] **Step 4: `docs/supabase-schema.sql` append, 테스트 PASS 확인.**
-- [ ] **Step 5: 커밋** — `git commit -m "feat(db): place_behavior_stats 뷰(원본 재계산, 소비는 다음 작업)"`
+- [x] **Step 4: `docs/supabase-schema.sql` append, 테스트 PASS 확인.**
+- [x] **Step 5: 커밋** — `git commit -m "feat(db): place_behavior_stats 뷰(원본 재계산, 소비는 다음 작업)"`
 
 ---
 
 ## Task 6: 원격 마이그레이션 적용 + 프로덕션 검증 【승인 게이트 1】
 
-- [ ] **Step 1: 사용자에게 적용 보고·승인** — 마이그레이션 3개(집계·원장·뷰) 내용 요약, 위험(기존 RPC 교체 → 배포 중 순단 가능성, drop function 후 create 사이는 한 트랜잭션이라 실질 없음) 설명.
-- [ ] **Step 2: MCP `apply_migration`으로 순서대로 적용** (`ai_log_daily_stats` → `places_ledger` → `place_behavior_stats_view`).
-- [ ] **Step 3: 프로덕션 검증 — 롤백되는 do 블록** (트리거 사고 때와 동일 방식, MCP `execute_sql`):
+- [x] **Step 1: 사용자에게 적용 보고·승인** — 마이그레이션 3개(집계·원장·뷰) 내용 요약, 위험(기존 RPC 교체 → 배포 중 순단 가능성, drop function 후 create 사이는 한 트랜잭션이라 실질 없음) 설명.
+- [x] **Step 2: MCP `apply_migration`으로 순서대로 적용** (`ai_log_daily_stats` → `places_ledger` → `place_behavior_stats_view`).
+- [x] **Step 3: 프로덕션 검증 — 롤백되는 do 블록** (트리거 사고 때와 동일 방식, MCP `execute_sql`):
 
 ```sql
 -- 1) 집계 함수 실측: 실행 후 일별 행 수 = 원본의 distinct (일,action) 수인지 확인하고 롤백.
@@ -807,8 +807,8 @@ select count(distinct session_id) from public.recommendation_course_steps where 
 --    (auth.uid() 없는 콘솔에서는 RPC 본문 로직만 발췌 실행)
 ```
 
-- [ ] **Step 4: `get_advisors`로 신규 보안·성능 이슈 없는지 확인.**
-- [ ] **Step 5: 결과를 커밋 메시지에 기록** — `git commit --allow-empty -m "chore(db): 원장 마이그레이션 3건 원격 적용·실측 검증 완료"` (또는 RESULT.md에 기록).
+- [x] **Step 4: `get_advisors`로 신규 보안·성능 이슈 없는지 확인.**
+- [x] **Step 5: 결과를 커밋 메시지에 기록** — `git commit --allow-empty -m "chore(db): 원장 마이그레이션 3건 원격 적용·실측 검증 완료"` (또는 RESULT.md에 기록).
 
 ---
 
@@ -1316,7 +1316,7 @@ import { pickPriceRange, budgetScoreFor, priceAnchorKRW, type PlacePriceFields }
 - Modify: `locales/ko.json`, `locales/en.json` (동일 작업에서 동시 갱신 — 프로젝트 규칙)
 - Test: `__tests__/review-place-feedback.test.tsx` (기존 review 화면 테스트 패턴 참조: `__tests__/course-screen.test.tsx` 등의 mock supabase 방식)
 
-- [ ] **Step 1: 실패하는 테스트 작성** — 핵심 시나리오 4개:
+- [x] **Step 1: 실패하는 테스트 작성** — 핵심 시나리오 4개:
 
 ```tsx
 // __tests__/review-place-feedback.test.tsx
@@ -1385,8 +1385,8 @@ it('장소 목록이 비면(수동 카드) 장소 섹션이 렌더되지 않는�
 
   (auth/profile mock, router mock 등 보일러플레이트는 기존 화면 테스트에서 그대로 가져온다. 만족도 칩에 `testID={'place-good-'+stepId}` / `place-bad-…` / `place-price-…-{1,2,3}`을 부여하는 것이 구현 요건이다.)
 
-- [ ] **Step 2: 실패 확인** — FAIL.
-- [ ] **Step 3: 구현** — `review.tsx`에 추가:
+- [x] **Step 2: 실패 확인** — FAIL.
+- [x] **Step 3: 구현** — `review.tsx`에 추가:
   - 로드: `useFocusEffect` 내 기존 프로필 조회에 이어 `supabase.rpc('get_course_places_for_review', { p_card_id: id })` → `places` state. 실패·빈 배열이면 섹션 미렌더.
   - state: `const [placeSatisfactions, setPlaceSatisfactions] = useState<Record<string, PlaceSatisfaction>>({});`, `const [placePrices, setPlacePrices] = useState<Record<string, 1|2|3>>({});`, `const touchedRef = useRef<Set<string>>(new Set())`.
   - 별점 변경 시: `setRating(n)` 핸들러에서 유도 기본값 재적용하되 사용자가 탭한 스텝은 보존:
@@ -1438,18 +1438,18 @@ function handleRating(n: Rating) {
 // "Liked it", "Not great", "Cheap", "Fair", "Pricey"
 ```
 
-- [ ] **Step 4: 테스트 PASS + `npm run validate` 클린.**
-- [ ] **Step 5: StyleSeed Gate** — `/ss-score` Gate 모드로 `app/card/review.tsx` 채점, <80이면 수정 후 재채점(≥80까지), `styleseed-design-review`도 실행. 점수와 함께 제시.
-- [ ] **Step 6: 커밋** — `git commit -m "feat: 리뷰 화면 장소별 만족도·가격 수집(별점 유도 기본값, 건너뛰기 허용)"`
+- [x] **Step 4: 테스트 PASS + `npm run validate` 클린.**
+- [x] **Step 5: StyleSeed Gate** — `/ss-score` Gate 모드로 `app/card/review.tsx` 채점, <80이면 수정 후 재채점(≥80까지), `styleseed-design-review`도 실행. 점수와 함께 제시.
+- [x] **Step 6: 커밋** — `git commit -m "feat: 리뷰 화면 장소별 만족도·가격 수집(별점 유도 기본값, 건너뛰기 허용)"`
 
 ---
 
 ## Task 12: 통합 검증
 
-- [ ] **Step 1:** 루트에서 `npx jest` 전체 → 전 suite PASS.
-- [ ] **Step 2:** `npm run validate`(tsc) 클린. 에러는 스스로 수정(해결한 유형은 AGENTS.md Anti-Patterns에 1줄 추가).
-- [ ] **Step 3:** 전체 완료 후 한 번에 코드 리뷰(superpowers:requesting-code-review — 사용자 선호: 단계별 리뷰 금지, 완료 후 일괄).
-- [ ] **Step 4:** 커밋(리뷰 지적 수정 반영).
+- [x] **Step 1:** 루트에서 `npx jest` 전체 → 전 suite PASS.
+- [x] **Step 2:** `npm run validate`(tsc) 클린. 에러는 스스로 수정(해결한 유형은 AGENTS.md Anti-Patterns에 1줄 추가).
+- [x] **Step 3:** 전체 완료 후 한 번에 코드 리뷰(superpowers:requesting-code-review — 사용자 선호: 단계별 리뷰 금지, 완료 후 일괄).
+- [x] **Step 4:** 커밋(리뷰 지적 수정 반영).
 
 ---
 
@@ -1460,7 +1460,7 @@ function handleRating(n: Rating) {
 - Modify: `docs/supabase-schema.sql`
 - Test: `__tests__/aiRetentionCronMigration.test.ts`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 ```ts
 // __tests__/aiRetentionCronMigration.test.ts
@@ -1486,7 +1486,7 @@ describe('AI 보존 cron 마이그레이션', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인 → SQL 작성**
+- [x] **Step 2: 실패 확인 → SQL 작성**
 
 ```sql
 -- supabase/migrations/20260727140000_pg_cron_ai_retention.sql
@@ -1513,8 +1513,8 @@ select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai
 commit;
 ```
 
-- [ ] **Step 3: 테스트 PASS, `docs/supabase-schema.sql` append.**
-- [ ] **Step 4: 사용자 승인 후 MCP `apply_migration` 적용.** 첫 만료일(2026-08-17) 전 아무 날이나 안전. 적용 직후 검증:
+- [x] **Step 3: 테스트 PASS, `docs/supabase-schema.sql` append.**
+- [x] **Step 4: 사용자 승인 후 MCP `apply_migration` 적용.** 첫 만료일(2026-08-17) 전 아무 날이나 안전. 적용 직후 검증:
 
 ```sql
 select jobname, schedule, command from cron.job;                -- 잡 등록 확인
@@ -1523,15 +1523,15 @@ select count(*) from public.ai_recommendation_log_daily_stats;  -- 집계 적재
 select min(created_at) from public.ai_recommendation_logs;      -- 30일 내 데이터만 남았는지(현재는 전부 8~일차라 삭제 0건이어야 정상)
 ```
 
-- [ ] **Step 5: 커밋** — `git commit -m "feat(db): pg_cron 일별 집계→삭제 보존 스케줄(집계 선행 코드 보장)"`
+- [x] **Step 5: 커밋** — `git commit -m "feat(db): pg_cron 일별 집계→삭제 보존 스케줄(집계 선행 코드 보장)"`
 
 ---
 
 ## Task 14: Edge 함수 재배포 【승인 게이트 2】
 
-- [ ] **Step 1: 사용자 승인** — 변경 요약: generate-ai(신규 액션), recommend-date(백그라운드 기록 + budget 랭킹), replacement-candidates(공유 랭킹 모듈 변경 반영). 위험: 공유 모듈 번들 스큐(과거 404 사고) → **세 함수 동시 재배포**로 회피. 추정 비용: 신규 장소당 haiku 1회(생성 1회 ≈ 수 원 수준 증가).
-- [ ] **Step 2: MCP `deploy_edge_function`으로 `generate-ai` → `recommend-date` → `replacement-candidates` 순 배포.**
-- [ ] **Step 3: 라이브 검증** — 실기기/시뮬에서 코스 1회 생성 후:
+- [x] **Step 1: 사용자 승인** — 변경 요약: generate-ai(신규 액션), recommend-date(백그라운드 기록 + budget 랭킹), replacement-candidates(공유 랭킹 모듈 변경 반영). 위험: 공유 모듈 번들 스큐(과거 404 사고) → **세 함수 동시 재배포**로 회피. 추정 비용: 신규 장소당 haiku 1회(생성 1회 ≈ 수 원 수준 증가).
+- [x] **Step 2: MCP `deploy_edge_function`으로 `generate-ai` → `recommend-date` → `replacement-candidates` 순 배포.**
+- [x] **Step 3: 라이브 검증** — 실기기/시뮬에서 코스 1회 생성 후:
 
 ```sql
 select kakao_place_id, place_name, estimated_min_krw, estimated_max_krw, estimate_model
@@ -1541,7 +1541,7 @@ where action = 'estimate_place_price' order by created_at desc limit 10;
 ```
 
   생성 응답 지연이 기존과 동일한지(백그라운드이므로 0 영향이어야 함) `get_logs`로 확인.
-- [ ] **Step 4: 결과 기록 커밋.**
+- [x] **Step 4: 결과 기록 커밋.**
 
 ---
 
@@ -1550,7 +1550,7 @@ where action = 'estimate_place_price' order by created_at desc limit 10;
 **Files:**
 - Create: `scripts/backfill-place-prices.ts`
 
-- [ ] **Step 1: 스크립트 작성** (deno, 기존 `scripts/eval-ai-logs.ts` 실행 관례 참조 — Anthropic API 직접 호출로 사용자 JWT 불요. 프롬프트·파서는 Task 7 모듈 import로 Edge와 단일 소스):
+- [x] **Step 1: 스크립트 작성** (deno, 기존 `scripts/eval-ai-logs.ts` 실행 관례 참조 — Anthropic API 직접 호출로 사용자 JWT 불요. 프롬프트·파서는 Task 7 모듈 import로 Edge와 단일 소스):
 
 ```ts
 // scripts/backfill-place-prices.ts
@@ -1622,9 +1622,9 @@ console.log(rows.join('\n'));
 console.log(`\nprompt version: ${PLACE_PRICE_PROMPT_VERSION}`);
 ```
 
-- [ ] **Step 2: 사용자 승인 후 실행** — `deno run -A scripts/backfill-place-prices.ts` (env 3종 필요).
-- [ ] **Step 3: 표를 사용자와 함께 훑는다.** 명백한 오답(국밥집 5만원류)이 있으면 Task 7 프롬프트를 고치고 재실행. 판정 결과에 따라 프롬프트 버전 bump(`place-price-v2`).
-- [ ] **Step 4: 커밋** — `git commit -m "feat: 51곳 가격 추정 백필 스크립트 + 품질 검증 결과"`
+- [x] **Step 2: 사용자 승인 후 실행** — `deno run -A scripts/backfill-place-prices.ts` (env 3종 필요).
+- [x] **Step 3: 표를 사용자와 함께 훑는다.** 명백한 오답(국밥집 5만원류)이 있으면 Task 7 프롬프트를 고치고 재실행. 판정 결과에 따라 프롬프트 버전 bump(`place-price-v2`).
+- [x] **Step 4: 커밋** — `git commit -m "feat: 51곳 가격 추정 백필 스크립트 + 품질 검증 결과"`
 
 ---
 
@@ -1648,3 +1648,24 @@ select count(*) filter (where estimated_at is not null)::float / count(*) from p
 select count(*) from public.places where observed_min_krw is not null or observed_max_krw is not null;
 -- 리뷰 참여율·확정률은 기존 대시보드 쿼리 유지.
 ```
+
+---
+
+## 실행 결과 기록 (2026-07-27, Task 11~15 종결)
+
+- **Task 11:** 리뷰 화면 장소별 만족도·가격 수집 구현. 코드 리뷰 지적 3건 반영 —
+  ① 유도 기본값을 사용자가 *해제*한 스텝이 별점 재선택으로 되살아나던 버그(touched를
+  derived에서 제외), ② `supabase.rpc`는 실패해도 reject하지 않아 수집 0건이 무음이던 문제
+  (`console.warn` 두 경로 추가), ③ 칩 라벨 대비(핑크 #C24B57 on 파스텔 = 4.2:1) → 본문색으로.
+- **Task 13:** 파일명은 `20260727150000`(원안 140000은 관측 표본 수 교정이 선점).
+  계획에 없던 `revoke ... purge_expired_ai_data() from anon, authenticated` 추가 —
+  생성 당시 `from public`만 회수돼 로그인 사용자가 직접 호출 가능했다.
+- **게이트 1 (원격 적용 완료):** 마이그레이션 2건 적용. `run_ai_retention()` 수동 1회 실행 →
+  일별 집계 9행 적재, `ai_recommendation_logs` 60건 유지(최고령 9일차라 삭제 0건 정상),
+  `has_function_privilege('authenticated', …)` 두 함수 모두 false 확인.
+- **게이트 2 (배포 완료):** generate-ai → recommend-date → replacement-candidates 순 재배포(CLI).
+  라이브 코스 1회 생성 검증은 사용자 실기기 확인 대기.
+- **게이트 3 (백필 완료):** 60곳(계획의 51곳은 그 사이 증가) 전부 추정 성공, 파싱 실패 0건.
+  카테고리는 Kakao REST 키가 로컬에 없어 `kakao_search_cache`에서 조달(미해결 5곳).
+  표 육안 검증: 빽다방 5~8천, 갈비 3.5~5.5만, 미술관 1~1.5만 등 명백한 오답 없음 →
+  프롬프트 버전 bump 불필요(`place-price-v1` 유지).
