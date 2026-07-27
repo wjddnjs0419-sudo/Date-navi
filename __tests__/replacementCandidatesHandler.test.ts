@@ -118,3 +118,43 @@ describe('replacement candidates handler', () => {
     expect(result).toMatchObject({ status: 200, body: { candidateListAttestationId: 'replacement-list-001' } });
   });
 });
+
+describe('교체 후보 예산 앵커', () => {
+  // 교체 요청은 courseSteps를 대상 1개로 좁힌다. 코스 전체 예산을 그대로 실어 보내면
+  // 앵커(예산÷장소수)가 전체 예산이 되어 거의 모든 후보가 예산 이내로 판정된다.
+  it('코스 전체 예산을 스텝 수로 나눈 몫만 검색에 넘긴다', async () => {
+    const searchedRequests: { totalBudgetKRW?: number }[] = [];
+    const searchCandidates = jest.fn(async (currentRequest: { totalBudgetKRW?: number }) => {
+      searchedRequests.push(currentRequest);
+      return { candidates: [candidate('cafe', 'CE7')] };
+    });
+    const deps = dependencies({
+      searchCandidates,
+      loadSession: jest.fn(async () => ({
+        ...session(),
+        originalRequest: { ...session().originalRequest, totalBudgetKRW: 70000 },
+      })),
+    });
+
+    await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, deps);
+
+    expect(searchedRequests[0]).toMatchObject({ totalBudgetKRW: 35000 });
+  });
+
+  it('예산이 없으면 그대로 없다', async () => {
+    const searchedRequests: { totalBudgetKRW?: number }[] = [];
+    const searchCandidates = jest.fn(async (currentRequest: { totalBudgetKRW?: number }) => {
+      searchedRequests.push(currentRequest);
+      return { candidates: [candidate('cafe', 'CE7')] };
+    });
+    const deps = dependencies({ searchCandidates });
+
+    await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'cafe' },
+    }, deps);
+
+    expect(searchedRequests[0].totalBudgetKRW).toBeUndefined();
+  });
+});

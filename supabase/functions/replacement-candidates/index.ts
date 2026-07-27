@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.106.1';
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
+import { lookupPlacePrices } from '../_shared/place-ledger.ts';
 import {
   createSupabaseRecommendationHistoryQueryAdapter,
   loadRecommendationHistory,
@@ -79,6 +80,8 @@ Deno.serve(async (request) => {
         fetcher: fetch,
         cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
         cacheMetrics,
+        // 생성과 같은 예산 점수를 쓴다 — budget은 score→contextScore→replacementScore로 흐른다.
+        priceLookup: (ids) => lookupPlacePrices({ client: serviceClient as never, kakaoPlaceIds: ids }),
       });
     },
     stageCandidateList: async ({ ownerUserId, sessionId, baseRequestId, targetStepId, candidates }) => {

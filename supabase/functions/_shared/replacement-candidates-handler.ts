@@ -126,6 +126,11 @@ export async function handleReplacementCandidates(
 
   const currentRequest: RecommendationRequest = {
     ...baseRequest.data,
+    // 대상 스텝 하나로 좁히므로 예산도 몫으로 낮춘다 — 코스 전체 예산을 그대로 두면
+    // 앵커(예산÷장소수)가 전체 예산이 되어 예산 점수가 무의미해진다.
+    ...(baseRequest.data.totalBudgetKRW
+      ? { totalBudgetKRW: Math.round(baseRequest.data.totalBudgetKRW / Math.max(rows.length, 1)) }
+      : {}),
     courseSteps: [{ id: target.step_id, category: target.category, label: target.label }],
     excludedPlaceIds: [...new Set([...(baseRequest.data.excludedPlaceIds ?? []), ...rows.map((row) => row.current_kakao_place_id)])],
   };

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
 import type { KakaoFetch } from '../supabase/functions/_shared/recommendation-search';
 import type { PlacePriceFields } from '../shared/recommendation/place-price';
@@ -102,5 +104,18 @@ describe('searchAndRankRecommendation — 장소 가격 조회', () => {
 
     expect(result.candidates.length).toBeGreaterThan(0);
     expect(result.candidates.every((candidate) => candidate.scoreBreakdown.budget === 0)).toBe(true);
+  });
+});
+
+// 두 함수가 같은 랭킹 코드를 공유한다. 한쪽만 배선하면 생성에서 밀린 비싼 장소가
+// 교체 시트 상단에 그대로 뜬다(budget은 score→contextScore→replacementScore로 흐른다).
+describe('가격 조회 배선', () => {
+  it.each([
+    ['recommend-date', 'supabase/functions/recommend-date/index.ts'],
+    ['replacement-candidates', 'supabase/functions/replacement-candidates/index.ts'],
+  ])('%s가 searchAndRankRecommendation에 priceLookup을 넘긴다', (_label, file) => {
+    const source = readFileSync(join(process.cwd(), file), 'utf8');
+    expect(source).toContain('lookupPlacePrices');
+    expect(source).toMatch(/priceLookup:/);
   });
 });
