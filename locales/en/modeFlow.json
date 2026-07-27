@@ -121,6 +121,7 @@
         "unsupported": "‘{{term}}’ couldn't be applied to this course"
       },
       "conditions": "View applied conditions",
+      "perPersonCourseBudget": "Whole-course budget per person: KRW {{amount}}",
       "editError": "We couldn't save this course change. Please try again.",
       "confirm": "Confirm",
       "regenerate": "Regenerate",

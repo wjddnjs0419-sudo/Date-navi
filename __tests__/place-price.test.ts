@@ -10,8 +10,13 @@ import {
 } from '../shared/recommendation/place-price';
 
 describe('priceAnchorKRW', () => {
-  it('예산을 코스 장소 수로 나눈 몫이 앵커다', () => {
-    expect(priceAnchorKRW(30000, 3)).toBe(10000);
+  it('2인 총 코스 예산을 1인·장소당 앵커로 바꾼다', () => {
+    // UI의 1인 전체 예산 3만원은 Edge 계약에서 2인 총액 6만원으로 전달된다.
+    // AI 추정 가격도 1인 기준이므로 2개 장소면 장소당 1만5천원과 비교해야 한다.
+    expect(priceAnchorKRW(60000, 2)).toBe(15000);
+  });
+  it('2인 총 예산을 코스 장소 수와 인원수로 나눈 몫이 앵커다', () => {
+    expect(priceAnchorKRW(30000, 3)).toBe(5000);
   });
   it('장소 수 0 이하나 예산 없음은 null', () => {
     expect(priceAnchorKRW(30000, 0)).toBeNull();

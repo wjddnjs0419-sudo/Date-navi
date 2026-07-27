@@ -121,6 +121,7 @@
         "unsupported": "‘{{term}}’은(는) 이 코스 구성에 반영하지 못했어요"
       },
       "conditions": "적용한 조건 보기",
+      "perPersonCourseBudget": "1인 전체 코스 예산 {{amount}}원",
       "editError": "코스 변경을 저장하지 못했어요. 다시 시도해주세요.",
       "confirm": "코스 확정",
       "regenerate": "잠금 외 재추천",

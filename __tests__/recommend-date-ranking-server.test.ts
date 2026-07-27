@@ -453,7 +453,7 @@ describe('rankPlaceCandidates — budget 점수', () => {
   );
 
   it('예산과 가격이 모두 있으면 몫 이내 장소가 가점, 몫을 크게 넘는 장소가 감점을 받는다', () => {
-    const ranked = rankPlaceCandidates([placeA, placeB], { ...request(), totalBudgetKRW: 30000 }, {
+    const ranked = rankPlaceCandidates([placeA, placeB], { ...request(), totalBudgetKRW: 60000 }, {
       limit: 10,
       prices: new Map([
         ['a', priceFields({ estimatedMinKRW: 5000, estimatedMaxKRW: 9000 })],

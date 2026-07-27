@@ -508,7 +508,13 @@ export default function CourseResultScreen() {
               <Text style={s.conditionText}>{snapshot.request.location.label}</Text>
               <Text style={s.conditionText}>{snapshot.request.courseSteps.map((step) => step.label).join(' → ')}</Text>
               {snapshot.request.maxWalkingMinutes && <Text style={s.conditionText}>{snapshot.request.maxWalkingMinutes} min</Text>}
-              {snapshot.request.totalBudgetKRW && <Text style={s.conditionText}>{snapshot.request.totalBudgetKRW.toLocaleString()} KRW</Text>}
+              {snapshot.request.totalBudgetKRW && (
+                <Text style={s.conditionText}>
+                  {t('modeFlow.courseResult.perPersonCourseBudget', {
+                    amount: (snapshot.request.totalBudgetKRW / 2).toLocaleString(),
+                  })}
+                </Text>
+              )}
               {snapshot.response.course.relaxedConstraints.map((item) => <Text key={item.constraint} style={s.relaxedText}>{item.reason}</Text>)}
             </View>
           )}

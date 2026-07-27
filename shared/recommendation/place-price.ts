@@ -6,6 +6,10 @@
 export const PRICE_LEVEL = { cheap: 1, normal: 2, expensive: 3 } as const;
 export type PriceLevel = (typeof PRICE_LEVEL)[keyof typeof PRICE_LEVEL];
 
+// totalBudgetKRW는 UI의 1인 예산을 두 배로 바꾼, 커플 2인의 코스 총액 계약이다.
+// 장소 가격 원장의 모든 금액은 1인 기준이므로 앵커도 1인·장소당으로 정규화한다.
+export const COUPLE_PARTICIPANT_COUNT = 2;
+
 // 미결정 사항(스펙): 안쪽 백분위 값. 실측 분포 확인 전까지의 초기값.
 // ⚠️ SQL이 이 상수를 import할 수 없어 같은 값이 두 곳에 산다. 여기를 바꾸면
 // public.recompute_place_observed_price(마이그레이션 20260727140000, docs/supabase-schema.sql)의
@@ -19,7 +23,7 @@ export type ObservedBounds = { minKRW: number | null; maxKRW: number | null; con
 export function priceAnchorKRW(totalBudgetKRW: number | null | undefined, stepCount: number): number | null {
   if (!totalBudgetKRW || !Number.isFinite(totalBudgetKRW) || totalBudgetKRW <= 0) return null;
   if (!Number.isFinite(stepCount) || stepCount <= 0) return null;
-  const anchor = Math.round(totalBudgetKRW / stepCount);
+  const anchor = Math.round(totalBudgetKRW / COUPLE_PARTICIPANT_COUNT / stepCount);
   // 0원 앵커는 모든 장소를 예산 초과로 만든다. 몫이 0으로 반올림될 만큼
   // 작은 예산은 앵커가 없는 것과 같게 다룬다(점수 0).
   return anchor > 0 ? anchor : null;
