@@ -1,6 +1,8 @@
 // 목적: 커버리지가 아니라 추정 품질 검증(스펙 §4). 이름만으로 가격대를 아는 개발 중
 // 장소들로 AI 추정 로직을 출시 전에 사람이 검증한다. 결과는 markdown 표로 출력한다.
-// 실행: npm run backfill:place-prices  (scripts/.env.eval.local + KAKAO_REST_API_KEY 필요)
+// 실행: npm run backfill:place-prices  (scripts/.env.eval.local의 env 3종)
+// 카테고리는 kakao_search_cache에서 조달한다 — Kakao REST 키는 Supabase secret에만 있고
+// 로컬에 평문이 없다. 키가 env에 있으면 캐시 미스만 API로 보강한다.
 // 프롬프트·파서는 Edge와 단일 소스(supabase/functions/_shared/place-price-prompt.ts).
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -15,8 +17,8 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
 const MODEL = 'claude-haiku-4-5';
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ANTHROPIC_API_KEY || !KAKAO_REST_API_KEY) {
-  console.error('Missing env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, KAKAO_REST_API_KEY');
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ANTHROPIC_API_KEY) {
+  console.error('Missing env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY');
   process.exit(1);
 }
 
@@ -32,8 +34,34 @@ type Step = {
   longitude: number | null;
 };
 
-// 스텝 테이블에는 카테고리가 없어 카카오 재조회로 보강한다(프롬프트 입력 요건).
-async function kakaoCategory(name: string, id: string) {
+type Category = { categoryName: string; categoryGroupCode: string; resolved: boolean };
+
+// 스텝 테이블에는 카테고리가 없다(프롬프트 입력 요건). 검색 캐시의 documents에서 끌어온다.
+async function cachedCategories(): Promise<Map<string, Category>> {
+  const { data: rows, error: readError } = await supabase
+    .from('kakao_search_cache')
+    .select('documents');
+  if (readError) throw readError;
+  const map = new Map<string, Category>();
+  for (const row of (rows ?? []) as { documents: unknown }[]) {
+    for (const doc of (Array.isArray(row.documents) ? row.documents : []) as {
+      id?: string; category_name?: string; category_group_code?: string;
+    }[]) {
+      if (doc.id && !map.has(doc.id)) {
+        map.set(doc.id, {
+          categoryName: doc.category_name ?? '',
+          categoryGroupCode: doc.category_group_code ?? '',
+          resolved: true,
+        });
+      }
+    }
+  }
+  return map;
+}
+
+// 캐시에 없는 장소만 카카오 API로 보강한다(키가 env에 있을 때만).
+async function kakaoCategory(name: string, id: string): Promise<Category> {
+  if (!KAKAO_REST_API_KEY) return { categoryName: '', categoryGroupCode: '', resolved: false };
   const response = await fetch(
     `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(name)}&size=15`,
     { headers: { Authorization: `KakaoAK ${KAKAO_REST_API_KEY}` } },
@@ -86,13 +114,17 @@ async function main() {
   for (const step of (steps ?? []) as Step[]) {
     if (step.current_kakao_place_id && step.place_name) byId.set(step.current_kakao_place_id, step);
   }
-  console.error(`고유 장소 ${byId.size}곳 추정 시작 (model=${MODEL}, prompt=${PLACE_PRICE_PROMPT_VERSION})`);
+  const categoryCache = await cachedCategories();
+  console.error(
+    `고유 장소 ${byId.size}곳 추정 시작 (model=${MODEL}, prompt=${PLACE_PRICE_PROMPT_VERSION},`
+    + ` 캐시 카테고리 ${categoryCache.size}건)`,
+  );
 
   const rows = ['| 장소 | 카테고리 | 추정(1인) | 판정 |', '|---|---|---|---|'];
   let failures = 0;
   let unresolvedCategories = 0;
   for (const [id, step] of byId) {
-    const category = await kakaoCategory(step.place_name!, id);
+    const category = categoryCache.get(id) ?? await kakaoCategory(step.place_name!, id);
     if (!category.resolved) unresolvedCategories += 1;
     const raw = await estimate(buildPlacePriceEstimationPrompt({
       placeName: step.place_name!,
