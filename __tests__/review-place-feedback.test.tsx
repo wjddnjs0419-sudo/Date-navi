@@ -58,6 +58,10 @@ jest.mock('../lib/supabase', () => ({
       if (table === 'date_cards') {
         return { update: mockUpdate };
       }
+      if (table === 'place_feedback') {
+        // 새 리뷰라 기존 답이 없는 상태.
+        return { select: () => ({ in: async () => ({ data: [], error: null }) }) };
+      }
       return {};
     },
   },
@@ -118,6 +122,14 @@ describe('리뷰 화면 — 장소별 등급', () => {
     const txt = allText(tree);
     expect(txt).toContain('가마솥김치전골');
     expect(txt).toContain('메가MGC커피');
+  });
+
+  it('두 줄이 각각 무엇을 묻는지 라벨로 설명한다', async () => {
+    // 실기기 피드백: 라벨이 없으니 5개 중 하나를 고르는 줄로 오해했다.
+    const tree = await render();
+    const txt = allText(tree);
+    expect(txt).toContain('만족스러웠나요?');
+    expect(txt).toContain('가격대는 어땠나요?');
   });
 
   it('별점 4를 주면 전 장소가 좋아요로 미리 선택되고, 3 이하면 선택되지 않는다', async () => {

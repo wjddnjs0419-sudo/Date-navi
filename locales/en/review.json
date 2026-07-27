@@ -16,6 +16,8 @@
     "placeSection": {
       "title": "How were the places on this course?",
       "sub": "Only flag the ones that fell short. Sharing prices improves future picks.",
+      "satisfactionLabel": "Would you go again?",
+      "priceLabel": "How were the prices?",
       "good": "Liked it",
       "bad": "Not great",
       "priceCheap": "Cheap",

@@ -504,3 +504,33 @@ describe('rankPlaceCandidates — budget 점수', () => {
     expect(budgetOf(ranked, 'a')).toBeGreaterThan(0);
   });
 });
+
+// 실기기 사고: 교체 시트에서 고른 장소가 랭킹 하위로 밀리면 limit 컷에 잘려
+// 후보 풀에서 사라지고, 핸들러가 forced를 못 찾아 422(COURSE_VALIDATION_FAILED)를 낸다.
+// 사용자에겐 "어떤 장소는 교체되고 어떤 장소는 오류"로 보인다.
+describe('수동 지정 장소는 랭킹 컷에서 보호된다', () => {
+  const farLowScore = (id: string) => place(id, 'FD6', 127.5); // 멀어서 distance 점수 최하
+
+  it('replacement로 고른 장소는 limit을 넘겨도 후보에 남는다', () => {
+    const others = ['a', 'b', 'c'].map((id) => place(id, 'FD6'));
+    const picked = farLowScore('picked');
+    const ranked = rankPlaceCandidates([...others, picked], {
+      ...request(['meal']),
+      replacement: { stepId: 'step-0', kakaoPlaceId: 'picked', pickedName: 'Place picked' },
+    } as RecommendationRequest, { limit: 2 });
+
+    expect(ranked.candidates.map((c) => c.kakaoPlaceId)).toContain('picked');
+  });
+
+  it('스텝 핀으로 지정한 장소도 limit을 넘겨도 후보에 남는다', () => {
+    const others = ['a', 'b', 'c'].map((id) => place(id, 'FD6'));
+    const pinned = farLowScore('pinned');
+    const base = request(['meal']);
+    const ranked = rankPlaceCandidates([...others, pinned], {
+      ...base,
+      courseSteps: [{ ...base.courseSteps[0], pinnedKakaoPlaceId: 'pinned', pinnedName: 'Place pinned' }],
+    }, { limit: 2 });
+
+    expect(ranked.candidates.map((c) => c.kakaoPlaceId)).toContain('pinned');
+  });
+});

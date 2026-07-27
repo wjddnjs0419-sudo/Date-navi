@@ -16,6 +16,8 @@
     "placeSection": {
       "title": "이번 코스 장소들은 어땠나요?",
       "sub": "아쉬웠던 곳만 바꿔주세요. 가격은 알려주시면 다음 추천이 좋아져요.",
+      "satisfactionLabel": "만족스러웠나요?",
+      "priceLabel": "가격대는 어땠나요?",
       "good": "좋아요",
       "bad": "별로예요",
       "priceCheap": "저렴",

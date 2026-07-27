@@ -157,8 +157,10 @@ const REPLACEMENT_SELECT_SCHEMA = {
 const PLACE_PRICE_SCHEMA = {
   type: 'object',
   properties: {
-    minKRW: { type: 'integer', minimum: 0, maximum: 1000000 },
-    maxKRW: { type: 'integer', minimum: 0, maximum: 1000000 },
+    // Anthropic structured output은 integer에 minimum/maximum을 받지 않는다(400).
+    // 범위(0~1,000,000)와 min<=max는 parsePlacePriceEstimate의 zod가 검증한다.
+    minKRW: { type: 'integer' },
+    maxKRW: { type: 'integer' },
   },
   required: ['minKRW', 'maxKRW'],
   additionalProperties: false,

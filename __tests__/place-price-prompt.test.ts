@@ -51,4 +51,17 @@ describe('generate-ai estimate_place_price 액션 배선', () => {
   it('_usage 봉투 없이 파싱 결과를 그대로 돌려준다', () => {
     expect(source).toMatch(/RAW_PASSTHROUGH_ACTIONS = new Set\(\[[^\]]*'estimate_place_price'[^\]]*\]\)/s);
   });
+
+  // 실측 사고: integer에 minimum/maximum을 얹었더니 Anthropic이 400
+  // ("For 'integer' type, properties maximum, minimum are not supported")을 내
+  // 신규 장소 추정이 9회 연속 전부 실패했다. 범위 검증은 parsePlacePriceEstimate(zod)가 한다.
+  it('PLACE_PRICE_SCHEMA는 integer에 minimum/maximum을 쓰지 않는다', () => {
+    const schema = source
+      .slice(source.indexOf('const PLACE_PRICE_SCHEMA'), source.indexOf('const ACTION_CONFIG'))
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('//'))
+      .join('\n');
+    expect(schema).toContain('minKRW');
+    expect(schema).not.toMatch(/minimum|maximum/);
+  });
 });

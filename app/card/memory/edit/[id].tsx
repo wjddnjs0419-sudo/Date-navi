@@ -16,6 +16,8 @@ import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../../components/il
 import { useI18n } from '../../../../lib/i18n';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../../lib/ratingFeedback';
 import { removeStorageObjectByUrl } from '../../../../lib/storageCleanup';
+import { usePlaceFeedback } from '../../../../lib/usePlaceFeedback';
+import { PlaceFeedbackSection } from '../../../../components/PlaceFeedbackSection';
 
 export default function EditMemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +35,10 @@ export default function EditMemoryScreen() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   // 저장 성공 시 옛 사진 오브젝트를 지우기 위해 로드 시점의 URL을 기억한다.
   const [initialPhotoUrl, setInitialPhotoUrl] = useState<string | null>(null);
+  const {
+    places, satisfactions, prices, load: loadPlaces,
+    tapSatisfaction, tapPrice, submit: submitPlaceFeedback,
+  } = usePlaceFeedback();
 
   useFocusEffect(
     useCallback(() => {
@@ -52,11 +58,14 @@ export default function EditMemoryScreen() {
           setRating(data.rating ?? 0);
           setPhotoUrl(data.photo_url);
           setInitialPhotoUrl(data.photo_url);
+          // 코스 추억이면 장소별 등급도 함께 수정할 수 있어야 한다(리뷰 화면과 같은 섹션).
+          await loadPlaces(data.card_id ?? undefined);
         }
+        if (!active) return;
         setLoading(false);
       })();
       return () => { active = false; };
-    }, [id]),
+    }, [id, loadPlaces]),
   );
 
   async function handlePickPhoto() {
@@ -129,6 +138,8 @@ export default function EditMemoryScreen() {
         .select('id');
       if (error) throw error;
       if (!data?.length) { Alert.alert(strings.common.notice, strings.card.memory.editForbidden); return; }
+      // 장소별 등급은 선택 사항 — 실패해도 저장 흐름을 막지 않는다.
+      await submitPlaceFeedback();
       // 사진이 교체된 채 저장됐으면 옛 오브젝트를 정리한다.
       if (initialPhotoUrl && initialPhotoUrl !== photoUrl) void removeStorageObjectByUrl(initialPhotoUrl);
       router.back();
@@ -244,6 +255,15 @@ export default function EditMemoryScreen() {
             <Text style={[s.feedbackLabel, { color: feedbackTone.fg }]}>{c.ratingFeedback[feedbackKey]}</Text>
           </View>
         )}
+
+        <PlaceFeedbackSection
+          places={places}
+          satisfactions={satisfactions}
+          prices={prices}
+          strings={c.placeSection}
+          onSatisfaction={tapSatisfaction}
+          onPrice={tapPrice}
+        />
 
         <View style={s.footerSpacer} />
       </ScrollView>
