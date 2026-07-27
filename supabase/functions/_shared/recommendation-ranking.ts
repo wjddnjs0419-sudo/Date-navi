@@ -53,6 +53,8 @@ export type PlaceCandidate = EvidencedKakaoPlace & {
   distanceFromSearchCenterMeters: number;
   score: number;
   scoreBreakdown: CandidateScoreBreakdown;
+  /** Immutable price selection made during ranking; omitted only by legacy fixtures/callers. */
+  priceAtRanking?: ReturnType<typeof pickPriceRange>;
 };
 
 export type RankedRecommendationSearch = {
@@ -354,6 +356,9 @@ export function rankPlaceCandidates(
     ...place,
     candidateId: `candidate_${String(index + 1).padStart(3, '0')}`,
     score: totalScore(place.scoreBreakdown),
+    priceAtRanking: options.prices?.get(place.kakaoPlaceId)
+      ? pickPriceRange(options.prices.get(place.kakaoPlaceId)!)
+      : { source: 'unknown', minKRW: null, maxKRW: null },
   }));
   const recallByCategory = Object.fromEntries(requiredCategories.map((category) => [
     category,

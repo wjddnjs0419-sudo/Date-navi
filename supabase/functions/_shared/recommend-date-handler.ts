@@ -32,6 +32,7 @@ import { placeMatchesStepIntent } from './step-intent.ts';
 import { effectiveStepIntents } from './step-intent.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
+import { buildCandidatePoolSnapshots } from './candidate-pool-snapshot.ts';
 import {
   EMPTY_RECOMMENDATION_HISTORY,
   type RecommendationHistoryContext,
@@ -473,6 +474,16 @@ export async function handleRecommendDate(
     requestId: parsedRequest.data.requestId,
     course: built.course,
     cards: built.cards,
+    candidatePool: buildCandidatePoolSnapshots({
+      candidates: search.candidates,
+      selectedKakaoPlaceIds: built.course.steps.map((step) => step.kakaoPlaceId),
+      forcedKakaoPlaceId: serverRequest.replacement?.kakaoPlaceId,
+      pinnedKakaoPlaceIds: [
+        ...serverRequest.courseSteps.map((step) => step.pinnedKakaoPlaceId),
+        ...(serverRequest.lockedSteps ?? []).map((step) => step.kakaoPlaceId),
+      ].filter((id): id is string => Boolean(id)),
+      reintroducedPlaceIds: search.reintroducedPlaceIds,
+    }),
     metadata: {
       fallbackUsed,
       selectionSource: fallbackUsed ? 'deterministic_fallback' : 'ai',
@@ -517,6 +528,7 @@ export async function handleRecommendDate(
     },
   });
   if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
+  if (!response.data.candidatePool) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
   try {
     validateRecommendDateResponseForRequest(serverRequest, response.data);
   } catch {
@@ -539,5 +551,6 @@ export async function handleRecommendDate(
       });
     } catch { /* 부가 기록은 응답을 막지 않는다 */ }
   }
-  return withHistory({ status: 200, body: response.data });
+  const { candidatePool: _candidatePool, ...publicResponse } = response.data;
+  return withHistory({ status: 200, body: publicResponse });
 }

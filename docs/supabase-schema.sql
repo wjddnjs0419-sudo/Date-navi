@@ -1668,3 +1668,48 @@ revoke all on function public.purge_expired_ai_data() from anon, authenticated;
 
 select cron.unschedule(jobid) from cron.job where jobname = 'ai-retention-daily';
 select cron.schedule('ai-retention-daily', '30 18 * * *', $$select public.run_ai_retention()$$);
+
+-- 20260727160000_candidate_pool_snapshots.sql
+-- New sessions preserve the complete ranked pool; legacy course-step pools stay readable.
+create or replace function public.validate_candidate_pool_snapshot(p_pool jsonb)
+returns boolean language plpgsql immutable set search_path = public, pg_temp as $$
+declare v_item jsonb;
+begin
+  if jsonb_typeof(p_pool) <> 'array' or jsonb_array_length(p_pool) not between 2 and 40 then return false; end if;
+  if (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'candidateId') from jsonb_array_elements(p_pool))
+    or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'kakaoPlaceId') from jsonb_array_elements(p_pool))
+    or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'rank') from jsonb_array_elements(p_pool)) then return false; end if;
+  for v_item in select value from jsonb_array_elements(p_pool) loop
+    if jsonb_typeof(v_item) <> 'object' or nullif(btrim(v_item ->> 'candidateId'), '') is null or nullif(btrim(v_item ->> 'kakaoPlaceId'), '') is null or nullif(btrim(v_item ->> 'category'), '') is null
+      or jsonb_typeof(v_item -> 'rank') is distinct from 'number' or (v_item ->> 'rank') !~ '^[1-9][0-9]*$' or jsonb_typeof(v_item -> 'totalScore') is distinct from 'number' or jsonb_typeof(v_item -> 'scoreBreakdown') is distinct from 'object'
+      or not ((v_item -> 'scoreBreakdown') ?& array['intent','distance','budget','preference','routeFit','diversity','behavior','penalty'])
+      or exists (select 1 from jsonb_each(v_item -> 'scoreBreakdown') where key <> all(array['intent','distance','budget','preference','routeFit','diversity','behavior','penalty','categoryRecall']) or jsonb_typeof(value) <> 'number')
+      or jsonb_typeof(v_item -> 'distanceFromSearchCenterMeters') is distinct from 'number' or (v_item ->> 'distanceFromSearchCenterMeters')::numeric < 0 or jsonb_typeof(v_item -> 'priceAtRanking') is distinct from 'object'
+      or coalesce(v_item -> 'priceAtRanking' ->> 'source', '') not in ('observed','estimated','unknown') or jsonb_typeof(v_item -> 'priceAtRanking' -> 'minKRW') is distinct from 'number' and jsonb_typeof(v_item -> 'priceAtRanking' -> 'minKRW') is distinct from 'null' or jsonb_typeof(v_item -> 'priceAtRanking' -> 'maxKRW') is distinct from 'number' and jsonb_typeof(v_item -> 'priceAtRanking' -> 'maxKRW') is distinct from 'null'
+      or exists (select 1 from jsonb_each(v_item -> 'priceAtRanking') where key <> all(array['source','minKRW','maxKRW']))
+      or jsonb_typeof(v_item -> 'selectedInitially') is distinct from 'boolean' or jsonb_typeof(v_item -> 'forced') is distinct from 'boolean' or jsonb_typeof(v_item -> 'pinned') is distinct from 'boolean' or jsonb_typeof(v_item -> 'reintroducedByHistory') is distinct from 'boolean'
+      or abs((v_item ->> 'totalScore')::numeric - (select sum(value::text::numeric) from jsonb_each(v_item -> 'scoreBreakdown'))) > 0.000001 then return false;
+    end if;
+  end loop;
+  return not exists (select 1 from jsonb_array_elements(p_pool) with ordinality as elements(value, ordinal) where (value ->> 'rank')::integer <> ordinal);
+end;
+$$;
+revoke all on function public.validate_candidate_pool_snapshot(jsonb) from public, anon, authenticated;
+
+-- The versioned migration replaces persist_recommendation_session(text) with the same
+-- guarded implementation, additionally requiring validate_candidate_pool_snapshot(v_response -> 'candidatePool')
+-- and inserting v_response -> 'candidatePool' in place of course.steps. Keep the deployed
+-- migration as the executable source because this canonical file's earlier definition is retained for history.
+
+do $$
+declare v_definition text;
+begin
+  select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure) into v_definition;
+  if position('candidate_pool = candidate_pool,' in lower(v_definition)) = 0 then
+    v_definition := replace(v_definition, 'candidate_pool = case when v_uses_attestation then v_response #> ''{course,steps}'' else candidate_pool end,', 'candidate_pool = candidate_pool,');
+    execute v_definition;
+  end if;
+  select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure) into v_definition;
+  if position('candidate_pool = candidate_pool,' in lower(v_definition)) = 0 then raise exception 'candidate pool immutability injection failed'; end if;
+end;
+$$;
