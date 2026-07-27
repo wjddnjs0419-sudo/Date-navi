@@ -7,6 +7,10 @@ export const PRICE_LEVEL = { cheap: 1, normal: 2, expensive: 3 } as const;
 export type PriceLevel = (typeof PRICE_LEVEL)[keyof typeof PRICE_LEVEL];
 
 // 미결정 사항(스펙): 안쪽 백분위 값. 실측 분포 확인 전까지의 초기값.
+// ⚠️ SQL이 이 상수를 import할 수 없어 같은 값이 두 곳에 산다. 여기를 바꾸면
+// public.recompute_place_observed_price(마이그레이션 20260727140000, docs/supabase-schema.sql)의
+// 0.25 / 1-0.25=0.75 리터럴도 같이 고쳐야 한다. 한쪽만 고치면 TS 테스트는 통과하는데
+// DB가 계산한 관측 구간만 조용히 달라진다.
 export const OBSERVED_BOUND_INNER_PERCENTILE = 0.25;
 
 export type PriceAnswer = { priceLevel: PriceLevel; anchorKRW: number };

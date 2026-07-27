@@ -1472,6 +1472,9 @@ comment on column public.place_feedback.satisfaction is
 -- 보간형 백분위 집계는 쓸 수 없다 — 이상치를 부분적으로 섞어 구간을 붕괴시킨다.
 -- 비보간형(disc) 집계도 규칙이 다르므로(N=3, f=0.75에서 최댓값 선택) 인덱스를 직접 계산한다:
 -- 하한은 floor((n-1)*0.75), 상한은 ceil((n-1)*0.25) — 둘 다 이상치 반대 방향.
+-- ⚠️ 아래 0.75 / 0.25는 shared/recommendation/place-price.ts의
+-- OBSERVED_BOUND_INNER_PERCENTILE(=0.25)과 같은 값이다. SQL이 TS 상수를 import할 수 없어
+-- 두 곳에 산다 — 한쪽만 바꾸면 TS 테스트는 통과하고 DB 계산만 조용히 달라진다.
 create or replace function public.recompute_place_observed_price(p_kakao_place_id text)
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare
