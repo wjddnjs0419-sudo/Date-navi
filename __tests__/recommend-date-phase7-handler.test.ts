@@ -71,6 +71,37 @@ function dependencies(overrides: Partial<RecommendDateDependencies> = {}): Recom
 }
 
 describe('recommend-date Phase 7 typed search outcomes', () => {
+  it('passes a free-text cafe exclusion to candidate search when cafe is not a course step', async () => {
+    const searchCandidates = jest.fn(async () => ({
+      candidates: [
+        candidates[0],
+        { ...candidate('culture-candidate', 'culture-id', 'CT1', 127.001), categoryGroupName: '문화시설', categoryName: '문화시설 > 전시' },
+      ],
+      recallByCategory: { meal: 1, culture: 1 },
+      searchMetadata: metadata(),
+    }));
+    const body: RecommendationRequest = {
+      ...request(),
+      courseSteps: [request().courseSteps[0], { id: 'culture', category: 'culture', label: '전시' }],
+      additionalRequest: '카페는 말고 전시로 가자',
+    };
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, dependencies({ searchCandidates }));
+
+    expect(result.status).toBe(200);
+    expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
+      excludedCategories: expect.arrayContaining(['cafe']),
+    }), expect.anything());
+  });
+
+  it('rejects a cafe step that conflicts with a free-text cafe exclusion', async () => {
+    const result = await handleRecommendDate({
+      method: 'POST', authorization: 'Bearer valid', body: { ...request(), additionalRequest: '카페는 말고' },
+    }, dependencies());
+
+    expect(result.status).toBe(400);
+  });
+
   it('rejects the shared single_place shape before recommend-date search or AI selection', async () => {
     const deps = dependencies();
     const singlePlaceRequest: RecommendationRequest = {

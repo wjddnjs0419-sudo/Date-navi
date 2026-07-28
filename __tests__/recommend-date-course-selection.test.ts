@@ -160,6 +160,19 @@ describe('verified Kakao category matching', () => {
 });
 
 describe('candidate-only course validation and assembly', () => {
+  it('rejects a preassembled pool containing an excluded step-intent candidate', () => {
+    const excludedPork = {
+      ...candidate('pork', 'pork-id', 'FD6', 127),
+      name: '왕십리 삼겹살집',
+    };
+    expect(() => buildCandidateOnlyCourse({
+      request: request({ additionalRequest: '삼겹살 말고 파스타' }),
+      candidates: [excludedPork, candidates[2]],
+      selection: { steps: [{ stepId: 'meal-step', candidateId: 'pork' }, selection.steps[1]] },
+      generatedAt: '2026-07-28T00:00:00.000Z',
+    })).toThrow(CourseSelectionError);
+  });
+
   it.each([
     ['unknown ID', { steps: [selection.steps[0], { stepId: 'cafe-step', candidateId: 'unknown' }] }],
     ['wrong step order', { steps: [...selection.steps].reverse() }],

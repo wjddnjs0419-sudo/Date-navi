@@ -8,8 +8,12 @@ import {
   normalizeRecommendationCategory,
   verifiedPlaceMatchesCategory,
 } from './recommendation-category.ts';
-import { effectiveStepIntents, effectiveExcludedIntents } from './step-intent.ts';
-import { placeMatchesStepIntent } from './step-intent.ts';
+import {
+  effectiveExcludedIntents,
+  effectiveStepIntents,
+  placeMatchesExcludedStepIntent,
+  placeMatchesStepIntent,
+} from './step-intent.ts';
 import {
   behaviorScoreFor,
   diversityScoreFor,
@@ -33,7 +37,6 @@ export const RANKING_SCORE_WEIGHTS = {
   stepIntentNameMatch: 20,
   stepIntentExpansion1: 12,
   stepIntentExpansion2: 6,
-  stepIntentNegatedPenalty: -60,
 } as const;
 
 export type CandidateScoreBreakdown = {
@@ -155,10 +158,12 @@ export function rankPlaceCandidates(
   )))];
   const excludedCategories = new Set((request.excludedCategories ?? []).map(normalizeRecommendationCategory));
   const excludedPlaceIds = new Set(request.excludedPlaceIds ?? []);
+  const excludedIntents = effectiveExcludedIntents(request);
   const eligiblePlaces = places.filter((place) => (
     !excludedPlaceIds.has(place.kakaoPlaceId)
     && !isUnfitDatePlace(place)
     && ![...excludedCategories].some((category) => verifiedPlaceMatchesCategory(place, category))
+    && !excludedIntents.some((intent) => placeMatchesExcludedStepIntent(place, intent))
   ));
 
   const history = hasHistorySignals(options.history) ? options.history : undefined;
@@ -203,13 +208,6 @@ export function rankPlaceCandidates(
   };
 
   const stepIntents = effectiveStepIntents(request);
-  const excludedIntents = effectiveExcludedIntents(request);
-  const negatedPenaltyFor = (place: EvidencedKakaoPlace): number => {
-    const name = place.name.normalize('NFKC').toLocaleLowerCase();
-    return excludedIntents.some((intent) => name.includes(intent.canonicalTerm.toLocaleLowerCase()))
-      ? RANKING_SCORE_WEIGHTS.stepIntentNegatedPenalty
-      : 0;
-  };
   const intentBoostFor = (place: EvidencedKakaoPlace): number => {
     let boost = 0;
     for (const intent of stepIntents) {
@@ -246,8 +244,7 @@ export function rankPlaceCandidates(
       intent: (requiredMatch
         ? RANKING_SCORE_WEIGHTS.requiredCategory
         : explicitKeywordMatch ? RANKING_SCORE_WEIGHTS.explicitKeywordEvidence : 0)
-        + intentBoostFor(place)
-        + negatedPenaltyFor(place),
+        + intentBoostFor(place),
       distance: Math.max(0, RANKING_SCORE_WEIGHTS.distanceMax - Math.floor(distanceFromSearchCenterMeters / 250)),
       budget: budgetScoreOf(place.kakaoPlaceId),
       preference: 0,

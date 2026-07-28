@@ -1,6 +1,11 @@
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
 import type { LockedCourseStepInput } from '../shared/recommendation/contracts';
-import { parseStepIntents, placeMatchesStepIntent, STEP_INTENT_PARSER_VERSION } from '../supabase/functions/_shared/step-intent';
+import {
+  parseStepIntents,
+  placeMatchesExcludedStepIntent,
+  placeMatchesStepIntent,
+  STEP_INTENT_PARSER_VERSION,
+} from '../supabase/functions/_shared/step-intent';
 
 const request = (additionalRequest?: string, steps: Array<{ id: string; category: string }> = [
   { id: 'step-1', category: 'meal' },
@@ -55,6 +60,45 @@ describe('parseStepIntents', () => {
     expect(parsed.stepIntents[0]?.canonicalTerm).toBe('삼겹살');
   });
 
+  it.each([
+    ['와인', '와인'], ['내추럴와인', '내추럴와인'], ['스파클링와인', '스파클링와인'], ['샴페인', '샴페인'],
+    ['맥주', '맥주'], ['수제맥주', '수제맥주'], ['생맥주', '생맥주'], ['칵테일', '칵테일'],
+    ['위스키', '위스키'], ['하이볼', '하이볼'], ['사케', '사케'], ['소주', '소주'],
+    ['막걸리', '막걸리'], ['전통주', '전통주'], ['청주', '청주'], ['이자카야', '이자카야'],
+    ['펍', '펍'], ['포차', '포차'], ['루프탑바', '루프탑바'], ['재즈바', '재즈바'],
+    ['칵테일바', '칵테일바'], ['위스키바', '위스키바'], ['와인바', '와인바'],
+  ])('%s를 drinks step intent로 인식한다', (text, canonicalTerm) => {
+    const parsed = parseStepIntents(request(text, [{ id: 'drinks', category: 'drinks' }]));
+    expect(parsed.stepIntents[0]).toMatchObject({
+      stepId: 'drinks', stepCategory: 'drinks', canonicalTerm, strength: 'preferred',
+    });
+  });
+
+  it.each([
+    '볼링', '방탈출', '보드게임', '클라이밍', '실내 사격', '양궁', '탁구', '당구', '롤러스케이트', '아이스링크',
+    '테니스', '배드민턴', '수영', '서핑', '카약', '요트', '낚시', '승마', '패러글라이딩', '짚라인', '레일바이크',
+    '스키', '눈썰매', '캠핑', '공방 체험', '도자기 체험', '향수 만들기', '반지 만들기', '쿠킹 클래스', '원데이 클래스',
+  ])('%s를 activity step intent로 인식한다', (canonicalTerm) => {
+    const parsed = parseStepIntents(request(canonicalTerm, [{ id: 'activity', category: 'activity' }]));
+    expect(parsed.stepIntents[0]).toMatchObject({ stepId: 'activity', stepCategory: 'activity', canonicalTerm });
+  });
+
+  it.each([
+    '미술관', '박물관', '갤러리', '독립서점', '도서관', '공연장', '극장', '영화관', '아트센터', '문화센터',
+    '복합문화공간', '전시관', '역사관', '천문대', '식물원', '수족관',
+  ])('%s를 culture step intent로 인식한다', (canonicalTerm) => {
+    const parsed = parseStepIntents(request(canonicalTerm, [{ id: 'culture', category: 'culture' }]));
+    expect(parsed.stepIntents[0]).toMatchObject({ stepId: 'culture', stepCategory: 'culture', canonicalTerm });
+  });
+
+  it.each([
+    ['도자기 만들고 싶어', 'activity', '도자기 체험', ['도자기 만들고', '도자기 체험', '도자기 공방']],
+    ['그림 전시 보고 싶어', 'culture', '미술관', ['그림 전시', '미술관', '갤러리']],
+  ])('%s separates the recognized intent from Kakao search expansions', (text, category, canonicalTerm, kakaoSearchTerms) => {
+    const parsed = parseStepIntents(request(text, [{ id: category, category }]));
+    expect(parsed.stepIntents[0]).toMatchObject({ canonicalTerm, kakaoSearchTerms });
+  });
+
   it('로마자 표기 변형(samgyupsal 등)을 alias로 흡수한다', () => {
     for (const text of ['samgyeopsal please', 'I want samgyupsal', 'samgyopsal!']) {
       expect(parseStepIntents(request(text)).stepIntents[0]?.canonicalTerm).toBe('삼겹살');
@@ -72,6 +116,25 @@ describe('parseStepIntents', () => {
     const parsed = parseStepIntents(request('삼겹살 말고 무조건 파스타'));
     expect(parsed.stepIntents.map((i) => [i.canonicalTerm, i.strength])).toEqual([['파스타', 'required']]);
     expect(parsed.excludedIntents.map((i) => i.canonicalTerm)).toEqual(['삼겹살']);
+  });
+
+  it('required 마커를 앞선 intent 너머의 다음 drinks intent로 전파하지 않는다', () => {
+    const parsed = parseStepIntents(request('무조건 식사는 삼겹살, 맥주도 마시자', [
+      { id: 'meal', category: 'meal' }, { id: 'drinks', category: 'drinks' },
+    ]));
+    expect(parsed.stepIntents.map((intent) => [intent.canonicalTerm, intent.strength])).toEqual([
+      ['삼겹살', 'required'], ['맥주', 'preferred'],
+    ]);
+  });
+
+  it.each([
+    ['삼겹살은 꼭 먹고 싶어', '삼겹살'],
+    ['떡볶이는 반드시 먹어야 해', '떡볶이'],
+    ['마라탕으로 고정하고 카페 가자', '마라탕'],
+    ['pasta is a must', '파스타'],
+  ])('%s makes %s required', (text, term) => {
+    expect(parseStepIntents(request(text)).stepIntents.find((intent) => intent.canonicalTerm === term)?.strength)
+      .toBe('required');
   });
 
   it('부정 마커(말고/빼고)는 intent를 negated로 표시하고 positive에서 제외한다', () => {
@@ -160,6 +223,24 @@ describe('placeMatchesStepIntent', () => {
 
   it('무관한 장소는 매칭하지 않는다', () => {
     expect(placeMatchesStepIntent(place({}), intent)).toBe(false);
+  });
+});
+
+describe('placeMatchesExcludedStepIntent', () => {
+  const excludedPork = parseStepIntents(request('삼겹살 말고 파스타')).excludedIntents[0]!;
+  const place = (overrides: Record<string, unknown>) => ({
+    kakaoPlaceId: 'p1', name: '어느 식당', categoryGroupCode: 'FD6', categoryGroupName: '음식점',
+    categoryName: '음식점 > 한식', address: '', roadAddress: '', latitude: 37.5, longitude: 127.0, mapUrl: '',
+    matchedSearchEvidence: [], ...overrides,
+  });
+
+  it('matches the same evidence, name, and category signals as a positive intent', () => {
+    expect(placeMatchesExcludedStepIntent(place({ name: '왕십리 삼겹살집' }), excludedPork)).toBe(true);
+    expect(placeMatchesExcludedStepIntent(place({
+      matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살' }],
+    }), excludedPork)).toBe(true);
+    expect(placeMatchesExcludedStepIntent(place({ categoryName: '음식점 > 한식 > 육류,고기' }), excludedPork)).toBe(true);
+    expect(placeMatchesExcludedStepIntent(place({ name: '파스타 전문점', categoryName: '음식점 > 양식' }), excludedPork)).toBe(false);
   });
 });
 

@@ -14,7 +14,12 @@ import {
   type StraightLineRouteMetadata,
 } from './recommendation-ranking.ts';
 import { verifiedPlaceMatchesCategory } from './recommendation-category.ts';
-import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import {
+  effectiveExcludedIntents,
+  effectiveStepIntents,
+  placeMatchesExcludedStepIntent,
+  placeMatchesStepIntent,
+} from './step-intent.ts';
 import {
   pairBonusForAdjacentPlaces,
   type RecommendationHistoryContext,
@@ -108,9 +113,11 @@ function validateCandidatePool(request: RecommendationRequest, candidates: reado
   }
   const excludedPlaceIds = new Set(request.excludedPlaceIds ?? []);
   const excludedCategories = request.excludedCategories ?? [];
+  const excludedIntents = effectiveExcludedIntents(request);
   if (candidates.some((candidate) => (
     excludedPlaceIds.has(candidate.kakaoPlaceId)
     || excludedCategories.some((category) => candidateMatchesCategory(candidate, category))
+    || excludedIntents.some((intent) => placeMatchesExcludedStepIntent(candidate, intent))
   ))) {
     throw new CourseSelectionError('COURSE_VALIDATION_FAILED');
   }
