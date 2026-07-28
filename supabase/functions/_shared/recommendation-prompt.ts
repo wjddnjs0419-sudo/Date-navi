@@ -2,7 +2,7 @@ import type { RecommendationRequest } from '../../../shared/recommendation/schem
 import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { mergeServerPreferences } from './recommendation-intent.ts';
 import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
-import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
+import { ALL_STEP_INTENT_DICTIONARY } from './food-intent-dictionary.ts';
 
 export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v5-pinned-steps';
 export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v1';
@@ -106,7 +106,7 @@ export function buildRecommendationPrompt(
  * canonical 검색 의도로 변환한다. 등재 canonical 우선, 미매핑은 unsupported로.
  */
 export function buildParseStepIntentsPrompt(request: RecommendationRequest): string {
-  const registeredCanonicals = STEP_INTENT_DICTIONARY.map((entry) => ({
+  const registeredCanonicals = ALL_STEP_INTENT_DICTIONARY.map((entry) => ({
     canonicalTerm: entry.canonicalTerm,
     targetCategory: entry.targetCategory,
     intentType: entry.intentType,

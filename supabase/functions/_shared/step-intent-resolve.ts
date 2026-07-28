@@ -1,10 +1,8 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/contracts.ts';
 import { parseStepIntents, type ParsedStepIntent, type StepIntentStrength } from './step-intent.ts';
 import { normalizeRecommendationCategory } from './recommendation-category.ts';
-import {
-  STEP_INTENT_DICTIONARY,
-  type StepIntentType,
-} from './step-intent-dictionary.ts';
+import { type StepIntentType } from './step-intent-dictionary.ts';
+import { ALL_STEP_INTENT_DICTIONARY, getStepIntentDictionaryEntry } from './food-intent-dictionary.ts';
 
 export type StepIntentSource = 'none' | 'rule' | 'ai';
 
@@ -49,7 +47,7 @@ export function coerceAiParseResult(raw: unknown, request: RecommendationRequest
       unsupported.push({ term: canonicalTerm, reason: `no ${targetCategory} step in course` });
       continue;
     }
-    const dictionaryEntry = STEP_INTENT_DICTIONARY.find((candidate) => candidate.canonicalTerm === canonicalTerm);
+    const dictionaryEntry = getStepIntentDictionaryEntry(canonicalTerm);
     const kakaoSearchTerms = Array.isArray(entry.kakaoSearchTerms)
       ? entry.kakaoSearchTerms.filter((term): term is string => typeof term === 'string').slice(0, 3)
       : [];
@@ -116,7 +114,7 @@ const GATE_STOPWORDS = new Set([
 /** 사전의 모든 alias(canonical/ko/en)를 텍스트에서 공백으로 치환해 매칭 스팬을 제거한다. */
 function stripKnownTerms(text: string): string {
   let out = text;
-  for (const entry of STEP_INTENT_DICTIONARY) {
+  for (const entry of ALL_STEP_INTENT_DICTIONARY) {
     for (const term of [entry.canonicalTerm, ...entry.koAliases]) {
       out = out.split(normalize(term)).join(' ');
     }

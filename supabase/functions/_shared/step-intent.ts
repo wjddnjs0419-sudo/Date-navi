@@ -1,10 +1,10 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/contracts.ts';
 import { normalizeRecommendationCategory } from './recommendation-category.ts';
 import {
-  STEP_INTENT_DICTIONARY,
   type StepIntentDictionaryEntry,
   type StepIntentType,
 } from './step-intent-dictionary.ts';
+import { ALL_STEP_INTENT_DICTIONARY, getStepIntentDictionaryEntry } from './food-intent-dictionary.ts';
 
 export const STEP_INTENT_PARSER_VERSION = 'step-intent-rules-v1';
 
@@ -36,27 +36,33 @@ const REQUIRED_WINDOW = 14;
 
 const normalize = (value: string): string => value.normalize('NFKC').toLocaleLowerCase();
 
-type AliasMatch = { entry: StepIntentDictionaryEntry; index: number };
+type AliasMatch = { entry: StepIntentDictionaryEntry; index: number; matchedTerm: string };
 
-function findAliasMatch(text: string, entry: StepIntentDictionaryEntry): number {
+function findAliasMatch(text: string, entry: StepIntentDictionaryEntry): { index: number; matchedTerm: string } | undefined {
   const koTerms = [entry.canonicalTerm, ...entry.koAliases];
-  for (const term of koTerms) {
-    const index = text.indexOf(normalize(term));
-    if (index >= 0) return index;
+  const koMatches = koTerms.map((term) => ({ term, index: text.indexOf(normalize(term)) })).filter((match) => match.index >= 0);
+  if (koMatches.length > 0) {
+    koMatches.sort((a, b) => a.index - b.index || b.term.length - a.term.length);
+    return { index: koMatches[0].index, matchedTerm: koMatches[0].term };
   }
   for (const alias of entry.enAliases) {
     const pattern = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
     const match = pattern.exec(text);
-    if (match) return match.index;
+    if (match) return { index: match.index, matchedTerm: alias };
   }
-  return -1;
+  return undefined;
 }
 
-function isRequiredAt(text: string, matchIndex: number): boolean {
+function isRequiredAt(text: string, matchIndex: number, matchedLength: number): boolean {
   // required 마커(무조건/반드시/꼭/only/must/has to be)는 대상어 앞에 오는 게 일반적이라
   // 앞쪽 prefix만 본다. "삼겹살 말고 무조건 파스타"에서 삼겹살이 뒤 '무조건'을 잡는 오판을 막는다.
   const windowText = text.slice(Math.max(0, matchIndex - REQUIRED_WINDOW), matchIndex);
-  return REQUIRED_MARKERS_KO.test(windowText) || REQUIRED_MARKERS_EN.test(windowText);
+  // "야채곱창 꼭 먹고 싶어"처럼 바로 뒤에 붙는 짧은 조사형도 허용한다. 뒤 창은
+  // 대상어 직후의 marker만 보므로 다음 intent의 "무조건"을 가로채지 않는다.
+  const immediatelyAfter = text.slice(matchIndex + matchedLength, matchIndex + matchedLength + 4);
+  return REQUIRED_MARKERS_KO.test(windowText)
+    || REQUIRED_MARKERS_EN.test(windowText)
+    || /^\s*(?:무조건|반드시|꼭)/.test(immediatelyAfter);
 }
 
 const NEGATION_MARKERS_KO = /(?:말고|말구|빼고|제외|아니)/;
@@ -79,9 +85,9 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
 
   // 사전 순회로 매칭 수집. 같은 canonical은 1회만.
   const matches: AliasMatch[] = [];
-  for (const entry of STEP_INTENT_DICTIONARY) {
-    const index = findAliasMatch(text, entry);
-    if (index >= 0) matches.push({ entry, index });
+  for (const entry of ALL_STEP_INTENT_DICTIONARY) {
+    const match = findAliasMatch(text, entry);
+    if (match) matches.push({ entry, ...match });
   }
   matches.sort((a, b) => a.index - b.index);
 
@@ -91,8 +97,8 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   const usedStepIds = new Set<string>();
   const stepIntents: ParsedStepIntent[] = [];
   const excludedIntents: ParsedStepIntent[] = [];
-  for (const { entry, index } of matches) {
-    const negated = isNegatedAt(text, index, normalize(entry.canonicalTerm).length);
+  for (const { entry, index, matchedTerm } of matches) {
+    const negated = isNegatedAt(text, index, normalize(matchedTerm).length);
     // 부정 intent는 step을 점유하지 않으므로(제외는 이름/카테고리 기반) 사용 여부와 무관하게 수집한다.
     // positive는 아직 안 쓴 대상 category step이 있어야 바인딩된다.
     const matchingStep = request.courseSteps.find((candidate) => (
@@ -106,8 +112,8 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
       stepCategory: entry.targetCategory,
       intentType: entry.intentType,
       canonicalTerm: entry.canonicalTerm,
-      kakaoSearchTerms: [entry.canonicalTerm, ...entry.expansions].slice(0, 3),
-      strength: isRequiredAt(text, index) ? 'required' : 'preferred',
+      kakaoSearchTerms: [...new Set([matchedTerm, entry.canonicalTerm, ...entry.expansions])].slice(0, 3),
+      strength: isRequiredAt(text, index, normalize(matchedTerm).length) ? 'required' : 'preferred',
       displayLabel: entry.displayLabel,
       ...(negated ? { negated: true } : {}),
     };
@@ -154,7 +160,7 @@ export function placeMatchesStepIntent(place: IntentMatchablePlace, intent: Pars
   if (place.matchedSearchEvidence.some((evidence) => (
     evidence.phase === 'step_intent' && evidence.canonicalTerm === intent.canonicalTerm
   ))) return true;
-  const entry = STEP_INTENT_DICTIONARY.find((candidate) => candidate.canonicalTerm === intent.canonicalTerm);
+  const entry = getStepIntentDictionaryEntry(intent.canonicalTerm);
   const name = normalize(place.name);
   if (name.includes(normalize(intent.canonicalTerm))) return true;
   const categoryName = normalize(place.categoryName ?? '');

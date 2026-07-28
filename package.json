@@ -58,6 +58,7 @@
     "validate": "tsc --noEmit",
     "eval:ai-logs": "tsx --env-file=scripts/.env.eval.local scripts/eval-ai-logs.ts",
     "backfill:place-prices": "tsx --env-file=scripts/.env.eval.local scripts/backfill-place-prices.ts",
+    "sync:food-intents": "tsx --env-file=scripts/.env.food-intents.local scripts/sync-food-intents.ts",
     "postinstall": "patch-package"
   },
   "private": true
