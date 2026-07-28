@@ -39,6 +39,17 @@ describe('parseStepIntents', () => {
     expect(parsed.parserVersion).toBe(STEP_INTENT_PARSER_VERSION);
   });
 
+  it('generated 음식 alias를 canonical으로 해석하고 alias-first Kakao 검색어를 만든다', () => {
+    expect(parseStepIntents(request('오늘은 야채곱창 꼭 먹고 싶어')).stepIntents).toEqual([
+      expect.objectContaining({
+        canonicalTerm: '곱창',
+        kakaoSearchTerms: ['야채곱창', '곱창', '곱창집'],
+        strength: 'required',
+      }),
+    ]);
+    expect(parseStepIntents(request('닭갈비 먹자')).stepIntents[0]?.canonicalTerm).toBe('닭갈비');
+  });
+
   it('영어 번역 표현을 canonical 한국어로 매핑한다', () => {
     const parsed = parseStepIntents(request('I want Korean pork belly.'));
     expect(parsed.stepIntents[0]?.canonicalTerm).toBe('삼겹살');
