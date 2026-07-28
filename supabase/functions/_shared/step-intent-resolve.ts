@@ -140,6 +140,39 @@ export function hasMeaningfulResidual(additionalRequest: string): boolean {
   });
 }
 
+const intentIdentity = (intent: ParsedStepIntent): string => (
+  `${normalize(intent.stepId)}:${normalize(intent.canonicalTerm)}`
+);
+
+/** 첫 결과(규칙 우선)를 보존하고, 중복 intent의 required 강도만 승격한다. */
+function dedupeIntents(intents: ParsedStepIntent[]): ParsedStepIntent[] {
+  const deduped = new Map<string, ParsedStepIntent>();
+  for (const intent of intents) {
+    const key = intentIdentity(intent);
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, intent);
+    } else if (existing.strength !== 'required' && intent.strength === 'required') {
+      deduped.set(key, { ...existing, strength: 'required' });
+    }
+  }
+  return [...deduped.values()];
+}
+
+/**
+ * 사전 exact match를 보존하고 AI는 미등재/누락 intent만 보강한다.
+ * 명시적 부정은 source와 stepId에 관계없이 같은 canonical positive보다 우선한다.
+ */
+export function mergeRuleAndAiIntents(
+  ruleIntents: ParsedStepIntent[],
+  aiIntents: ParsedStepIntent[],
+  excludedIntents: ParsedStepIntent[],
+): ParsedStepIntent[] {
+  const excludedTerms = new Set(excludedIntents.map((intent) => normalize(intent.canonicalTerm)));
+  return dedupeIntents([...ruleIntents, ...aiIntents])
+    .filter((intent) => !excludedTerms.has(normalize(intent.canonicalTerm)));
+}
+
 export async function resolveStepIntents(
   request: RecommendationRequest,
   deps: ResolveDeps = {},
@@ -165,10 +198,11 @@ export async function resolveStepIntents(
 
   try {
     const ai = await deps.invokeAi!(request);
+    const excludedIntents = dedupeIntents([...rule.excludedIntents, ...(ai.excludedIntents ?? [])]);
     return {
       source: 'ai',
-      stepIntents: ai.stepIntents,
-      excludedIntents: [...rule.excludedIntents, ...(ai.excludedIntents ?? [])],
+      stepIntents: mergeRuleAndAiIntents(rule.stepIntents, ai.stepIntents, excludedIntents),
+      excludedIntents,
       unsupported: ai.unsupported ?? [],
       conflicts: ai.conflicts ?? [],
     };
