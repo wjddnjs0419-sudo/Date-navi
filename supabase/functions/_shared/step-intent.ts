@@ -15,7 +15,7 @@ export type ParsedStepIntent = {
   stepCategory: string;
   intentType: StepIntentType;
   canonicalTerm: string;
-  /** [canonical, ...expansions] — 인덱스가 곧 expansionLevel(0/1/2). */
+  /** [canonical, ...searchExpansions] — 인덱스가 곧 expansionLevel(0/1/2). */
   kakaoSearchTerms: string[];
   strength: StepIntentStrength;
   displayLabel: { ko: string; en: string };
@@ -33,30 +33,61 @@ const REQUIRED_MARKERS_KO = /(?:무조건|반드시|꼭)/;
 const REQUIRED_MARKERS_EN = /\b(?:only|must|has to be)\b/i;
 /** 대상어 앞쪽에서 required 마커를 찾는 로컬 window(자소 단위). */
 const REQUIRED_WINDOW = 14;
+const REQUIRED_SUFFIX_WINDOW = 16;
+const REQUIRED_SUFFIX_KO = /^(?:은|는|이|가|을|를|으로|로|도)?\s*(?:(?:꼭|반드시|무조건)\s*(?:먹|해야|할|포함)|(?:먹어야|먹을|포함되어야)\s*(?:해|함)|고정)/;
+const REQUIRED_SUFFIX_EN = /^\s*(?:is\s+)?(?:a\s+)?must\b|^\s*(?:only|must|has\s+to\s+be)\b/i;
 
 const normalize = (value: string): string => value.normalize('NFKC').toLocaleLowerCase();
 
-type AliasMatch = { entry: StepIntentDictionaryEntry; index: number };
+type AliasMatch = { entry: StepIntentDictionaryEntry; index: number; matchedLength: number };
 
-function findAliasMatch(text: string, entry: StepIntentDictionaryEntry): number {
-  const koTerms = [entry.canonicalTerm, ...entry.koAliases];
-  for (const term of koTerms) {
-    const index = text.indexOf(normalize(term));
-    if (index >= 0) return index;
+function findAliasMatches(text: string, entry: StepIntentDictionaryEntry): Omit<AliasMatch, 'entry'>[] {
+  const matches: Omit<AliasMatch, 'entry'>[] = [];
+  for (const alias of [entry.canonicalTerm, ...entry.aliases]) {
+    const normalizedAlias = normalize(alias);
+    if (!normalizedAlias) continue;
+    if (/^[a-z0-9 ]+$/i.test(normalizedAlias)) {
+      const pattern = new RegExp(`\\b${normalizedAlias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(text)) !== null) {
+        matches.push({ index: match.index, matchedLength: match[0].length });
+      }
+      continue;
+    }
+    let fromIndex = 0;
+    while (fromIndex < text.length) {
+      const index = text.indexOf(normalizedAlias, fromIndex);
+      if (index < 0) break;
+      matches.push({ index, matchedLength: normalizedAlias.length });
+      fromIndex = index + normalizedAlias.length;
+    }
   }
-  for (const alias of entry.enAliases) {
-    const pattern = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    const match = pattern.exec(text);
-    if (match) return match.index;
-  }
-  return -1;
+  return matches;
 }
 
-function isRequiredAt(text: string, matchIndex: number): boolean {
-  // required 마커(무조건/반드시/꼭/only/must/has to be)는 대상어 앞에 오는 게 일반적이라
-  // 앞쪽 prefix만 본다. "삼겹살 말고 무조건 파스타"에서 삼겹살이 뒤 '무조건'을 잡는 오판을 막는다.
-  const windowText = text.slice(Math.max(0, matchIndex - REQUIRED_WINDOW), matchIndex);
-  return REQUIRED_MARKERS_KO.test(windowText) || REQUIRED_MARKERS_EN.test(windowText);
+function stableUnique(terms: readonly string[]): string[] {
+  return [...new Set(terms.map((term) => term.trim()).filter(Boolean))];
+}
+
+function isRequiredAt(
+  text: string,
+  matchIndex: number,
+  canonicalLen: number,
+  previousMatchEnd: number,
+): boolean {
+  // 앞 마커는 기존처럼 국소 window만 본다. 뒤 마커는 대상어 직후의 문법 형태만 허용해
+  // "삼겹살 말고 무조건 파스타"의 무조건이 앞 음식으로 번지는 것을 막는다.
+  const prefixStart = Math.max(
+    0,
+    matchIndex - REQUIRED_WINDOW,
+    previousMatchEnd <= matchIndex ? previousMatchEnd : 0,
+  );
+  const prefix = text.slice(prefixStart, matchIndex);
+  const suffix = text.slice(matchIndex + canonicalLen, matchIndex + canonicalLen + REQUIRED_SUFFIX_WINDOW);
+  return REQUIRED_MARKERS_KO.test(prefix)
+    || REQUIRED_MARKERS_EN.test(prefix)
+    || REQUIRED_SUFFIX_KO.test(suffix)
+    || REQUIRED_SUFFIX_EN.test(suffix);
 }
 
 const NEGATION_MARKERS_KO = /(?:말고|말구|빼고|제외|아니)/;
@@ -80,10 +111,19 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   // 사전 순회로 매칭 수집. 같은 canonical은 1회만.
   const matches: AliasMatch[] = [];
   for (const entry of STEP_INTENT_DICTIONARY) {
-    const index = findAliasMatch(text, entry);
-    if (index >= 0) matches.push({ entry, index });
+    matches.push(...findAliasMatches(text, entry).map((match) => ({ entry, ...match })));
   }
-  matches.sort((a, b) => a.index - b.index);
+  matches.sort((a, b) => a.index - b.index || b.matchedLength - a.matchedLength);
+  // 같은 텍스트 span을 공유하는 더 일반적인 intent는 버린다. "수제맥주"와 "맥주"처럼
+  // 중첩된 부정 intent를 함께 만들면 generic exclusion이 과도하게 확장된다.
+  const nonOverlappingMatches: AliasMatch[] = [];
+  for (const match of matches) {
+    const matchEnd = match.index + match.matchedLength;
+    const overlapsSelected = nonOverlappingMatches.some((selected) => (
+      match.index < selected.index + selected.matchedLength && selected.index < matchEnd
+    ));
+    if (!overlapsSelected) nonOverlappingMatches.push(match);
+  }
 
   // locked 스텝은 선택 단계에서 lock으로 pin되어 intent가 무시되므로(유령 거부/무음 무시 방지)
   // 애초에 intent를 배정하지 않는다.
@@ -91,8 +131,11 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   const usedStepIds = new Set<string>();
   const stepIntents: ParsedStepIntent[] = [];
   const excludedIntents: ParsedStepIntent[] = [];
-  for (const { entry, index } of matches) {
-    const negated = isNegatedAt(text, index, normalize(entry.canonicalTerm).length);
+  let previousMatchEnd = 0;
+  for (const { entry, index, matchedLength } of nonOverlappingMatches) {
+    const negated = isNegatedAt(text, index, matchedLength);
+    const required = isRequiredAt(text, index, matchedLength, previousMatchEnd);
+    previousMatchEnd = Math.max(previousMatchEnd, index + matchedLength);
     // 부정 intent는 step을 점유하지 않으므로(제외는 이름/카테고리 기반) 사용 여부와 무관하게 수집한다.
     // positive는 아직 안 쓴 대상 category step이 있어야 바인딩된다.
     const matchingStep = request.courseSteps.find((candidate) => (
@@ -106,8 +149,8 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
       stepCategory: entry.targetCategory,
       intentType: entry.intentType,
       canonicalTerm: entry.canonicalTerm,
-      kakaoSearchTerms: [entry.canonicalTerm, ...entry.expansions].slice(0, 3),
-      strength: isRequiredAt(text, index) ? 'required' : 'preferred',
+      kakaoSearchTerms: stableUnique([entry.canonicalTerm, ...entry.searchExpansions]).slice(0, 3),
+      strength: required ? 'required' : 'preferred',
       displayLabel: entry.displayLabel,
       ...(negated ? { negated: true } : {}),
     };
@@ -158,5 +201,10 @@ export function placeMatchesStepIntent(place: IntentMatchablePlace, intent: Pars
   const name = normalize(place.name);
   if (name.includes(normalize(intent.canonicalTerm))) return true;
   const categoryName = normalize(place.categoryName ?? '');
-  return (entry?.compatibleCategoryNameKeywords ?? []).some((keyword) => categoryName.includes(normalize(keyword)));
+  return (entry?.categoryNameKeywords ?? []).some((keyword) => categoryName.includes(normalize(keyword)));
+}
+
+/** 제외 intent도 positive/required와 정확히 같은 evidence·이름·상세 카테고리 의미를 쓴다. */
+export function placeMatchesExcludedStepIntent(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
+  return placeMatchesStepIntent(place, intent);
 }

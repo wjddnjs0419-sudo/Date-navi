@@ -18,6 +18,11 @@
 - Preserve all current curated entries, including `전시`, `보드게임`, activity/culture additions, and drinks entries.
 - Use the existing hard requirement/exclusion semantics unchanged.
 
+## Execution Decisions (2026-07-28)
+
+- Generic drink taxonomy is intentional: `wine`/`와인` normalize to `와인`, and `cocktail`/`cocktails`/`칵테일` normalize to `칵테일`; explicit bar phrases (`wine bar`/`와인바`, `cocktail bar`/`칵테일바`) continue to target their bar canonicals. This is the approved exception to preserving prior canonical mappings.
+- Collect every dictionary occurrence, then retain only the longest non-overlapping matches. For example, `수제맥주 말고 와인` yields excluded `수제맥주` (not the overlapping generic `맥주`) and preferred `와인`; `수제맥주 말고 맥주` preserves the later, non-overlapping preferred `맥주`.
+
 ---
 
 ## File Structure
@@ -157,7 +162,8 @@ Expected: PASS; every activity/culture/drinks term retains its canonical and its
 
 ```ts
 expect(parseStepIntents(request('pasta is a must')).stepIntents[0]?.canonicalTerm).toBe('파스타');
-expect(parseStepIntents(request('compassion pasta')).stepIntents).toEqual([]);
+expect(parseStepIntents(request('compassion')).stepIntents).toEqual([]);
+expect(parseStepIntents(request('compassion pasta')).stepIntents[0]?.canonicalTerm).toBe('파스타');
 expect(parseStepIntents(request('도자기 만들고 싶어', [{ id: 'activity', category: 'activity' }]))
   .stepIntents[0]?.canonicalTerm).toBe('도자기 체험');
 ```

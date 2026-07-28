@@ -113,15 +113,21 @@ const GATE_STOPWORDS = new Set([
   'and', 'or', 'but', 'dinner', 'lunch', 'date', 'place', 'somewhere', 'course', 'with', 'my', 'we', 'us', 'that',
 ]);
 
-/** 사전의 모든 alias(canonical/ko/en)를 텍스트에서 공백으로 치환해 매칭 스팬을 제거한다. */
+const isLatinAlias = (alias: string): boolean => /^[a-z0-9 ]+$/i.test(alias);
+
+function removeDictionaryAlias(text: string, alias: string): string {
+  const normalizedAlias = normalize(alias);
+  return isLatinAlias(normalizedAlias)
+    ? text.replace(new RegExp(`\\b${escapeRegExp(normalizedAlias)}\\b`, 'gi'), ' ')
+    : text.split(normalizedAlias).join(' ');
+}
+
+/** 사전의 모든 alias(canonical 포함)를 텍스트에서 공백으로 치환해 매칭 스팬을 제거한다. */
 function stripKnownTerms(text: string): string {
   let out = text;
   for (const entry of STEP_INTENT_DICTIONARY) {
-    for (const term of [entry.canonicalTerm, ...entry.koAliases]) {
-      out = out.split(normalize(term)).join(' ');
-    }
-    for (const alias of entry.enAliases) {
-      out = out.replace(new RegExp(`\\b${escapeRegExp(normalize(alias))}\\b`, 'gi'), ' ');
+    for (const alias of [entry.canonicalTerm, ...entry.aliases]) {
+      out = removeDictionaryAlias(out, alias);
     }
   }
   return out;
