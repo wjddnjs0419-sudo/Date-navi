@@ -15,7 +15,7 @@ export type ParsedStepIntent = {
   stepCategory: string;
   intentType: StepIntentType;
   canonicalTerm: string;
-  /** [canonical, ...expansions] — 인덱스가 곧 expansionLevel(0/1/2). */
+  /** [canonical, ...searchExpansions] — 인덱스가 곧 expansionLevel(0/1/2). */
   kakaoSearchTerms: string[];
   strength: StepIntentStrength;
   displayLabel: { ko: string; en: string };
@@ -39,24 +39,34 @@ const REQUIRED_SUFFIX_EN = /^\s*(?:is\s+)?(?:a\s+)?must\b|^\s*(?:only|must|has\s
 
 const normalize = (value: string): string => value.normalize('NFKC').toLocaleLowerCase();
 
-type AliasMatch = { entry: StepIntentDictionaryEntry; index: number; matchedTerm: string; matchedLength: number };
+type AliasMatch = { entry: StepIntentDictionaryEntry; index: number; matchedLength: number };
 
-function findAliasMatch(text: string, entry: StepIntentDictionaryEntry): Omit<AliasMatch, 'entry'> | undefined {
-  const koTerms = [entry.canonicalTerm, ...entry.koAliases];
-  const koMatches = koTerms
-    .map((term) => ({ term, normalizedTerm: normalize(term), index: text.indexOf(normalize(term)) }))
-    .filter((match) => match.index >= 0);
-  if (koMatches.length > 0) {
-    koMatches.sort((a, b) => a.index - b.index || b.normalizedTerm.length - a.normalizedTerm.length);
-    const match = koMatches[0];
-    return { index: match.index, matchedTerm: match.term, matchedLength: match.normalizedTerm.length };
+function findAliasMatches(text: string, entry: StepIntentDictionaryEntry): Omit<AliasMatch, 'entry'>[] {
+  const matches: Omit<AliasMatch, 'entry'>[] = [];
+  for (const alias of [entry.canonicalTerm, ...entry.aliases]) {
+    const normalizedAlias = normalize(alias);
+    if (!normalizedAlias) continue;
+    if (/^[a-z0-9 ]+$/i.test(normalizedAlias)) {
+      const pattern = new RegExp(`\\b${normalizedAlias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(text)) !== null) {
+        matches.push({ index: match.index, matchedLength: match[0].length });
+      }
+      continue;
+    }
+    let fromIndex = 0;
+    while (fromIndex < text.length) {
+      const index = text.indexOf(normalizedAlias, fromIndex);
+      if (index < 0) break;
+      matches.push({ index, matchedLength: normalizedAlias.length });
+      fromIndex = index + normalizedAlias.length;
+    }
   }
-  for (const alias of entry.enAliases) {
-    const pattern = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    const match = pattern.exec(text);
-    if (match) return { index: match.index, matchedTerm: alias, matchedLength: match[0].length };
-  }
-  return undefined;
+  return matches;
+}
+
+function stableUnique(terms: readonly string[]): string[] {
+  return [...new Set(terms.map((term) => term.trim()).filter(Boolean))];
 }
 
 function isRequiredAt(
@@ -101,10 +111,19 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   // 사전 순회로 매칭 수집. 같은 canonical은 1회만.
   const matches: AliasMatch[] = [];
   for (const entry of ALL_STEP_INTENT_DICTIONARY) {
-    const match = findAliasMatch(text, entry);
-    if (match) matches.push({ entry, ...match });
+    matches.push(...findAliasMatches(text, entry).map((match) => ({ entry, ...match })));
   }
-  matches.sort((a, b) => a.index - b.index);
+  matches.sort((a, b) => a.index - b.index || b.matchedLength - a.matchedLength);
+  // 같은 텍스트 span을 공유하는 더 일반적인 intent는 버린다. "수제맥주"와 "맥주"처럼
+  // 중첩된 부정 intent를 함께 만들면 generic exclusion이 과도하게 확장된다.
+  const nonOverlappingMatches: AliasMatch[] = [];
+  for (const match of matches) {
+    const matchEnd = match.index + match.matchedLength;
+    const overlapsSelected = nonOverlappingMatches.some((selected) => (
+      match.index < selected.index + selected.matchedLength && selected.index < matchEnd
+    ));
+    if (!overlapsSelected) nonOverlappingMatches.push(match);
+  }
 
   // locked 스텝은 선택 단계에서 lock으로 pin되어 intent가 무시되므로(유령 거부/무음 무시 방지)
   // 애초에 intent를 배정하지 않는다.
@@ -113,7 +132,7 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
   const stepIntents: ParsedStepIntent[] = [];
   const excludedIntents: ParsedStepIntent[] = [];
   let previousMatchEnd = 0;
-  for (const { entry, index, matchedTerm, matchedLength } of matches) {
+  for (const { entry, index, matchedLength } of nonOverlappingMatches) {
     const negated = isNegatedAt(text, index, matchedLength);
     const required = isRequiredAt(text, index, matchedLength, previousMatchEnd);
     previousMatchEnd = Math.max(previousMatchEnd, index + matchedLength);
@@ -130,7 +149,7 @@ export function parseStepIntents(request: RecommendationRequest): ParsedStepInte
       stepCategory: entry.targetCategory,
       intentType: entry.intentType,
       canonicalTerm: entry.canonicalTerm,
-      kakaoSearchTerms: [...new Set([matchedTerm, entry.canonicalTerm, ...entry.expansions])].slice(0, 3),
+      kakaoSearchTerms: stableUnique([entry.canonicalTerm, ...entry.searchExpansions]).slice(0, 3),
       strength: required ? 'required' : 'preferred',
       displayLabel: entry.displayLabel,
       ...(negated ? { negated: true } : {}),
@@ -182,7 +201,7 @@ export function placeMatchesStepIntent(place: IntentMatchablePlace, intent: Pars
   const name = normalize(place.name);
   if (name.includes(normalize(intent.canonicalTerm))) return true;
   const categoryName = normalize(place.categoryName ?? '');
-  return (entry?.compatibleCategoryNameKeywords ?? []).some((keyword) => categoryName.includes(normalize(keyword)));
+  return (entry?.categoryNameKeywords ?? []).some((keyword) => categoryName.includes(normalize(keyword)));
 }
 
 /** 제외 intent도 positive/required와 정확히 같은 evidence·이름·상세 카테고리 의미를 쓴다. */

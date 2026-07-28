@@ -2,6 +2,7 @@ import type { RecommendationRequest } from '../shared/recommendation/schemas';
 import {
   mergeRuleAndAiIntents,
   resolveStepIntents,
+  hasMeaningfulResidual,
   type AiParseResult,
 } from '../supabase/functions/_shared/step-intent-resolve';
 import type { ParsedStepIntent } from '../supabase/functions/_shared/step-intent';
@@ -57,6 +58,11 @@ describe('mergeRuleAndAiIntents', () => {
 });
 
 describe('resolveStepIntents — 고재현 AI 게이트', () => {
+  it('strips unified dictionary aliases before checking residual text', () => {
+    expect(hasMeaningfulResidual('도자기 만들고 싶어')).toBe(false);
+    expect(hasMeaningfulResidual('도자기 만들고 조용한 곳')).toBe(true);
+  });
+
   it('사전 통문장 히트는 source=rule, AI 미호출', async () => {
     const invokeAi = jest.fn();
     const resolved = await resolveStepIntents(request('삼겹살 먹고 싶어'), { invokeAi });

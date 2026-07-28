@@ -3,12 +3,12 @@ import { STEP_INTENT_DICTIONARY, type StepIntentDictionaryEntry } from './step-i
 
 const generatedFoodEntries: StepIntentDictionaryEntry[] = GENERATED_FOOD_INTENTS.map((entry) => ({
   canonicalTerm: entry.canonicalTerm,
+  aliases: [...entry.aliases],
+  searchExpansions: [...entry.searchExpansions],
+  domain: 'food',
   intentType: 'dish',
   targetCategory: 'meal',
-  expansions: [...entry.searchExpansions],
-  koAliases: [...entry.aliases],
-  enAliases: [],
-  compatibleCategoryNameKeywords: [],
+  categoryNameKeywords: [],
   displayLabel: { ko: entry.canonicalTerm, en: entry.canonicalTerm },
 }));
 

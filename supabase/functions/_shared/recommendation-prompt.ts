@@ -110,7 +110,8 @@ export function buildParseStepIntentsPrompt(request: RecommendationRequest): str
     canonicalTerm: entry.canonicalTerm,
     targetCategory: entry.targetCategory,
     intentType: entry.intentType,
-    expansions: entry.expansions,
+    domain: entry.domain,
+    searchExpansions: entry.searchExpansions,
   }));
   const orderedCourseSteps = request.courseSteps.map((step, index) => ({
     order: index + 1,

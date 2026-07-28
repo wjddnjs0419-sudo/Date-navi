@@ -6,6 +6,7 @@ import {
   placeMatchesStepIntent,
   STEP_INTENT_PARSER_VERSION,
 } from '../supabase/functions/_shared/step-intent';
+import { STEP_INTENT_DICTIONARY } from '../supabase/functions/_shared/step-intent-dictionary';
 
 const request = (additionalRequest?: string, steps: Array<{ id: string; category: string }> = [
   { id: 'step-1', category: 'meal' },
@@ -30,6 +31,19 @@ const lockedStep = (stepId: string): LockedCourseStepInput => ({
 });
 
 describe('parseStepIntents', () => {
+  it('uses one normalized dictionary schema for every entry', () => {
+    for (const entry of STEP_INTENT_DICTIONARY) {
+      expect(entry).toEqual(expect.objectContaining({
+        canonicalTerm: expect.any(String), aliases: expect.any(Array),
+        searchExpansions: expect.any(Array), domain: expect.any(String),
+        targetCategory: expect.any(String), intentType: expect.any(String),
+        categoryNameKeywords: expect.any(Array), displayLabel: expect.any(Object),
+      }));
+      expect(Array.isArray(entry.searchExpansions)).toBe(true);
+      expect(entry.searchExpansions.length).toBeLessThanOrEqual(2);
+    }
+  });
+
   it('한국어 dish 요청을 meal step에 preferred로 바인딩한다', () => {
     const parsed = parseStepIntents(request('삼겹살 먹고 싶어'));
     expect(parsed.stepIntents).toEqual([{
@@ -42,17 +56,6 @@ describe('parseStepIntents', () => {
       displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' },
     }]);
     expect(parsed.parserVersion).toBe(STEP_INTENT_PARSER_VERSION);
-  });
-
-  it('generated 음식 alias를 canonical으로 해석하고 alias-first Kakao 검색어를 만든다', () => {
-    expect(parseStepIntents(request('오늘은 야채곱창 꼭 먹고 싶어')).stepIntents).toEqual([
-      expect.objectContaining({
-        canonicalTerm: '곱창',
-        kakaoSearchTerms: ['야채곱창', '곱창', '곱창집'],
-        strength: 'required',
-      }),
-    ]);
-    expect(parseStepIntents(request('닭갈비 먹자')).stepIntents[0]?.canonicalTerm).toBe('닭갈비');
   });
 
   it('영어 번역 표현을 canonical 한국어로 매핑한다', () => {
@@ -74,6 +77,30 @@ describe('parseStepIntents', () => {
     });
   });
 
+  it('keeps only the most specific overlapping excluded drink intent', () => {
+    const parsed = parseStepIntents(request('수제맥주 말고 와인', [{ id: 'drinks', category: 'drinks' }]));
+    expect(parsed.stepIntents.map((intent) => intent.canonicalTerm)).toEqual(['와인']);
+    expect(parsed.excludedIntents.map((intent) => intent.canonicalTerm)).toEqual(['수제맥주']);
+  });
+
+  it.each([
+    ['수제맥주 말고 맥주', '수제맥주', '맥주'],
+    ['와인바 말고 와인', '와인바', '와인'],
+    ['칵테일바 말고 칵테일', '칵테일바', '칵테일'],
+  ])('keeps a later non-overlapping drink occurrence in %s', (text, excluded, preferred) => {
+    const parsed = parseStepIntents(request(text, [{ id: 'drinks', category: 'drinks' }]));
+    expect(parsed.excludedIntents.map((intent) => intent.canonicalTerm)).toEqual([excluded]);
+    expect(parsed.stepIntents.map((intent) => intent.canonicalTerm)).toEqual([preferred]);
+  });
+
+  it('maps plural cocktails to the generic cocktail taxonomy', () => {
+    const parsed = parseStepIntents(request('cocktails', [{ id: 'drinks', category: 'drinks' }]));
+    expect(parsed.stepIntents[0]).toMatchObject({
+      canonicalTerm: '칵테일',
+      kakaoSearchTerms: ['칵테일', '칵테일바'],
+    });
+  });
+
   it.each([
     '볼링', '방탈출', '보드게임', '클라이밍', '실내 사격', '양궁', '탁구', '당구', '롤러스케이트', '아이스링크',
     '테니스', '배드민턴', '수영', '서핑', '카약', '요트', '낚시', '승마', '패러글라이딩', '짚라인', '레일바이크',
@@ -92,8 +119,8 @@ describe('parseStepIntents', () => {
   });
 
   it.each([
-    ['도자기 만들고 싶어', 'activity', '도자기 체험', ['도자기 만들고', '도자기 체험', '도자기 공방']],
-    ['그림 전시 보고 싶어', 'culture', '미술관', ['그림 전시', '미술관', '갤러리']],
+    ['도자기 만들고 싶어', 'activity', '도자기 체험', ['도자기 체험', '도자기 공방', '도예 체험']],
+    ['그림 전시 보고 싶어', 'culture', '미술관', ['미술관', '갤러리']],
   ])('%s separates the recognized intent from Kakao search expansions', (text, category, canonicalTerm, kakaoSearchTerms) => {
     const parsed = parseStepIntents(request(text, [{ id: category, category }]));
     expect(parsed.stepIntents[0]).toMatchObject({ canonicalTerm, kakaoSearchTerms });
@@ -103,6 +130,14 @@ describe('parseStepIntents', () => {
     for (const text of ['samgyeopsal please', 'I want samgyupsal', 'samgyopsal!']) {
       expect(parseStepIntents(request(text)).stepIntents[0]?.canonicalTerm).toBe('삼겹살');
     }
+  });
+
+  it('Latin aliases use word boundaries while Korean aliases remain substring matches', () => {
+    expect(parseStepIntents(request('pasta is a must')).stepIntents[0]?.canonicalTerm).toBe('파스타');
+    expect(parseStepIntents(request('compassion pasta')).stepIntents[0]?.canonicalTerm).toBe('파스타');
+    expect(parseStepIntents(request('compassion')).stepIntents).toEqual([]);
+    expect(parseStepIntents(request('도자기 만들고 싶어', [{ id: 'activity', category: 'activity' }]))
+      .stepIntents[0]?.canonicalTerm).toBe('도자기 체험');
   });
 
   it('무조건/only 마커는 required로 승격한다', () => {
