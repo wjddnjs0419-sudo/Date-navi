@@ -1,5 +1,10 @@
 import type { RecommendationRequest } from '../shared/recommendation/schemas';
-import { resolveStepIntents, type AiParseResult } from '../supabase/functions/_shared/step-intent-resolve';
+import {
+  mergeRuleAndAiIntents,
+  resolveStepIntents,
+  type AiParseResult,
+} from '../supabase/functions/_shared/step-intent-resolve';
+import type { ParsedStepIntent } from '../supabase/functions/_shared/step-intent';
 
 const request = (additionalRequest?: string): RecommendationRequest => ({
   requestId: 'req-resolve',
@@ -11,6 +16,44 @@ const request = (additionalRequest?: string): RecommendationRequest => ({
     { id: 'step-2', category: 'cafe', label: '카페' },
   ],
   ...(additionalRequest ? { additionalRequest } : {}),
+});
+
+const parsedIntent = (overrides: Partial<ParsedStepIntent> = {}): ParsedStepIntent => ({
+  stepId: 'step-1',
+  stepCategory: 'meal',
+  intentType: 'dish',
+  canonicalTerm: '삼겹살',
+  kakaoSearchTerms: ['삼겹살', '돼지고기구이'],
+  strength: 'preferred',
+  displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' },
+  ...overrides,
+});
+
+describe('mergeRuleAndAiIntents', () => {
+  it('규칙 exact intent의 검색 정보는 유지하고 AI의 required 강도만 승격한다', () => {
+    const rulePork = parsedIntent();
+    const aiPorkRequired = parsedIntent({
+      kakaoSearchTerms: ['pork belly'],
+      strength: 'required',
+      displayLabel: { ko: 'AI 삼겹살', en: 'AI pork belly' },
+    });
+
+    expect(mergeRuleAndAiIntents([rulePork], [aiPorkRequired], [])).toEqual([
+      { ...rulePork, strength: 'required' },
+    ]);
+  });
+
+  it('AI의 미등재 intent를 추가하고 명시적 부정과 같은 positive는 제거한다', () => {
+    const rulePork = parsedIntent();
+    const aiCafe = parsedIntent({
+      stepId: 'step-2', stepCategory: 'cafe', intentType: 'venue_subtype', canonicalTerm: '감성 카페',
+      kakaoSearchTerms: ['감성 카페'], displayLabel: { ko: '감성 카페', en: 'Atmospheric cafe' },
+    });
+    const negatedPork = parsedIntent({ negated: true });
+
+    expect(mergeRuleAndAiIntents([rulePork], [aiCafe], [])).toEqual([rulePork, aiCafe]);
+    expect(mergeRuleAndAiIntents([rulePork], [aiCafe], [negatedPork])).toEqual([aiCafe]);
+  });
 });
 
 describe('resolveStepIntents — 고재현 AI 게이트', () => {
@@ -54,6 +97,24 @@ describe('resolveStepIntents — 고재현 AI 게이트', () => {
     }));
     await resolveStepIntents(request('삼겹살 먹고 조용하고 분위기 좋은 감성 카페 가고싶어'), { invokeAi });
     expect(invokeAi).toHaveBeenCalledTimes(1);
+  });
+
+  it('AI가 규칙의 식사 intent를 누락해도 규칙 intent를 보존한다', async () => {
+    const invokeAi = jest.fn(async (): Promise<AiParseResult> => ({
+      stepIntents: [{
+        stepId: 'step-2', stepCategory: 'cafe', intentType: 'venue_subtype', canonicalTerm: '감성 카페',
+        kakaoSearchTerms: ['감성 카페'], strength: 'preferred', displayLabel: { ko: '감성 카페', en: 'Atmospheric cafe' },
+      }],
+      unsupported: [], conflicts: [],
+    }));
+
+    const resolved = await resolveStepIntents(
+      request('삼겹살 먹고 조용하고 분위기 좋은 감성 카페 가고싶어'),
+      { invokeAi },
+    );
+
+    expect(resolved.source).toBe('ai');
+    expect(resolved.stepIntents.map((intent) => intent.canonicalTerm)).toEqual(['삼겹살', '감성 카페']);
   });
 
   it('미등재 라틴 토큰이 남으면 AI 호출', async () => {

@@ -302,6 +302,36 @@ describe('recommend-date step intent resolve 배선', () => {
     expect(parseStepIntentsAi).toHaveBeenCalledTimes(1);
   });
 
+  it('AI가 식사 intent를 누락해도 병합된 규칙 intent를 검색 요청에 전달한다', async () => {
+    const searchCandidates = jest.fn(async () => ({
+      candidates: porkCandidates,
+      recallByCategory: { meal: 1, cafe: 1 },
+      searchMetadata: metadata(),
+    }));
+    const parseStepIntentsAi = jest.fn(async () => ({
+      stepIntents: [{
+        canonicalTerm: '감성 카페', targetCategory: 'cafe', intentType: 'venue_subtype',
+        kakaoSearchTerms: ['감성 카페'], strength: 'preferred', negated: false,
+      }],
+      unsupported: [], conflicts: [],
+    }));
+    const deps = dependencies({ searchCandidates, parseStepIntentsAi });
+    const body: RecommendationRequest = {
+      ...request(),
+      additionalRequest: '삼겹살 먹고 조용하고 분위기 좋은 감성 카페 가고싶어',
+    };
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
+
+    expect(result.status).toBe(200);
+    expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
+      resolvedStepIntents: expect.arrayContaining([
+        expect.objectContaining({ canonicalTerm: '삼겹살' }),
+        expect.objectContaining({ canonicalTerm: '감성 카페' }),
+      ]),
+    }), expect.anything());
+  });
+
   it('additionalRequest가 없으면 AI 파서를 호출하지 않는다', async () => {
     const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
     const deps = dependencies({ parseStepIntentsAi });
