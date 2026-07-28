@@ -13,7 +13,7 @@ export type FoodIntentOverrides = {
   cuisineCategoryByCanonicalTerm: Record<string, string>;
 };
 
-export type FoodSourceRow = { sourceName: string };
+export type FoodSourceRow = { sourceName: string; canonicalName?: string; excludedReason?: string };
 export type ExcludedFoodRow = { sourceName: string; normalizedName: string; reason: string };
 export type FoodIntentArtifacts = { entries: FoodIntentEntry[]; excluded: ExcludedFoodRow[] };
 
@@ -28,8 +28,29 @@ const unique = (values: readonly string[]): string[] => [...new Set(values.filte
 export function normalizeFoodName(sourceName: string): string {
   return sourceName.normalize('NFKC')
     .replace(/[[(][^\])]*[\])]/g, ' ')
+    .replace(/[_／]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** Public standard-data downloads expose rows directly under records, with Korean field names. */
+export function collectFoodRowsFromStandardData(payload: unknown): FoodSourceRow[] {
+  const records = (payload as { records?: unknown })?.records;
+  if (!Array.isArray(records)) throw new Error('Food standard-data JSON missing records');
+  return records.flatMap((record) => {
+    const row = record as Record<string, unknown>;
+    if (row['데이터구분명'] !== '음식') return [];
+    const sourceName = row['식품명'];
+    const canonicalName = row['대표식품명'];
+    if (typeof sourceName !== 'string' || !sourceName.trim()) throw new Error('Food standard-data row missing 식품명');
+    if (typeof canonicalName !== 'string' || !canonicalName.trim()) throw new Error('Food standard-data row missing 대표식품명');
+    const company = row['업체명'];
+    return [{
+      sourceName,
+      canonicalName,
+      ...(typeof company === 'string' && company.trim() && company !== '해당없음' ? { excludedReason: 'brand_or_product' } : {}),
+    }];
+  });
 }
 
 export function collectFoodRows(payload: unknown): FoodSourceRow[] {
@@ -49,16 +70,25 @@ export function collectFoodRows(payload: unknown): FoodSourceRow[] {
 
 export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrides: FoodIntentOverrides): FoodIntentArtifacts {
   const excluded: ExcludedFoodRow[] = [];
-  const accepted: Array<{ sourceName: string; normalizedName: string }> = [];
+  const accepted: Array<{ sourceName: string; normalizedName: string; normalizedCanonical: string }> = [];
+  const canonicalSeeds = new Set<string>();
   const excludedCanonicals = new Set(overrides.excludeCanonicalTerms.map(normalizeFoodName));
   for (const row of rows) {
     const normalizedName = normalizeFoodName(row.sourceName);
+    const normalizedCanonical = normalizeFoodName(row.canonicalName ?? row.sourceName);
     const pattern = NON_RESTAURANT_PATTERNS.find(([regex]) => regex.test(normalizedName));
-    const reason = pattern?.[1]
+    const canonicalReason = !/^[가-힣 ]{2,30}$/.test(normalizedCanonical)
+      ? 'not_a_korean_menu_name'
+      : (excludedCanonicals.has(normalizedCanonical) ? 'manual_exclude' : undefined);
+    // Standard-data rows may carry a clean representative name even when the detailed
+    // source name is a branded/size-specific product. API rows have no separate canonical.
+    if (!canonicalReason && (row.canonicalName !== undefined || !pattern)) canonicalSeeds.add(normalizedCanonical);
+    const reason = row.excludedReason
+      ?? pattern?.[1]
       ?? (!/^[가-힣 ]{2,30}$/.test(normalizedName) ? 'not_a_korean_menu_name' : undefined)
-      ?? (excludedCanonicals.has(normalizedName) ? 'manual_exclude' : undefined);
+      ?? canonicalReason;
     if (reason) excluded.push({ sourceName: row.sourceName, normalizedName, reason });
-    else accepted.push({ sourceName: row.sourceName, normalizedName });
+    else accepted.push({ sourceName: row.sourceName, normalizedName, normalizedCanonical });
   }
 
   const canonicalFor = new Map<string, string>();
@@ -73,8 +103,14 @@ export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrid
   }
 
   const groups = new Map<string, string[]>();
+  for (const canonical of canonicalSeeds) {
+    const groupedCanonical = canonicalFor.get(canonical) ?? canonical;
+    groups.set(groupedCanonical, [...(groups.get(groupedCanonical) ?? []), canonical]);
+  }
   for (const row of accepted) {
-    const canonical = canonicalFor.get(row.normalizedName) ?? row.normalizedName;
+    const canonical = canonicalFor.get(row.normalizedCanonical)
+      ?? canonicalFor.get(row.normalizedName)
+      ?? row.normalizedCanonical;
     groups.set(canonical, [...(groups.get(canonical) ?? []), row.normalizedName]);
   }
   for (const entry of overrides.include) {

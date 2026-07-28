@@ -1,5 +1,5 @@
-import { collectFoodRows, buildFoodIntentArtifacts } from '../scripts/food-intent-sync-lib';
-import { syncFoodIntents } from '../scripts/sync-food-intents';
+import { collectFoodRows, collectFoodRowsFromStandardData, buildFoodIntentArtifacts } from '../scripts/food-intent-sync-lib';
+import { syncFoodIntents, syncFoodIntentsFromStandardData } from '../scripts/sync-food-intents';
 
 describe('food intent curation', () => {
   it('reads the official API envelope and rejects API errors', () => {
@@ -26,6 +26,20 @@ describe('food intent curation', () => {
     expect(artifacts.excluded).toEqual(expect.arrayContaining([
       expect.objectContaining({ sourceName: '닭가슴살 원재료', reason: 'ingredient' }),
     ]));
+  });
+
+  it('uses representative food names as canonical terms from standard-data JSON', () => {
+    const rows = collectFoodRowsFromStandardData({ records: [
+      { 식품명: '곱창구이_소고기', 대표식품명: '곱창구이', 데이터구분명: '음식' },
+      { 식품명: '닭가슴살', 대표식품명: '닭가슴살', 데이터구분명: '식품' },
+    ] });
+    expect(rows).toEqual([{ sourceName: '곱창구이_소고기', canonicalName: '곱창구이' }]);
+    const artifacts = buildFoodIntentArtifacts(rows, {
+      include: [], excludeCanonicalTerms: [], aliasesByCanonicalTerm: {}, searchExpansionsByCanonicalTerm: {}, cuisineCategoryByCanonicalTerm: {},
+    });
+    expect(artifacts.entries).toEqual([expect.objectContaining({
+      canonicalTerm: '곱창구이', aliases: ['곱창구이 소고기'],
+    })]);
   });
 });
 
@@ -61,5 +75,18 @@ describe('food intent sync', () => {
       paths: { raw: 'raw', generated: 'generated', excluded: 'excluded', module: 'module' }, writeFile,
     })).rejects.toThrow('Food API request failed: 503');
     expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('writes artifacts from a local standard-data JSON without a service key', async () => {
+    const files: Record<string, string> = {};
+    await syncFoodIntentsFromStandardData({
+      payload: { records: [{ 식품명: '닭갈비', 대표식품명: '닭갈비', 데이터구분명: '음식' }] },
+      now: () => new Date('2026-07-28T00:00:00.000Z'), overrides,
+      paths: { raw: 'raw', generated: 'generated', excluded: 'excluded', module: 'module' },
+      writeFile: async (path, content) => { files[path] = content; },
+    });
+    expect(JSON.parse(files.generated).source.dataset).toContain('전국통합식품영양성분정보');
+    expect(JSON.parse(files.generated).entries[0].canonicalTerm).toBe('닭갈비');
+    expect(files.raw).toContain('대표식품명');
   });
 });
