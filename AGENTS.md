@@ -190,3 +190,4 @@ handleGenerateAiOptions()
 - `pg_get_functiondef` 기반 in-place 함수 패치의 self-check는 반드시 **실제 주입되는 문자열**을 marker로 쓸 것 — 주입 코드에 없는 설명용 문구(`'... consumption failed'`)를 `position(... in lower(v_definition))`으로 재확인하면 마이그레이션이 항상 injection failed로 raise된다. marker는 idempotency 가드와 동일 문자열이어야 하고, `lower()` 비교이므로 소문자로 쓸 것.
 - PL/pgSQL 트리거에서 `TG_OP`는 항상 대문자(`'INSERT'`/`'UPDATE'`/`'DELETE'`)다 — `tg_op = 'insert'`로 비교하면 컴파일·실행 모두 조용히 성공하면서 어떤 분기도 타지 않아 몇 달간 무발화 상태가 된다. 감사 트리거를 추가하면 반드시 실제 INSERT/UPDATE/DELETE를 돌려 행이 쌓이는지 확인할 것.
 - 삭제 이벤트를 기록하는 감사 테이블에 대상 테이블로의 `on delete cascade` FK를 걸지 말 것 — `after delete`는 부모가 이미 없어 FK 위반으로 원본 삭제를 깨뜨리고, `before delete`로 옮겨도 이어지는 cascade가 방금 넣은 행을 지운다. 상위(세션 등) FK만 남길 것.
+- `.worktrees/*`에 만든 git worktree도 Jest의 test/haste-map 탐색에서 제외할 것 — `.claude/worktrees/*`만 ignore하면 root에서 테스트할 때 worktree 테스트가 중복 실행되고 `__mocks__` duplicate 경고가 발생한다. 두 ignore 배열에 모두 `<rootDir>/.worktrees/`를 넣는다.
