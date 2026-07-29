@@ -32,7 +32,7 @@ release_barrier() {
   local pid_file="$1"
   local backend_pid
   for _ in $(seq 1 100); do
-    backend_pid="$(head -n 1 "$pid_file" 2>/dev/null || true)"
+    backend_pid="$(grep -E '^[0-9]+$' "$pid_file" 2>/dev/null | head -n 1 || true)"
     [[ "$backend_pid" =~ ^[0-9]+$ ]] && break
     sleep 0.05
   done
