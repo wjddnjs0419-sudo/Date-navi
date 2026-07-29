@@ -21,6 +21,28 @@
 - 가격 추정은 사용자 quota에서 제외하고 장소별 원자적 claim으로 중복 호출만 막는다.
 - 스키마 변경은 새 migration과 `docs/supabase-schema.sql`에 함께 반영한다.
 
+## Review Gates
+
+각 구현 묶음이 끝나면 다음 묶음으로 넘어가기 전에 독립 서브에이전트 코드 리뷰를 실행한다.
+
+- 묶음 A: Task 1 — 초대 문구 AI 제거
+- 묶음 B: Tasks 2–3 — Postgres quota/lock/event와 Edge adapter
+- 묶음 C: Task 4 — `recommend-date` lock·quota 수명
+- 묶음 D: Task 5 — `generate-ai` 내부 action 보호
+- 묶음 E: Task 6 — 장소 가격 추정 claim
+- 묶음 F: Task 7 — 앱 제한 오류와 안내 UI
+- 묶음 G: Task 8 — 통합 검증·배포 준비
+
+모든 리뷰 프롬프트에는 아래 context를 명시적으로 주입한다.
+
+- 설계 문서: `docs/superpowers/specs/2026-07-29-ai-rate-limits-design.md`
+- 구현 계획: `docs/superpowers/plans/2026-07-29-ai-rate-limits.md`
+- 해당 묶음의 요구사항과 실제 변경 요약
+- 묶음 시작 SHA와 종료 SHA
+- 실행한 테스트 명령과 결과
+
+리뷰 서브에이전트는 read-only로 작업한다. Critical과 Important 지적은 같은 묶음에서 수정하고 재검증한 뒤에만 다음 묶음으로 진행한다. Minor는 안전성과 요구사항에 영향을 주면 즉시 수정하고, 그렇지 않으면 최종 handoff에 기록한다.
+
 ---
 
 ### Task 1: 초대 문구 AI 제거
