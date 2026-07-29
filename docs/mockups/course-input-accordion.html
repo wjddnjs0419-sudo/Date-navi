@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Date Navi · 코스 생성 입력 목업</title>
+<style>
+  :root { --bg:#fff9fc; --card:#fff; --ink:#27242a; --sub:#8d8182; --line:#eee2e3; --pink:#f5687d; --soft:#fff0f3; --chip:#f8f3f0; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f7f1f3; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",sans-serif; }
+  .phone { width:min(100%,430px); min-height:100vh; margin:auto; padding:28px 24px 108px; background:var(--bg); }
+  .eyebrow { margin:0 0 10px; color:var(--pink); font-size:12px; font-weight:800; letter-spacing:.08em; }
+  h1 { margin:0; font-size:27px; letter-spacing:-.045em; text-align:center; }
+  .subtitle { margin:10px auto 30px; max-width:330px; color:var(--sub); font-size:14px; line-height:1.55; text-align:center; }
+  .section { border-top:1px solid var(--line); padding:22px 0; }
+  .section:first-of-type { border-top:0; padding-top:0; }
+  .section-head { display:flex; align-items:center; gap:10px; }
+  .badge { flex:none; display:grid; place-items:center; width:27px; height:27px; border-radius:50%; background:var(--pink); color:#fff; font-size:14px; font-weight:800; }
+  .title { flex:1; margin:0; font-size:17px; letter-spacing:-.035em; }
+  .hint { margin:6px 0 16px 37px; color:var(--sub); font-size:13px; line-height:1.45; }
+  .step-card { padding:18px; border:1px solid var(--line); border-radius:18px; background:var(--card); }
+  .step-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-size:16px; font-weight:800; }
+  .mini { border:0; color:var(--sub); background:var(--chip); border-radius:10px; width:37px; height:37px; font-size:23px; }
+  .tabs { display:grid; grid-template-columns:1fr 1fr; padding:4px; border-radius:13px; background:var(--chip); gap:3px; }
+  .tabs span { padding:10px; border-radius:10px; text-align:center; font-size:14px; font-weight:750; }
+  .tabs .active { color:#cc5063; background:white; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 2px; }
+  .chip { padding:10px 13px; border:1px solid #eddfe0; border-radius:13px; background:#fff; color:#504d57; font-size:14px; font-weight:700; }
+  .chip.selected { border-color:#f5a3b0; background:var(--soft); color:#cb5163; }
+  .accordion { overflow:hidden; border:0; border-radius:14px; background:transparent; }
+  .accordion-trigger { display:flex; align-items:center; width:100%; padding:0; border:0; color:inherit; background:transparent; cursor:pointer; font:inherit; text-align:left; }
+  .accordion-trigger .title { font-size:17px; }
+  .chevron { display:grid; place-items:center; width:36px; height:36px; color:var(--pink); border-radius:50%; background:var(--soft); font-size:23px; font-weight:400; }
+  .accordion-body { padding:16px 0 2px 37px; animation:reveal .2s ease-out; }
+  @keyframes reveal { from { opacity:0; transform:translateY(-5px) } to { opacity:1; transform:translateY(0) } }
+  .keyword-row { margin:16px 0 0; padding-top:16px; border-top:1px solid var(--line); }
+  .keyword-row .accordion-body { padding-left:0; }
+  .keyword-row .title { font-size:15px; }
+  .keyword-row .chevron { width:31px; height:31px; font-size:20px; }
+  .tag { display:inline-flex; align-items:center; margin:0 6px 8px 0; padding:7px 10px; border:1px solid #eadedf; border-radius:999px; color:#766d6f; background:#fff; font-size:13px; font-weight:650; }
+  .tag b { margin-left:7px; color:#a69d9e; }
+  .input-row { display:flex; gap:8px; margin-top:4px; }
+  input, textarea { width:100%; border:0; border-radius:12px; outline:0; background:var(--chip); color:var(--ink); font:inherit; }
+  input { min-width:0; padding:12px; font-size:14px; }
+  textarea { min-height:95px; padding:13px; resize:vertical; line-height:1.5; }
+  .add { padding:0 14px; border:0; border-radius:12px; color:#fff; background:var(--pink); font-weight:800; }
+  .choices { display:flex; flex-wrap:wrap; gap:8px; }
+  .choice { padding:12px 16px; border:1px solid #ecdfe0; border-radius:14px; background:white; color:#57535d; font-weight:750; }
+  .choice.selected { border-color:#f59cab; color:#cb5163; background:var(--soft); }
+  .slider { position:relative; height:36px; margin:6px 0 7px; }
+  .slider::before { position:absolute; top:16px; right:0; left:0; height:5px; border-radius:99px; background:#f0e3e0; content:""; }
+  .slider::after { position:absolute; top:8px; left:32%; width:18px; height:18px; border:4px solid var(--pink); border-radius:50%; background:#fff; content:""; box-shadow:0 1px 5px #e8cbd0; }
+  .value { margin:0 0 4px; color:#c84f61; font-size:14px; font-weight:800; }
+  .summary { margin-left:auto; color:#b76673; font-size:12px; font-weight:750; }
+  .location { display:flex; align-items:center; gap:10px; padding:14px; border:1px solid #eedfe0; border-radius:14px; background:white; color:#7d7374; }
+  .pin { color:var(--pink); font-size:20px; }
+  .fixed-button { position:fixed; right:max(24px,calc((100vw - 430px)/2 + 24px)); bottom:20px; left:max(24px,calc((100vw - 430px)/2 + 24px)); max-width:382px; height:53px; border:0; border-radius:999px; color:#fff; background:#171717; font-size:16px; font-weight:800; box-shadow:0 8px 24px #3d2a2b38; }
+  @media (prefers-reduced-motion:reduce) { .accordion-body { animation:none; } }
+</style>
+<body>
+  <main class="phone">
+    <p class="eyebrow">DATE NAVI · UI MOCKUP</p>
+    <h1>데이트 코스 만들기</h1>
+    <p class="subtitle">필수 정보부터 고르고, 필요할 때만 선택 조건을 열어 더해보세요.</p>
+
+    <section class="section">
+      <div class="section-head"><span class="badge">1</span><h2 class="title">코스 단계</h2></div>
+      <p class="hint">2~4단계까지 순서대로 구성할 수 있어요.</p>
+      <article class="step-card">
+        <div class="step-top"><span>1단계</span><button class="mini" aria-label="단계 삭제">×</button></div>
+        <div class="tabs"><span class="active">AI 추천</span><span>내가 직접</span></div>
+        <div class="chips"><span class="chip selected">🍴 식사</span><span class="chip">☕ 카페</span><span class="chip">🍷 술집</span><span class="chip">⚡ 활동</span></div>
+        <details class="accordion keyword-row">
+          <summary class="accordion-trigger"><span class="title">원하는 키워드 <small>(선택)</small></span><span class="summary">라멘, 파스타</span><span class="chevron" aria-hidden="true">⌄</span></summary>
+          <div class="accordion-body">
+            <span class="tag">#라멘 <b>×</b></span><span class="tag">#파스타 <b>×</b></span>
+            <div class="input-row"><input aria-label="직접 입력할 키워드" placeholder="직접 입력" /><button class="add">추가</button></div>
+          </div>
+        </details>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><span class="badge">2</span><h2 class="title">어디서 만나요? <small>(필수)</small></h2></div>
+      <p class="hint">검색 중심이 될 시작 위치를 선택해주세요.</p>
+      <div class="location"><span class="pin">⌖</span><span>성수역 2호선</span></div>
+    </section>
+
+    <section class="section">
+      <details class="accordion">
+        <summary class="accordion-trigger"><span class="badge">3</span><h2 class="title">장소 사이 최대 도보 시간 <small>(선택)</small></h2><span class="summary">무관</span><span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="accordion-body"><div class="choices"><span class="choice">5분</span><span class="choice">10분</span><span class="choice">20분</span><span class="choice selected">무관</span></div></div>
+      </details>
+    </section>
+
+    <section class="section">
+      <details class="accordion">
+        <summary class="accordion-trigger"><span class="badge">4</span><h2 class="title">1인 전체 코스 예산 <small>(선택)</small></h2><span class="summary">미선택</span><span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="accordion-body"><p class="value">50,000원</p><div class="slider"></div><p class="hint" style="margin:0">한 사람이 전체 코스에서 쓸 목표 예산이에요.</p></div>
+      </details>
+    </section>
+
+    <section class="section">
+      <details class="accordion">
+        <summary class="accordion-trigger"><span class="badge">5</span><h2 class="title">원하는 분위기 <small>(선택)</small></h2><span class="summary">로맨틱한</span><span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="accordion-body"><div class="choices"><span class="choice">편안한</span><span class="choice">활기찬</span><span class="choice selected">로맨틱한</span><span class="choice">조용한</span><span class="choice">색다른</span></div></div>
+      </details>
+    </section>
+
+    <section class="section">
+      <details class="accordion">
+        <summary class="accordion-trigger"><span class="badge">6</span><h2 class="title">전체 시간 <small>(선택)</small></h2><span class="summary">미선택</span><span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="accordion-body"><p class="value">4시간</p><div class="slider"></div></div>
+      </details>
+    </section>
+
+    <section class="section">
+      <details class="accordion">
+        <summary class="accordion-trigger"><span class="badge">7</span><h2 class="title">추가 요청 <small>(선택)</small></h2><span class="chevron" aria-hidden="true">⌄</span></summary>
+        <div class="accordion-body"><textarea placeholder="AI에게 전달할 추가 요청을 적어주세요"></textarea></div>
+      </details>
+    </section>
+  </main>
+  <button class="fixed-button">AI 코스 추천받기</button>
+<script>
+  document.querySelectorAll('details').forEach((item) => {
+    item.addEventListener('toggle', () => item.querySelector('.chevron').textContent = item.open ? '⌃' : '⌄');
+  });
+</script>
+</body>
+</html>

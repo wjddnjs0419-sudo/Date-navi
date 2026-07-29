@@ -1,6 +1,6 @@
 import { type Dispatch, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowDown, ArrowUp, MapPin, Search, Trash2, X } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, MapPin, Search, Trash2, X } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import {
   CATEGORY_ICONS,
@@ -74,6 +74,7 @@ export function CourseStepEditor({
 }) {
   const [mode, setMode] = useState<'ai' | 'pick'>(step.pin ? 'pick' : 'ai');
   const [customTag, setCustomTag] = useState('');
+  const [tagsExpanded, setTagsExpanded] = useState(false);
 
   function switchToAi() {
     // AI 추천 = AI가 장소를 고른다. 지정해둔 핀이 남으면 서버가 그 장소로 확정하므로 즉시 제거한다.
@@ -191,10 +192,28 @@ export function CourseStepEditor({
 
       {mode === 'ai' && step.category !== 'ai_decide' && (
         <View style={styles.tagSection}>
-          <Text style={styles.tagLabel}>{t('course.steps.tags.label')}</Text>
-          <Text style={styles.tagHint}>{t('course.steps.tags.hint')}</Text>
-          {visibleSuggestions.length > 0 && (
-            <View style={styles.tagWrap}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={t(
+              tagsExpanded ? 'course.accessibility.collapseOptional' : 'course.accessibility.expandOptional',
+              { label: t('course.steps.tags.label') },
+            )}
+            accessibilityState={{ expanded: tagsExpanded }}
+            activeOpacity={0.72}
+            hitSlop={10}
+            onPress={() => setTagsExpanded((expanded) => !expanded)}
+            style={styles.tagToggle}
+            testID="course-step-tags-toggle"
+          >
+            <Text style={styles.tagLabel}>{t('course.steps.tags.label')}</Text>
+            {tagsExpanded
+              ? <ChevronUp size={18} color={C.textSub} strokeWidth={2} />
+              : <ChevronDown size={18} color={C.textSub} strokeWidth={2} />}
+          </TouchableOpacity>
+          {tagsExpanded && <>
+            <Text style={styles.tagHint}>{t('course.steps.tags.hint')}</Text>
+            {visibleSuggestions.length > 0 && (
+              <View style={styles.tagWrap}>
               {visibleSuggestions.map((tag) => (
                 <View key={tag} style={styles.suggestionWithRemove}>
                   {(() => {
@@ -229,9 +248,9 @@ export function CourseStepEditor({
                   )}
                 </View>
               ))}
-            </View>
-          )}
-          <View style={styles.tagAddRow}>
+              </View>
+            )}
+            <View style={styles.tagAddRow}>
             <TextInput
               accessibilityLabel={t('course.accessibility.customIntentTag')}
               value={customTag}
@@ -256,7 +275,8 @@ export function CourseStepEditor({
             >
               <Text style={styles.tagAddButtonText}>{t('course.steps.tags.add')}</Text>
             </TouchableOpacity>
-          </View>
+            </View>
+          </>}
         </View>
       )}
 
@@ -343,6 +363,7 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 10, color: C.inkSoft, fontWeight: '600' },
   categoryTextSelected: { color: C.pinkDeep },
   tagSection: { gap: SP.xs, paddingTop: SP.xs },
+  tagToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   tagLabel: { fontSize: 13, color: C.text, fontWeight: '700' },
   tagHint: { fontSize: 11, color: C.textMuted },
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs },
@@ -370,6 +391,7 @@ const styles = StyleSheet.create({
   tagInput: {
     flex: 1, minHeight: 42, paddingHorizontal: SP.sm,
     borderRadius: R.sm, backgroundColor: C.gray, color: C.text, fontSize: 13,
+    paddingVertical: 0, textAlignVertical: 'center',
   },
   tagAddButton: {
     minHeight: 42, justifyContent: 'center', paddingHorizontal: SP.md,

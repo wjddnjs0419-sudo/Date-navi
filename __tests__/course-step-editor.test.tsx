@@ -143,9 +143,22 @@ describe('CourseStepEditor AI/직접 토글 (옵션 B)', () => {
 });
 
 describe('CourseStepEditor optional intent tags', () => {
+  function expandTags(renderer: TestRendererInstance) {
+    act(() => { byTestID(renderer, 'course-step-tags-toggle')!.props.onPress(); });
+  }
+
+  it('keeps keyword controls collapsed until its chevron row is pressed', () => {
+    const renderer = render({ id: 'step-1', category: 'meal' });
+    expect(byTestID(renderer, 'course-step-tag-suggestion-라멘')).toBeUndefined();
+
+    expandTags(renderer);
+    expect(byTestID(renderer, 'course-step-tag-suggestion-라멘')).toBeDefined();
+  });
+
   it('shows hash-prefixed suggested tags and adds one to only this step', () => {
     const dispatch = jest.fn();
     const renderer = render({ id: 'step-1', category: 'meal' }, { dispatch });
+    expandTags(renderer);
 
     const ramen = byTestID(renderer, 'course-step-tag-suggestion-라멘');
     expect(ramen).toBeDefined();
@@ -157,6 +170,7 @@ describe('CourseStepEditor optional intent tags', () => {
   it('keeps a selected suggested tag in place and toggles its course selection', () => {
     const dispatch = jest.fn();
     const renderer = render({ id: 'step-1', category: 'meal', intentTags: ['라멘'] }, { dispatch });
+    expandTags(renderer);
 
     const remove = byTestID(renderer, 'course-step-tag-suggestion-라멘');
     expect(remove).toBeDefined();
@@ -168,6 +182,7 @@ describe('CourseStepEditor optional intent tags', () => {
   it('adds a custom tag from the step-local input', () => {
     const dispatch = jest.fn();
     const renderer = render({ id: 'step-1', category: 'meal' }, { dispatch });
+    expandTags(renderer);
 
     const input = byTestID(renderer, 'course-step-tag-input');
     expect(input).toBeDefined();

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react-native';
 import { BackBar, BigButton } from '../../components/ui';
 import { CourseStepEditor } from '../../components/recommendation/course-step-editor';
 import { LocationSelector } from '../../components/recommendation/location-selector';
@@ -72,6 +72,47 @@ function SectionTitle({ number, label, hint }: { number: number; label: string; 
   );
 }
 
+function OptionalSection({
+  number,
+  label,
+  expanded,
+  onToggle,
+  children,
+  t,
+}: {
+  number: number;
+  label: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  t: Translate;
+}) {
+  const Chevron = expanded ? ChevronUp : ChevronDown;
+  return (
+    <View style={styles.optionalSection}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t(
+          expanded ? 'course.accessibility.collapseOptional' : 'course.accessibility.expandOptional',
+          { label },
+        )}
+        accessibilityState={{ expanded }}
+        activeOpacity={0.72}
+        onPress={onToggle}
+        style={styles.optionalSectionTrigger}
+        testID={`course-toggle-${number}`}
+      >
+        <View style={styles.sectionBadge}>
+          <Text style={styles.sectionBadgeText}>{number}</Text>
+        </View>
+        <Text style={styles.sectionLabel}>{label}</Text>
+        <Chevron size={20} color={C.textSub} strokeWidth={2} />
+      </TouchableOpacity>
+      {expanded && <View style={styles.optionalSectionBody}>{children}</View>}
+    </View>
+  );
+}
+
 export default function CourseScreen() {
   const router = useRouter();
   const { language, t } = useI18n();
@@ -89,6 +130,11 @@ export default function CourseScreen() {
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
 
   const [pinTargetStepId, setPinTargetStepId] = useState<string | null>(null);
+  const [expandedOptionalSections, setExpandedOptionalSections] = useState<Record<number, boolean>>({});
+
+  function toggleOptionalSection(number: number) {
+    setExpandedOptionalSections((current) => ({ ...current, [number]: !current[number] }));
+  }
 
   useEffect(() => {
     const unsub = subscribePickedPlace((place) => {
@@ -195,8 +241,13 @@ export default function CourseScreen() {
           onChange={(location) => dispatch({ type: 'setLocation', location })}
         />
 
-        <View style={styles.section}>
-          <SectionTitle number={3} label={t('course.walking.label')} />
+        <OptionalSection
+          number={3}
+          label={t('course.walking.label')}
+          expanded={!!expandedOptionalSections[3]}
+          onToggle={() => toggleOptionalSection(3)}
+          t={t}
+        >
           <View style={styles.choiceWrap}>
             {WALKING_OPTIONS.map((option) => {
               const selected = draft.maxWalkingMinutes === option.value;
@@ -215,10 +266,15 @@ export default function CourseScreen() {
               );
             })}
           </View>
-        </View>
+        </OptionalSection>
 
-        <View style={styles.section}>
-          <SectionTitle number={4} label={t('course.budget.label')} />
+        <OptionalSection
+          number={4}
+          label={t('course.budget.label')}
+          expanded={!!expandedOptionalSections[4]}
+          onToggle={() => toggleOptionalSection(4)}
+          t={t}
+        >
           <StepSlider
             min={0}
             max={PER_PERSON_BUDGET_MAX_KRW}
@@ -230,10 +286,15 @@ export default function CourseScreen() {
             testID="course-budget-slider"
           />
           <Text style={styles.hint}>{t('course.budget.hint')}</Text>
-        </View>
+        </OptionalSection>
 
-        <View style={styles.section}>
-          <SectionTitle number={5} label={t('course.moods.label')} />
+        <OptionalSection
+          number={5}
+          label={t('course.moods.label')}
+          expanded={!!expandedOptionalSections[5]}
+          onToggle={() => toggleOptionalSection(5)}
+          t={t}
+        >
           <View style={styles.choiceWrap}>
             {COURSE_MOODS.map((mood) => {
               const selected = draft.moods.includes(mood);
@@ -254,10 +315,15 @@ export default function CourseScreen() {
               );
             })}
           </View>
-        </View>
+        </OptionalSection>
 
-        <View style={styles.section}>
-          <SectionTitle number={6} label={t('course.duration.label')} />
+        <OptionalSection
+          number={6}
+          label={t('course.duration.label')}
+          expanded={!!expandedOptionalSections[6]}
+          onToggle={() => toggleOptionalSection(6)}
+          t={t}
+        >
           <StepSlider
             min={0}
             max={DURATION_MAX_HOURS}
@@ -271,10 +337,15 @@ export default function CourseScreen() {
             accessibilityLabel={t('course.accessibility.duration')}
             testID="course-duration-slider"
           />
-        </View>
+        </OptionalSection>
 
-        <View style={styles.section}>
-          <SectionTitle number={7} label={t('course.additional.label')} />
+        <OptionalSection
+          number={7}
+          label={t('course.additional.label')}
+          expanded={!!expandedOptionalSections[7]}
+          onToggle={() => toggleOptionalSection(7)}
+          t={t}
+        >
           <TextInput
             accessibilityLabel={t('course.accessibility.additionalRequest')}
             style={styles.additionalInput}
@@ -287,7 +358,7 @@ export default function CourseScreen() {
             textAlignVertical="top"
           />
           <Text style={styles.counter}>{t('course.additional.maxLength', { count: draft.additionalRequest.length })}</Text>
-        </View>
+        </OptionalSection>
 
         {validation.issues.length > 0 && (
           <View style={styles.validation}>
@@ -335,6 +406,14 @@ const styles = StyleSheet.create({
   sectionBadgeText: { fontSize: 13, fontWeight: '800', color: C.white },
   sectionTitleCopy: { flex: 1, gap: SP.xs },
   sectionLabel: { fontSize: 15, fontWeight: '700', color: C.text, lineHeight: 22 },
+  optionalSection: {
+    marginTop: SP.xxl,
+    paddingTop: SP.xxl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.borderLight,
+  },
+  optionalSectionTrigger: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
+  optionalSectionBody: { paddingTop: SP.md },
   hint: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
   addButton: {
     minHeight: 44,

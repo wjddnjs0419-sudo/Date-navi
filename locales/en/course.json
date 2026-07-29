@@ -5,7 +5,7 @@
     "title": "Plan your date course",
     "subtitle": "Pick the steps and preferences, and we'll suggest a course that fits.",
     "steps": {
-      "label": "Course steps",
+      "label": "Date itinerary",
       "hint": "Arrange two to four steps in the order you want.",
       "add": "Add step",
       "stepLabel": "Step {{number}}",
@@ -34,7 +34,7 @@
       }
     },
     "walking": {
-      "label": "Maximum walk between places (optional)",
+      "label": "Max walk between stops (optional)",
       "options": {
         "five": "5 min",
         "ten": "10 min",
@@ -43,12 +43,12 @@
       }
     },
     "budget": {
-      "label": "Whole-course budget per person (KRW, optional)",
+      "label": "Course budget (KRW, optional)",
       "amount": "KRW {{amount}}",
       "hint": "Enter what one person will spend for the whole course, up to KRW 100,000."
     },
     "moods": {
-      "label": "Preferred moods (select any)",
+      "label": "Preferred vibes (select any)",
       "options": {
         "comfortable": "Comfortable",
         "lively": "Lively",
@@ -62,7 +62,7 @@
       "hoursLabel": "{{count}} hours"
     },
     "additional": {
-      "label": "Additional request (optional)",
+      "label": "Anything else? (optional)",
       "placeholder": "Add context for the AI",
       "maxLength": "{{count}}/500 characters"
     },
@@ -98,6 +98,8 @@
       "budget": "Enter the whole-course budget per person in Korean won",
       "duration": "Select total time",
       "additionalRequest": "Enter an additional request",
+      "expandOptional": "Expand {{label}}",
+      "collapseOptional": "Collapse {{label}}",
       "generate": "Build the date course"
     },
     "generateButton": "Get AI course",

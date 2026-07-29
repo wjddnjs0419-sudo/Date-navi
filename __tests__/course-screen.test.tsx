@@ -166,6 +166,11 @@ describe('structured course screen', () => {
       .findAllByProps({ testID })
       .find((node) => node.props.accessibilityValue)!;
 
+    expect(renderer.root.findAllByProps({ testID: 'course-duration-slider' })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ testID: 'course-budget-slider' })).toHaveLength(0);
+    act(() => renderer.root.findByProps({ testID: 'course-toggle-6' }).props.onPress());
+    act(() => renderer.root.findByProps({ testID: 'course-toggle-4' }).props.onPress());
+
     expect(findSlider('course-duration-slider').props.accessibilityValue.now).toBe(0);
     expect(findSlider('course-duration-slider').props.accessibilityValue.max).toBe(24);
     expect(findSlider('course-budget-slider').props.accessibilityValue.now).toBe(0);
@@ -198,6 +203,7 @@ describe('structured course screen', () => {
     act(() => locationSelector.props.onChange(location));
     expect(generate().props.disabled).toBe(false);
 
+    act(() => renderer.root.findByProps({ testID: 'course-toggle-7' }).props.onPress());
     const additional = renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.additionalRequest' });
     act(() => additional.props.onChangeText('avoid cafes'));
     expect(generate().props.disabled).toBe(false);

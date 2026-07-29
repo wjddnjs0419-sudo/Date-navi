@@ -98,6 +98,8 @@
       "budget": "1인 전체 코스 예산 원화 입력",
       "duration": "전체 시간 선택",
       "additionalRequest": "추가 요청 입력",
+      "expandOptional": "{{label}} 펼치기",
+      "collapseOptional": "{{label}} 접기",
       "generate": "데이트 코스 만들기"
     },
     "generateButton": "AI 코스 추천받기",
