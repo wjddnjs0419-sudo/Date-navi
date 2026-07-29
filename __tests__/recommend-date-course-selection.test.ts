@@ -12,6 +12,7 @@ import {
 } from '../supabase/functions/_shared/recommendation-course-selection';
 import type { PlaceCandidate } from '../supabase/functions/_shared/recommendation-ranking';
 import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
+import { STEP_INTENT_DICTIONARY } from '../supabase/functions/_shared/step-intent-dictionary';
 
 const lockedStep = (
   stepId: string,
@@ -120,6 +121,39 @@ describe('candidate-only selection schema', () => {
 });
 
 describe('verified Kakao category matching', () => {
+  it.each(STEP_INTENT_DICTIONARY.filter((entry) => entry.targetCategory === 'activity' || entry.targetCategory === 'culture'))(
+    'accepts the representative Kakao category-name fixture for $canonicalTerm',
+    (entry) => {
+      const verified = {
+        ...candidate('taxonomy', 'taxonomy-id', 'PK6', 127),
+        name: '데이트 장소',
+        categoryGroupCode: '',
+        categoryGroupName: '',
+        categoryName: `시설 > ${entry.canonicalTerm}`,
+        matchedSearchEvidence: [],
+      };
+
+      expect(candidateMatchesCategory(verified, entry.targetCategory)).toBe(true);
+    },
+  );
+
+  it('does not use a place name or conflicting Kakao group as activity/culture proof', () => {
+    const restaurantNamedMuseum = {
+      ...candidate('restaurant-museum', 'restaurant-museum-id', 'FD6', 127),
+      name: '미술관 식당',
+      categoryGroupName: '음식점',
+      categoryName: '음식점 > 한식',
+      matchedSearchEvidence: [],
+    };
+
+    expect(candidateMatchesCategory(restaurantNamedMuseum, 'culture')).toBe(false);
+    expect(candidateMatchesCategory({
+      ...restaurantNamedMuseum,
+      name: '일반 식당',
+      categoryName: '음식점 > 한식 > 수영',
+    }, 'activity')).toBe(false);
+  });
+
   it('does not treat keyword query evidence as proof of drinks or activity category', () => {
     const restaurantFromDrinksQuery = {
       ...candidate('restaurant', 'restaurant-id', 'FD6', 127),
@@ -150,6 +184,7 @@ describe('verified Kakao category matching', () => {
     const verified = {
       ...candidate('verified', 'verified-id', 'PK6', 127),
       name,
+      ...(expectedCategory === 'activity' ? { categoryGroupCode: '' } : {}),
       categoryGroupName: '',
       categoryName,
       matchedSearchEvidence: [],

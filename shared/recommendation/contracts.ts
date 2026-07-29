@@ -24,6 +24,8 @@ export type CourseStepInput = {
   id: string;
   category: string;
   label: string;
+  /** Optional preferred keywords for this specific AI-selected step. */
+  intentTags?: string[];
   /** User-picked place for this step. When set, the step is pinned and its category is ignored. */
   pinnedKakaoPlaceId?: string;
   /** Search seed the server re-searches to server-verify the pinned place. Required when pinnedKakaoPlaceId is set. */

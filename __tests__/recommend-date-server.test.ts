@@ -9,8 +9,10 @@ import {
 import { RecommendDateDownstreamTimeoutError } from '../supabase/functions/_shared/recommend-date-downstream';
 import {
   buildRecommendationPrompt,
+  buildParseStepIntentsPrompt,
   RECOMMEND_DATE_PROMPT_VERSION,
 } from '../supabase/functions/_shared/recommendation-prompt';
+import { retrieveGeneratedFoodIntents } from '../supabase/functions/_shared/food-intent-dictionary';
 
 const request = (language: 'ko' | 'en' = 'ko'): RecommendationRequest => ({
   requestId: `request-${language}`,
@@ -91,6 +93,21 @@ function dependencies(overrides: Partial<RecommendDateDependencies> = {}): Recom
 }
 
 describe('recommend-date server prompt', () => {
+  it('limits generated-food fallback context to request-local matches', () => {
+    const prompt = buildParseStepIntentsPrompt({ ...request(), additionalRequest: '라떼와 닭갈비 먹고 싶어' });
+    const generatedSection = prompt.split('Request-local generated food candidates:')[1]!.split('Ordered course steps:')[0]!;
+
+    expect(generatedSection).toContain('"라떼"');
+    expect(generatedSection).toContain('"닭갈비"');
+    expect(generatedSection).not.toContain('"가래떡"');
+    expect((generatedSection.match(/"canonicalTerm"/g) ?? [])).toHaveLength(2);
+  });
+
+  it('caps generated-food retrieval at 20 even when a caller requests more', () => {
+    const candidates = retrieveGeneratedFoodIntents('가래떡 가오리찜 가오리콩나물찜 가오리회무침 가자미 매운탕 가자미구이 가자미식해 가자미조림 가자미찜 가자미튀김 가죽나물무침 가지김치 가지나물 가지냉국 가지볶음 가지전 가지찜 가지탕수 갈비 갈비구이 갈비찜', 99);
+    expect(candidates).toHaveLength(20);
+  });
+
   it('stages only the server-validated response for the authenticated owner before returning it', async () => {
     const stageAttestation = jest.fn(async () => undefined);
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer token', body: request() }, dependencies({ stageAttestation }));
@@ -132,8 +149,9 @@ describe('recommend-date server prompt', () => {
     expect(prompt).toContain('"twoPersonTotalBudgetKRW": 70000');
     expect(prompt).toContain('"moods"');
     expect(prompt).toContain('"durationCompatibilityMetadata": "half_day"');
-    expect(prompt).toContain('"additionalRequest"');
-    expect(prompt).toContain('"parsedPreferences"');
+    expect(prompt).toContain('"supplementaryAdditionalRequest"');
+    expect(prompt).toContain('"selectedStepTags"');
+    expect(prompt).not.toContain('"parsedPreferences"');
     expect(prompt).toMatch(/authoritative/i);
     expect(prompt).toMatch(/cannot override/i);
     expect(prompt).toMatch(/price|pricing/i);
@@ -143,7 +161,7 @@ describe('recommend-date server prompt', () => {
   });
 
   it('uses a prompt version separate from the legacy client prompt version', () => {
-    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v5-pinned-steps');
+    expect(RECOMMEND_DATE_PROMPT_VERSION).toBe('recommend-date-v6-step-tags');
   });
 
   it('step intent가 있으면 resolvedStepIntents 블록과 매칭 후보 id를 포함한다', () => {
@@ -336,7 +354,7 @@ describe('recommend-date dependency-injected handler', () => {
     });
     const prompt = (deps.generateSelection as jest.Mock).mock.calls[0][0].prompt as string;
     expect(prompt).toContain(`"language": "${language}"`);
-    expect(prompt).toContain(`"additionalRequest": "${input.additionalRequest}"`);
+    expect(prompt).toContain(`"supplementaryAdditionalRequest": "${input.additionalRequest}"`);
     expect(prompt).not.toContain('"photoFriendlyPreferred": true');
     expect(result).toMatchObject({
       status: 200,

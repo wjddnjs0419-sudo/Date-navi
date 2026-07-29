@@ -4,6 +4,7 @@ import {
   mergeServerPreferences,
   parseAdditionalRequest,
 } from '../supabase/functions/_shared/recommendation-intent';
+import { resolveStepIntents } from '../supabase/functions/_shared/step-intent-resolve';
 
 const request = (additionalRequest: string): RecommendationRequest => ({
   requestId: 'request-intent',
@@ -187,5 +188,40 @@ describe('recommend-date conservative preference merge and conflicts', () => {
       ...request('술집은 빼줘'),
       excludedCategories: ['restaurant'],
     })).toEqual({ conflictingCategories: ['meal'] });
+  });
+});
+
+describe('structured step intent tags', () => {
+  it('resolves a known tag as a preferred intent on its own step', async () => {
+    const resolved = await resolveStepIntents({
+      ...request(''),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['라멘'] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+    });
+
+    expect(resolved.stepIntents).toEqual([expect.objectContaining({
+      stepId: 'meal',
+      canonicalTerm: '라멘',
+      strength: 'preferred',
+      kakaoSearchTerms: ['라멘', '일본식라면', '일식'],
+    })]);
+    expect(resolved.excludedIntents).toEqual([]);
+  });
+
+  it('keeps a custom tag as a preferred keyword and never creates exclusions from text', async () => {
+    const resolved = await resolveStepIntents({
+      ...request('초밥 말고 라멘'),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['바질크림뇨끼'] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+    });
+
+    expect(resolved.stepIntents).toEqual([expect.objectContaining({
+      stepId: 'meal', canonicalTerm: '바질크림뇨끼', kakaoSearchTerms: ['바질크림뇨끼'], strength: 'preferred',
+    })]);
+    expect(resolved.excludedIntents).toEqual([]);
   });
 });

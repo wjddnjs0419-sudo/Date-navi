@@ -25,6 +25,12 @@
         "clear": "Clear",
         "locationFirstTitle": "Choose the meeting location first",
         "locationFirstBody": "Pick a location under \"Where are you meeting?\" below, and you can search for places nearby."
+      },
+      "tags": {
+        "label": "Keywords (optional)",
+        "hint": "We'll prioritize places matching your selected keywords.",
+        "placeholder": "Add your own",
+        "add": "Add"
       }
     },
     "walking": {
@@ -57,7 +63,7 @@
     },
     "additional": {
       "label": "Additional request (optional)",
-      "placeholder": "e.g. Suggest a cafe with a great atmosphere for a date",
+      "placeholder": "Add context for the AI",
       "maxLength": "{{count}}/500 characters"
     },
     "preview": {
@@ -82,6 +88,11 @@
       "moveStepDown": "Move this step down",
       "removeStep": "Remove this step",
       "category": "Select {{category}} for step {{number}}",
+      "addIntentTag": "Add keyword {{tag}}",
+      "removeIntentTag": "Remove keyword {{tag}}",
+      "removeSuggestedIntentTag": "Remove {{tag}} from suggestions",
+      "customIntentTag": "Custom keyword",
+      "addCustomIntentTag": "Add custom keyword",
       "walking": "Select a maximum walk of {{option}}",
       "mood": "Select the {{mood}} mood",
       "budget": "Enter the whole-course budget per person in Korean won",

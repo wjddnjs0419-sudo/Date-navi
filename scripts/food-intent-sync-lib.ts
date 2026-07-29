@@ -2,18 +2,28 @@ export type FoodIntentEntry = {
   canonicalTerm: string;
   aliases: string[];
   searchExpansions: string[];
+  domain: 'food';
+  intentType: 'dish';
+  targetCategory: 'meal' | 'cafe';
+  categoryNameKeywords: string[];
   cuisineCategory?: string;
 };
 
+export type FoodIntentOverrideEntry = Pick<FoodIntentEntry, 'canonicalTerm' | 'aliases' | 'searchExpansions' | 'cuisineCategory'>;
+
 export type FoodIntentOverrides = {
-  include: FoodIntentEntry[];
+  include: FoodIntentOverrideEntry[];
   excludeCanonicalTerms: string[];
   aliasesByCanonicalTerm: Record<string, string[]>;
   searchExpansionsByCanonicalTerm: Record<string, string[]>;
   cuisineCategoryByCanonicalTerm: Record<string, string>;
+  classificationOverrides?: {
+    version: number;
+    targetCategoryByCanonicalTerm: Record<string, 'meal' | 'cafe'>;
+  };
 };
 
-export type FoodSourceRow = { sourceName: string; canonicalName?: string; excludedReason?: string };
+export type FoodSourceRow = { sourceName: string; canonicalName?: string; classification?: string; excludedReason?: string };
 export type ExcludedFoodRow = { sourceName: string; normalizedName: string; reason: string };
 export type FoodIntentArtifacts = { entries: FoodIntentEntry[]; excluded: ExcludedFoodRow[] };
 
@@ -24,6 +34,15 @@ const NON_RESTAURANT_PATTERNS: ReadonlyArray<[RegExp, string]> = [
 ];
 
 const unique = (values: readonly string[]): string[] => [...new Set(values.filter(Boolean))];
+const CAFE_CLASSIFICATION_PATTERN = /(?:커피|음료|차|다류|주스|디저트|빵|제과|케이크|아이스크림|빙수)/;
+const CAFE_TERM_PATTERN = /(?:커피|라떼|에스프레소|카푸치노|모카|스무디|에이드|주스|케이크|빵|쿠키|마카롱|도넛|와플|빙수|아이스크림|젤라또|푸딩|타르트|크로플|베이글|스콘|밀크티|코코아|[가-힣]+차$)/;
+
+function classifyFoodIntent(canonicalTerm: string, classifications: readonly string[], overrides: FoodIntentOverrides): 'meal' | 'cafe' {
+  const explicit = overrides.classificationOverrides?.targetCategoryByCanonicalTerm[canonicalTerm];
+  if (explicit) return explicit;
+  if (classifications.some((classification) => CAFE_CLASSIFICATION_PATTERN.test(classification))) return 'cafe';
+  return CAFE_TERM_PATTERN.test(canonicalTerm) ? 'cafe' : 'meal';
+}
 
 export function normalizeFoodName(sourceName: string): string {
   return sourceName.normalize('NFKC')
@@ -45,9 +64,13 @@ export function collectFoodRowsFromStandardData(payload: unknown): FoodSourceRow
     if (typeof sourceName !== 'string' || !sourceName.trim()) throw new Error('Food standard-data row missing 식품명');
     if (typeof canonicalName !== 'string' || !canonicalName.trim()) throw new Error('Food standard-data row missing 대표식품명');
     const company = row['업체명'];
+    const classification = [row['식품대분류명'], row['식품중분류명'], row['식품소분류명']]
+      .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+      .join(' ');
     return [{
       sourceName,
       canonicalName,
+      ...(classification ? { classification } : {}),
       ...(typeof company === 'string' && company.trim() && company !== '해당없음' ? { excludedReason: 'brand_or_product' } : {}),
     }];
   });
@@ -70,7 +93,7 @@ export function collectFoodRows(payload: unknown): FoodSourceRow[] {
 
 export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrides: FoodIntentOverrides): FoodIntentArtifacts {
   const excluded: ExcludedFoodRow[] = [];
-  const accepted: Array<{ sourceName: string; normalizedName: string; normalizedCanonical: string }> = [];
+  const accepted: Array<{ sourceName: string; normalizedName: string; normalizedCanonical: string; classification?: string }> = [];
   const canonicalSeeds = new Set<string>();
   const excludedCanonicals = new Set(overrides.excludeCanonicalTerms.map(normalizeFoodName));
   for (const row of rows) {
@@ -88,7 +111,7 @@ export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrid
       ?? (!/^[가-힣 ]{2,30}$/.test(normalizedName) ? 'not_a_korean_menu_name' : undefined)
       ?? canonicalReason;
     if (reason) excluded.push({ sourceName: row.sourceName, normalizedName, reason });
-    else accepted.push({ sourceName: row.sourceName, normalizedName, normalizedCanonical });
+    else accepted.push({ sourceName: row.sourceName, normalizedName, normalizedCanonical, classification: row.classification });
   }
 
   const canonicalFor = new Map<string, string>();
@@ -102,23 +125,30 @@ export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrid
     for (const alias of aliases) canonicalFor.set(normalizeFoodName(alias), normalizedCanonical);
   }
 
-  const groups = new Map<string, string[]>();
+  const groups = new Map<string, { members: string[]; classifications: string[] }>();
+  const addToGroup = (canonical: string, members: readonly string[], classifications: readonly string[] = []) => {
+    const group = groups.get(canonical) ?? { members: [], classifications: [] };
+    group.members.push(...members);
+    group.classifications.push(...classifications);
+    groups.set(canonical, group);
+  };
   for (const canonical of canonicalSeeds) {
     const groupedCanonical = canonicalFor.get(canonical) ?? canonical;
-    groups.set(groupedCanonical, [...(groups.get(groupedCanonical) ?? []), canonical]);
+    addToGroup(groupedCanonical, [canonical]);
   }
   for (const row of accepted) {
     const canonical = canonicalFor.get(row.normalizedCanonical)
       ?? canonicalFor.get(row.normalizedName)
       ?? row.normalizedCanonical;
-    groups.set(canonical, [...(groups.get(canonical) ?? []), row.normalizedName]);
+    addToGroup(canonical, [row.normalizedName], row.classification ? [row.classification] : []);
   }
   for (const entry of overrides.include) {
     const canonical = normalizeFoodName(entry.canonicalTerm);
-    groups.set(canonical, [...(groups.get(canonical) ?? []), canonical, ...entry.aliases.map(normalizeFoodName)]);
+    addToGroup(canonical, [canonical, ...entry.aliases.map(normalizeFoodName)]);
   }
 
-  const entries = [...groups.entries()].map(([groupCanonical, members]) => {
+  const entries = [...groups.entries()].map(([groupCanonical, group]) => {
+    const { members, classifications } = group;
     const included = overrides.include.find((entry) => normalizeFoodName(entry.canonicalTerm) === groupCanonical);
     const canonicalTerm = included ? normalizeFoodName(included.canonicalTerm) : [...new Set(members)].sort((a, b) => a.length - b.length || a.localeCompare(b, 'ko-KR'))[0];
     const aliases = unique([
@@ -131,7 +161,14 @@ export function buildFoodIntentArtifacts(rows: readonly FoodSourceRow[], overrid
       ...(overrides.searchExpansionsByCanonicalTerm[canonicalTerm] ?? []),
     ]).filter((term) => term !== canonicalTerm).slice(0, 2);
     const cuisineCategory = included?.cuisineCategory ?? overrides.cuisineCategoryByCanonicalTerm[canonicalTerm];
-    return { canonicalTerm, aliases, searchExpansions, ...(cuisineCategory ? { cuisineCategory } : {}) };
+    return {
+      canonicalTerm, aliases, searchExpansions,
+      domain: 'food' as const,
+      intentType: 'dish' as const,
+      targetCategory: classifyFoodIntent(canonicalTerm, classifications, overrides),
+      categoryNameKeywords: [],
+      ...(cuisineCategory ? { cuisineCategory } : {}),
+    };
   }).sort((a, b) => a.canonicalTerm.localeCompare(b.canonicalTerm, 'ko-KR'));
 
   return { entries, excluded };

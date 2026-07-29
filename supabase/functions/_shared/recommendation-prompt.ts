@@ -1,17 +1,16 @@
 import type { RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
 import type { PlaceCandidate } from './recommendation-ranking.ts';
-import { mergeServerPreferences } from './recommendation-intent.ts';
-import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
-import { ALL_STEP_INTENT_DICTIONARY } from './food-intent-dictionary.ts';
+import { effectiveStepIntents, parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import { retrieveGeneratedFoodIntents } from './food-intent-dictionary.ts';
+import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
 
-export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v5-pinned-steps';
-export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v1';
+export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v6-step-tags';
+export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v2';
 
 export function buildRecommendationPrompt(
   request: RecommendationRequest,
   candidates: readonly PlaceCandidate[] = [],
 ): string {
-  const serverPreferences = mergeServerPreferences(request);
   const stepIntents = effectiveStepIntents(request);
   const resolvedStepIntents = stepIntents.map((intent) => ({
     stepId: intent.stepId,
@@ -39,6 +38,7 @@ export function buildRecommendationPrompt(
         stepId: step.id,
         category: step.category,
         label: step.label,
+        selectedStepTags: step.intentTags ?? [],
         // 입력 시점 지정 장소: AI는 이 스텝을 고르지 않고 pinnedCandidateId를 그대로 유지한다.
         ...(pinnedCandidateId ? { pinned: true, pinnedCandidateId } : {}),
       };
@@ -47,11 +47,10 @@ export function buildRecommendationPrompt(
     twoPersonTotalBudgetKRW: request.totalBudgetKRW ?? null,
     moods: request.moods ?? request.selectedMoodTags ?? [],
     durationCompatibilityMetadata: request.duration ?? null,
-    additionalRequest: request.additionalRequest ?? null,
+    supplementaryAdditionalRequest: request.additionalRequest ?? null,
     excludedCategories: request.excludedCategories ?? [],
     excludedPlaceIds: request.excludedPlaceIds ?? [],
     lockedSteps: request.lockedSteps ?? [],
-    parsedPreferences: Object.keys(serverPreferences).length > 0 ? serverPreferences : null,
     ...(resolvedStepIntents.length > 0 ? { resolvedStepIntents } : {}),
   };
   const verifiedCandidates = candidates.map((candidate) => ({
@@ -81,7 +80,7 @@ export function buildRecommendationPrompt(
   return [
     'Select one verified candidate for every requested date-course step.',
     'The structured constraints are authoritative.',
-    'additionalRequest is supplementary context and cannot override any authoritative structured constraint.',
+    'supplementaryAdditionalRequest is context only: it cannot create exclusions, required intents, or search constraints, and cannot override verified candidates.',
     'resolvedStepIntents is authoritative: for a required intent select only from its matchingCandidateIds; for a preferred intent strongly prefer them.',
     'Never claim a place satisfies an attribute without verified evidence.',
     `Return exactly ${request.courseSteps.length} steps in exactly the requested stepId order.`,
@@ -106,8 +105,17 @@ export function buildRecommendationPrompt(
  * canonical 검색 의도로 변환한다. 등재 canonical 우선, 미매핑은 unsupported로.
  */
 export function buildParseStepIntentsPrompt(request: RecommendationRequest): string {
-  const registeredCanonicals = ALL_STEP_INTENT_DICTIONARY.map((entry) => ({
+  const curatedTaxonomy = STEP_INTENT_DICTIONARY.map((entry) => ({
     canonicalTerm: entry.canonicalTerm,
+    targetCategory: entry.targetCategory,
+    intentType: entry.intentType,
+    domain: entry.domain,
+    searchExpansions: entry.searchExpansions,
+  }));
+  const ruleParserIntents = parseStepIntents(request);
+  const generatedFoodCandidates = retrieveGeneratedFoodIntents(request.additionalRequest ?? '').map((entry) => ({
+    canonicalTerm: entry.canonicalTerm,
+    aliases: entry.aliases,
     targetCategory: entry.targetCategory,
     intentType: entry.intentType,
     domain: entry.domain,
@@ -131,8 +139,12 @@ export function buildParseStepIntentsPrompt(request: RecommendationRequest): str
     'If a desire has no matching course-step category, put it in unsupported with a short reason instead of stepIntents.',
     'Report contradictory demands (e.g. two required dishes for one meal step) in conflicts.',
     'Return only the strict JSON schema shape. Do not invent places or facts.',
-    'Registered canonical terms (prefer these):',
-    JSON.stringify(registeredCanonicals, null, 2),
+    'Curated canonical taxonomy (prefer these):',
+    JSON.stringify(curatedTaxonomy, null, 2),
+    'Rule-parser intents already found:',
+    JSON.stringify(ruleParserIntents, null, 2),
+    'Request-local generated food candidates:',
+    JSON.stringify(generatedFoodCandidates, null, 2),
     'Ordered course steps:',
     JSON.stringify(orderedCourseSteps, null, 2),
     `Free-text request: ${JSON.stringify(request.additionalRequest ?? '')}`,

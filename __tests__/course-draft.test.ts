@@ -79,6 +79,29 @@ describe('structured course draft', () => {
     ]);
   });
 
+  it('adds unique intent tags to their owning step and removes them again', () => {
+    let draft = createInitialCourseDraft(idFactory('step-a', 'step-b'));
+    draft = courseDraftReducer(draft, { type: 'addStepIntentTag', stepId: 'step-a', tag: ' 라멘 ' });
+    draft = courseDraftReducer(draft, { type: 'addStepIntentTag', stepId: 'step-a', tag: '라멘' });
+    draft = courseDraftReducer(draft, { type: 'addStepIntentTag', stepId: 'step-b', tag: '루프탑 카페' });
+
+    expect(draft.steps).toEqual([
+      { id: 'step-a', category: 'meal', intentTags: ['라멘'] },
+      { id: 'step-b', category: 'cafe', intentTags: ['루프탑 카페'] },
+    ]);
+
+    draft = courseDraftReducer(draft, { type: 'removeStepIntentTag', stepId: 'step-a', tag: '라멘' });
+    expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'meal' });
+  });
+
+  it('keeps only one selected intent tag per step', () => {
+    let draft = createInitialCourseDraft(idFactory('step-a', 'step-b'));
+    draft = courseDraftReducer(draft, { type: 'selectStepIntentTag', stepId: 'step-a', tag: '라멘' });
+    draft = courseDraftReducer(draft, { type: 'selectStepIntentTag', stepId: 'step-a', tag: '파스타' });
+
+    expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'meal', intentTags: ['파스타'] });
+  });
+
   it('extracts deterministic ko/en exclusions and safe soft preferences', () => {
     expect(parseCoursePreferences('카페 빼줘. 술집 제외하고 걷기 싫어. 조용한 실내에서 사진 찍고 싶어')).toEqual({
       excludedCategories: ['cafe', 'drinks', 'walk'],
@@ -180,7 +203,27 @@ describe('structured course draft', () => {
     expect(buildStructuredCourseInput(draft, categoryLabels).totalBudgetKRW).toBe(100000);
   });
 
-  it('rejects missing location, oversized requests, duplicate IDs, and unresolved exclusions', () => {
+  it('serializes selected tags but never turns supplementary text into parsed preferences', () => {
+    const initial = createInitialCourseDraft(idFactory('step-a', 'step-b'));
+    const draft: CourseDraft = {
+      ...initial,
+      location,
+      additionalRequest: '초밥 말고 라멘',
+      steps: [{ ...initial.steps[0], intentTags: ['라멘'] }, initial.steps[1]],
+    };
+
+    expect(buildStructuredCourseInput(draft, categoryLabels)).toMatchObject({
+      additionalRequest: '초밥 말고 라멘',
+      courseSteps: [
+        { id: 'step-a', intentTags: ['라멘'] },
+        { id: 'step-b' },
+      ],
+    });
+    expect('parsedPreferences' in buildStructuredCourseInput(draft, categoryLabels)).toBe(false);
+    expect(validateCourseDraft(draft)).toEqual({ valid: true, issues: [] });
+  });
+
+  it('rejects missing location, oversized requests, and duplicate IDs without parsing text exclusions', () => {
     const initial = createInitialCourseDraft(idFactory('step-a', 'step-b'));
     const result = validateCourseDraft({
       ...initial,
@@ -193,7 +236,6 @@ describe('structured course draft', () => {
       { code: 'location_required' },
       { code: 'duplicate_step_ids' },
       { code: 'additional_request_too_long' },
-      { code: 'exclusion_conflict', categories: ['cafe'] },
     ]));
   });
 
@@ -251,7 +293,6 @@ describe('structured course draft', () => {
       moods: ['romantic', 'quiet'],
       duration: '2-3h',
       additionalRequest: '사진 찍기 좋은 실내 장소',
-      parsedPreferences: { indoorOnly: true, photoFriendlyPreferred: true },
     });
   });
 

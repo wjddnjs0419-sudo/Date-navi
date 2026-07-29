@@ -8,5 +8,15 @@
   "excludeCanonicalTerms": [],
   "aliasesByCanonicalTerm": {},
   "searchExpansionsByCanonicalTerm": {},
-  "cuisineCategoryByCanonicalTerm": {}
+  "cuisineCategoryByCanonicalTerm": {},
+  "classificationOverrides": {
+    "version": 1,
+    "targetCategoryByCanonicalTerm": {
+      "커피": "cafe",
+      "라떼": "cafe",
+      "케이크": "cafe",
+      "빙수": "cafe",
+      "아이스크림": "cafe"
+    }
+  }
 }

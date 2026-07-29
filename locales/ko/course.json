@@ -25,6 +25,12 @@
         "clear": "지우기",
         "locationFirstTitle": "만나는 위치를 먼저 선택해주세요",
         "locationFirstBody": "아래 '어디서 만나요?'에서 위치를 고르면 그 주변으로 장소를 검색할 수 있어요."
+      },
+      "tags": {
+        "label": "원하는 키워드 (선택)",
+        "hint": "선택한 키워드를 우선 반영해 장소를 찾아요.",
+        "placeholder": "직접 입력",
+        "add": "추가"
       }
     },
     "walking": {
@@ -57,7 +63,7 @@
     },
     "additional": {
       "label": "추가 요청 (선택)",
-      "placeholder": "예: 데이트하기 좋은 분위기 좋은 카페로 추천해줘",
+      "placeholder": "AI에게 전달할 추가 요청을 적어주세요",
       "maxLength": "{{count}}/500자"
     },
     "preview": {
@@ -82,6 +88,11 @@
       "moveStepDown": "이 단계를 아래로 이동",
       "removeStep": "이 단계 삭제",
       "category": "{{number}}단계 카테고리 {{category}} 선택",
+      "addIntentTag": "{{tag}} 키워드 추가",
+      "removeIntentTag": "{{tag}} 키워드 삭제",
+      "removeSuggestedIntentTag": "{{tag}} 기본 추천에서 삭제",
+      "customIntentTag": "직접 입력할 키워드",
+      "addCustomIntentTag": "직접 입력한 키워드 추가",
       "walking": "최대 도보 시간 {{option}} 선택",
       "mood": "분위기 {{mood}} 선택",
       "budget": "1인 전체 코스 예산 원화 입력",

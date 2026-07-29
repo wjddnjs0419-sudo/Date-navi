@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
-import { BackBar, Badge, BigButton } from '../../components/ui';
+import { BackBar, BigButton } from '../../components/ui';
 import { CourseStepEditor } from '../../components/recommendation/course-step-editor';
 import { LocationSelector } from '../../components/recommendation/location-selector';
 import { StepSlider } from '../../components/recommendation/step-slider';
@@ -24,7 +24,6 @@ import {
   PER_PERSON_BUDGET_STEP_KRW,
   courseDraftReducer,
   createInitialCourseDraft,
-  parseCoursePreferences,
   parseDurationHours,
   parsePerPersonBudgetKRW,
   validateCourseDraft,
@@ -39,6 +38,7 @@ import { createRecommendationRequestId } from '../../lib/recommendationIdentity'
 import { buildStructuredGeneratingParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { subscribePickedPlace } from '../../lib/place-pick-bridge';
+import { usePersonalStepTagCatalog } from '../../components/recommendation/use-personal-step-tag-catalog';
 
 const WALKING_OPTIONS: { value: WalkingLimit; labelKey: string }[] = [
   { value: 5, labelKey: 'course.walking.options.five' },
@@ -54,11 +54,6 @@ function issueMessage(
   categoryLabels: Record<CourseCategory, string>,
   t: Translate,
 ): string {
-  if (issue.code === 'exclusion_conflict') {
-    return t('course.validation.exclusion_conflict', {
-      categories: issue.categories.map((category) => categoryLabels[category]).join(', '),
-    });
-  }
   return t(`course.validation.${issue.code}`);
 }
 
@@ -81,6 +76,7 @@ export default function CourseScreen() {
   const router = useRouter();
   const { language, t } = useI18n();
   const { prepareRecommendationRequest } = useRecommendationSessionStore();
+  const personalTagCatalog = usePersonalStepTagCatalog();
   const idSequence = useRef(0);
   const [draft, dispatch] = useReducer(
     courseDraftReducer,
@@ -90,10 +86,6 @@ export default function CourseScreen() {
   const categoryLabels = useMemo(() => Object.fromEntries(
     COURSE_CATEGORIES.map((category) => [category, t(`course.steps.categories.${category}`)]),
   ) as Record<CourseCategory, string>, [t]);
-  const parsedPreferences = useMemo(
-    () => parseCoursePreferences(draft.additionalRequest),
-    [draft.additionalRequest],
-  );
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
 
   const [pinTargetStepId, setPinTargetStepId] = useState<string | null>(null);
@@ -148,8 +140,6 @@ export default function CourseScreen() {
     } as any);
   }
 
-  const hasPreview = Object.keys(parsedPreferences).length > 0;
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -177,6 +167,9 @@ export default function CourseScreen() {
                 categoryLabels={categoryLabels}
                 dispatch={dispatch}
                 onRequestPick={requestPick}
+                suggestions={personalTagCatalog.suggestionsFor(step.category)}
+                onAddSuggestedTag={(tag) => personalTagCatalog.addSuggestion(step.category, tag)}
+                onRemoveSuggestedTag={(tag) => personalTagCatalog.removeSuggestion(step.category, tag)}
                 t={t}
               />
             ))}
@@ -296,30 +289,14 @@ export default function CourseScreen() {
           <Text style={styles.counter}>{t('course.additional.maxLength', { count: draft.additionalRequest.length })}</Text>
         </View>
 
-        {hasPreview && (
-          <View style={styles.preview}>
-            <Text style={styles.previewTitle}>{t('course.preview.title')}</Text>
-            <View style={styles.previewChips}>
-              {parsedPreferences.excludedCategories?.map((category) => (
-                <Badge key={category} tone="gray">
-                  {t('course.preview.excluded', { category: categoryLabels[category as CourseCategory] })}
-                </Badge>
-              ))}
-              {parsedPreferences.quietPreferred && <Badge tone="lavender">{t('course.preview.quiet')}</Badge>}
-              {parsedPreferences.photoFriendlyPreferred && <Badge tone="pink">{t('course.preview.photo')}</Badge>}
-              {parsedPreferences.indoorOnly && <Badge tone="mint">{t('course.preview.indoor')}</Badge>}
-            </View>
-          </View>
-        )}
-
         {validation.issues.length > 0 && (
           <View style={styles.validation}>
             {validation.issues.map((issue) => (
               <Text
                 key={issue.code}
                 selectable
-                style={[styles.validationText, issue.code === 'exclusion_conflict' && styles.conflictText]}
-                testID={issue.code === 'exclusion_conflict' ? 'course-conflict' : 'course-validation'}
+                style={styles.validationText}
+                testID="course-validation"
               >
                 {issueMessage(issue, categoryLabels, t)}
               </Text>

@@ -23,6 +23,15 @@ const VERIFIED_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
   activity: ['액티비티', '체험', '영화관', '볼링', '방탈출', '공방', '놀이공원', '테마파크'],
 };
 
+const TAXONOMY_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
+  activity: STEP_INTENT_DICTIONARY
+    .filter((entry) => entry.targetCategory === 'activity')
+    .flatMap((entry) => [entry.canonicalTerm, ...entry.categoryNameKeywords]),
+  culture: STEP_INTENT_DICTIONARY
+    .filter((entry) => entry.targetCategory === 'culture')
+    .flatMap((entry) => [entry.canonicalTerm, ...entry.categoryNameKeywords]),
+};
+
 // 데이트에 부적합한 카카오 카테고리 그룹코드. 적합 코드(FD6·CE7·CT1·AT4)만 통과.
 export const UNFIT_CATEGORY_GROUP_CODES = new Set<string>([
   'HP8', // 병원
@@ -74,9 +83,13 @@ export function verifiedPlaceMatchesCategory(
   if (normalized === 'ai_decide') return true;
   const code = CATEGORY_CODES[normalized];
   if (code && place.categoryGroupCode) return place.categoryGroupCode === code;
-  const keywords = VERIFIED_CATEGORY_KEYWORDS[normalized] ?? [];
-  const haystack = `${place.categoryGroupName} ${place.categoryName} ${place.name}`
+  if (normalized === 'activity' && place.categoryGroupCode) return false;
+  // Activity/culture taxonomy subtypes are often returned without their reliable broad Kakao group code.
+  // Their verified category names remain sufficient for broad course-step eligibility only.
+  const keywords = [...(VERIFIED_CATEGORY_KEYWORDS[normalized] ?? []), ...(TAXONOMY_CATEGORY_KEYWORDS[normalized] ?? [])];
+  const haystack = `${place.categoryGroupName} ${place.categoryName}`
     .normalize('NFKC')
     .toLocaleLowerCase();
   return keywords.some((keyword) => haystack.includes(keyword));
 }
+import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';

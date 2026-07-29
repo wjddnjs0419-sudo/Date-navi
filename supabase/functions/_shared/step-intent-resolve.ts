@@ -6,7 +6,7 @@ import {
 } from './step-intent-dictionary.ts';
 import { ALL_STEP_INTENT_DICTIONARY, getStepIntentDictionaryEntry } from './food-intent-dictionary.ts';
 
-export type StepIntentSource = 'none' | 'rule' | 'ai';
+export type StepIntentSource = 'none' | 'rule' | 'ai' | 'tag';
 
 export type UnsupportedIntent = { term: string; reason: string };
 export type IntentConflict = { description: string };
@@ -102,6 +102,7 @@ type ResolveDeps = {
 
 const normalize = (value: string): string => value.normalize('NFKC').toLocaleLowerCase();
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const stableUnique = (terms: readonly string[]): string[] => [...new Set(terms.map((term) => term.trim()).filter(Boolean))];
 
 // 도메인 불용어: 조사·동사·요청 상투어 + required/negation 마커. 잔여 신호에서 제외한다.
 const GATE_STOPWORDS = new Set([
@@ -185,6 +186,41 @@ export async function resolveStepIntents(
   request: RecommendationRequest,
   deps: ResolveDeps = {},
 ): Promise<ResolvedStepIntents> {
+  const lockedStepIds = new Set((request.lockedSteps ?? []).map((step) => step.stepId));
+  const stepIntents = request.courseSteps.flatMap((step) => {
+    if (lockedStepIds.has(step.id)) return [];
+    const stepCategory = normalizeRecommendationCategory(step.category);
+    return (step.intentTags ?? []).flatMap((rawTag) => {
+      const tag = rawTag.trim();
+      if (!tag) return [];
+      const dictionaryEntry = ALL_STEP_INTENT_DICTIONARY.find((entry) => (
+        normalize(entry.canonicalTerm) === normalize(tag)
+        || entry.aliases.some((alias) => normalize(alias) === normalize(tag))
+      ));
+      if (dictionaryEntry && dictionaryEntry.targetCategory !== stepCategory) return [];
+      return [{
+        stepId: step.id,
+        stepCategory,
+        intentType: dictionaryEntry?.intentType ?? 'dish',
+        canonicalTerm: dictionaryEntry?.canonicalTerm ?? tag,
+        kakaoSearchTerms: dictionaryEntry
+          ? stableUnique([dictionaryEntry.canonicalTerm, ...dictionaryEntry.searchExpansions]).slice(0, 3)
+          : [tag],
+        strength: 'preferred' as StepIntentStrength,
+        displayLabel: dictionaryEntry?.displayLabel ?? { ko: tag, en: tag },
+      } satisfies ParsedStepIntent];
+    });
+  });
+  if (stepIntents.length > 0) {
+    return { source: 'tag', stepIntents: dedupeIntents(stepIntents), excludedIntents: [], unsupported: [], conflicts: [] };
+  }
+
+  // Course additionalRequest is prompt-only context. The legacy parser remains exported for
+  // non-course compatibility, but is deliberately not consulted by this request path.
+  if (request.mode === 'course') {
+    return { source: 'none', stepIntents: [], excludedIntents: [], unsupported: [], conflicts: [] };
+  }
+
   const raw = request.additionalRequest?.trim();
   if (!raw) {
     return { source: 'none', stepIntents: [], excludedIntents: [], unsupported: [], conflicts: [] };

@@ -6,20 +6,14 @@ import {
   type RecommendationRequest,
 } from '../../../shared/recommendation/schemas.ts';
 import {
-  buildParseStepIntentsPrompt,
   buildRecommendationPrompt,
-  PARSE_STEP_INTENTS_PROMPT_VERSION,
   RECOMMEND_DATE_PROMPT_VERSION,
 } from './recommendation-prompt.ts';
-import { coerceAiParseResult, resolveStepIntents } from './step-intent-resolve.ts';
+import { resolveStepIntents } from './step-intent-resolve.ts';
 import {
   RecommendDateDownstreamMalformedError,
   RecommendDateDownstreamTimeoutError,
 } from './recommend-date-downstream.ts';
-import {
-  detectStructuredPreferenceConflict,
-  mergeServerPreferences,
-} from './recommendation-intent.ts';
 import type { RecommendationSearchPipelineResult } from './recommendation-search-pipeline.ts';
 import {
   buildCandidateOnlyCourse,
@@ -96,12 +90,6 @@ export type RecommendDateDependencies = {
     candidateListAttestationId: string;
   }) => Promise<number | undefined>;
   generateSelection: (input: {
-    authorization: string;
-    prompt: string;
-    promptVersion: string;
-  }) => Promise<unknown>;
-  /** step intent AI fallback(parse_step_intents). 규칙 미검출+유의미 잔여 시에만 resolve가 호출한다. */
-  parseStepIntentsAi?: (input: {
     authorization: string;
     prompt: string;
     promptVersion: string;
@@ -185,34 +173,13 @@ export async function handleRecommendDate(
   if (parsedRequest.data.mode !== 'course' || parsedRequest.data.courseSteps.length < 2) {
     return errorResult(400, 'INVALID_INPUT');
   }
-  if (detectStructuredPreferenceConflict(parsedRequest.data)) {
-    return errorResult(400, 'INVALID_INPUT');
-  }
-
+  // Client-side parsedPreferences is legacy/untrusted. Course free text is prompt-only,
+  // so it must not be promoted to structured search, ranking, or exclusion constraints.
   const { parsedPreferences: _untrustedParsedPreferences, ...trustedRequest } = parsedRequest.data;
-  const serverPreferences = mergeServerPreferences(trustedRequest);
-  const serverRequest = Object.keys(serverPreferences).length > 0
-    ? {
-      ...trustedRequest,
-      ...serverPreferences,
-      parsedPreferences: serverPreferences,
-    }
-    : trustedRequest;
+  const serverRequest = trustedRequest;
 
-  // step intent를 요청당 1회 resolve(규칙 → 게이트 충족 시 AI 병합)해 서버 내부 request에 부착한다.
-  // 하위 순수함수(search/ranking/selection/prompt)는 effectiveStepIntents로 이 값을 읽어 재파싱하지 않는다.
-  const resolved = await resolveStepIntents(serverRequest, {
-    invokeAi: dependencies.parseStepIntentsAi
-      ? async (req) => coerceAiParseResult(
-        await dependencies.parseStepIntentsAi!({
-          authorization,
-          prompt: buildParseStepIntentsPrompt(req),
-          promptVersion: PARSE_STEP_INTENTS_PROMPT_VERSION,
-        }),
-        req,
-      )
-      : undefined,
-  });
+  // Structured tags are resolved once per request. Additional free text is prompt-only.
+  const resolved = await resolveStepIntents(serverRequest);
   const intentAwareRequest = {
     ...serverRequest,
     resolvedStepIntents: resolved.stepIntents,
@@ -512,7 +479,7 @@ export async function handleRecommendDate(
         ? {
           stepIntent: {
             parserSource: resolved.source,
-            aiFallbackUsed: resolved.source === 'ai',
+            aiFallbackUsed: false,
             resolved: [...resolved.stepIntents, ...resolved.excludedIntents].map((intent) => ({
               canonicalTerm: intent.canonicalTerm,
               displayLabel: intent.displayLabel,

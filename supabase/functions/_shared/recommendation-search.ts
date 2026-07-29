@@ -4,6 +4,7 @@ import type {
 } from '../../../shared/recommendation/contracts.ts';
 import { effectiveStepIntents } from './step-intent.ts';
 
+// explicit remains in the evidence union for backward-compatible cached records; new plans never emit it.
 type SearchPhase = 'required' | 'step_intent' | 'explicit' | 'intent' | 'fallback';
 
 export type SearchEvidence = {
@@ -144,11 +145,6 @@ export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearc
         expansionLevel: level as 0 | 1 | 2,
       });
     });
-  }
-  // 파싱 성공 시 raw 통문장 검색 제거(카카오는 짧은 키워드용), 실패 시에만 최후 보조로 유지.
-  const explicit = request.additionalRequest?.trim();
-  if (explicit && stepIntents.length === 0) {
-    items.push({ source: 'keyword', phase: 'explicit', queryText: explicit });
   }
   items.push({ source: 'keyword', phase: 'intent', queryText: '데이트 코스' });
   items.push({ source: 'fallback', phase: 'fallback', queryText: '주변 데이트 장소' });

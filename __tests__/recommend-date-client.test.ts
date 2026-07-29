@@ -44,7 +44,6 @@ const courseDraft: NonNullable<FeelingInput['courseDraft']> = {
   moods: ['romantic', 'quiet'],
   duration: 'half_day',
   additionalRequest: '야경을 보고 싶어',
-  parsedPreferences: { quietPreferred: true },
 };
 
 const input: FeelingInput = {

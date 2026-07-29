@@ -7,6 +7,7 @@ import type {
   ParsedPreferenceInput,
   RecommendationLocation,
 } from '../shared/recommendation/contracts';
+import { MAX_STEP_INTENT_TAGS } from '../shared/recommendation/step-intent-tag-catalog';
 
 export const COURSE_CATEGORIES = [
   'meal',
@@ -47,6 +48,7 @@ export type CoursePin = {
 export type CourseDraftStep = {
   id: string;
   category: CourseCategory;
+  intentTags?: readonly string[];
   /** When set, the step is pinned to a user-picked place and its category is ignored server-side. */
   pin?: CoursePin;
 };
@@ -72,6 +74,9 @@ export type CourseDraftAction =
   | { type: 'removeStep'; stepId: string }
   | { type: 'moveStep'; stepId: string; direction: 'up' | 'down' }
   | { type: 'setStepCategory'; stepId: string; category: CourseCategory }
+  | { type: 'selectStepIntentTag'; stepId: string; tag: string }
+  | { type: 'addStepIntentTag'; stepId: string; tag: string }
+  | { type: 'removeStepIntentTag'; stepId: string; tag: string }
   | { type: 'setStepPin'; stepId: string; pin: CoursePin }
   | { type: 'clearStepPin'; stepId: string }
   | { type: 'setWalkingLimit'; minutes: WalkingLimit }
@@ -86,8 +91,7 @@ export type CourseDraftIssue =
   | { code: 'duplicate_step_ids' }
   | { code: 'invalid_step_category' }
   | { code: 'budget_invalid' }
-  | { code: 'additional_request_too_long' }
-  | { code: 'exclusion_conflict'; categories: CourseCategory[] };
+  | { code: 'additional_request_too_long' };
 
 export type StructuredCourseInput = {
   location: RecommendationLocation;
@@ -97,7 +101,6 @@ export type StructuredCourseInput = {
   moods?: CourseMood[];
   duration?: string;
   additionalRequest?: string;
-  parsedPreferences?: ParsedPreferenceInput;
 };
 
 const categorySet = new Set<string>(COURSE_CATEGORIES);
@@ -146,6 +149,39 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
         steps: draft.steps.map((step) => (
           step.id === action.stepId ? { ...step, category: action.category } : step
         )),
+      };
+    case 'selectStepIntentTag': {
+      const tag = action.tag.trim();
+      if (!tag || tag.length > 40) return draft;
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => (
+          step.id === action.stepId ? { ...step, intentTags: [tag] } : step
+        )),
+      };
+    }
+    case 'addStepIntentTag': {
+      const tag = action.tag.trim();
+      if (!tag || tag.length > 40) return draft;
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => {
+          if (step.id !== action.stepId) return step;
+          const intentTags = [...new Set([...(step.intentTags ?? []), tag])].slice(0, MAX_STEP_INTENT_TAGS);
+          return { ...step, intentTags };
+        }),
+      };
+    }
+    case 'removeStepIntentTag':
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => {
+          if (step.id !== action.stepId) return step;
+          const intentTags = (step.intentTags ?? []).filter((tag) => tag !== action.tag);
+          if (intentTags.length > 0) return { ...step, intentTags };
+          const { intentTags: _intentTags, ...rest } = step;
+          return rest;
+        }),
       };
     case 'setStepPin':
       return {
@@ -318,13 +354,6 @@ export function validateCourseDraft(draft: CourseDraft): { valid: boolean; issue
   }
   if (draft.additionalRequest.length > 500) issues.push({ code: 'additional_request_too_long' });
 
-  const excluded = parseCoursePreferences(draft.additionalRequest).excludedCategories ?? [];
-  const selected = new Set(draft.steps.map((step) => step.category));
-  const conflicts = excluded.filter((category): category is CourseCategory => (
-    categorySet.has(category) && selected.has(category as CourseCategory)
-  ));
-  if (conflicts.length > 0) issues.push({ code: 'exclusion_conflict', categories: conflicts });
-
   return { valid: issues.length === 0, issues };
 }
 
@@ -336,14 +365,13 @@ export function buildStructuredCourseInput(
   if (!validation.valid || !draft.location) throw new Error('Cannot build an invalid course draft.');
 
   const additionalRequest = draft.additionalRequest.trim() || undefined;
-  const parsedPreferences = parseCoursePreferences(draft.additionalRequest);
-  const hasParsedPreferences = Object.keys(parsedPreferences).length > 0;
   return {
     location: draft.location,
     courseSteps: draft.steps.map((step) => ({
       id: step.id,
       category: step.category,
       label: step.pin ? step.pin.name : categoryLabels[step.category],
+      ...(step.intentTags && step.intentTags.length > 0 ? { intentTags: [...step.intentTags] } : {}),
       ...(step.pin ? { pinnedKakaoPlaceId: step.pin.kakaoPlaceId, pinnedName: step.pin.name } : {}),
     })),
     ...(draft.maxWalkingMinutes ? { maxWalkingMinutes: draft.maxWalkingMinutes } : {}),
@@ -354,6 +382,5 @@ export function buildStructuredCourseInput(
     ...(draft.moods.length > 0 ? { moods: [...draft.moods] } : {}),
     ...(draft.duration ? { duration: draft.duration } : {}),
     ...(additionalRequest ? { additionalRequest } : {}),
-    ...(hasParsedPreferences ? { parsedPreferences } : {}),
   };
 }

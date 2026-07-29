@@ -71,7 +71,7 @@ function dependencies(overrides: Partial<RecommendDateDependencies> = {}): Recom
 }
 
 describe('recommend-date Phase 7 typed search outcomes', () => {
-  it('passes a free-text cafe exclusion to candidate search when cafe is not a course step', async () => {
+  it('keeps a free-text cafe exclusion out of candidate search', async () => {
     const searchCandidates = jest.fn(async () => ({
       candidates: [
         candidates[0],
@@ -89,17 +89,17 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, dependencies({ searchCandidates }));
 
     expect(result.status).toBe(200);
-    expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
-      excludedCategories: expect.arrayContaining(['cafe']),
+    expect(searchCandidates).toHaveBeenCalledWith(expect.not.objectContaining({
+      excludedCategories: expect.anything(),
     }), expect.anything());
   });
 
-  it('rejects a cafe step that conflicts with a free-text cafe exclusion', async () => {
+  it('does not reject a cafe step for supplementary free text', async () => {
     const result = await handleRecommendDate({
       method: 'POST', authorization: 'Bearer valid', body: { ...request(), additionalRequest: '카페는 말고' },
     }, dependencies());
 
-    expect(result.status).toBe(400);
+    expect(result.status).toBe(200);
   });
 
   it('rejects the shared single_place shape before recommend-date search or AI selection', async () => {
@@ -149,7 +149,7 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
     expect(deps.generateSelection).not.toHaveBeenCalled();
   });
 
-  it('returns STEP_INTENT_UNSATISFIED when a required step intent has no matching candidate', async () => {
+  it('does not make a free-text dish mention a required intent', async () => {
     // meal 카테고리는 충족(무관 식당)하지만 "무조건 삼겹살" required intent를 만족하는 후보는 0.
     const intentRequest: RecommendationRequest = { ...request(), additionalRequest: '무조건 삼겹살이어야 해' };
     const deps = dependencies({
@@ -162,19 +162,10 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: intentRequest }, deps);
 
-    expect({ status: result.status, body: result.body }).toEqual({
-      status: 422,
-      body: {
-        error: {
-          ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
-          unsatisfiedIntents: [{ canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' } }],
-        },
-      },
-    });
-    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(result.status).toBe(200);
   });
 
-  it('required intent 게이트는 카테고리까지 검사한다(이름만 전시인 비-culture는 통과 못 함)', async () => {
+  it('does not make a free-text culture mention a required intent', async () => {
     // culture 스텝은 CT1 후보로 category 게이트를 통과하지만, "무조건 전시" required intent를
     // 만족하는 후보는 이름만 전시인 FD6뿐이라 culture ∩ 전시 매칭은 0 → STEP_INTENT_UNSATISFIED.
     const cultureRequest: RecommendationRequest = {
@@ -202,16 +193,7 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: cultureRequest }, deps);
 
-    expect({ status: result.status, body: result.body }).toEqual({
-      status: 422,
-      body: {
-        error: {
-          ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
-          unsatisfiedIntents: [{ canonicalTerm: '전시', displayLabel: { ko: '전시', en: 'Exhibition' } }],
-        },
-      },
-    });
-    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(result.status).toBe(200);
   });
 
   it('continues after partial search failure when every required step still has candidates', async () => {
@@ -313,43 +295,20 @@ describe('recommend-date step intent resolve 배선', () => {
     candidate('cafe-candidate', 'cafe-id', 'CE7', 127.001),
   ];
 
-  it('규칙 사전 히트("삼겹살")는 AI 파서를 호출하지 않고 200을 반환한다', async () => {
-    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
-    const deps = dependencies({
-      searchCandidates: jest.fn(async () => ({ candidates: porkCandidates, recallByCategory: { meal: 1, cafe: 1 }, searchMetadata: metadata() })),
-      parseStepIntentsAi,
-    });
-    const body: RecommendationRequest = { ...request(), additionalRequest: '삼겹살 먹고 싶어' };
-    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
-    expect(result.status).toBe(200);
-    expect(parseStepIntentsAi).not.toHaveBeenCalled();
-  });
-
-  it('사전 미검출 + 유의미 잔여 텍스트면 AI 파서를 한 번 호출한다', async () => {
-    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
-    const deps = dependencies({ parseStepIntentsAi });
-    const body: RecommendationRequest = { ...request(), additionalRequest: '뭔가 색다르고 이색적인 곳으로 가고파' };
-    await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
-    expect(parseStepIntentsAi).toHaveBeenCalledTimes(1);
-  });
-
-  it('AI가 식사 intent를 누락해도 병합된 규칙 intent를 검색 요청에 전달한다', async () => {
+  it('selected tags alone are resolved and forwarded to candidate search', async () => {
     const searchCandidates = jest.fn(async () => ({
       candidates: porkCandidates,
       recallByCategory: { meal: 1, cafe: 1 },
       searchMetadata: metadata(),
     }));
-    const parseStepIntentsAi = jest.fn(async () => ({
-      stepIntents: [{
-        canonicalTerm: '감성 카페', targetCategory: 'cafe', intentType: 'venue_subtype',
-        kakaoSearchTerms: ['감성 카페'], strength: 'preferred', negated: false,
-      }],
-      unsupported: [], conflicts: [],
-    }));
-    const deps = dependencies({ searchCandidates, parseStepIntentsAi });
+    const deps = dependencies({ searchCandidates });
     const body: RecommendationRequest = {
       ...request(),
-      additionalRequest: '삼겹살 먹고 조용하고 분위기 좋은 감성 카페 가고싶어',
+      additionalRequest: '삼겹살 말고 라멘',
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['삼겹살'] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
     };
 
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
@@ -357,32 +316,30 @@ describe('recommend-date step intent resolve 배선', () => {
     expect(result.status).toBe(200);
     expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
       resolvedStepIntents: expect.arrayContaining([
-        expect.objectContaining({ canonicalTerm: '삼겹살' }),
-        expect.objectContaining({ canonicalTerm: '감성 카페' }),
+        expect.objectContaining({ canonicalTerm: '삼겹살', strength: 'preferred' }),
       ]),
     }), expect.anything());
   });
 
-  it('additionalRequest가 없으면 AI 파서를 호출하지 않는다', async () => {
-    const parseStepIntentsAi = jest.fn(async () => ({ stepIntents: [], unsupported: [], conflicts: [] }));
-    const deps = dependencies({ parseStepIntentsAi });
-    await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
-    expect(parseStepIntentsAi).not.toHaveBeenCalled();
-  });
-
-  it('응답 metadata.stepIntent에 parserSource와 resolved 칩 데이터가 담긴다', async () => {
+  it('response metadata identifies tag-resolved intent data', async () => {
     const deps = dependencies({
       searchCandidates: jest.fn(async () => ({ candidates: porkCandidates, recallByCategory: { meal: 1, cafe: 1 }, searchMetadata: metadata() })),
     });
-    const body: RecommendationRequest = { ...request(), additionalRequest: '삼겹살 먹고 싶어' };
+    const body: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['삼겹살'] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+    };
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body }, deps);
     expect(result.status).toBe(200);
     const meta = (result.body as { metadata: { stepIntent?: { parserSource: string; resolved: { canonicalTerm: string }[] } } }).metadata.stepIntent;
-    expect(meta?.parserSource).toBe('rule');
+    expect(meta?.parserSource).toBe('tag');
     expect(meta?.resolved.map((r) => r.canonicalTerm)).toContain('삼겹살');
   });
 
-  it('additionalRequest가 없으면 metadata.stepIntent를 넣지 않는다', async () => {
+  it('untagged steps do not add metadata.stepIntent', async () => {
     const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, dependencies());
     const meta = (result.body as { metadata: { stepIntent?: unknown } }).metadata;
     expect(meta.stepIntent).toBeUndefined();

@@ -184,6 +184,7 @@ export function effectiveExcludedIntents(
 type IntentEvidence = {
   phase?: string;
   canonicalTerm?: string;
+  expansionLevel?: 0 | 1 | 2;
 };
 
 type IntentMatchablePlace = {
@@ -192,19 +193,45 @@ type IntentMatchablePlace = {
   matchedSearchEvidence: readonly IntentEvidence[];
 };
 
-/** 스펙 §12.2 required 충족 조건: exact 검색 evidence ∨ 이름 포함 ∨ 호환 상세 category. */
-export function placeMatchesStepIntent(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
+const BROAD_STRICT_CATEGORY_KEYWORDS = new Set([
+  '일식', '중식', '양식', '육류,고기', '분식', '와인바', '호프', '펍', '주점', '이자카야', '전통주',
+].map(normalize));
+const BROAD_STRICT_ALIASES = new Set([
+  'italian food', 'italian restaurant', '루프탑', 'rooftop',
+].map(normalize));
+
+function isStrictNameTerm(term: string, entry: StepIntentDictionaryEntry | undefined): boolean {
+  const normalizedTerm = normalize(term);
+  return !BROAD_STRICT_ALIASES.has(normalizedTerm);
+}
+
+function isStrictCategoryKeyword(keyword: string, intent: ParsedStepIntent): boolean {
+  const normalizedKeyword = normalize(keyword);
+  return normalizedKeyword === normalize(intent.canonicalTerm) || !BROAD_STRICT_CATEGORY_KEYWORDS.has(normalizedKeyword);
+}
+
+function hasStrictIntentEvidence(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
   if (place.matchedSearchEvidence.some((evidence) => (
-    evidence.phase === 'step_intent' && evidence.canonicalTerm === intent.canonicalTerm
+    evidence.phase === 'step_intent'
+    && evidence.canonicalTerm === intent.canonicalTerm
+    && evidence.expansionLevel === 0
   ))) return true;
   const entry = getStepIntentDictionaryEntry(intent.canonicalTerm);
   const name = normalize(place.name);
-  if (name.includes(normalize(intent.canonicalTerm))) return true;
+  if ([intent.canonicalTerm, ...(entry?.aliases ?? [])]
+    .some((term) => isStrictNameTerm(term, entry) && name.includes(normalize(term)))) return true;
   const categoryName = normalize(place.categoryName ?? '');
-  return (entry?.categoryNameKeywords ?? []).some((keyword) => categoryName.includes(normalize(keyword)));
+  return (entry?.categoryNameKeywords ?? []).some((keyword) => (
+    isStrictCategoryKeyword(keyword, intent) && categoryName.includes(normalize(keyword))
+  ));
 }
 
-/** 제외 intent도 positive/required와 정확히 같은 evidence·이름·상세 카테고리 의미를 쓴다. */
+/** Exact intent proof used by required gates; preferred expansion scoring is separate in recommendation-ranking. */
+export function placeMatchesStepIntent(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
+  return hasStrictIntentEvidence(place, intent);
+}
+
+/** Separate hard-exclusion boundary so scoring rules cannot broaden this filter accidentally. */
 export function placeMatchesExcludedStepIntent(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
-  return placeMatchesStepIntent(place, intent);
+  return hasStrictIntentEvidence(place, intent);
 }

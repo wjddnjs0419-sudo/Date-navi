@@ -248,8 +248,42 @@ describe('placeMatchesStepIntent', () => {
     }), intent)).toBe(true);
   });
 
+  it('확장 검색 evidence만으로는 strict intent를 증명하지 않는다', () => {
+    expect(placeMatchesStepIntent(place({
+      matchedSearchEvidence: [{ queryId: 'query_003', source: 'keyword', page: 1, queryText: '돼지고기구이', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 1 }],
+    }), intent)).toBe(false);
+  });
+
+  it('2차 확장 검색 evidence만으로도 strict intent를 증명하지 않는다', () => {
+    expect(placeMatchesStepIntent(place({
+      matchedSearchEvidence: [{ queryId: 'query_004', source: 'keyword', page: 1, queryText: '고기집', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 2 }],
+    }), intent)).toBe(false);
+  });
+
+  it('broad cuisine alias or category cannot prove a dish', () => {
+    const pasta = parseStepIntents(request('파스타 먹고 싶어')).stepIntents[0]!;
+    const tteokbokki = parseStepIntents(request('떡볶이 먹고 싶어')).stepIntents[0]!;
+
+    expect(placeMatchesStepIntent(place({ name: 'Italian Restaurant' }), pasta)).toBe(false);
+    expect(placeMatchesStepIntent(place({ categoryName: '음식점 > 분식' }), tteokbokki)).toBe(false);
+  });
+
+  it('broad drink venues cannot prove a specific drink', () => {
+    const soju = parseStepIntents(request('소주 마시고 싶어', [{ id: 'drinks', category: 'drinks' }])).stepIntents[0]!;
+    const sake = parseStepIntents(request('사케 마시고 싶어', [{ id: 'drinks', category: 'drinks' }])).stepIntents[0]!;
+    const makgeolli = parseStepIntents(request('막걸리 마시고 싶어', [{ id: 'drinks', category: 'drinks' }])).stepIntents[0]!;
+    expect(placeMatchesStepIntent(place({ categoryName: '음식점 > 주점' }), soju)).toBe(false);
+    expect(placeMatchesStepIntent(place({ categoryName: '음식점 > 이자카야' }), sake)).toBe(false);
+    expect(placeMatchesStepIntent(place({ categoryName: '음식점 > 전통주' }), makgeolli)).toBe(false);
+  });
+
   it('장소 이름의 canonical 포함으로 매칭한다', () => {
     expect(placeMatchesStepIntent(place({ name: '왕십리 삼겹살집' }), intent)).toBe(true);
+  });
+
+  it('search expansion과 겹쳐도 narrow alias 이름은 strict intent를 증명한다', () => {
+    const sushi = parseStepIntents(request('초밥 먹고 싶어')).stepIntents[0]!;
+    expect(placeMatchesStepIntent(place({ name: '성수 오마카세' }), sushi)).toBe(true);
   });
 
   it('호환 categoryName 키워드로 매칭한다', () => {
@@ -269,12 +303,15 @@ describe('placeMatchesExcludedStepIntent', () => {
     matchedSearchEvidence: [], ...overrides,
   });
 
-  it('matches the same evidence, name, and category signals as a positive intent', () => {
+  it('uses only strict evidence and narrow category signals', () => {
     expect(placeMatchesExcludedStepIntent(place({ name: '왕십리 삼겹살집' }), excludedPork)).toBe(true);
     expect(placeMatchesExcludedStepIntent(place({
-      matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살' }],
+      matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 0 }],
     }), excludedPork)).toBe(true);
-    expect(placeMatchesExcludedStepIntent(place({ categoryName: '음식점 > 한식 > 육류,고기' }), excludedPork)).toBe(true);
+    expect(placeMatchesExcludedStepIntent(place({ categoryName: '음식점 > 한식 > 육류,고기' }), excludedPork)).toBe(false);
+    expect(placeMatchesExcludedStepIntent(place({
+      matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 2 }],
+    }), excludedPork)).toBe(false);
     expect(placeMatchesExcludedStepIntent(place({ name: '파스타 전문점', categoryName: '음식점 > 양식' }), excludedPork)).toBe(false);
   });
 });
@@ -298,6 +335,10 @@ describe('placeMatchesStepIntent - venue_subtype(루프탑 카페)', () => {
 
   it('이름에 "루프탑 카페"가 포함되면 매칭한다', () => {
     expect(placeMatchesStepIntent(cafePlace({ name: '옥상 루프탑 카페' }), rooftopIntent)).toBe(true);
+  });
+
+  it('generic English rooftop name alone does not prove a rooftop cafe', () => {
+    expect(placeMatchesStepIntent(cafePlace({ name: 'Rooftop Bar' }), rooftopIntent)).toBe(false);
   });
 
   it('step_intent 검색 evidence로 매칭한다', () => {

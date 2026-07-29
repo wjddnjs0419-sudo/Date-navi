@@ -58,7 +58,7 @@ describe('recommend-date deterministic Kakao search plan', () => {
     });
   });
 
-  it('orders deduped required categories before explicit keyword, intent proxy, and fallback', () => {
+  it('keeps supplementary text out of the search plan', () => {
     const plan = buildKakaoSearchPlan({
       ...request(['meal', 'drinks', 'meal']),
       additionalRequest: '루프탑',
@@ -67,7 +67,6 @@ describe('recommend-date deterministic Kakao search plan', () => {
     expect(plan.map((item) => [item.source, item.category, item.categoryCode, item.queryText])).toEqual([
       ['category', 'meal', 'FD6', undefined],
       ['keyword', 'drinks', undefined, '술집'],
-      ['keyword', undefined, undefined, '루프탑'],
       ['keyword', undefined, undefined, '데이트 코스'],
       ['fallback', undefined, undefined, '주변 데이트 장소'],
     ]);
@@ -349,6 +348,10 @@ describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
   const intentRequest = (additionalRequest: string): RecommendationRequest => ({
     ...request(['meal', 'cafe']),
     additionalRequest,
+    courseSteps: [
+      { id: 'step-0', category: 'meal', label: 'meal', intentTags: ['삼겹살'] },
+      { id: 'step-1', category: 'cafe', label: 'cafe' },
+    ],
   });
 
   it('사전 매칭 시 step_intent 쿼리를 만들고 raw explicit 쿼리를 제거한다', () => {
@@ -363,10 +366,10 @@ describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
     expect(plan.some((item) => item.phase === 'explicit')).toBe(false);
   });
 
-  it('사전 미매칭 시 기존처럼 raw explicit 쿼리를 유지한다', () => {
+  it('supplementary text never becomes a raw explicit query', () => {
     const plan = buildKakaoSearchPlan(intentRequest('감성 있는 곳이면 좋겠어'));
     expect(plan.some((item) => item.phase === 'step_intent')).toBe(false);
-    expect(plan.find((item) => item.phase === 'explicit')?.queryText).toBe('감성 있는 곳이면 좋겠어');
+    expect(plan.some((item) => item.phase === 'explicit')).toBe(false);
   });
 
   it('step_intent 쿼리는 generic intent(데이트 코스)보다 앞에 온다', () => {

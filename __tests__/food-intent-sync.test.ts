@@ -41,6 +41,22 @@ describe('food intent curation', () => {
       canonicalTerm: '곱창구이', aliases: ['곱창구이 소고기'],
     })]);
   });
+
+  it('classifies coffee, drinks, and desserts as cafe intents', () => {
+    const artifacts = buildFoodIntentArtifacts([
+      { sourceName: '커피' }, { sourceName: '라떼' }, { sourceName: '케이크' },
+      { sourceName: '빙수' }, { sourceName: '크로플' }, { sourceName: '베이글' }, { sourceName: '스콘' }, { sourceName: '밀크티' }, { sourceName: '코코아' },
+      { sourceName: '닭갈비' }, { sourceName: '나폴리탄 스파게티' }, { sourceName: '차돌박이구이' },
+    ], {
+      include: [], excludeCanonicalTerms: [], aliasesByCanonicalTerm: {}, searchExpansionsByCanonicalTerm: {}, cuisineCategoryByCanonicalTerm: {},
+    });
+
+    expect(Object.fromEntries(artifacts.entries.map((entry) => [entry.canonicalTerm, entry.targetCategory]))).toEqual({
+      '커피': 'cafe', '라떼': 'cafe', '케이크': 'cafe', '빙수': 'cafe', '닭갈비': 'meal',
+      '크로플': 'cafe', '베이글': 'cafe', '스콘': 'cafe', '밀크티': 'cafe', '코코아': 'cafe',
+      '나폴리탄 스파게티': 'meal', '차돌박이구이': 'meal',
+    });
+  });
 });
 
 describe('food intent sync', () => {

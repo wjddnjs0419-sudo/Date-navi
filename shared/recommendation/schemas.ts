@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 const nonEmptyText = z.string().trim().min(1);
 const boundedText = (max: number) => nonEmptyText.max(max);
+const uniqueStrings = (maxLength: number) => z.array(boundedText(maxLength)).superRefine((values, ctx) => {
+  if (new Set(values).size !== values.length) {
+    ctx.addIssue({ code: 'custom', message: 'Values must be unique.' });
+  }
+});
 
 export const recommendationLanguageSchema = z.enum(['ko', 'en']);
 export const recommendationModeSchema = z.enum(['course', 'single_place']);
@@ -20,17 +25,12 @@ export const courseStepInputSchema = z.object({
   id: boundedText(80),
   category: boundedText(80),
   label: boundedText(120),
+  intentTags: uniqueStrings(40).max(6).optional(),
   pinnedKakaoPlaceId: boundedText(120).optional(),
   pinnedName: boundedText(120).optional(),
 }).strict().superRefine((step, ctx) => {
   if (step.pinnedKakaoPlaceId && !step.pinnedName) {
     ctx.addIssue({ code: 'custom', path: ['pinnedName'], message: 'pinnedName is required when a step is pinned.' });
-  }
-});
-
-const uniqueStrings = (maxLength: number) => z.array(boundedText(maxLength)).superRefine((values, ctx) => {
-  if (new Set(values).size !== values.length) {
-    ctx.addIssue({ code: 'custom', message: 'Values must be unique.' });
   }
 });
 

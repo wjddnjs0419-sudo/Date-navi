@@ -1,6 +1,6 @@
 import { type Dispatch, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowDown, ArrowUp, MapPin, Search, Trash2 } from 'lucide-react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowDown, ArrowUp, MapPin, Search, Trash2, X } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import {
   CATEGORY_ICONS,
@@ -9,6 +9,10 @@ import {
   type CourseDraftAction,
   type CourseDraftStep,
 } from '../../lib/course-draft';
+import {
+  MAX_STEP_INTENT_TAGS,
+  getStepIntentTagSuggestions,
+} from '../../shared/recommendation/step-intent-tag-catalog';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
@@ -53,6 +57,9 @@ export function CourseStepEditor({
   categoryLabels,
   dispatch,
   onRequestPick,
+  suggestions,
+  onAddSuggestedTag,
+  onRemoveSuggestedTag,
   t,
 }: {
   step: CourseDraftStep;
@@ -61,9 +68,13 @@ export function CourseStepEditor({
   categoryLabels: Record<CourseCategory, string>;
   dispatch: Dispatch<CourseDraftAction>;
   onRequestPick: (stepId: string) => void;
+  suggestions?: readonly string[];
+  onAddSuggestedTag?: (tag: string) => Promise<void> | void;
+  onRemoveSuggestedTag?: (tag: string) => Promise<void> | void;
   t: Translate;
 }) {
   const [mode, setMode] = useState<'ai' | 'pick'>(step.pin ? 'pick' : 'ai');
+  const [customTag, setCustomTag] = useState('');
 
   function switchToAi() {
     // AI 추천 = AI가 장소를 고른다. 지정해둔 핀이 남으면 서버가 그 장소로 확정하므로 즉시 제거한다.
@@ -76,6 +87,19 @@ export function CourseStepEditor({
     // 핀과 공존하므로 카테고리 선택은 핀을 지우지 않는다.
     const next = step.category === category ? 'ai_decide' : category;
     dispatch({ type: 'setStepCategory', stepId: step.id, category: next });
+  }
+
+  const selectedTags = step.intentTags ?? [];
+  const visibleSuggestions = suggestions ?? getStepIntentTagSuggestions(step.category);
+  const canAddTag = selectedTags.length < MAX_STEP_INTENT_TAGS;
+
+  function addCustomTag() {
+    const tag = customTag.trim();
+    if (!tag || !canAddTag) return;
+    // The selected state is immediate; the reusable suggestion appears in its final slot after persistence.
+    dispatch({ type: 'selectStepIntentTag', stepId: step.id, tag });
+    void onAddSuggestedTag?.(tag);
+    setCustomTag('');
   }
 
   return (
@@ -163,6 +187,77 @@ export function CourseStepEditor({
         })}
       </View>
 
+      {mode === 'ai' && step.category !== 'ai_decide' && (
+        <View style={styles.tagSection}>
+          <Text style={styles.tagLabel}>{t('course.steps.tags.label')}</Text>
+          <Text style={styles.tagHint}>{t('course.steps.tags.hint')}</Text>
+          {visibleSuggestions.length > 0 && (
+            <View style={styles.tagWrap}>
+              {visibleSuggestions.map((tag) => (
+                <View key={tag} style={styles.suggestionWithRemove}>
+                  {(() => {
+                    const selected = selectedTags.includes(tag);
+                    return (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={t('course.accessibility.addIntentTag', { tag: `#${tag}` })}
+                    activeOpacity={0.72}
+                    disabled={!selected && !canAddTag}
+                    onPress={() => dispatch(selected
+                      ? { type: 'removeStepIntentTag', stepId: step.id, tag }
+                      : { type: 'selectStepIntentTag', stepId: step.id, tag })}
+                    style={[styles.suggestedTag, selected && styles.suggestedTagSelected, !selected && !canAddTag && styles.controlDisabled]}
+                    testID={`course-step-tag-suggestion-${tag}`}
+                  >
+                    <Text style={[styles.suggestedTagText, selected && styles.suggestedTagTextSelected]}>#{tag}</Text>
+                  </TouchableOpacity>
+                    );
+                  })()}
+                  {onRemoveSuggestedTag && (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={t('course.accessibility.removeSuggestedIntentTag', { tag: `#${tag}` })}
+                      activeOpacity={0.72}
+                      onPress={() => { void onRemoveSuggestedTag(tag); }}
+                      style={styles.suggestionRemove}
+                      testID={`course-step-suggestion-remove-${tag}`}
+                    >
+                      <X size={10} color={C.white} strokeWidth={3} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+          <View style={styles.tagAddRow}>
+            <TextInput
+              accessibilityLabel={t('course.accessibility.customIntentTag')}
+              value={customTag}
+              onChangeText={setCustomTag}
+              placeholder={t('course.steps.tags.placeholder')}
+              placeholderTextColor={C.textFaint}
+              maxLength={40}
+              editable={canAddTag}
+              onSubmitEditing={addCustomTag}
+              returnKeyType="done"
+              style={styles.tagInput}
+              testID="course-step-tag-input"
+            />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('course.accessibility.addCustomIntentTag')}
+              activeOpacity={0.72}
+              disabled={!canAddTag || !customTag.trim()}
+              onPress={addCustomTag}
+              style={[styles.tagAddButton, (!canAddTag || !customTag.trim()) && styles.controlDisabled]}
+              testID="course-step-tag-add"
+            >
+              <Text style={styles.tagAddButtonText}>{t('course.steps.tags.add')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {mode === 'pick' && (
         step.pin ? (
           <View style={styles.pinnedRow}>
@@ -245,6 +340,40 @@ const styles = StyleSheet.create({
   categorySelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
   categoryText: { fontSize: 10, color: C.inkSoft, fontWeight: '600' },
   categoryTextSelected: { color: C.pinkDeep },
+  tagSection: { gap: SP.xs, paddingTop: SP.xs },
+  tagLabel: { fontSize: 13, color: C.text, fontWeight: '700' },
+  tagHint: { fontSize: 11, color: C.textMuted },
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs },
+  suggestionWithRemove: { position: 'relative' },
+  selectedTag: {
+    minHeight: 34,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: SP.sm, borderRadius: 999,
+    backgroundColor: C.pinkLight, borderWidth: 1, borderColor: C.pinkBorder,
+  },
+  selectedTagText: { fontSize: 12, color: C.pinkDeep, fontWeight: '700' },
+  suggestedTag: {
+    minHeight: 34, justifyContent: 'center', paddingHorizontal: SP.sm,
+    borderRadius: 999, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
+  },
+  suggestedTagSelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
+  suggestedTagText: { fontSize: 12, color: C.textSub, fontWeight: '600' },
+  suggestedTagTextSelected: { color: C.pinkDeep },
+  suggestionRemove: {
+    position: 'absolute', top: -5, right: -5, zIndex: 1,
+    width: 17, height: 17, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 9, backgroundColor: C.textMuted,
+  },
+  tagAddRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  tagInput: {
+    flex: 1, minHeight: 42, paddingHorizontal: SP.sm,
+    borderRadius: R.sm, backgroundColor: C.gray, color: C.text, fontSize: 13,
+  },
+  tagAddButton: {
+    minHeight: 42, justifyContent: 'center', paddingHorizontal: SP.md,
+    borderRadius: R.sm, backgroundColor: C.pinkDeep,
+  },
+  tagAddButtonText: { fontSize: 13, color: C.white, fontWeight: '700' },
   pickEntry: {
     minHeight: 48,
     flexDirection: 'row',

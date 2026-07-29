@@ -24,7 +24,12 @@ const t = (key: string, values?: Record<string, unknown>) => (
   values ? `${key}:${JSON.stringify(values)}` : key
 );
 
-type Step = { id: string; category: CourseCategory; pin?: { kakaoPlaceId: string; name: string; address: string } };
+type Step = {
+  id: string;
+  category: CourseCategory;
+  intentTags?: readonly string[];
+  pin?: { kakaoPlaceId: string; name: string; address: string };
+};
 
 function render(step: Step, extra: { dispatch?: jest.Mock; onRequestPick?: jest.Mock } = {}) {
   let renderer!: TestRendererInstance;
@@ -134,5 +139,40 @@ describe('CourseStepEditor AI/직접 토글 (옵션 B)', () => {
     const [cafeButton] = renderer.root.findAll((n) => n.props?.testID === 'course-step-category-cafe');
     act(() => { cafeButton.props.onPress(); });
     expect(dispatch).toHaveBeenCalledWith({ type: 'setStepCategory', stepId: 'step-1', category: 'ai_decide' });
+  });
+});
+
+describe('CourseStepEditor optional intent tags', () => {
+  it('shows hash-prefixed suggested tags and adds one to only this step', () => {
+    const dispatch = jest.fn();
+    const renderer = render({ id: 'step-1', category: 'meal' }, { dispatch });
+
+    const ramen = byTestID(renderer, 'course-step-tag-suggestion-라멘');
+    expect(ramen).toBeDefined();
+    expect(ramen!.props.accessibilityLabel).toContain('#라멘');
+    act(() => { ramen!.props.onPress(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'selectStepIntentTag', stepId: 'step-1', tag: '라멘' });
+  });
+
+  it('keeps a selected suggested tag in place and toggles its course selection', () => {
+    const dispatch = jest.fn();
+    const renderer = render({ id: 'step-1', category: 'meal', intentTags: ['라멘'] }, { dispatch });
+
+    const remove = byTestID(renderer, 'course-step-tag-suggestion-라멘');
+    expect(remove).toBeDefined();
+    expect(remove!.props.accessibilityLabel).toContain('#라멘');
+    act(() => { remove!.props.onPress(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'removeStepIntentTag', stepId: 'step-1', tag: '라멘' });
+  });
+
+  it('adds a custom tag from the step-local input', () => {
+    const dispatch = jest.fn();
+    const renderer = render({ id: 'step-1', category: 'meal' }, { dispatch });
+
+    const input = byTestID(renderer, 'course-step-tag-input');
+    expect(input).toBeDefined();
+    act(() => { input!.props.onChangeText('바질크림뇨끼'); });
+    act(() => { byTestID(renderer, 'course-step-tag-add')!.props.onPress(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'selectStepIntentTag', stepId: 'step-1', tag: '바질크림뇨끼' });
   });
 });

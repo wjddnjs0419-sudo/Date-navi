@@ -6,72 +6,128 @@ export const GENERATED_FOOD_INTENTS = [
     "aliases": [
       "가래떡 흑미"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가오리찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가오리콩나물찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가오리회무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미식해",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가자미튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가죽나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지냉국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지볶음",
@@ -80,41 +136,69 @@ export const GENERATED_FOOD_INTENTS = [
       "가지볶음 가지 고추",
       "가지볶음 가지 당근"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "가지탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "간자장",
     "aliases": [
       "간자장 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "간재미회무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈매기살구이",
     "aliases": [
       "갈매기살구이 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈비구이",
@@ -124,7 +208,11 @@ export const GENERATED_FOOD_INTENTS = [
       "갈비구이 소고기 양념",
       "갈비구이 왕갈비 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈비찜",
@@ -132,101 +220,169 @@ export const GENERATED_FOOD_INTENTS = [
       "갈비찜 고춧가루",
       "갈비찜 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈비탕",
     "aliases": [
       "갈비탕 소금제외"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈치구이",
     "aliases": [
       "갈치구이 기름"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈치젓",
     "aliases": [
       "갈치젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈치조림",
     "aliases": [
       "갈치조림 무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈치찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갈치튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감바스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자",
     "aliases": [
       "감자 찐감자"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자 된장국",
     "aliases": [
       "감자 된장국 두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자 소고기찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자 호박된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자국",
     "aliases": [
       "감자국 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자그라탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자범벅",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자볶음",
@@ -244,12 +400,20 @@ export const GENERATED_FOOD_INTENTS = [
       "감자볶음 당근",
       "감자볶음 양파"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자샐러드",
@@ -257,94 +421,166 @@ export const GENERATED_FOOD_INTENTS = [
       "감자샐러드 당근",
       "감자샐러드 오이"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자샐러드 샌드위치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자스프",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자연근튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "감자튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갑오징어무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "갓김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "강낭콩밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "개고기 수육",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "개고기무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "개고기전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "개피떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "건갈치조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "건꼴뚜기조림",
     "aliases": [
       "건꼴뚜기조림 풋고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "건새우 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "건새우볶음",
@@ -353,19 +589,31 @@ export const GENERATED_FOOD_INTENTS = [
       "건새우볶음 건새우 꽈리고추",
       "건새우볶음 풋고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "건포도빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "검정콩밥",
     "aliases": [
       "검정콩밥 보리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "겉절이",
@@ -375,22 +623,38 @@ export const GENERATED_FOOD_INTENTS = [
       "겉절이 열무",
       "겉절이 치커리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "게국지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "게맛살튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "게살죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "게장",
@@ -398,22 +662,38 @@ export const GENERATED_FOOD_INTENTS = [
       "게장 간장",
       "게장 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "게조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "겨자채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "견과",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "경단",
@@ -422,22 +702,38 @@ export const GENERATED_FOOD_INTENTS = [
       "경단 찹쌀 카스텔라",
       "경단 콩"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "계란 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "계란덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "계란빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마",
@@ -445,32 +741,56 @@ export const GENERATED_FOOD_INTENTS = [
       "고구마 밤고구마 삶은것",
       "고구마 찐고구마"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마깻잎튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마맛탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마줄기나물",
@@ -478,22 +798,38 @@ export const GENERATED_FOOD_INTENTS = [
       "고구마줄기나물 고춧가루",
       "고구마줄기나물 들깨"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고구마튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고기만두",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고들빼기김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고등어구이",
@@ -502,7 +838,11 @@ export const GENERATED_FOOD_INTENTS = [
       "고등어구이 석쇠",
       "고등어구이 카레"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고등어조림",
@@ -511,120 +851,208 @@ export const GENERATED_FOOD_INTENTS = [
       "고등어조림 배추김치",
       "고등어조림 모듬채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고등어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고등어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고등어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고디국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고사리나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고사리나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추장볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추장아찌 무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추장찌개",
     "aliases": [
       "고추장찌개 두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추조림",
     "aliases": [
       "고추조림 멸치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고추튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고춧가루 양념장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고춧잎나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "고춧잎나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곤드레나물밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곤드레밥",
     "aliases": [
       "곤드레밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곤약무침",
     "aliases": [
       "곤약무침 마요네즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곤약조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "골뱅이무침",
@@ -633,19 +1061,31 @@ export const GENERATED_FOOD_INTENTS = [
       "골뱅이무침 소면",
       "골뱅이무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곰치국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곰탕",
     "aliases": [
       "곰탕 우거지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곱창",
@@ -656,7 +1096,11 @@ export const GENERATED_FOOD_INTENTS = [
     ],
     "searchExpansions": [
       "곱창집"
-    ]
+    ],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곱창볶음",
@@ -664,29 +1108,49 @@ export const GENERATED_FOOD_INTENTS = [
       "곱창볶음 돼지고기",
       "곱창볶음 돼지껍데기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "곱창전골",
     "aliases": [
       "곱창전골 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "과일",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "과일샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "광어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "국밥",
@@ -698,7 +1162,11 @@ export const GENERATED_FOOD_INTENTS = [
       "국밥 콩나물",
       "국밥 굴"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "국수",
@@ -710,32 +1178,56 @@ export const GENERATED_FOOD_INTENTS = [
       "국수 잔치국수",
       "국수 쟁반막국수"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "국수전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "군만두",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴 국밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴 두부찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴국",
@@ -743,7 +1235,11 @@ export const GENERATED_FOOD_INTENTS = [
       "굴국 두부",
       "굴국 무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴무침",
@@ -751,116 +1247,204 @@ export const GENERATED_FOOD_INTENTS = [
       "굴무침 무",
       "굴무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴비구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "굴찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "귀리밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "귤차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "그라탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "근대 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "근대나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기름장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기스면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기장밥",
     "aliases": [
       "기장밥 찹쌀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기타빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기타음료",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기타차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "기피편",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김구이",
     "aliases": [
       "김구이 조미김"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김말이튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김밥",
@@ -881,44 +1465,76 @@ export const GENERATED_FOOD_INTENTS = [
       "김밥 샐러드",
       "김밥 샐러리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김부각",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 고기만두",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 돼지고기볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 볶음밥",
     "aliases": [
       "김치 볶음밥 모듬"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 청국장찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치 콩나물국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치국",
@@ -929,12 +1545,20 @@ export const GENERATED_FOOD_INTENTS = [
       "김치국 두부",
       "김치국 콩나물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치만두",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치볶음",
@@ -946,7 +1570,11 @@ export const GENERATED_FOOD_INTENTS = [
       "김치볶음 김치만",
       "김치볶음 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치순두부",
@@ -955,7 +1583,11 @@ export const GENERATED_FOOD_INTENTS = [
       "김치순두부 바지락",
       "김치순두부 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치전",
@@ -963,12 +1595,20 @@ export const GENERATED_FOOD_INTENTS = [
       "김치전 오징어",
       "김치전 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치찌개",
@@ -982,7 +1622,11 @@ export const GENERATED_FOOD_INTENTS = [
       "김치찌개 김치만",
       "김치찌개 꽁치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김치찜",
@@ -990,105 +1634,181 @@ export const GENERATED_FOOD_INTENTS = [
       "김치찜 돼지고기",
       "김치찜 돼지고기 두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "김튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깍두기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깐쇼새우",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깐풍기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깐풍새우",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깨죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깨찰빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎나물",
     "aliases": [
       "깻잎나물 깻잎"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎나물볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "깻잎튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "껍질콩볶음",
     "aliases": [
       "껍질콩볶음 맛살"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꼬리곰탕",
     "aliases": [
       "꼬리곰탕 당면"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꼬막무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꼬막찜",
     "aliases": [
       "꼬막찜 참꼬막"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꼬치구이",
@@ -1098,19 +1818,31 @@ export const GENERATED_FOOD_INTENTS = [
       "꼬치구이 닭모래집 간장",
       "꼬치구이 닭모래집 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꼬치구치",
     "aliases": [
       "꼬치구치 낙지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽁치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽁치조림",
@@ -1120,24 +1852,40 @@ export const GENERATED_FOOD_INTENTS = [
       "꽁치조림 배추김치",
       "꽁치조림 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽁치찌개",
     "aliases": [
       "꽁치찌개 김치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽁치튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽃게 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽃게장",
@@ -1145,27 +1893,47 @@ export const GENERATED_FOOD_INTENTS = [
       "꽃게장 간장",
       "꽃게장 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽃게찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽃게콩나물찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽃게탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽈리고추 오징어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽈리고추볶음",
@@ -1174,69 +1942,121 @@ export const GENERATED_FOOD_INTENTS = [
       "꽈리고추볶음 잔멸치 호두",
       "꽈리고추볶음 멸치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽈리고추조림",
     "aliases": [
       "꽈리고추조림 멸치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꽈리고추찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꿀떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꿀차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "꿩불고기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "나박김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "나베",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "나폴리탄 스파게티",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지 비빔밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지 삼겹살 볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지볶음",
@@ -1244,37 +2064,65 @@ export const GENERATED_FOOD_INTENTS = [
       "낙지볶음 떡",
       "낙지볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "낙지탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "난자완스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "내장전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "내장탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉국",
@@ -1282,7 +2130,11 @@ export const GENERATED_FOOD_INTENTS = [
       "냉국 미역",
       "냉국 미역 오이"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉면",
@@ -1292,22 +2144,38 @@ export const GENERATED_FOOD_INTENTS = [
       "냉면 회냉면 홍어",
       "냉면 물냉면"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉이 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉이나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉이초나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "냉채",
@@ -1315,24 +2183,40 @@ export const GENERATED_FOOD_INTENTS = [
       "냉채 닭고기",
       "냉채 해파리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "넙치 회덮밥",
     "aliases": [
       "넙치 회덮밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "넙치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "노각무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "녹두빈대떡",
@@ -1342,29 +2226,49 @@ export const GENERATED_FOOD_INTENTS = [
       "녹두빈대떡 해물",
       "녹두빈대떡 해물 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "녹두전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "녹차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "누룽지",
     "aliases": [
       "누룽지 뜨거운물첨가"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "느타리버섯 구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "느타리버섯볶음",
@@ -1372,69 +2276,121 @@ export const GENERATED_FOOD_INTENTS = [
       "느타리버섯볶음 느타리버섯",
       "느타리버섯볶음 느타리버섯 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "느타리버섯튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다슬기 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다시마무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다시마조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다시마튀각",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다식",
     "aliases": [
       "다식 송화"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "다쿠아즈",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "단무지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "단무지무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "단호박 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "단호박조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "단호박찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀",
@@ -1443,17 +2399,29 @@ export const GENERATED_FOOD_INTENTS = [
       "달걀 삶은것 노른자",
       "달걀 삶은것 흰자"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀말이",
@@ -1463,19 +2431,31 @@ export const GENERATED_FOOD_INTENTS = [
       "달걀말이 부추",
       "달걀말이 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀부침",
     "aliases": [
       "달걀부침 햄"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀찜",
@@ -1487,36 +2467,60 @@ export const GENERATED_FOOD_INTENTS = [
       "달걀찜 우유",
       "달걀찜 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀탕",
     "aliases": [
       "달걀탕 순두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달걀후라이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달래 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "달래무침",
     "aliases": [
       "달래무침 오이"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭가슴살 샐러드",
@@ -1524,126 +2528,222 @@ export const GENERATED_FOOD_INTENTS = [
       "닭가슴살 샐러드 드레싱",
       "닭가슴살 샐러드 마요네즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭갈비",
     "aliases": [],
     "searchExpansions": [
       "닭갈비집"
-    ]
+    ],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭강정",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기 탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기냉채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭고기육개장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭곰탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭껍데기튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭꼬치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭날개구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭다리구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭다리조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭다리튀김",
     "aliases": [
       "닭다리튀김 간장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭도리탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭모래집볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭모래집튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭발구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭발볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭발튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭백숙",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭볶음",
@@ -1652,26 +2752,42 @@ export const GENERATED_FOOD_INTENTS = [
       "닭볶음 매운양념",
       "닭볶음 매운양념 치즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭볶음탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭조림",
     "aliases": [
       "닭조림 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭죽",
     "aliases": [
       "닭죽 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭찜",
@@ -1680,7 +2796,11 @@ export const GENERATED_FOOD_INTENTS = [
       "닭찜 매운양념",
       "닭찜 안동찜닭"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭튀김",
@@ -1693,17 +2813,29 @@ export const GENERATED_FOOD_INTENTS = [
       "닭튀김 다리",
       "닭튀김 닭가슴살"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "닭튀김 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "당근볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구 매운탕",
@@ -1711,74 +2843,130 @@ export const GENERATED_FOOD_INTENTS = [
       "대구 매운탕 내장",
       "대구 매운탕 내장 알"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구볼찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구지리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대구포",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대창구이",
     "aliases": [
       "대창구이 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대추차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대합 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "대합죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "더덕구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "더덕무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "더덕장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "덮밥",
@@ -1794,12 +2982,20 @@ export const GENERATED_FOOD_INTENTS = [
       "덮밥 참치",
       "덮밥 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도가니탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도넛",
@@ -1807,22 +3003,38 @@ export const GENERATED_FOOD_INTENTS = [
       "도넛 찹쌀",
       "도넛 링도넛"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도다리구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도라지나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도라지나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도라지생채",
@@ -1831,44 +3043,76 @@ export const GENERATED_FOOD_INTENTS = [
       "도라지생채 오이",
       "도라지생채 오징어채"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도라지튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도루묵조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도루묵찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도미 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도미찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도미튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "도토리묵무침",
     "aliases": [
       "도토리묵무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돈가스",
@@ -1878,101 +3122,177 @@ export const GENERATED_FOOD_INTENTS = [
       "돈가스 돼지안심",
       "돈가스 치즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돌나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돌나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돌솥 비빔밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돌솥비빔밥",
     "aliases": [
       "돌솥비빔밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동치미",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태까스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태양념구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동태튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "동파육",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지갈비강정",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지갈비구이",
     "aliases": [
       "돼지갈비구이 간장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지갈비전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지갈비찜",
@@ -1983,7 +3303,11 @@ export const GENERATED_FOOD_INTENTS = [
       "돼지갈비찜 채소",
       "돼지갈비찜 채소 떡"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기",
@@ -1992,44 +3316,76 @@ export const GENERATED_FOOD_INTENTS = [
       "돼지고기 간",
       "돼지고기 머리고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기 꼬치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기 스테이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기 장조림",
     "aliases": [
       "돼지고기 장조림 메추리알"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기 피망잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기강정",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기볶음",
@@ -2045,42 +3401,74 @@ export const GENERATED_FOOD_INTENTS = [
       "돼지고기볶음 돼지고기",
       "돼지고기볶음 돼지고기 배추김치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지고기튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지껍데기구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지등갈비찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지등심 장조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지머리국밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지불고기",
@@ -2090,12 +3478,20 @@ export const GENERATED_FOOD_INTENTS = [
       "돼지불고기 버섯",
       "돼지불고기 삼겹살 오징어"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "돼지사태찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "된장국",
@@ -2121,7 +3517,11 @@ export const GENERATED_FOOD_INTENTS = [
       "된장국 시금치",
       "된장국 감자"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "된장찌개",
@@ -2140,24 +3540,40 @@ export const GENERATED_FOOD_INTENTS = [
       "된장찌개 두부 호박",
       "된장찌개 모듬채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두릅무침",
     "aliases": [
       "두릅무침 초고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 달걀찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 달걀탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 된장국",
@@ -2165,75 +3581,127 @@ export const GENERATED_FOOD_INTENTS = [
       "두부 된장국 바지락",
       "두부 된장국 유부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 명란찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 애호박찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 청국장찌개",
     "aliases": [
       "두부 청국장찌개 김치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부 탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부김치",
     "aliases": [
       "두부김치 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부냉채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부볶음",
     "aliases": [
       "두부볶음 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부부침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부조림",
     "aliases": [
       "두부조림 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부찌개",
@@ -2246,67 +3714,119 @@ export const GENERATED_FOOD_INTENTS = [
       "두부찌개 소고기 고추장",
       "두부찌개 소고기 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두부튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "두유 카페라떼",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "들깨국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "들깨죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "들깻잎장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "등심돈가스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "딸기넥타",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "딸기바나나 스무디",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "땅콩조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "땅콩죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡갈비",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡강정",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡국",
@@ -2317,7 +3837,11 @@ export const GENERATED_FOOD_INTENTS = [
       "떡국 소고기",
       "떡국 소고기 달걀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡만두국",
@@ -2325,7 +3849,11 @@ export const GENERATED_FOOD_INTENTS = [
       "떡만두국 고기만두",
       "떡만두국 김치만두"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡볶이",
@@ -2342,19 +3870,31 @@ export const GENERATED_FOOD_INTENTS = [
       "떡볶이 간장",
       "떡볶이 고추장 메추리알"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "떡산적",
     "aliases": [
       "떡산적 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "또띠아",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "라떼",
@@ -2362,7 +3902,11 @@ export const GENERATED_FOOD_INTENTS = [
       "라떼 바닐라",
       "라떼 그린티"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "라멘",
@@ -2372,7 +3916,11 @@ export const GENERATED_FOOD_INTENTS = [
       "라멘 소유라멘",
       "라멘 시오라멘"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "라면",
@@ -2396,62 +3944,110 @@ export const GENERATED_FOOD_INTENTS = [
       "라면 짜장라면",
       "라면 국물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "라볶이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "라조기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "런천미트구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "레몬차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "레몬청차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "레몬홍차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "롤빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘장아찌무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘쫑무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘쫑볶음",
@@ -2462,7 +4058,11 @@ export const GENERATED_FOOD_INTENTS = [
       "마늘쫑볶음 잔멸치",
       "마늘쫑볶음 간장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘쫑장아찌",
@@ -2470,56 +4070,96 @@ export const GENERATED_FOOD_INTENTS = [
       "마늘쫑장아찌 간장",
       "마늘쫑장아찌 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘쫑장아찌무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마늘쫑조림",
     "aliases": [
       "마늘쫑조림 멸치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마라탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마카로니 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마카롱",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마테차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "마파두부",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "막국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "막창구이",
     "aliases": [
       "막창구이 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "만두",
@@ -2529,7 +4169,11 @@ export const GENERATED_FOOD_INTENTS = [
       "만두 고기만두",
       "만두 물만두"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "만두국",
@@ -2538,49 +4182,85 @@ export const GENERATED_FOOD_INTENTS = [
       "만두국 김치만두",
       "만두국 사골"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "만두전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "만두탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "맛살전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "망둥어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "망둥어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "매생이국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "매실장아찌",
     "aliases": [
       "매실장아찌 우메보시"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "매운 어묵볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "매운탕",
@@ -2597,108 +4277,188 @@ export const GENERATED_FOOD_INTENTS = [
       "매운탕 메기",
       "매운탕 메기 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "매작과",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "머위나물",
     "aliases": [
       "머위나물 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "머위나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "머위나물볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "머위대나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "머핀",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메기 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메기찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메밀국수",
     "aliases": [
       "메밀국수 온면"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메밀묵 무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메밀묵국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메밀소바",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메밀전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메추리알 돼지고기장조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메추리알 어묵조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "메추리알장조림",
     "aliases": [
       "메추리알장조림 꽈리고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멕시컨샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멘보샤",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멸치 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멸치볶음",
@@ -2708,135 +4468,235 @@ export const GENERATED_FOOD_INTENTS = [
       "멸치볶음 마늘쫑",
       "멸치볶음 풋고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멸치젓",
     "aliases": [
       "멸치젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "멸치조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "명란젓",
     "aliases": [
       "명란젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "명란찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "명란찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "명태 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모닝빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬 김밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬 초밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬 콩조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬배추나물",
     "aliases": [
       "모듬배추나물 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬버섯볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬찰떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬채소전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬채소전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모듬회",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모밀국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모싯잎송편",
     "aliases": [
       "모싯잎송편 동부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "모카빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "몸국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무 북어국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무 어묵조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무 파래무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무국",
@@ -2850,39 +4710,67 @@ export const GENERATED_FOOD_INTENTS = [
       "무국 홍합",
       "무국 들깨"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무국물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무말랭이무침",
     "aliases": [
       "무말랭이무침 오징어"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무말랭이장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무생채",
@@ -2893,56 +4781,96 @@ export const GENERATED_FOOD_INTENTS = [
       "무생채 식초",
       "무생채 액젓"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무숙장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무지개떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무짠지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무청나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "무초절임",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "묵국",
     "aliases": [
       "묵국 메밀묵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "묵말이",
     "aliases": [
       "묵말이 도토리묵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "묵무침",
@@ -2950,43 +4878,71 @@ export const GENERATED_FOOD_INTENTS = [
       "묵무침 도토리묵",
       "묵무침 청포묵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "묵밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "문어무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "문어볶음",
     "aliases": [
       "문어볶음 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "물김치",
     "aliases": [
       "물김치 돌나물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "물냉면",
     "aliases": [
       "물냉면 열무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "물만두",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "물회",
@@ -2994,17 +4950,29 @@ export const GENERATED_FOOD_INTENTS = [
       "물회 생선",
       "물회 오징어"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미꾸라지튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미나리 초무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미나리나물",
@@ -3014,49 +4982,85 @@ export const GENERATED_FOOD_INTENTS = [
       "미나리나물 소금",
       "미나리나물 팽이버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미나리무침",
     "aliases": [
       "미나리무침 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미나리전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미더덕찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미소된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미숫가루",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미숫가루 음료",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역 오이무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역국",
@@ -3071,7 +5075,11 @@ export const GENERATED_FOOD_INTENTS = [
       "미역국 굴",
       "미역국 대합"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역냉국",
@@ -3079,7 +5087,11 @@ export const GENERATED_FOOD_INTENTS = [
       "미역냉국 오이",
       "미역냉국 오이 고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역줄기볶음",
@@ -3087,17 +5099,29 @@ export const GENERATED_FOOD_INTENTS = [
       "미역줄기볶음 미역줄기",
       "미역줄기볶음 미역줄기 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역초무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미역튀각",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미음",
@@ -3105,51 +5129,87 @@ export const GENERATED_FOOD_INTENTS = [
       "미음 칠분도미",
       "미음 현미"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미트 스파게티",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "미트볼조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "민들레무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "민들레잎무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "민어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "민어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밀면",
     "aliases": [
       "밀면 물밀면"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밀크쉐이크",
     "aliases": [
       "밀크쉐이크 바닐라"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밀크티",
@@ -3159,51 +5219,87 @@ export const GENERATED_FOOD_INTENTS = [
       "밀크티 타로",
       "밀크티 흑당"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밀푀유나베",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바게트",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바지락 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바지락 미역국",
     "aliases": [
       "바지락 미역국 떡"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바지락 수제비",
     "aliases": [
       "바지락 수제비 감자"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바지락국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "바지락찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밤밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "방풍나물",
@@ -3212,17 +5308,29 @@ export const GENERATED_FOOD_INTENTS = [
       "방풍나물 된장",
       "방풍나물 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "방풍나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추 된장국",
@@ -3230,12 +5338,20 @@ export const GENERATED_FOOD_INTENTS = [
       "배추 된장국 바지락",
       "배추 된장국 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추국",
@@ -3243,7 +5359,11 @@ export const GENERATED_FOOD_INTENTS = [
       "배추국 들깨",
       "배추국 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추김치",
@@ -3252,7 +5372,11 @@ export const GENERATED_FOOD_INTENTS = [
       "배추김치 봄재배",
       "배추김치 여름재배"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추나물",
@@ -3261,108 +5385,188 @@ export const GENERATED_FOOD_INTENTS = [
       "배추나물 간장 소금",
       "배추나물 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추숙주나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "배추전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "백김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "백설기",
     "aliases": [
       "백설기 검정콩"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "백합죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "밴댕이무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "뱅쇼",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "뱅어포구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "뱅어포무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "뱅어포튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버거",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯 샤브샤브",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯 잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯구이",
     "aliases": [
       "버섯구이 새송이버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯구이표고버섯",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯무침",
     "aliases": [
       "버섯무침 느타리버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯볶음",
@@ -3372,131 +5576,231 @@ export const GENERATED_FOOD_INTENTS = [
       "버섯볶음 양송이버섯",
       "버섯볶음 표고버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯전",
     "aliases": [
       "버섯전 표고버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯전골",
     "aliases": [
       "버섯전골 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버섯찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버터빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "버터크림빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "번데기탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "베이글",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "베이컨떡말이구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "베이컨채소볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "병어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "병어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "병어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "보리밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "보신탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "보쌈김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복숭아홍차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복지리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "복찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "볶음 우동",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "볶음면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "볶음밥",
@@ -3519,42 +5823,74 @@ export const GENERATED_FOOD_INTENTS = [
       "볶음밥 계란",
       "볶음밥 김치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "볼락 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부대찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추 채소무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추 초무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추무침",
@@ -3565,31 +5901,51 @@ export const GENERATED_FOOD_INTENTS = [
       "부추무침 양파",
       "부추무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "부추전",
     "aliases": [
       "부추전 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어강정",
     "aliases": [
       "북어강정 고추장양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어국",
@@ -3599,89 +5955,157 @@ export const GENERATED_FOOD_INTENTS = [
       "북어국 콩나물",
       "북어국 달걀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어양념구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어채 고추장 무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어채무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "북어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "분짜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "불고기전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "불낙전골",
     "aliases": [
       "불낙전골 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "붕어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "붕어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "브로콜리 두부무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "브로콜리 버섯볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "브로콜리 채소무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "브로콜리무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "브로콜리볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비름나물",
@@ -3691,37 +6115,65 @@ export const GENERATED_FOOD_INTENTS = [
       "비름나물 된장",
       "비름나물 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비름나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔 잡곡밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔냉면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔막국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비빔밥",
@@ -3738,17 +6190,29 @@ export const GENERATED_FOOD_INTENTS = [
       "비빔밥 참치",
       "비빔밥 참치 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "비프까스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "빙떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "빙수",
@@ -3756,46 +6220,78 @@ export const GENERATED_FOOD_INTENTS = [
       "빙수 팥 우유얼음",
       "빙수 인절미 우유얼음"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "뼈다귀해장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "사골국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "사과차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "사태찜",
     "aliases": [
       "사태찜 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "산자",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "산적",
     "aliases": [
       "산적 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삶은 땅콩 조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼각김밥",
@@ -3804,14 +6300,22 @@ export const GENERATED_FOOD_INTENTS = [
       "삼각김밥 고추장불고기",
       "삼각김밥 숯불갈비"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼겹살구이",
     "aliases": [
       "삼겹살구이 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼겹살볶음",
@@ -3820,141 +6324,249 @@ export const GENERATED_FOOD_INTENTS = [
       "삼겹살볶음 묵은지김치",
       "삼겹살볶음 세발낙지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼계탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼색 오이냉국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼색냉채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치 양념구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치 카레구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "삼치튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "상추 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "상추겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새송이버섯 구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새송이버섯볶음",
     "aliases": [
       "새송이버섯볶음 새송이버섯 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새송이버섯전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새싹 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우 탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우젓",
     "aliases": [
       "새우젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우젓국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "새우튀김롤",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "샌드위치",
@@ -3971,7 +6583,11 @@ export const GENERATED_FOOD_INTENTS = [
       "샌드위치 닭가슴살",
       "샌드위치 닭고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "샐러드",
@@ -3989,17 +6605,29 @@ export const GENERATED_FOOD_INTENTS = [
       "샐러드 단호박",
       "샐러드 닭가슴살"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "생강차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "생선까스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "생선전",
@@ -4007,12 +6635,20 @@ export const GENERATED_FOOD_INTENTS = [
       "생선전 가자미",
       "생선전 동태"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "샤베트",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "샤브샤브",
@@ -4020,107 +6656,183 @@ export const GENERATED_FOOD_INTENTS = [
       "샤브샤브 버섯",
       "샤브샤브 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "서대구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "섞박지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "섞어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "선지해장국",
     "aliases": [
       "선지해장국 내장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "선짓국",
     "aliases": [
       "선짓국 내장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "설렁탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "세발나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "세발낙지볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "세발낙지찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소간 채소볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소갈비 구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소갈비찜",
     "aliases": [
       "소갈비찜 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 감자죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 국밥",
     "aliases": [
       "소고기 국밥 내장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 두부국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 떡찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 무국",
     "aliases": [
       "소고기 무국 콩나물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 미역국",
@@ -4128,22 +6840,38 @@ export const GENERATED_FOOD_INTENTS = [
       "소고기 미역국 떡",
       "소고기 미역국 바지락"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 샌드위치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 샤브샤브",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 완자전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기 장조림",
@@ -4151,19 +6879,31 @@ export const GENERATED_FOOD_INTENTS = [
       "소고기 장조림 꽈리고추",
       "소고기 장조림 메추리알"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기국",
     "aliases": [
       "소고기국 무 당면"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기버섯죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기볶음",
@@ -4172,155 +6912,271 @@ export const GENERATED_FOOD_INTENTS = [
       "소고기볶음 고추장",
       "소고기볶음 버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기산적",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기샤브샤브",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기스튜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기육개장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기채소볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소고기튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소곱창 구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소곱창 볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소금빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소내장구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소등심 스테이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소등심구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소라무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소라산적",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소보로빵",
     "aliases": [
       "소보로빵 맘모스빵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소불고기",
     "aliases": [
       "소불고기 버섯"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소사태찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소세지빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소시지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소시지 케첩볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소시지볶음",
     "aliases": [
       "소시지볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소시지조림",
     "aliases": [
       "소시지조림 어묵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소시지튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소안심스테이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "소탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "송어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "송편",
@@ -4330,39 +7186,67 @@ export const GENERATED_FOOD_INTENTS = [
       "송편 콩",
       "송편 팥"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수란",
     "aliases": [
       "수란 중탕"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수박화채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수수경단",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수수밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수수부꾸미",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수수팥떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수육",
@@ -4370,7 +7254,11 @@ export const GENERATED_FOOD_INTENTS = [
       "수육 소고기",
       "수육 소고기 꼬리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "수제비",
@@ -4378,7 +7266,11 @@ export const GENERATED_FOOD_INTENTS = [
       "수제비 감자",
       "수제비 김치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "숙주나물",
@@ -4388,27 +7280,47 @@ export const GENERATED_FOOD_INTENTS = [
       "숙주나물 숙주",
       "숙주나물 숙주 게맛살"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "숙주미나리나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순 현미밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순대",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순대국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순대볶음",
@@ -4418,12 +7330,20 @@ export const GENERATED_FOOD_INTENTS = [
       "순대볶음 백순대",
       "순대볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순대전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "순두부찌개",
@@ -4433,27 +7353,47 @@ export const GENERATED_FOOD_INTENTS = [
       "순두부찌개 배추김치 돼지고기",
       "순두부찌개 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "숭어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스무디",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스콘",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스크램블드에그",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스테이크",
@@ -4461,14 +7401,22 @@ export const GENERATED_FOOD_INTENTS = [
       "스테이크 소등심",
       "스테이크 소안심"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스파게티",
     "aliases": [
       "스파게티 미트볼"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "스프",
@@ -4479,17 +7427,29 @@ export const GENERATED_FOOD_INTENTS = [
       "스프 양송이버섯",
       "스프 옥수수"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시금치 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시금치 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시금치나물",
@@ -4500,65 +7460,109 @@ export const GENERATED_FOOD_INTENTS = [
       "시금치나물 당근",
       "시금치나물 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시래기 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시래기나물",
     "aliases": [
       "시래기나물 간장 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시래기나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시루떡",
     "aliases": [
       "시루떡 녹두"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "시리얼",
     "aliases": [
       "시리얼 우유"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "식빵",
     "aliases": [
       "식빵 통밀식빵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "식빵튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "식혜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쌀국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쌀밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쌀죽",
@@ -4569,22 +7573,38 @@ export const GENERATED_FOOD_INTENTS = [
       "쌀죽 오대",
       "쌀죽 칠분도미"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쌈장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쌍화차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥갓나물",
@@ -4594,81 +7614,141 @@ export const GENERATED_FOOD_INTENTS = [
       "쑥갓나물 소금",
       "쑥갓나물 고춧가루"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥갓나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥갓무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥갓오이무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쑥튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "씀바귀나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "씀바귀나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아구탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아귀 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아귀지리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아귀찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아욱 된장국",
     "aliases": [
       "아욱 된장국 건새우"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아이스 카페라떼",
     "aliases": [
       "아이스 카페라떼 카라멜"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아이스 카페모카",
@@ -4677,82 +7757,138 @@ export const GENERATED_FOOD_INTENTS = [
       "아이스 카페모카 휘핑크림",
       "아이스 카페모카 카라멜"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아이스크림",
     "aliases": [
       "아이스크림 썬대"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "아이스티",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "알밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "알탕",
     "aliases": [
       "알탕 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "앙금빵",
     "aliases": [
       "앙금빵 앙버터빵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박 감자된장국",
     "aliases": [
       "애호박 감자된장국 바지락"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박 볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박부침개",
     "aliases": [
       "애호박부침개 새우"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박찌개",
@@ -4760,12 +7896,20 @@ export const GENERATED_FOOD_INTENTS = [
       "애호박찌개 감자",
       "애호박찌개 두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "애호박찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "액상커피",
@@ -4774,22 +7918,38 @@ export const GENERATED_FOOD_INTENTS = [
       "액상커피 커피가루 설탕",
       "액상커피 커피가루 설탕 크림"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "야채빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "약과",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "약식",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양꼬치",
@@ -4798,166 +7958,294 @@ export const GENERATED_FOOD_INTENTS = [
     ],
     "searchExpansions": [
       "양꼬치집"
-    ]
+    ],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념 도토리묵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념 돼지고기튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념 바지락젓",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념 새우젓",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념 오징어젓",
     "aliases": [
       "양념 오징어젓 낙지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념두부",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념채김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양념초장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양미리조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추 사과 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추 초나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추부추무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양배추오이 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양상추 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양송이 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양송이버섯볶음",
     "aliases": [
       "양송이버섯볶음 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양장피",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양태구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양파 소고기전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양파링튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양파볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "양파장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵 감자볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵 오이무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵 우동",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵국",
@@ -4965,12 +8253,20 @@ export const GENERATED_FOOD_INTENTS = [
       "어묵국 고춧가루",
       "어묵국 고춧가루 제외"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵국물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵볶음",
@@ -4979,151 +8275,267 @@ export const GENERATED_FOOD_INTENTS = [
       "어묵볶음 채소",
       "어묵볶음 어묵"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵조림",
     "aliases": [
       "어묵조림 풋고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵탕",
     "aliases": [
       "어묵탕 고춧가루"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어묵튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어육소시지전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "어탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "얼갈이 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "얼갈이 나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "얼갈이 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "얼갈이겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "얼갈이배추김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "에이드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연근전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연근조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연근튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연두부찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연두부찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연어롤",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연잎밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "연포탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무 비빔밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무나물",
@@ -5131,141 +8543,249 @@ export const GENERATED_FOOD_INTENTS = [
       "열무나물 간장",
       "열무나물 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무물김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "열무얼갈이김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "영양돌솥밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오겹살구이",
     "aliases": [
       "오겹살구이 돼지고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오곡밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리 간장불고기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리감자죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리고기구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리고기로스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리백숙",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리불고기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오리탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오므라이스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오믈렛",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오미자차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오븐스파게티",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이 도라지 생채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이 물김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이 미역냉국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이고추 된장무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이냉국",
     "aliases": [
       "오이냉국 미역"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이모듬무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이무침",
@@ -5274,12 +8794,20 @@ export const GENERATED_FOOD_INTENTS = [
       "오이무침 부추",
       "오이무침 양파"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이부추무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이생채",
@@ -5292,41 +8820,69 @@ export const GENERATED_FOOD_INTENTS = [
       "오이생채 오이 달래",
       "오이생채 오이 부추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이소박이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이장아찌",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이지",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오이지무침",
     "aliases": [
       "오이지무침 고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어 덮밥",
     "aliases": [
       "오징어 덮밥 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어무침",
@@ -5334,149 +8890,257 @@ export const GENERATED_FOOD_INTENTS = [
       "오징어무침 미나리",
       "오징어무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어미역초무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어볶음",
     "aliases": [
       "오징어볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어불고기",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어산적",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어순대",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어젓",
     "aliases": [
       "오징어젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어채무침",
     "aliases": [
       "오징어채무침 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어채볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어채조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어탕수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "오징어포조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥돔구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥수수",
     "aliases": [
       "옥수수 찐옥수수"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥수수구이",
     "aliases": [
       "옥수수구이 치즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥수수밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥수수부침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "옥수수샐러드",
     "aliases": [
       "옥수수샐러드 햄"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "올갱이국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "올갱이국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "올갱이해장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "와플",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "완두콩밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "완자전",
@@ -5486,22 +9150,38 @@ export const GENERATED_FOOD_INTENTS = [
       "완자전 참치",
       "완자전 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "완자조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "요구르트",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우거지나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우동",
@@ -5513,123 +9193,215 @@ export const GENERATED_FOOD_INTENTS = [
       "우동 중식",
       "우동 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우동볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우럭 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우럭구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우럭튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우럭회덮밥",
     "aliases": [
       "우럭회덮밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우롱차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우엉 양념구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우엉볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우엉조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우유",
     "aliases": [
       "우유 딸기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "우유튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "울면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "월남쌈",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "웨이퍼",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유과",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유부 된장국",
     "aliases": [
       "유부 된장국 무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유부 초밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유부국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유부조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유산슬",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유자차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유채김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유채나물",
@@ -5637,17 +9409,29 @@ export const GENERATED_FOOD_INTENTS = [
       "유채나물 간장 소금",
       "유채나물 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유채무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "유채물김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "육개장",
@@ -5656,37 +9440,65 @@ export const GENERATED_FOOD_INTENTS = [
       "육개장 돼지고기",
       "육개장 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "육회",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "육회비빔밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "율무밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "율무죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "율무차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "은대구구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "인절미",
@@ -5694,54 +9506,94 @@ export const GENERATED_FOOD_INTENTS = [
       "인절미 콩고물",
       "인절미 팥고물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "임연수구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "임연수조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "임연수튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잉어 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "자몽차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "자몽홍차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "자장면",
     "aliases": [
       "자장면 삼선"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "자장밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잔멸치 튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잔멸치볶음",
@@ -5758,12 +9610,20 @@ export const GENERATED_FOOD_INTENTS = [
       "잔멸치볶음 간장",
       "잔멸치볶음 간장 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잔치국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡곡밥",
@@ -5773,12 +9633,20 @@ export const GENERATED_FOOD_INTENTS = [
       "잡곡밥 현미",
       "잡곡밥 보리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡곡죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡채",
@@ -5792,54 +9660,94 @@ export const GENERATED_FOOD_INTENTS = [
       "잡채 콩나물",
       "잡채 고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡채밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡탕밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잡탕전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "잣죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장국국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어 양념구이",
     "aliases": [
       "장어 양념구이 들깨"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어 초밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어구이",
@@ -5849,22 +9757,38 @@ export const GENERATED_FOOD_INTENTS = [
       "장어구이 소금",
       "장어구이 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장어튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "장조림",
@@ -5876,69 +9800,121 @@ export const GENERATED_FOOD_INTENTS = [
       "장조림 메추리알",
       "장조림 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "재첩국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쟁반국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쟁반짜장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "적어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "적어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "전갱이구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "전복죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "전복탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "전어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "전어조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "절편",
     "aliases": [
       "절편 쑥"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "제육",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "제육볶음",
@@ -5946,100 +9922,172 @@ export const GENERATED_FOOD_INTENTS = [
       "제육볶음 오징어",
       "제육볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "젤리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조개 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조개구이",
     "aliases": [
       "조개구이 키조개"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조개국",
     "aliases": [
       "조개국 바지락"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조개젓",
     "aliases": [
       "조개젓 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조개탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기 양념구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기 오븐구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조기튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "조미 김구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "족발",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "주꾸미볶음",
     "aliases": [
       "주꾸미볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "주꾸미삼겹살",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "주먹밥",
@@ -6049,44 +10097,76 @@ export const GENERATED_FOOD_INTENTS = [
       "주먹밥 소고기",
       "주먹밥 참치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "죽순볶음",
     "aliases": [
       "죽순볶음 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "중식우동",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "중식잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쥐포무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쥐포조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쥐포튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "증편",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "지리탕",
@@ -6094,29 +10174,49 @@ export const GENERATED_FOOD_INTENTS = [
       "지리탕 대구",
       "지리탕 복"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짜사이무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짜장면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짜장밥",
     "aliases": [
       "짜장밥 오징어"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짜장소스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짬뽕",
@@ -6126,64 +10226,112 @@ export const GENERATED_FOOD_INTENTS = [
       "짬뽕 삼선",
       "짬뽕 차돌박이"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짬뽕라면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "짬뽕밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쫄면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "쫄볶이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "차돌박이구이",
     "aliases": [
       "차돌박이구이 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "차조밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "찰떡빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "찰밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "찰시루떡",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참깨죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참나물 겉절이",
@@ -6191,119 +10339,203 @@ export const GENERATED_FOOD_INTENTS = [
       "참나물 겉절이 간장",
       "참나물 겉절이 단감"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참나물 무침",
     "aliases": [
       "참나물 무침 된장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참나물겉절이",
     "aliases": [
       "참나물겉절이 고춧가루"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치 샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치 완자전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치강정",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치구이",
     "aliases": [
       "참치구이 머리"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "참치회덮밥",
     "aliases": [
       "참치회덮밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "찹쌀떡",
     "aliases": [
       "찹쌀떡 팥"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "찹쌀죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "채소 꼬치구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "채소밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "채소전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "채소죽",
     "aliases": [
       "채소죽 달걀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "채소튀김",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "천사채무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청경채나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청국장찌개",
@@ -6313,37 +10545,65 @@ export const GENERATED_FOOD_INTENTS = [
       "청국장찌개 배추김치",
       "청국장찌개 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청어구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청포묵 무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청포묵국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "청포묵무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "초간장",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "초당순두부",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "초밥",
@@ -6358,32 +10618,56 @@ export const GENERATED_FOOD_INTENTS = [
       "초밥 새우",
       "초밥 연어"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "초코소라빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "초콜릿",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "총각김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "추어탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "충무김밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "취나물",
@@ -6392,7 +10676,11 @@ export const GENERATED_FOOD_INTENTS = [
       "취나물 된장",
       "취나물 취나물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "취나물무침",
@@ -6400,59 +10688,103 @@ export const GENERATED_FOOD_INTENTS = [
       "취나물무침 간장",
       "취나물무침 소금"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "츄러스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치아바타",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치즈",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치즈 스파게티",
     "aliases": [
       "치즈 스파게티 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치즈볼",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치즈빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치즈스틱",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치커리 겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치커리겉절이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치커리무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치킨",
@@ -6462,22 +10794,38 @@ export const GENERATED_FOOD_INTENTS = [
     ],
     "searchExpansions": [
       "치킨집"
-    ]
+    ],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치킨가스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "치킨데리야끼",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "칠면조구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "카레라이스",
@@ -6489,24 +10837,40 @@ export const GENERATED_FOOD_INTENTS = [
       "카레라이스 오징어",
       "카레라이스 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "카레소스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "카스텔라",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "카페라떼",
     "aliases": [
       "카페라떼 카라멜"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "카페모카",
@@ -6515,7 +10879,11 @@ export const GENERATED_FOOD_INTENTS = [
       "카페모카 카라멜",
       "카페모카 카라멜 휘핑크림"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "칼국수",
@@ -6526,17 +10894,29 @@ export const GENERATED_FOOD_INTENTS = [
       "칼국수 들깨",
       "칼국수 바지락"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "캔디",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "캘리포니아롤",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "커피",
@@ -6548,7 +10928,11 @@ export const GENERATED_FOOD_INTENTS = [
       "커피 아메리카노",
       "커피 달고나커피"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "케이크",
@@ -6558,7 +10942,11 @@ export const GENERATED_FOOD_INTENTS = [
       "케이크 생크림케이크",
       "케이크 롤케이크"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "코다리조림",
@@ -6566,59 +10954,103 @@ export const GENERATED_FOOD_INTENTS = [
       "코다리조림 간장",
       "코다리조림 무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "코다리찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "코코아",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콘치즈구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콤부차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물 국밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물 느타리무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물 선짓국",
     "aliases": [
       "콩나물 선짓국 낙지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물 황태국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물국",
@@ -6633,19 +11065,31 @@ export const GENERATED_FOOD_INTENTS = [
       "콩나물국 콩나물 소고기",
       "콩나물국 콩나물만"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물국밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물냉채",
     "aliases": [
       "콩나물냉채 오이"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물무침",
@@ -6660,7 +11104,11 @@ export const GENERATED_FOOD_INTENTS = [
       "콩나물무침 고춧가루",
       "콩나물무침 당근"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물밥",
@@ -6669,24 +11117,40 @@ export const GENERATED_FOOD_INTENTS = [
       "콩나물밥 소고기",
       "콩나물밥 양념장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물잡채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩나물찜",
     "aliases": [
       "콩나물찜 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩밥",
@@ -6695,123 +11159,215 @@ export const GENERATED_FOOD_INTENTS = [
       "콩밥 검정콩",
       "콩밥 완두콩"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩비지찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "콩조림",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "크로와상",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "크로켓",
     "aliases": [
       "크로켓 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "크로플",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "크림빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "키조개구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "타르트",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "탄산음료",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "탄탄면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "탕수어",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "탕수육",
     "aliases": [
       "탕수육 새우"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "탕평채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "토란국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "토란대나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "토란대나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "토스트",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "톳나물",
     "aliases": [
       "톳나물 두부"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "톳나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "트위스터 샌드위치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파강회",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파김치",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파래무침",
@@ -6820,27 +11376,47 @@ export const GENERATED_FOOD_INTENTS = [
       "파래무침 액젓",
       "파래무침 파래 무"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파래볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파래전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파운드케이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "파전",
@@ -6850,91 +11426,159 @@ export const GENERATED_FOOD_INTENTS = [
       "파전 돼지고기 김치",
       "파전 해물"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팔보채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팝콘",
     "aliases": [
       "팝콘 카라멜"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팟타이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팥밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팥빙수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팥빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "팥죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "페이스트리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "폭찹",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "표고버섯볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "풋고추된장무침",
     "aliases": [
       "풋고추된장무침 풋고추"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "풋고추볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "풋고추찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "풋마늘무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "프레즐",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "피망볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "피자",
@@ -6945,27 +11589,47 @@ export const GENERATED_FOOD_INTENTS = [
       "피자 콤비네이션피자",
       "피자 불고기피자"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "피자빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "피조개무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "하이라이스",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "함박스테이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "핫도그",
@@ -6973,82 +11637,146 @@ export const GENERATED_FOOD_INTENTS = [
       "핫도그 감자",
       "핫도그 모짜렐라"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "핫케이크",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 덮밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 매운탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 스파게티",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 완자전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물 채소전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물전골",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물칼국수",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물콩나물찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해물파전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해신탕",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해장국",
@@ -7057,22 +11785,38 @@ export const GENERATED_FOOD_INTENTS = [
       "해장국 선지",
       "해장국 우거지"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해초무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "해파리냉채",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄구이",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄버거",
@@ -7084,90 +11828,154 @@ export const GENERATED_FOOD_INTENTS = [
       "햄버거 치킨",
       "햄버거 불고기버거"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄볶음",
     "aliases": [
       "햄볶음 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄부침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄샌드위치",
     "aliases": [
       "햄샌드위치 치즈"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄샐러드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "햄채소볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "허니브레드",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "허브차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "현미밥",
     "aliases": [
       "현미밥 쌀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "현미죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호떡",
     "aliases": [
       "호떡 견과류"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호밀빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박고지볶음",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박나물",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박볶음",
@@ -7175,128 +11983,224 @@ export const GENERATED_FOOD_INTENTS = [
       "호박볶음 호박",
       "호박볶음 호박 채소"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박오가리나물무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박잎 된장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박전",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "호박찌개",
     "aliases": [
       "호박찌개 고추장"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "혼합잡곡밥",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍어무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍어찌개",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍어찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍어회무침",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍차",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합 무국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합 미나리죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합 미역국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합 소고기죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합산적",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "홍합탕",
     "aliases": [
       "홍합탕 홍합만"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "화양적",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "황태구이",
     "aliases": [
       "황태구이 양념"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "황태콩나물찜",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "황태해장국",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "회냉면",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "회덮밥",
@@ -7304,7 +12208,11 @@ export const GENERATED_FOOD_INTENTS = [
       "회덮밥 모듬",
       "회덮밥 참치"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "회무침",
@@ -7312,45 +12220,77 @@ export const GENERATED_FOOD_INTENTS = [
       "회무침 가오리",
       "회무침 서대"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "효모빵",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "cafe",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "훈제오리",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "훠궈",
     "aliases": [
       "훠궈 소고기"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "흑미밥",
     "aliases": [
       "흑미밥 찹쌀"
     ],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "흑임자 죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "흑임자죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   },
   {
     "canonicalTerm": "흰죽",
     "aliases": [],
-    "searchExpansions": []
+    "searchExpansions": [],
+    "domain": "food",
+    "intentType": "dish",
+    "targetCategory": "meal",
+    "categoryNameKeywords": []
   }
 ] as const;

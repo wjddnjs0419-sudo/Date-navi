@@ -105,6 +105,27 @@ describe('replacement candidates handler', () => {
     expect(body.top[0].scoreBreakdown).toBeUndefined();
   });
 
+  it('rejects expansion-only candidates for a required replacement intent', async () => {
+    const expansionOnly = {
+      ...candidate('expanded-pork', 'FD6'),
+      matchedSearchEvidence: [{ queryId: 'q1', source: 'keyword' as const, page: 1, queryText: '돼지고기구이', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 1 as const }],
+    };
+    const exact = {
+      ...candidate('exact-pork', 'FD6'),
+      matchedSearchEvidence: [{ queryId: 'q2', source: 'keyword' as const, page: 1, queryText: '삼겹살', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 0 as const }],
+    };
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'meal' },
+    }, dependencies({
+      experimentMode: 'off',
+      loadSession: jest.fn(async () => ({ ...session(), originalRequest: { ...session().originalRequest, additionalRequest: '삼겹살은 반드시 먹어야 해' } })),
+      searchCandidates: jest.fn(async () => ({ candidates: [expansionOnly, exact] })),
+    }));
+    const body = result.body as { top: Array<{ kakaoPlaceId: string }>; additional: Array<{ kakaoPlaceId: string }> };
+
+    expect([...body.top, ...body.additional].map((entry) => entry.kakaoPlaceId)).toEqual(['place-exact-pork']);
+  });
+
   it('stores the exact displayed ranks behind an opaque server attestation', async () => {
     const stageCandidateList = jest.fn(async () => 'replacement-list-001');
     const result = await handleReplacementCandidates({

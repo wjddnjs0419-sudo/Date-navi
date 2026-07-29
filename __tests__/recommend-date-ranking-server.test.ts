@@ -403,6 +403,19 @@ describe('rankPlaceCandidates — step intent boost', () => {
     const { candidates } = rankPlaceCandidates([porky, pasta], negatedReq);
     expect(candidates.map((candidate) => candidate.kakaoPlaceId)).toEqual(['pasta']);
   });
+
+  it.each([
+    ['초밥 말고 라멘', '성수 초밥집', '성수 라멘 전문점', 'ramen'],
+    ['마라탕 말고 짜장면', '성수 마라탕', '성수 짜장면', 'jajangmyeon'],
+    ['삼겹살 제외', '성수 삼겹살집', '동네 고기집', 'barbecue'],
+  ])('keeps the non-excluded alternative for %s', (additionalRequest, excludedName, retainedName, retainedId) => {
+    const { candidates } = rankPlaceCandidates([
+      mealPlace('excluded', { name: excludedName }),
+      mealPlace(retainedId, { name: retainedName }),
+    ], { ...intentRequest, additionalRequest });
+
+    expect(candidates.map((candidate) => candidate.kakaoPlaceId)).toEqual([retainedId]);
+  });
 });
 
 describe('recommend-date straight-line route and constraint metadata', () => {
