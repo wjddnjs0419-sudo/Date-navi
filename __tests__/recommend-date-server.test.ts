@@ -362,6 +362,71 @@ describe('recommend-date dependency-injected handler', () => {
     });
   });
 
+  it('holds one course-generation lock and consumes quota immediately before Claude selection', async () => {
+    const calls: string[] = [];
+    const deps = dependencies({
+      rateLimit: {
+        acquire: jest.fn(async () => { calls.push('acquire'); return { acquired: true as const }; }),
+        consume: jest.fn(async () => { calls.push('consume'); return { allowed: true as const }; }),
+        release: jest.fn(async () => { calls.push('release'); }),
+        recordEvent: jest.fn(async () => undefined),
+      },
+      searchCandidates: jest.fn(async () => { calls.push('search'); return searchResult; }),
+      generateSelection: jest.fn(async () => { calls.push('select'); return validSelection; }),
+    });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+
+    expect(result.status).toBe(200);
+    expect(calls).toEqual(['acquire', 'search', 'consume', 'select', 'release']);
+    expect(deps.rateLimit!.acquire).toHaveBeenCalledWith({ userId: 'user-001', requestId: 'request-ko' });
+  });
+
+  it('returns distinct lock, burst, and daily limit responses without calling Claude', async () => {
+    const scenarios = [
+      { lock: { acquired: false as const, retryAfterSeconds: 12 }, status: 409, code: 'AI_REQUEST_ALREADY_RUNNING' },
+      { quota: { allowed: false as const, limitType: 'burst' as const, retryAfterSeconds: 30 }, status: 429, code: 'AI_BURST_LIMITED' },
+      { quota: { allowed: false as const, limitType: 'daily' as const, resetsAt: '2026-07-15T00:00:00+09:00' }, status: 429, code: 'AI_DAILY_LIMITED' },
+    ];
+    for (const scenario of scenarios) {
+      const deps = dependencies({
+        rateLimit: {
+          acquire: jest.fn(async () => scenario.lock ?? { acquired: true as const }),
+          consume: jest.fn(async () => scenario.quota ?? { allowed: true as const }),
+          release: jest.fn(async () => undefined),
+          recordEvent: jest.fn(async () => undefined),
+        },
+      });
+      const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+      expect(result).toMatchObject({ status: scenario.status, body: { error: { code: scenario.code } } });
+      expect(deps.generateSelection).not.toHaveBeenCalled();
+      if (scenario.lock) expect(deps.rateLimit!.release).not.toHaveBeenCalled();
+      else expect(deps.rateLimit!.release).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('does not consume quota for an all-pinned deterministic course', async () => {
+    const rateLimit = {
+      acquire: jest.fn(async () => ({ acquired: true as const })),
+      consume: jest.fn(async () => ({ allowed: true as const })),
+      release: jest.fn(async () => undefined),
+      recordEvent: jest.fn(async () => undefined),
+    };
+    const input = request();
+    input.courseSteps = [
+      { ...input.courseSteps[0], pinnedKakaoPlaceId: 'meal-place', pinnedName: 'Place meal-place' },
+      { ...input.courseSteps[1], pinnedKakaoPlaceId: 'cafe-place', pinnedName: 'Place cafe-place' },
+    ];
+    const deps = dependencies({ rateLimit });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: input }, deps);
+
+    expect(result.status).toBe(200);
+    expect(rateLimit.consume).not.toHaveBeenCalled();
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(rateLimit.release).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['downstream failure', jest.fn(async () => { throw new Error('private downstream detail'); })],
     ['non-timeout abort', jest.fn(async () => {

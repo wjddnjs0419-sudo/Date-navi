@@ -2,6 +2,12 @@ import { createClient } from 'npm:@supabase/supabase-js@2.106.1';
 
 import { handleRecommendDate } from '../_shared/recommend-date-handler.ts';
 import { invokeGenerateAiSelection } from '../_shared/recommend-date-downstream.ts';
+import {
+  acquireCourseGenerationLock,
+  consumeCourseGenerationQuota,
+  recordAiRateLimitEvent,
+  releaseCourseGenerationLock,
+} from '../_shared/ai-rate-limit.ts';
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
 import {
@@ -51,6 +57,36 @@ Deno.serve(async (request) => {
     authorization: request.headers.get('Authorization'),
     body,
   }, {
+    rateLimit: {
+      acquire: async ({ userId, requestId }) => {
+        const serviceClient = createClient<any>(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        return acquireCourseGenerationLock(serviceClient, { userId, requestId });
+      },
+      release: async ({ userId, requestId }) => {
+        const serviceClient = createClient<any>(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        await releaseCourseGenerationLock(serviceClient, { userId, requestId });
+      },
+      consume: async ({ userId }) => {
+        const serviceClient = createClient<any>(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        return consumeCourseGenerationQuota(serviceClient, { userId });
+      },
+      recordEvent: async ({ userId, eventType }) => {
+        const serviceClient = createClient<any>(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        await recordAiRateLimitEvent(serviceClient, { userId, eventType });
+      },
+    },
     authenticate: async (authorization) => {
       const userClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
