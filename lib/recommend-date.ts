@@ -14,6 +14,7 @@ import {
 const recommendationErrorCodes = new Set<RecommendationErrorCode>([
   'LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED',
   'INSUFFICIENT_CANDIDATES', 'STEP_INTENT_UNSATISFIED', 'STEP_PIN_UNAVAILABLE', 'AI_TIMEOUT', 'AI_INVALID_RESPONSE',
+  'AI_REQUEST_ALREADY_RUNNING', 'AI_RATE_LIMITED', 'AI_DAILY_LIMIT_REACHED', 'AI_LIMIT_UNAVAILABLE',
   'COURSE_VALIDATION_FAILED', 'AUTH_EXPIRED', 'NETWORK_ERROR', 'UNKNOWN',
 ]);
 
@@ -31,15 +32,32 @@ export type UnsatisfiedStepIntent = {
   displayLabel: { ko: string; en: string };
 };
 
+export type RecommendationErrorDetails = {
+  failureStage?: CourseFailureStage;
+  unsatisfiedIntents?: UnsatisfiedStepIntent[];
+  retryAfterSeconds?: number;
+  limitType?: 'burst' | 'daily';
+  resetsAt?: string;
+};
+
 export class RecommendationRequestError extends Error {
   constructor(
     public readonly code: RecommendationErrorCode,
-    public readonly failureStage?: CourseFailureStage,
-    public readonly unsatisfiedIntents?: UnsatisfiedStepIntent[],
+    details: RecommendationErrorDetails = {},
   ) {
     super(code);
     this.name = 'RecommendationRequestError';
+    this.failureStage = details.failureStage;
+    this.unsatisfiedIntents = details.unsatisfiedIntents;
+    this.retryAfterSeconds = details.retryAfterSeconds;
+    this.limitType = details.limitType;
+    this.resetsAt = details.resetsAt;
   }
+  readonly failureStage?: CourseFailureStage;
+  readonly unsatisfiedIntents?: UnsatisfiedStepIntent[];
+  readonly retryAfterSeconds?: number;
+  readonly limitType?: 'burst' | 'daily';
+  readonly resetsAt?: string;
 }
 
 function parseUnsatisfiedIntents(value: unknown): UnsatisfiedStepIntent[] | undefined {
@@ -53,6 +71,15 @@ function parseUnsatisfiedIntents(value: unknown): UnsatisfiedStepIntent[] | unde
     return [];
   });
   return intents.length > 0 ? intents : undefined;
+}
+
+function positiveRetrySeconds(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+function isoResetTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return undefined;
+  return Number.isNaN(Date.parse(value)) ? undefined : value;
 }
 
 export function isPreparedRequestExpiredError(error: unknown): boolean {
@@ -79,17 +106,25 @@ async function toRecommendationRequestError(error: unknown): Promise<Recommendat
     typeof code === 'string' && recommendationErrorCodes.has(code as RecommendationErrorCode)
       ? code as RecommendationErrorCode
       : 'NETWORK_ERROR';
-  return new RecommendationRequestError(
-    typedCode,
-    typedCode === 'COURSE_VALIDATION_FAILED'
+  const limitType = errorPayload?.limitType;
+  return new RecommendationRequestError(typedCode, {
+    failureStage: typedCode === 'COURSE_VALIDATION_FAILED'
       && typeof failureStage === 'string'
       && courseFailureStages.has(failureStage as CourseFailureStage)
       ? failureStage as CourseFailureStage
       : undefined,
-    typedCode === 'STEP_INTENT_UNSATISFIED'
+    unsatisfiedIntents: typedCode === 'STEP_INTENT_UNSATISFIED'
       ? parseUnsatisfiedIntents(errorPayload?.unsatisfiedIntents)
       : undefined,
-  );
+    retryAfterSeconds: typedCode === 'AI_REQUEST_ALREADY_RUNNING' || typedCode === 'AI_RATE_LIMITED'
+      ? positiveRetrySeconds(errorPayload?.retryAfterSeconds)
+      : undefined,
+    limitType: (typedCode === 'AI_RATE_LIMITED' && limitType === 'burst')
+      || (typedCode === 'AI_DAILY_LIMIT_REACHED' && limitType === 'daily')
+      ? limitType
+      : undefined,
+    resetsAt: typedCode === 'AI_DAILY_LIMIT_REACHED' ? isoResetTimestamp(errorPayload?.resetsAt) : undefined,
+  });
 }
 
 export function buildRecommendationRequest(

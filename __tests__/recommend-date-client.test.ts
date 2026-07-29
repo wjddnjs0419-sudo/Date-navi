@@ -148,6 +148,19 @@ describe('structured recommend-date client', () => {
     );
   });
 
+  it.each([
+    ['AI_REQUEST_ALREADY_RUNNING', { retryAfterSeconds: 12 }, { retryAfterSeconds: 12 }],
+    ['AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: 91 }, { limitType: 'burst', retryAfterSeconds: 91 }],
+    ['AI_DAILY_LIMIT_REACHED', { limitType: 'daily', resetsAt: '2026-07-30T15:00:00+09:00' }, { limitType: 'daily', resetsAt: '2026-07-30T15:00:00+09:00' }],
+  ] as const)('preserves safe rate-limit metadata for %s', async (code, details, expected) => {
+    const requestBody = buildRecommendationRequest(courseDraft, `req-client-${code}`, 'ko');
+    invoke.mockResolvedValue({ data: null, error: { context: { json: async () => ({ error: { code, ...details } }) } } });
+
+    await expect(requestRecommendationResponse(requestBody)).rejects.toEqual(
+      expect.objectContaining<Partial<RecommendationRequestError>>({ code, ...expected }),
+    );
+  });
+
   it('preserves the sanitized course failure stage for actionable recovery', async () => {
     const requestBody = buildRecommendationRequest(courseDraft, 'req-client-stage-001', 'ko');
     invoke.mockResolvedValue({

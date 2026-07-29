@@ -26,6 +26,34 @@ import {
   buildStructuredCourseResultParams,
 } from '../../lib/recommendation-route';
 
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+export function courseRateLimitNotice(error: RecommendationRequestError, t: Translate): { title: string; body: string } | null {
+  if (error.code === 'AI_REQUEST_ALREADY_RUNNING') {
+    return {
+      title: t('modeFlow.generating.rateLimit.alreadyRunningTitle'),
+      body: t('modeFlow.generating.rateLimit.alreadyRunningBody'),
+    };
+  }
+  if (error.code === 'AI_RATE_LIMITED') {
+    const remaining = error.retryAfterSeconds ?? 1;
+    return {
+      title: t('modeFlow.generating.rateLimit.burstTitle'),
+      body: t('modeFlow.generating.rateLimit.burstBody', {
+        minutes: Math.floor(remaining / 60),
+        seconds: remaining % 60,
+      }),
+    };
+  }
+  if (error.code === 'AI_DAILY_LIMIT_REACHED') {
+    return {
+      title: t('modeFlow.generating.rateLimit.dailyTitle'),
+      body: t('modeFlow.generating.rateLimit.dailyBody'),
+    };
+  }
+  return null;
+}
+
 export default function GeneratingScreen() {
   const {
     mode,
@@ -196,6 +224,7 @@ export default function GeneratingScreen() {
 
   const unsatisfiedIntents = courseError?.code === 'STEP_INTENT_UNSATISFIED' ? courseError.unsatisfiedIntents ?? [] : [];
   const canRelax = typeof requestId === 'string' && unsatisfiedIntents.length > 0;
+  const rateLimitNotice = courseError ? courseRateLimitNotice(courseError, t) : null;
 
   const handleRelax = () => {
     if (typeof requestId !== 'string') return;
@@ -223,6 +252,17 @@ export default function GeneratingScreen() {
         onPrimary={handleRelax}
         secondaryLabel={t('modeFlow.generating.relaxation.editButton')}
         onSecondary={() => router.replace('/mode-flow/course' as any)}
+      />
+    );
+  }
+
+  if (rateLimitNotice) {
+    return (
+      <GeneratingFallback
+        heading={rateLimitNotice.title}
+        message={rateLimitNotice.body}
+        primaryLabel={t('modeFlow.generating.rateLimit.confirm')}
+        onPrimary={() => router.replace('/mode-flow/course' as any)}
       />
     );
   }

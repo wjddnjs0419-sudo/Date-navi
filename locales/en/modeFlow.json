@@ -69,6 +69,15 @@
         "request_response_validation": "The generated course does not match the selected conditions. Try adjusting them.",
         "stage_attestation": "We had trouble safely saving the generated course. Please try again shortly."
       },
+      "rateLimit": {
+        "alreadyRunningTitle": "Your course is being created",
+        "alreadyRunningBody": "A course is already being created for this account. Please wait a moment.",
+        "burstTitle": "Please wait before creating another course",
+        "burstBody": "There have been several requests recently. Try again in {{minutes}}m {{seconds}}s.",
+        "dailyTitle": "You've used today's course generations",
+        "dailyBody": "You can create another course after midnight.",
+        "confirm": "OK"
+      },
       "courseEdit": "Edit course preferences",
       "defaultError": "Something went wrong while creating recommendations.",
       "errorTitle": "Something went wrong",
