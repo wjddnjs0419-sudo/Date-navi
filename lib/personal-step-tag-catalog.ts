@@ -47,7 +47,7 @@ export function mergePersonalStepTagCatalog(
 }
 
 export function defaultSuggestionsForPersonalCatalog(category: PersonalStepTagCategory): readonly string[] {
-  return getStepIntentTagSuggestions(category);
+  return getStepIntentTagSuggestions(category).map((suggestion) => suggestion.value);
 }
 
 type TagRow = { id: string; category: PersonalStepTagCategory; tag: string; normalized_tag: string };

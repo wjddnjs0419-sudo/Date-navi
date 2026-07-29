@@ -216,6 +216,7 @@ export default function CourseScreen() {
                 suggestions={personalTagCatalog.suggestionsFor(step.category)}
                 onAddSuggestedTag={(tag) => personalTagCatalog.addSuggestion(step.category, tag)}
                 onRemoveSuggestedTag={(tag) => personalTagCatalog.removeSuggestion(step.category, tag)}
+                language={language}
                 t={t}
               />
             ))}

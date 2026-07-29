@@ -12,6 +12,9 @@ import { SP } from '../../constants/theme';
 import { BigButton, GeneratingView } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
+import { addPersonalStepTag, PERSONAL_STEP_TAG_CATEGORIES } from '../../lib/personal-step-tag-catalog';
+import { supabase } from '../../lib/supabase';
+import { canonicalizeStepIntentTag, isShippedStepIntentTag } from '../../shared/recommendation/step-intent-tag-catalog';
 import {
   RecommendationRequestError,
   isPreparedRequestExpiredError,
@@ -93,6 +96,20 @@ export default function GeneratingScreen() {
           startCourseProgress();
           const response = await requestRecommendationResponse(request, { signal: requestToken.signal });
           if (cancelled || requestToken.signal.aborted) return;
+          const verified = new Set(response.metadata.stepIntent?.verifiedCanonicalTerms ?? []);
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await Promise.all(request.courseSteps.flatMap((courseStep) => {
+              if (!PERSONAL_STEP_TAG_CATEGORIES.includes(courseStep.category as any)) return [];
+              return (courseStep.intentTags ?? []).flatMap((tag) => {
+                const canonical = canonicalizeStepIntentTag(tag);
+                // Only an unknown tag proven by Kakao becomes a reusable personal tag.
+                return !isShippedStepIntentTag(tag) && canonical === tag && verified.has(canonical)
+                  ? [addPersonalStepTag(user.id, courseStep.category as any, tag).catch(() => undefined)]
+                  : [];
+              });
+            }));
+          }
           const snapshot = await persistRecommendationSession(request.requestId);
           await logEvent('ai_card_created', { mode: 'make_course', card_count: response.cards.length });
           if (cancelled || requestToken.signal.aborted) return;

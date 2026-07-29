@@ -42,6 +42,7 @@ function render(step: Step, extra: { dispatch?: jest.Mock; onRequestPick?: jest.
         categoryLabels={categoryLabels}
         dispatch={extra.dispatch ?? jest.fn()}
         onRequestPick={extra.onRequestPick ?? jest.fn()}
+        language="ko"
         t={t}
       />,
     );

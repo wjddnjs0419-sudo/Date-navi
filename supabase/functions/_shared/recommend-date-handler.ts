@@ -480,6 +480,9 @@ export async function handleRecommendDate(
           stepIntent: {
             parserSource: resolved.source,
             aiFallbackUsed: false,
+            verifiedCanonicalTerms: resolved.stepIntents
+              .filter((intent) => search.candidates.some((candidate) => placeMatchesStepIntent(candidate, intent)))
+              .map((intent) => intent.canonicalTerm),
             resolved: [...resolved.stepIntents, ...resolved.excludedIntents].map((intent) => ({
               canonicalTerm: intent.canonicalTerm,
               displayLabel: intent.displayLabel,

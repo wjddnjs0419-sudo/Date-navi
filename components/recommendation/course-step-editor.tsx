@@ -11,7 +11,10 @@ import {
 } from '../../lib/course-draft';
 import {
   getStepIntentTagSuggestions,
+  localizeStepIntentTag,
+  canonicalizeStepIntentTag,
 } from '../../shared/recommendation/step-intent-tag-catalog';
+import type { RecommendationLanguage } from '../../shared/recommendation/contracts';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
@@ -59,6 +62,7 @@ export function CourseStepEditor({
   suggestions,
   onAddSuggestedTag,
   onRemoveSuggestedTag,
+  language,
   t,
 }: {
   step: CourseDraftStep;
@@ -70,6 +74,7 @@ export function CourseStepEditor({
   suggestions?: readonly string[];
   onAddSuggestedTag?: (tag: string) => Promise<void> | void;
   onRemoveSuggestedTag?: (tag: string) => Promise<void> | void;
+  language: RecommendationLanguage;
   t: Translate;
 }) {
   const [mode, setMode] = useState<'ai' | 'pick'>(step.pin ? 'pick' : 'ai');
@@ -92,16 +97,19 @@ export function CourseStepEditor({
   const selectedTags = step.intentTags ?? [];
   const visibleSuggestions = [...new Set([
     ...selectedTags,
-    ...(suggestions ?? getStepIntentTagSuggestions(step.category)),
+    ...(suggestions ?? getStepIntentTagSuggestions(step.category).map((suggestion) => suggestion.value)),
   ])];
   const canAddTag = true;
 
   function addCustomTag() {
-    const tag = customTag.trim();
+    const tag = canonicalizeStepIntentTag(customTag);
     if (!tag || !canAddTag) return;
     // The selected state is immediate; the reusable suggestion appears in its final slot after persistence.
     dispatch({ type: 'selectStepIntentTag', stepId: step.id, tag });
-    void onAddSuggestedTag?.(tag);
+    // Shipped and recognized aliases are safe reusable suggestions. Unknown
+    // input remains selected for this request, but is saved only after the
+    // Edge confirms Kakao evidence.
+    if (tag !== customTag.trim()) void onAddSuggestedTag?.(tag);
     setCustomTag('');
   }
 
@@ -214,14 +222,16 @@ export function CourseStepEditor({
             <Text style={styles.tagHint}>{t('course.steps.tags.hint')}</Text>
             {visibleSuggestions.length > 0 && (
               <View style={styles.tagWrap}>
-              {visibleSuggestions.map((tag) => (
+              {visibleSuggestions.map((tag) => {
+                const displayTag = localizeStepIntentTag(tag, language);
+                return (
                 <View key={tag} style={styles.suggestionWithRemove}>
                   {(() => {
                     const selected = selectedTags.includes(tag);
                     return (
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel={t('course.accessibility.addIntentTag', { tag: `#${tag}` })}
+                    accessibilityLabel={t('course.accessibility.addIntentTag', { tag: `#${displayTag}` })}
                     activeOpacity={0.72}
                     disabled={!selected && !canAddTag}
                     onPress={() => dispatch(selected
@@ -230,14 +240,14 @@ export function CourseStepEditor({
                     style={[styles.suggestedTag, selected && styles.suggestedTagSelected, !selected && !canAddTag && styles.controlDisabled]}
                     testID={`course-step-tag-suggestion-${tag}`}
                   >
-                    <Text style={[styles.suggestedTagText, selected && styles.suggestedTagTextSelected]}>#{tag}</Text>
+                    <Text style={[styles.suggestedTagText, selected && styles.suggestedTagTextSelected]}>#{displayTag}</Text>
                   </TouchableOpacity>
                     );
                   })()}
                   {onRemoveSuggestedTag && (
                     <TouchableOpacity
                       accessibilityRole="button"
-                      accessibilityLabel={t('course.accessibility.removeSuggestedIntentTag', { tag: `#${tag}` })}
+                      accessibilityLabel={t('course.accessibility.removeSuggestedIntentTag', { tag: `#${displayTag}` })}
                       activeOpacity={0.72}
                       onPress={() => { void onRemoveSuggestedTag(tag); }}
                       style={styles.suggestionRemove}
@@ -247,7 +257,7 @@ export function CourseStepEditor({
                     </TouchableOpacity>
                   )}
                 </View>
-              ))}
+              ); })}
               </View>
             )}
             <View style={styles.tagAddRow}>

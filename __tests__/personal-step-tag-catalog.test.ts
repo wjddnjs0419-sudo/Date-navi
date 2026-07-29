@@ -1,4 +1,5 @@
 import { mergePersonalStepTagCatalog, normalizeStepIntentTag } from '../lib/personal-step-tag-catalog';
+import { canonicalizeStepIntentTag, getStepIntentTagSuggestions } from '../shared/recommendation/step-intent-tag-catalog';
 
 describe('personal step tag catalog', () => {
   it('hides a shipped tag and retains a personal tag in the same category', () => {
@@ -12,5 +13,12 @@ describe('personal step tag catalog', () => {
 
   it('normalizes whitespace and case for unique catalog keys', () => {
     expect(normalizeStepIntentTag('  Ramen  ')).toBe('ramen');
+  });
+
+  it('uses an English label but the same Korean canonical value for a shipped tag', () => {
+    expect(getStepIntentTagSuggestions('meal', 'en')[0]).toEqual({
+      value: '라멘', label: 'Ramen', shipped: true,
+    });
+    expect(canonicalizeStepIntentTag('Ramen')).toBe('라멘');
   });
 });
