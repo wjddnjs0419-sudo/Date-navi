@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(15);
 
 -- 테스트용 UUID는 auth.users FK 없이도 RPC의 동시성·경계 동작을 보려는 값이다.
 -- Supabase test db는 postgres로 실행하므로 이 transaction 안에서만 FK trigger를 끈다.
@@ -63,6 +63,37 @@ select is(
   2::bigint,
   'Seoul midnight creates a second daily bucket'
 );
+
+create extension if not exists dblink;
+select dblink_connect('ai_lock_one', 'dbname=postgres user=postgres');
+select dblink_connect('ai_lock_two', 'dbname=postgres user=postgres');
+select dblink_send_query('ai_lock_one', $$select * from public.acquire_ai_request_lock('00000000-0000-0000-0000-000000000004', 'course_generate', 'concurrent-one', '2026-07-29T11:00:00Z')$$);
+select dblink_send_query('ai_lock_two', $$select * from public.acquire_ai_request_lock('00000000-0000-0000-0000-000000000004', 'course_generate', 'concurrent-two', '2026-07-29T11:00:00Z')$$);
+create temp table concurrent_lock_results(acquired boolean, retry_after_seconds integer);
+insert into concurrent_lock_results select * from dblink_get_result('ai_lock_one') as result(acquired boolean, retry_after_seconds integer);
+insert into concurrent_lock_results select * from dblink_get_result('ai_lock_two') as result(acquired boolean, retry_after_seconds integer);
+select is((select count(*) from concurrent_lock_results where acquired), 1::bigint, 'two concurrent lock RPCs have exactly one winner');
+select dblink_disconnect('ai_lock_one');
+select dblink_disconnect('ai_lock_two');
+
+select dblink_connect('ai_quota_one', 'dbname=postgres user=postgres');
+select dblink_connect('ai_quota_two', 'dbname=postgres user=postgres');
+select dblink_connect('ai_quota_three', 'dbname=postgres user=postgres');
+select dblink_connect('ai_quota_four', 'dbname=postgres user=postgres');
+select dblink_send_query('ai_quota_one', $$select * from public.consume_ai_quota('00000000-0000-0000-0000-000000000005', 'course_generate', '2026-07-29T12:00:00Z')$$);
+select dblink_send_query('ai_quota_two', $$select * from public.consume_ai_quota('00000000-0000-0000-0000-000000000005', 'course_generate', '2026-07-29T12:00:00Z')$$);
+select dblink_send_query('ai_quota_three', $$select * from public.consume_ai_quota('00000000-0000-0000-0000-000000000005', 'course_generate', '2026-07-29T12:00:00Z')$$);
+select dblink_send_query('ai_quota_four', $$select * from public.consume_ai_quota('00000000-0000-0000-0000-000000000005', 'course_generate', '2026-07-29T12:00:00Z')$$);
+create temp table concurrent_quota_results(allowed boolean, limit_type text, retry_after_seconds integer, resets_at timestamptz);
+insert into concurrent_quota_results select * from dblink_get_result('ai_quota_one') as result(allowed boolean, limit_type text, retry_after_seconds integer, resets_at timestamptz);
+insert into concurrent_quota_results select * from dblink_get_result('ai_quota_two') as result(allowed boolean, limit_type text, retry_after_seconds integer, resets_at timestamptz);
+insert into concurrent_quota_results select * from dblink_get_result('ai_quota_three') as result(allowed boolean, limit_type text, retry_after_seconds integer, resets_at timestamptz);
+insert into concurrent_quota_results select * from dblink_get_result('ai_quota_four') as result(allowed boolean, limit_type text, retry_after_seconds integer, resets_at timestamptz);
+select is((select count(*) from concurrent_quota_results where allowed), 3::bigint, 'four concurrent quota RPCs allow exactly three calls');
+select dblink_disconnect('ai_quota_one');
+select dblink_disconnect('ai_quota_two');
+select dblink_disconnect('ai_quota_three');
+select dblink_disconnect('ai_quota_four');
 
 select * from finish();
 rollback;

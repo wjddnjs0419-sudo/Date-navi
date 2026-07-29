@@ -36,9 +36,17 @@ function positiveInteger(value: unknown): number {
 }
 
 function isoTimestamp(value: unknown): string {
-  if (typeof value !== 'string'
-    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
-    || Number.isNaN(Date.parse(value))) {
+  if (typeof value !== 'string') throw new Error('AI rate-limit RPC returned an invalid reset timestamp');
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
+  const year = match ? Number(match[1]) : Number.NaN;
+  const month = match ? Number(match[2]) : Number.NaN;
+  const day = match ? Number(match[3]) : Number.NaN;
+  const hour = match ? Number(match[4]) : Number.NaN;
+  const minute = match ? Number(match[5]) : Number.NaN;
+  const second = match ? Number(match[6]) : Number.NaN;
+  const daysInMonth = Number.isNaN(year) || Number.isNaN(month) ? Number.NaN : new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (!match || month < 1 || month > 12 || day < 1 || day > daysInMonth
+    || hour > 23 || minute > 59 || second > 59 || Number.isNaN(Date.parse(value))) {
     throw new Error('AI rate-limit RPC returned an invalid reset timestamp');
   }
   return value;

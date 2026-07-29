@@ -40,4 +40,12 @@ describe('AI rate-limit Edge adapter', () => {
     await expect(consumeCourseGenerationQuota(client as never, { userId: 'user-1' }))
       .rejects.toThrow('invalid reset timestamp');
   });
+
+  it('calendar-invalid ISO-shaped daily reset도 fail closed 한다', async () => {
+    const client = rpcClient([{
+      allowed: false, limit_type: 'daily', retry_after_seconds: null, resets_at: '2026-02-30T00:00:00Z',
+    }]);
+    await expect(consumeCourseGenerationQuota(client as never, { userId: 'user-1' }))
+      .rejects.toThrow('invalid reset timestamp');
+  });
 });
