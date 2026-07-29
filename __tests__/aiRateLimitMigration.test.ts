@@ -46,4 +46,14 @@ describe('AI rate-limit migration', () => {
       expect(sql).toContain(`revoke all on function public.${fn}`);
     }
   });
+
+  it('live lock이 경쟁적으로 사라지면 재조회 대신 획득을 재시도한다', () => {
+    const sql = migration();
+    const lockFunction = sql.slice(
+      sql.indexOf('create or replace function public.acquire_ai_request_lock'),
+      sql.indexOf('create or replace function public.release_ai_request_lock'),
+    );
+    expect(lockFunction).toContain('loop');
+    expect(lockFunction).toContain('if not found then continue; end if;');
+  });
 });

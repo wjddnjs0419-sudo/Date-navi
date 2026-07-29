@@ -52,23 +52,26 @@ begin
     raise invalid_parameter_value using message = 'invalid_ai_lock';
   end if;
 
-  insert into public.ai_request_locks(user_id, action, request_id, expires_at)
-  values (p_user_id, p_action, p_request_id, p_now + interval '2 minutes')
-  on conflict (user_id, action) do update set
-    request_id = excluded.request_id,
-    expires_at = excluded.expires_at,
-    created_at = p_now
-  where public.ai_request_locks.expires_at <= p_now
-  returning true, 0 into acquired, retry_after_seconds;
+  loop
+    insert into public.ai_request_locks(user_id, action, request_id, expires_at)
+    values (p_user_id, p_action, p_request_id, p_now + interval '2 minutes')
+    on conflict (user_id, action) do update set
+      request_id = excluded.request_id,
+      expires_at = excluded.expires_at,
+      created_at = p_now
+    where public.ai_request_locks.expires_at <= p_now
+    returning true, 0 into acquired, retry_after_seconds;
 
-  if found then return next; return; end if;
+    if found then return next; return; end if;
 
-  select expires_at into v_expires_at
-  from public.ai_request_locks
-  where user_id = p_user_id and action = p_action;
-  acquired := false;
-  retry_after_seconds := greatest(1, ceil(extract(epoch from (v_expires_at - p_now)))::integer);
-  return next;
+    select expires_at into v_expires_at
+    from public.ai_request_locks
+    where user_id = p_user_id and action = p_action;
+    if not found then continue; end if;
+    acquired := false;
+    retry_after_seconds := greatest(1, ceil(extract(epoch from (v_expires_at - p_now)))::integer);
+    return next;
+  end loop;
 end;
 $$;
 

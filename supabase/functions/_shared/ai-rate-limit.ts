@@ -36,7 +36,9 @@ function positiveInteger(value: unknown): number {
 }
 
 function isoTimestamp(value: unknown): string {
-  if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
+  if (typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    || Number.isNaN(Date.parse(value))) {
     throw new Error('AI rate-limit RPC returned an invalid reset timestamp');
   }
   return value;
