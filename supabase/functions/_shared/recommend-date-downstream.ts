@@ -37,7 +37,7 @@ type GenerateAiSelectionInput = {
   internalAiToken: string;
   prompt: string;
   promptVersion: string;
-  action?: string;
+  action?: 'recommend_date_select' | 'estimate_place_price';
 };
 
 type GenerateAiSelectionOptions = {

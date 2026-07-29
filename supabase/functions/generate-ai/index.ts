@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { PARSE_STEP_INTENTS_SCHEMA } from './parse-step-intents-schema.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,113 +10,6 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
-
-const CARDS_SCHEMA = {
-  type: 'object',
-  properties: {
-    cards: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          summary: { type: 'string' },
-          // estimated_time/budget은 앱이 결정론적으로 채운다 (V2 §11) — Claude 미생성.
-          tags: { type: 'array', items: { type: 'string' } },
-          why_recommended: { type: 'string' },
-          // 카카오 로컬 실제 장소 (location 입력 시에만 채워짐 — optional)
-          place_name: { type: 'string' },
-          place_address: { type: 'string' },
-          map_url: { type: 'string' },
-          // make_course 모드 전용 동선 단계 (optional — required 미포함이라 다른 모드는 생략 가능)
-          steps: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                label: { type: 'string' },
-                desc: { type: 'string' },
-              },
-              required: ['label'],
-              additionalProperties: false,
-            },
-          },
-        },
-        required: ['title', 'summary', 'tags', 'why_recommended'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['cards'],
-  additionalProperties: false,
-};
-
-const SOFT_MESSAGE_SCHEMA = {
-  type: 'object',
-  properties: { message: { type: 'string' } },
-  required: ['message'],
-  additionalProperties: false,
-};
-
-// V2 §10 — Claude는 후보 candidate_id를 선택하고 설명만 생성한다. 장소·estimated 미생성.
-const FEELING_SELECT_SCHEMA = {
-  type: 'object',
-  properties: {
-    recommendations: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          candidate_id: { type: 'string' },
-          title: { type: 'string' },
-          summary: { type: 'string' },
-          why_recommended: { type: 'string' },
-          tags: { type: 'array', items: { type: 'string' } },
-        },
-        required: ['candidate_id', 'title', 'summary', 'why_recommended', 'tags'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['recommendations'],
-  additionalProperties: false,
-};
-
-// make_course — steps[] (순서 보존). 장소 단계는 candidate_id, 행동 단계는 label/desc만 (§16).
-const COURSE_SELECT_SCHEMA = {
-  type: 'object',
-  properties: {
-    recommendations: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          summary: { type: 'string' },
-          why_recommended: { type: 'string' },
-          tags: { type: 'array', items: { type: 'string' } },
-          steps: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                candidate_id: { type: 'string' },
-                label: { type: 'string' },
-                desc: { type: 'string' },
-              },
-              required: ['label'],
-              additionalProperties: false,
-            },
-          },
-        },
-        required: ['title', 'summary', 'why_recommended', 'tags', 'steps'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['recommendations'],
-  additionalProperties: false,
-};
 
 // recommend-date 전용: 장소 사실은 서버 후보에서만 조립하며 Claude는 ID만 선택한다.
 const RECOMMEND_DATE_SELECT_SCHEMA = {
@@ -137,19 +29,6 @@ const RECOMMEND_DATE_SELECT_SCHEMA = {
     },
   },
   required: ['steps'],
-  additionalProperties: false,
-};
-
-// recommend-date의 "이 단계 교체" 전용: 대상 스텝 하나에 대한 검증된 candidateId만 최대 10개 순서대로 선택.
-const REPLACEMENT_SELECT_SCHEMA = {
-  type: 'object',
-  properties: {
-    candidateIds: {
-      type: 'array',
-      items: { type: 'string' },
-    },
-  },
-  required: ['candidateIds'],
   additionalProperties: false,
 };
 
@@ -256,7 +135,12 @@ Deno.serve(async (req) => {
     if (!config) {
       return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
     }
-    if (!hasInternalAiToken(req.headers.get('x-internal-ai-token'), Deno.env.get('INTERNAL_AI_TOKEN'))) {
+    const internalAiToken = Deno.env.get('INTERNAL_AI_TOKEN');
+    if (!internalAiToken) {
+      console.error('generate-ai INTERNAL_AI_TOKEN is not configured');
+      return json({ error: 'Internal configuration error' }, 500);
+    }
+    if (!hasInternalAiToken(req.headers.get('x-internal-ai-token'), internalAiToken)) {
       return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
     }
     if (typeof prompt !== 'string' || !prompt) {
