@@ -17,7 +17,7 @@
 
 원격 배포 전 수행할 절차 (아직 실행하지 않음):
 
-1. Supabase SQL Editor에서 `supabase/migrations/20260729120000_ai_rate_limits.sql`, 이어서 `supabase/migrations/20260729130000_place_price_estimation_claim.sql`을 순서대로 적용한다.
+1. 로컬 Supabase에서 두 migration을 검증한 뒤 Supabase CLI의 `supabase db push`로 `20260729120000_ai_rate_limits.sql`, 이어서 `20260729130000_place_price_estimation_claim.sql`을 순서대로 적용한다. SQL Editor 직접 실행은 migration history를 남기지 않아 이후 CLI 배포와 충돌하므로 사용하지 않는다. 이미 history mismatch가 있으면 먼저 `supabase migration list`로 원격 이력을 정리한다.
 2. 충분히 긴 무작위 값으로 `INTERNAL_AI_TOKEN` Edge secret을 설정하고, 같은 값을 `generate-ai`와 `recommend-date`가 읽도록 한다.
 3. `generate-ai`를 먼저, `recommend-date`를 다음으로 배포한다.
 4. authenticated JWT로 7개 quota/lock/price RPC가 거부되고 service role만 허용되는지, 토큰 없는 `generate-ai`가 403인지 확인한다.
