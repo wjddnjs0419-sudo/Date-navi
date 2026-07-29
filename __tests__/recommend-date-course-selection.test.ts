@@ -154,6 +154,20 @@ describe('verified Kakao category matching', () => {
     }, 'activity')).toBe(false);
   });
 
+  it.each([
+    ['CT1', '문화시설', '문화시설 > 클라이밍장', '클라이밍센터', 'activity'],
+    ['AT4', '관광명소', '관광명소 > 식물원', '서울식물원', 'culture'],
+    ['AT4', '관광명소', '관광명소 > 아쿠아리움', '코엑스 아쿠아리움', 'culture'],
+    ['CE7', '카페', '카페 > 보드게임카페', '보드게임카페', 'activity'],
+    ['CT1', '문화시설', '문화시설 > 공방', '성수 공방', 'activity'],
+    ['', '', '관광명소', '서울식물원', 'culture'],
+  ] as const)('accepts taxonomy aliases and compatible place names: %s %s', (categoryGroupCode, categoryGroupName, categoryName, name, category) => {
+    expect(candidateMatchesCategory({
+      ...candidate('taxonomy-compatible', 'taxonomy-compatible-id', categoryGroupCode, 127),
+      categoryGroupCode, categoryGroupName, categoryName, name, matchedSearchEvidence: [],
+    }, category)).toBe(true);
+  });
+
   it('does not treat keyword query evidence as proof of drinks or activity category', () => {
     const restaurantFromDrinksQuery = {
       ...candidate('restaurant', 'restaurant-id', 'FD6', 127),

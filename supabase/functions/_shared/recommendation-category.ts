@@ -26,10 +26,10 @@ const VERIFIED_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
 const TAXONOMY_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
   activity: STEP_INTENT_DICTIONARY
     .filter((entry) => entry.targetCategory === 'activity')
-    .flatMap((entry) => [entry.canonicalTerm, ...entry.categoryNameKeywords]),
+    .flatMap((entry) => [entry.canonicalTerm, ...entry.aliases, ...entry.searchExpansions, ...entry.categoryNameKeywords]),
   culture: STEP_INTENT_DICTIONARY
     .filter((entry) => entry.targetCategory === 'culture')
-    .flatMap((entry) => [entry.canonicalTerm, ...entry.categoryNameKeywords]),
+    .flatMap((entry) => [entry.canonicalTerm, ...entry.aliases, ...entry.searchExpansions, ...entry.categoryNameKeywords]),
 };
 
 // 데이트에 부적합한 카카오 카테고리 그룹코드. 적합 코드(FD6·CE7·CT1·AT4)만 통과.
@@ -86,15 +86,17 @@ export function verifiedPlaceMatchesCategory(
   // A mismatched broad code is normally decisive. Activity/culture are the exception: Kakao
   // frequently puts a verified subtype (climbing, aquarium, botanical garden) under CT1/AT4.
   const taxonomyKeywords = TAXONOMY_CATEGORY_KEYWORDS[normalized] ?? [];
-  const haystack = `${place.categoryGroupName} ${place.categoryName}`
+  const haystack = `${place.name} ${place.categoryGroupName} ${place.categoryName}`
     .normalize('NFKC')
-    .toLocaleLowerCase();
+    .toLocaleLowerCase()
+    .replace(/\s+/g, '');
   const taxonomyCompatibleGroup = !place.categoryGroupCode
     || place.categoryGroupCode === 'CT1'
-    || place.categoryGroupCode === 'AT4';
+    || place.categoryGroupCode === 'AT4'
+    || place.categoryGroupCode === 'CE7';
   if ((normalized === 'activity' || normalized === 'culture')
     && taxonomyCompatibleGroup
-    && taxonomyKeywords.some((keyword) => haystack.includes(keyword))) return true;
+    && taxonomyKeywords.some((keyword) => haystack.includes(keyword.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, '')))) return true;
   if (code && place.categoryGroupCode) return false;
   if (normalized === 'activity' && place.categoryGroupCode) return false;
   const keywords = VERIFIED_CATEGORY_KEYWORDS[normalized] ?? [];

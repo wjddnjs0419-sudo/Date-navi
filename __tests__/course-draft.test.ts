@@ -102,6 +102,14 @@ describe('structured course draft', () => {
     expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'meal', intentTags: ['파스타'] });
   });
 
+  it('clears a selected tag when its step category changes', () => {
+    let draft = createInitialCourseDraft(idFactory('step-a', 'step-b'));
+    draft = courseDraftReducer(draft, { type: 'selectStepIntentTag', stepId: 'step-a', tag: '라멘' });
+    draft = courseDraftReducer(draft, { type: 'setStepCategory', stepId: 'step-a', category: 'cafe' });
+
+    expect(draft.steps[0]).toEqual({ id: 'step-a', category: 'cafe', intentTags: undefined });
+  });
+
   it('extracts deterministic ko/en exclusions and safe soft preferences', () => {
     expect(parseCoursePreferences('카페 빼줘. 술집 제외하고 걷기 싫어. 조용한 실내에서 사진 찍고 싶어')).toEqual({
       excludedCategories: ['cafe', 'drinks', 'walk'],

@@ -167,7 +167,7 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
         ...draft,
         steps: draft.steps.map((step) => {
           if (step.id !== action.stepId) return step;
-          const intentTags = [...new Set([...(step.intentTags ?? []), tag])].slice(0, MAX_STEP_INTENT_TAGS);
+          const intentTags = [tag];
           return { ...step, intentTags };
         }),
       };

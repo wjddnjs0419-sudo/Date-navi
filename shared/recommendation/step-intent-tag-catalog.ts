@@ -1,4 +1,4 @@
-export const MAX_STEP_INTENT_TAGS = 6;
+export const MAX_STEP_INTENT_TAGS = 1;
 
 const SUGGESTIONS_BY_CATEGORY: Record<string, readonly string[]> = {
   meal: ['라멘', '파스타', '삼겹살', '초밥', '떡볶이', '마라탕'],
