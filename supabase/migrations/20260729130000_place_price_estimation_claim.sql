@@ -2,7 +2,7 @@ begin;
 
 alter table public.places
   add column if not exists price_estimation_status text not null default 'pending'
-    check (price_estimation_status in ('pending', 'claimed', 'completed')),
+    check (price_estimation_status in ('pending', 'claimed', 'estimated')),
   add column if not exists price_estimation_claim_id uuid,
   add column if not exists price_estimation_claimed_at timestamptz;
 
@@ -37,7 +37,7 @@ begin
       estimated_max_krw = p_max_krw,
       estimated_at = p_now,
       estimate_model = p_model,
-      price_estimation_status = 'completed',
+      price_estimation_status = 'estimated',
       price_estimation_claim_id = null,
       price_estimation_claimed_at = null,
       updated_at = p_now

@@ -161,6 +161,26 @@ describe('recordPlaceKnowledge', () => {
     expect(estimate).toHaveBeenCalledWith(place);
   });
 
+  it('완료 RPC가 false면 추정 성공으로 집계하지 않고 claim을 release한다', async () => {
+    const rpc = jest.fn(async (functionName: string) => {
+      if (functionName === 'claim_place_price_estimation') return { data: [{ kakao_place_id: 'k1' }], error: null };
+      if (functionName === 'complete_place_price_estimation') return { data: false, error: null };
+      return { data: true, error: null };
+    });
+    const client = { from: () => ({ upsert: async () => ({ error: null }) }), rpc };
+
+    await recordPlaceKnowledge({
+      client: client as never,
+      places: [place],
+      estimate: async () => ({ minKRW: 5000, maxKRW: 9000 }),
+      model: 'm',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('release_place_price_estimation_claim', expect.objectContaining({ p_kakao_place_id: 'k1' }));
+    const summary = errorSpy.mock.calls.map((call) => String(call[0])).find((line) => line.includes('place_ledger_recorded'));
+    expect(JSON.parse(summary!)).toMatchObject({ estimated: 0, estimateFailed: 1 });
+  });
+
   it('upsert 실패도 밖으로 던지지 않는다 — 부가 기록이 원본 흐름을 되돌리지 않는다', async () => {
     const client = {
       from: () => ({

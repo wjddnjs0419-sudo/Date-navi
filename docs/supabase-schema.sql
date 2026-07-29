@@ -1908,7 +1908,7 @@ end $$;
 -- 20260729130000_place_price_estimation_claim.sql
 alter table public.places
   add column if not exists price_estimation_status text not null default 'pending'
-    check (price_estimation_status in ('pending', 'claimed', 'completed')),
+    check (price_estimation_status in ('pending', 'claimed', 'estimated')),
   add column if not exists price_estimation_claim_id uuid,
   add column if not exists price_estimation_claimed_at timestamptz;
 create or replace function public.claim_place_price_estimation(p_kakao_place_ids text[], p_claim_id uuid, p_now timestamptz default now())
@@ -1924,7 +1924,7 @@ returns boolean language plpgsql security definer set search_path = public, pg_t
 begin
   if p_min_krw < 0 or p_max_krw < p_min_krw or nullif(btrim(p_model), '') is null then raise invalid_parameter_value using message = 'invalid_place_price_estimate'; end if;
   update public.places set estimated_min_krw = p_min_krw, estimated_max_krw = p_max_krw, estimated_at = p_now, estimate_model = p_model,
-    price_estimation_status = 'completed', price_estimation_claim_id = null, price_estimation_claimed_at = null, updated_at = p_now
+    price_estimation_status = 'estimated', price_estimation_claim_id = null, price_estimation_claimed_at = null, updated_at = p_now
   where kakao_place_id = p_kakao_place_id and price_estimation_status = 'claimed' and price_estimation_claim_id = p_claim_id;
   return found;
 end;

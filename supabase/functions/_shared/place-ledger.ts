@@ -133,14 +133,14 @@ export async function recordPlaceKnowledge(input: {
           });
           continue;
         }
-        const { error: completeError } = await input.client.rpc('complete_place_price_estimation', {
+        const { data: completed, error: completeError } = await input.client.rpc('complete_place_price_estimation', {
           p_kakao_place_id: place.kakaoPlaceId,
           p_claim_id: claimId,
           p_min_krw: estimate.minKRW,
           p_max_krw: estimate.maxKRW,
           p_model: input.model,
         });
-        if (completeError) throw completeError;
+        if (completeError || completed !== true) throw completeError ?? new Error('place price completion claim was lost');
         estimated += 1;
       } catch (error) {
         estimateFailed += 1;
