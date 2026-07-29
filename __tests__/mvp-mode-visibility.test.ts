@@ -93,14 +93,26 @@ describe('MVP 단일 모드 노출 — 화면 배선', () => {
       expect(existsSync(join(process.cwd(), 'app/soft-message'))).toBe(false);
     });
 
-    it('전용 AI 함수와 프롬프트 빌더가 삭제됐다 (공유 invite/공유 제안 경로는 유지)', () => {
+    it('공유 화면과 AI 모듈에 초대 문구 AI가 없다', () => {
+      const send = read('app/share/send.tsx');
       const ai = read('lib/ai.ts');
+      expect(send).not.toContain('generateInviteMessage');
+      expect(send).not.toContain('handleSuggestMessage');
+      expect(send).not.toContain('share.send.suggestCta');
       expect(ai).not.toContain('generateSoftMessage');
       expect(ai).not.toContain('adjustSoftMessage');
-      expect(ai).toContain('generateInviteMessage');
+      expect(ai).not.toContain('generateInviteMessage');
+      expect(ai).not.toContain("'soft_message'");
       const prompt = read('lib/prompt.ts');
       expect(prompt).not.toContain('buildSoftMessagePrompt');
       expect(prompt).not.toContain('buildAdjustSoftMessagePrompt');
+    });
+
+    it('공유 화면은 직접 편집한 message를 계속 저장한다', () => {
+      const send = read('app/share/send.tsx');
+      expect(send).toContain('value={message}');
+      expect(send).toContain('onChangeText={setMessage}');
+      expect(send).toContain('generated_text: message');
     });
 
     it('ko/en에서 tabs.softMessage와 softMessage 섹션이 제거됐다', () => {

@@ -55,7 +55,7 @@ async function searchPlaces(
 
 // AI 호출은 Supabase Edge Function(generate-ai)이 대행한다.
 // Anthropic 키는 함수 시크릿으로만 존재하며 클라이언트 번들에 노출되지 않는다.
-type AIAction = 'cards' | 'soft_message' | 'feeling_select' | 'course_select';
+type AIAction = 'cards' | 'feeling_select' | 'course_select';
 
 // generate-ai 응답에 첨부되는 계측 usage (§18). 마지막 호출 값을 보관해 호출부가 로깅에 쓸 수 있게 한다.
 export type AIUsage = { input_tokens?: number; output_tokens?: number };
@@ -185,66 +185,6 @@ export const FALLBACK_CARDS_BY_LANGUAGE: Record<AppLanguage, DateCard[]> = {
   ],
 };
 
-
-// ─── 초대 한마디 (긍정·설레는 톤) ───────────────────────────────────────────────
-// send 화면 전용.
-export type InviteCard = { title: string; summary?: string; tags?: string[] };
-
-function buildInviteMessagePrompt(card: InviteCard, language: AppLanguage): string {
-  const tagText = (card.tags ?? []).join(', ');
-  if (language === 'en') {
-    return `You help someone invite their partner on a date in a warm, excited tone.
-Write a short message inviting them to this date idea. Sound genuinely looking forward to it — NEVER apologetic.
-
-【Date】
-- Title: ${card.title}
-${card.summary ? `- About: ${card.summary}\n` : ''}${tagText ? `- Vibe: ${tagText}\n` : ''}
-Reply with JSON only. Do not include any other text.
-
-{
-  "message": "A warm invite to my partner (2-3 sentences, excited and natural, no apology)"
-}
-
-Rules:
-- Use positive, looking-forward phrasing like "let's go together", "how about it?", "this looks fun"
-- Never include apology or burden ("sorry", "it's okay if not")
-- Keep it within 2-3 sentences`;
-  }
-
-  return `당신은 연인에게 데이트를 설레는 말투로 제안하도록 돕는 전문가입니다.
-아래 데이트 후보를 같이 가자고 권하는 짧은 한마디를 만들어주세요. 기대되고 설레는 느낌으로, 절대 사과/거절 투는 쓰지 마세요.
-
-【데이트 후보】
-- 제목: ${card.title}
-${card.summary ? `- 내용: ${card.summary}\n` : ''}${tagText ? `- 분위기: ${tagText}\n` : ''}
-반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트는 출력하지 마세요.
-
-{
-  "message": "상대에게 보낼 설레는 초대 한마디 (2~3문장, 자연스러운 연인 말투, 사과 표현 금지)"
-}
-
-규칙:
-- "같이 가자", "어때?", "재밌을 것 같아" 같은 긍정적이고 기대되는 표현을 쓰세요
-- "미안해", "부담되면 괜찮아" 같은 사과·거절 표현은 절대 넣지 마세요
-- 2~3문장으로 간결하게 작성하세요`;
-}
-
-const INVITE_FALLBACKS: Record<AppLanguage, string> = {
-  ko: '이거 우리 같이 가보면 진짜 좋을 것 같아! 시간 어때? 😊',
-  en: 'I think we’d have a great time with this one! Want to go together? 😊',
-};
-
-export async function generateInviteMessage(card: InviteCard, language: AppLanguage = 'ko'): Promise<string> {
-  try {
-    const prompt = buildInviteMessagePrompt(card, language);
-    const { data } = await invokeAI('soft_message', prompt);
-    const msg = (data as { message?: string })?.message;
-    if (!msg) throw new Error('No message in response');
-    return msg;
-  } catch {
-    return INVITE_FALLBACKS[language];
-  }
-}
 
 // Session 재사용/재추천용 부가 정보 (Phase 6). Phase 4·5에서는 onSession 미소비여도 무해.
 export type GenerateOptions = {
