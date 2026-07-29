@@ -180,6 +180,7 @@ Deno.serve(async (request) => {
       ...input,
       supabaseUrl: Deno.env.get('SUPABASE_URL')!,
       anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
+      internalAiToken: Deno.env.get('INTERNAL_AI_TOKEN')!,
     }),
     stageAttestation: async ({ ownerUserId, request, response }) => {
       const serviceClient = createClient(
@@ -227,6 +228,7 @@ Deno.serve(async (request) => {
             supabaseUrl: Deno.env.get('SUPABASE_URL')!,
             anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
             authorization,
+            internalAiToken: Deno.env.get('INTERNAL_AI_TOKEN')!,
             action: 'estimate_place_price',
             prompt: buildPlacePriceEstimationPrompt({
               placeName: place.name,

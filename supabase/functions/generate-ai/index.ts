@@ -3,7 +3,7 @@ import { PARSE_STEP_INTENTS_SCHEMA } from './parse-step-intents-schema.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-ai-token',
 };
 
 const json = (body: unknown, status = 200) =>
@@ -167,15 +167,9 @@ const PLACE_PRICE_SCHEMA = {
 };
 
 // logged: 프롬프트/응답 로깅 대상 여부 — soft_message(초대·거절 메시지)는 추천 품질과 무관하므로 제외.
-const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean }> = {
-  cards: { schema: CARDS_SCHEMA, maxTokens: 2048, temperature: 0.8, logged: true },
-  soft_message: { schema: SOFT_MESSAGE_SCHEMA, maxTokens: 256, temperature: 0.9, logged: false },
-  feeling_select: { schema: FEELING_SELECT_SCHEMA, maxTokens: 1536, temperature: 0.7, logged: true },
-  course_select: { schema: COURSE_SELECT_SCHEMA, maxTokens: 2048, temperature: 0.7, logged: true },
-  recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
-  replacement_select: { schema: REPLACEMENT_SELECT_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
-  parse_step_intents: { schema: PARSE_STEP_INTENTS_SCHEMA, maxTokens: 512, temperature: 0, logged: true },
-  estimate_place_price: { schema: PLACE_PRICE_SCHEMA, maxTokens: 256, temperature: 0, logged: true },
+const ACTION_CONFIG: Record<string, { schema: object; maxTokens: number; temperature: number; logged: boolean; maxPromptChars: number }> = {
+  recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA, maxTokens: 512, temperature: 0, logged: true, maxPromptChars: 20_000 },
+  estimate_place_price: { schema: PLACE_PRICE_SCHEMA, maxTokens: 256, temperature: 0, logged: true, maxPromptChars: 1_000 },
 };
 
 const MODEL = 'claude-haiku-4-5';
@@ -188,10 +182,18 @@ const LOGGED_ACTIONS = new Set(
 // 파싱 결과를 레거시 _usage 봉투 없이 그대로 돌려주는 액션들 — 엄격 스키마 소비자 전용.
 const RAW_PASSTHROUGH_ACTIONS = new Set([
   'recommend_date_select',
-  'replacement_select',
-  'parse_step_intents',
   'estimate_place_price',
 ]);
+
+function hasInternalAiToken(provided: string | null, expected: string | undefined): boolean {
+  if (!provided || !expected) return false;
+  const length = Math.max(provided.length, expected.length);
+  let mismatch = provided.length ^ expected.length;
+  for (let index = 0; index < length; index += 1) {
+    mismatch |= (provided.charCodeAt(index) || 0) ^ (expected.charCodeAt(index) || 0);
+  }
+  return mismatch === 0;
+}
 
 type LogParams = {
   userId: string;
@@ -251,8 +253,17 @@ Deno.serve(async (req) => {
 
     const { action, prompt, prompt_version } = await req.json();
     const config = typeof action === 'string' ? ACTION_CONFIG[action] : undefined;
-    if (!config || typeof prompt !== 'string' || !prompt) {
+    if (!config) {
+      return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
+    }
+    if (!hasInternalAiToken(req.headers.get('x-internal-ai-token'), Deno.env.get('INTERNAL_AI_TOKEN'))) {
+      return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
+    }
+    if (typeof prompt !== 'string' || !prompt) {
       return json({ error: 'Invalid request' }, 400);
+    }
+    if (prompt.length > config.maxPromptChars) {
+      return json({ error: { code: 'AI_PROMPT_TOO_LARGE', maxPromptChars: config.maxPromptChars } }, 413);
     }
     const promptVersion = typeof prompt_version === 'string' && prompt_version ? prompt_version : 'unknown';
 

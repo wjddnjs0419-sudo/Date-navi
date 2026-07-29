@@ -34,6 +34,7 @@ type GenerateAiSelectionInput = {
   supabaseUrl: string;
   anonKey: string;
   authorization: string;
+  internalAiToken: string;
   prompt: string;
   promptVersion: string;
   action?: string;
@@ -61,6 +62,7 @@ export async function invokeGenerateAiSelection(
       method: 'POST',
       headers: {
         Authorization: input.authorization,
+        'x-internal-ai-token': input.internalAiToken,
         apikey: input.anonKey,
         'Content-Type': 'application/json',
       },

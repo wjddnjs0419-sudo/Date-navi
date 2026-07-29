@@ -10,6 +10,7 @@ const input = {
   supabaseUrl: 'https://example.supabase.co',
   anonKey: 'anon-key',
   authorization: 'Bearer user-token',
+  internalAiToken: 'internal-token',
   prompt: 'server-only prompt',
   promptVersion: 'recommend-date-v1',
 };
@@ -61,6 +62,7 @@ describe('recommend-date downstream timeout boundary', () => {
       action: 'recommend_date_select',
       prompt_version: input.promptVersion,
     });
+    expect((fetchImpl as jest.Mock).mock.calls[0][1].headers['x-internal-ai-token']).toBe('internal-token');
     expect(jest.getTimerCount()).toBe(0);
   });
 
