@@ -9,7 +9,9 @@ import type { ParsedStepIntent } from '../supabase/functions/_shared/step-intent
 
 const request = (additionalRequest?: string): RecommendationRequest => ({
   requestId: 'req-resolve',
-  mode: 'course',
+  // Course requests deliberately use tags only. These are compatibility tests
+  // for the retained non-course natural-language resolver.
+  mode: 'single_place',
   language: 'ko',
   location: { source: 'kakao', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark' },
   courseSteps: [
@@ -57,7 +59,7 @@ describe('mergeRuleAndAiIntents', () => {
   });
 });
 
-describe('resolveStepIntents — 고재현 AI 게이트', () => {
+describe('resolveStepIntents — non-course compatibility AI gate', () => {
   it('strips unified dictionary aliases before checking residual text', () => {
     expect(hasMeaningfulResidual('도자기 만들고 싶어')).toBe(false);
     expect(hasMeaningfulResidual('도자기 만들고 조용한 곳')).toBe(true);

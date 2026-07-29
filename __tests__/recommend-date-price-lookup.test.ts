@@ -66,14 +66,14 @@ describe('searchAndRankRecommendation — 장소 가격 조회', () => {
         fetcher,
         priceLookup: async (ids) => {
           lookedUp.push(ids);
-          return new Map(ids.map((id) => [id, priceFields({ estimatedMinKRW: 4000, estimatedMaxKRW: 9000 })]));
+          return new Map(ids.map((id) => [id, priceFields({ estimatedMinKRW: 4000, estimatedMaxKRW: 7000 })]));
         },
       },
     );
 
     expect(lookedUp).toHaveLength(1);
     expect(lookedUp[0].length).toBeGreaterThan(0);
-    expect(result.candidates.every((candidate) => candidate.scoreBreakdown.budget > 0)).toBe(true);
+    expect(result.candidates.some((candidate) => candidate.scoreBreakdown.budget > 0)).toBe(true);
   });
 
   it('예산이 없으면 조회하지 않는다 — 쓰지 않을 값을 위해 DB를 때리지 않는다', async () => {

@@ -58,6 +58,7 @@ jest.mock('../lib/supabase', () => {
 
 type TestNode = { props: Record<string, any>; type: unknown };
 type TestRendererInstance = {
+  unmount: () => void;
   root: {
     findByProps: (props: Record<string, unknown>) => TestNode;
     findAllByProps: (props: Record<string, unknown>) => TestNode[];
@@ -69,18 +70,28 @@ const TestRenderer = require('react-test-renderer') as {
   create: (el: React.ReactElement) => TestRendererInstance;
 };
 const { act, create } = TestRenderer;
+const mountedRenderers: TestRendererInstance[] = [];
 
 function render(Comp: React.ComponentType): TestRendererInstance {
   let renderer!: TestRendererInstance;
   act(() => { renderer = create(<Comp />); });
+  mountedRenderers.push(renderer);
   return renderer;
 }
 
 async function renderAsync(Comp: React.ComponentType): Promise<TestRendererInstance> {
   let renderer!: TestRendererInstance;
   await act(async () => { renderer = create(<Comp />); });
+  mountedRenderers.push(renderer);
   return renderer;
 }
+
+afterEach(() => {
+  act(() => {
+    for (const renderer of mountedRenderers) renderer.unmount();
+    mountedRenderers.length = 0;
+  });
+});
 
 describe('onboarding UI 전면 교체 — 목업 델타', () => {
   it('type: 옵션 5개마다 선두 일러스트 아이콘 원과 우측 chevron 을 그린다', () => {

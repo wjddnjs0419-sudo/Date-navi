@@ -187,7 +187,7 @@ describe('structured course screen', () => {
     expect(request.totalBudgetKRW).toBe(2_000);
   });
 
-  it('requires location, blocks a parsed conflict, and hands a valid draft to generating by requestId only', () => {
+  it('requires location and keeps an additional request as supplementary context', () => {
     let renderer!: TestRendererInstance;
     act(() => { renderer = create(<CourseScreen />); });
     const generate = () => renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.generate' });
@@ -200,10 +200,6 @@ describe('structured course screen', () => {
 
     const additional = renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.additionalRequest' });
     act(() => additional.props.onChangeText('avoid cafes'));
-    expect(renderer.root.findAllByType(Text).filter((node) => node.props.testID === 'course-conflict')).toHaveLength(1);
-    expect(generate().props.disabled).toBe(true);
-
-    act(() => additional.props.onChangeText(''));
     expect(generate().props.disabled).toBe(false);
     act(() => generate().props.onPress());
 
@@ -215,7 +211,7 @@ describe('structured course screen', () => {
     expect(request.requestId).toBe('req-course-screen-001');
     expect(request.location).toEqual(location);
     expect(request.courseSteps).toHaveLength(2);
-    expect(request.additionalRequest).toBeUndefined();
+    expect(request.additionalRequest).toBe('avoid cafes');
   });
 
   it('scrolls the focused input above the keyboard automatically (KAV는 공간만 만들고 스크롤은 안 해줘서 부족 — 실기기 확인)', () => {

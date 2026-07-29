@@ -88,7 +88,7 @@ function dependencies(overrides: Partial<RecommendDateDependencies> = {}): Recom
 }
 
 describe('recommend-date Phase 6 handler boundary', () => {
-  it('rejects auth, invalid schema, and structured conflict before Kakao search', async () => {
+  it('rejects auth and invalid schema, but keeps supplementary free text out of hard validation', async () => {
     const authDeps = dependencies();
     await handleRecommendDate({ method: 'POST', body: request() }, authDeps);
     expect(authDeps.searchCandidates).not.toHaveBeenCalled();
@@ -107,12 +107,12 @@ describe('recommend-date Phase 6 handler boundary', () => {
       authorization: 'Bearer valid',
       body: { ...request(), additionalRequest: '카페는 빼줘' },
     }, conflictDeps);
-    expect(result).toEqual({ status: 400, body: { error: createRecommendationError('INVALID_INPUT') } });
-    expect(conflictDeps.searchCandidates).not.toHaveBeenCalled();
-    expect(conflictDeps.generateSelection).not.toHaveBeenCalled();
+    expect(result.status).toBe(200);
+    expect(conflictDeps.searchCandidates).toHaveBeenCalledTimes(1);
+    expect(conflictDeps.generateSelection).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects normalized top-level structured exclusion conflicts before search', async () => {
+  it('preserves structured exclusions as hard constraints', async () => {
     const deps = dependencies();
 
     const result = await handleRecommendDate({
@@ -121,9 +121,12 @@ describe('recommend-date Phase 6 handler boundary', () => {
       body: { ...request(), excludedCategories: ['restaurant'] },
     }, deps);
 
-    expect(result).toEqual({ status: 400, body: { error: createRecommendationError('INVALID_INPUT') } });
-    expect(deps.searchCandidates).not.toHaveBeenCalled();
-    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: 422,
+      body: { error: { code: 'COURSE_VALIDATION_FAILED' } },
+    });
+    expect(deps.searchCandidates).toHaveBeenCalledTimes(1);
+    expect(deps.generateSelection).toHaveBeenCalledTimes(1);
   });
 
   it.each(['ko', 'en'] as const)('routes a valid %s request through the same search/rank dependency', async (language) => {
@@ -166,11 +169,11 @@ describe('recommend-date Phase 6 handler boundary', () => {
     const searched = (deps.searchCandidates as jest.Mock).mock.calls[0][0] as RecommendationRequest;
     const prompt = (deps.generateSelection as jest.Mock).mock.calls[0][0].prompt as string;
     expect(searched.parsedPreferences).toBeUndefined();
-    expect(prompt).toContain('"parsedPreferences": null');
+    expect(prompt).toContain('"supplementaryAdditionalRequest": null');
     expect(prompt).not.toContain('"quietPreferred": true');
   });
 
-  it('replaces conflicting nested client preferences with server-parsed raw values', async () => {
+  it('ignores client-parsed preferences and keeps free text supplementary', async () => {
     const deps = dependencies();
     const input = {
       ...request(),
@@ -181,9 +184,11 @@ describe('recommend-date Phase 6 handler boundary', () => {
     await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: input }, deps);
 
     const searched = (deps.searchCandidates as jest.Mock).mock.calls[0][0] as RecommendationRequest;
-    expect(searched.parsedPreferences).toEqual({ quietPreferred: false });
-    expect(searched.quietPreferred).toBe(false);
+    const prompt = (deps.generateSelection as jest.Mock).mock.calls[0][0].prompt as string;
+    expect(searched.parsedPreferences).toBeUndefined();
+    expect(searched.quietPreferred).toBeUndefined();
     expect(JSON.stringify(searched)).not.toContain('photoFriendlyPreferred');
+    expect(prompt).toContain('avoid quiet places');
   });
 
   it('includes hard exclusions in structured prompt constraints as defense in depth', () => {

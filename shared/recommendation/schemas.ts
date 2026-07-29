@@ -226,7 +226,7 @@ export const recommendDateRouteMetadataSchema = z.object({
 }).strict();
 
 export const stepIntentMetadataSchema = z.object({
-  parserSource: z.enum(['none', 'rule', 'ai']),
+  parserSource: z.enum(['none', 'rule', 'ai', 'tag']),
   aiFallbackUsed: z.boolean(),
   resolved: z.array(z.object({
     canonicalTerm: boundedText(80),

@@ -35,6 +35,7 @@ jest.mock('../lib/i18n', () => ({
 
 type TestNode = { props: Record<string, any>; type: unknown };
 type TestRendererInstance = {
+  unmount: () => void;
   root: {
     findByProps: (props: Record<string, unknown>) => TestNode;
     findAllByType: (type: unknown) => TestNode[];
@@ -45,6 +46,7 @@ const TestRenderer = require('react-test-renderer') as {
   create: (element: React.ReactElement) => TestRendererInstance;
 };
 const { act, create } = TestRenderer;
+const mountedRenderers: TestRendererInstance[] = [];
 const AuthScreen = require('../app/(auth)/index').default as React.ComponentType;
 
 const GOOGLE_BRAND_COLORS = ['#4285F4', '#34A853', '#FBBC05', '#EA4335'];
@@ -53,8 +55,16 @@ function render(language: 'ko' | 'en'): TestRendererInstance {
   mockLanguage = language;
   let renderer!: TestRendererInstance;
   act(() => { renderer = create(<AuthScreen />); });
+  mountedRenderers.push(renderer);
   return renderer;
 }
+
+afterEach(() => {
+  act(() => {
+    for (const renderer of mountedRenderers) renderer.unmount();
+    mountedRenderers.length = 0;
+  });
+});
 
 describe('auth social buttons follow official brand guidelines', () => {
   it('renders the official four-color Google G logo', () => {
