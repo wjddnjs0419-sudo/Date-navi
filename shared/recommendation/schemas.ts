@@ -25,7 +25,7 @@ export const courseStepInputSchema = z.object({
   id: boundedText(80),
   category: boundedText(80),
   label: boundedText(120),
-  intentTags: uniqueStrings(40).max(6).optional(),
+  intentTags: uniqueStrings(40).max(1).optional(),
   pinnedKakaoPlaceId: boundedText(120).optional(),
   pinnedName: boundedText(120).optional(),
 }).strict().superRefine((step, ctx) => {

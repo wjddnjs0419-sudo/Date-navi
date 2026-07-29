@@ -82,14 +82,22 @@ export function verifiedPlaceMatchesCategory(
   const normalized = normalizeRecommendationCategory(category);
   if (normalized === 'ai_decide') return true;
   const code = CATEGORY_CODES[normalized];
-  if (code && place.categoryGroupCode) return place.categoryGroupCode === code;
-  if (normalized === 'activity' && place.categoryGroupCode) return false;
-  // Activity/culture taxonomy subtypes are often returned without their reliable broad Kakao group code.
-  // Their verified category names remain sufficient for broad course-step eligibility only.
-  const keywords = [...(VERIFIED_CATEGORY_KEYWORDS[normalized] ?? []), ...(TAXONOMY_CATEGORY_KEYWORDS[normalized] ?? [])];
+  if (code && place.categoryGroupCode === code) return true;
+  // A mismatched broad code is normally decisive. Activity/culture are the exception: Kakao
+  // frequently puts a verified subtype (climbing, aquarium, botanical garden) under CT1/AT4.
+  const taxonomyKeywords = TAXONOMY_CATEGORY_KEYWORDS[normalized] ?? [];
   const haystack = `${place.categoryGroupName} ${place.categoryName}`
     .normalize('NFKC')
     .toLocaleLowerCase();
+  const taxonomyCompatibleGroup = !place.categoryGroupCode
+    || place.categoryGroupCode === 'CT1'
+    || place.categoryGroupCode === 'AT4';
+  if ((normalized === 'activity' || normalized === 'culture')
+    && taxonomyCompatibleGroup
+    && taxonomyKeywords.some((keyword) => haystack.includes(keyword))) return true;
+  if (code && place.categoryGroupCode) return false;
+  if (normalized === 'activity' && place.categoryGroupCode) return false;
+  const keywords = VERIFIED_CATEGORY_KEYWORDS[normalized] ?? [];
   return keywords.some((keyword) => haystack.includes(keyword));
 }
 import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';

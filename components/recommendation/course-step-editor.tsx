@@ -10,7 +10,6 @@ import {
   type CourseDraftStep,
 } from '../../lib/course-draft';
 import {
-  MAX_STEP_INTENT_TAGS,
   getStepIntentTagSuggestions,
 } from '../../shared/recommendation/step-intent-tag-catalog';
 
@@ -90,8 +89,11 @@ export function CourseStepEditor({
   }
 
   const selectedTags = step.intentTags ?? [];
-  const visibleSuggestions = suggestions ?? getStepIntentTagSuggestions(step.category);
-  const canAddTag = selectedTags.length < MAX_STEP_INTENT_TAGS;
+  const visibleSuggestions = [...new Set([
+    ...selectedTags,
+    ...(suggestions ?? getStepIntentTagSuggestions(step.category)),
+  ])];
+  const canAddTag = true;
 
   function addCustomTag() {
     const tag = customTag.trim();

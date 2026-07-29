@@ -147,7 +147,7 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
       return {
         ...draft,
         steps: draft.steps.map((step) => (
-          step.id === action.stepId ? { ...step, category: action.category } : step
+          step.id === action.stepId ? { ...step, category: action.category, intentTags: undefined } : step
         )),
       };
     case 'selectStepIntentTag': {
