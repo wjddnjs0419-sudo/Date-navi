@@ -721,7 +721,17 @@ const noteS = StyleSheet.create({
 // ─── GeneratingView ───────────────────────────────────────────────────────────
 // AI 생성 로딩 화면 공통 UI. 헤딩 + 코스맵 일러스트 + 단계 진행바만 담당하고,
 // 단계 진행(setInterval)과 실제 생성 호출은 각 화면이 맡는다.
-export function GeneratingView({ heading, steps, step }: { heading: string; steps: string[]; step: number }) {
+export function GeneratingView({
+  heading,
+  steps,
+  step,
+  progressPercent: progressPercentOverride,
+}: {
+  heading: string;
+  steps: string[];
+  step: number;
+  progressPercent?: number;
+}) {
   const pulseScale = useRef(new Animated.Value(1)).current;
   const fillPercent = useRef(new Animated.Value(0)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -767,13 +777,15 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
     return () => pulse.stop();
   }, [pulseScale, reduceMotion]);
 
-  // step/steps 로직 유지: 진행 단계(current)와 현재 단계 라벨(statusLabel)을 파생한다.
+  // 첫 단계는 0%에서 시작하고, 마지막 단계에서 100%가 되도록 진행률을 계산한다.
   const total = Math.max(steps.length, 1);
   const current = Math.min(Math.max(step, 0), total - 1);
   const statusLabel = steps[current] ?? '';
+  const derivedProgressPercent = total === 1 ? 100 : Math.round((current / (total - 1)) * 100);
+  const progressPercent = Math.min(100, Math.max(0, progressPercentOverride ?? derivedProgressPercent));
 
   useEffect(() => {
-    const target = ((current + 1) / total) * 100;
+    const target = progressPercent;
     if (reduceMotion) {
       fillPercent.setValue(target);
       return;
@@ -784,7 +796,7 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false, // width 애니메이션은 layout 속성이라 native driver 불가
     }).start();
-  }, [current, total, fillPercent, reduceMotion]);
+  }, [fillPercent, progressPercent, reduceMotion]);
 
   const fillWidth = fillPercent.interpolate({
     inputRange: [0, 100],
@@ -802,7 +814,7 @@ export function GeneratingView({ heading, steps, step }: { heading: string; step
       <View style={genS.progressBlock}>
         <View style={genS.progressHeader}>
           <Text style={genS.statusLabel} numberOfLines={1}>{statusLabel}</Text>
-          <Text style={genS.progressCount}>{`${current + 1} / ${total}`}</Text>
+          <Text style={genS.progressCount}>{`${progressPercent}%`}</Text>
         </View>
         <View style={genS.progressTrack} testID="generating-progress-track">
           <Animated.View

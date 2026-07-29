@@ -38,7 +38,7 @@ export default function GeneratingScreen() {
     persistRecommendationSession,
   } = useRecommendationSessionStore();
   const [step, setStep] = useState(0);
-  const [courseStage, setCourseStage] = useState<'preparing' | 'requesting' | 'validating' | 'ready'>('preparing');
+  const [courseProgress, setCourseProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [courseError, setCourseError] = useState<RecommendationRequestError | null>(null);
   const [requestExpired, setRequestExpired] = useState(false);
@@ -60,23 +60,44 @@ export default function GeneratingScreen() {
   useEffect(() => {
     let cancelled = false;
     const requestToken = new AbortController();
+    let progressTimer: ReturnType<typeof setInterval> | undefined;
+    let progressTarget = 90;
+    let displayedProgress = 0;
+    let resolveCompletion: (() => void) | undefined;
+
+    const startCourseProgress = () => {
+      progressTimer = setInterval(() => {
+        const increment = progressTarget === 100 ? 4 : 1;
+        displayedProgress = Math.min(displayedProgress + increment, progressTarget);
+        if (!cancelled) setCourseProgress(displayedProgress);
+        if (displayedProgress === 100) resolveCompletion?.();
+      }, 80);
+    };
+
+    const completeCourseProgress = () => new Promise<void>((resolve) => {
+      if (displayedProgress === 100) {
+        resolve();
+        return;
+      }
+      resolveCompletion = resolve;
+      progressTarget = 100;
+    });
+
     (async () => {
       try {
         if (typeof requestId === 'string') {
-          setCourseStage('preparing');
           setStep(0);
+          setCourseProgress(0);
           const request = getPreparedRecommendationRequest(requestId);
           if (cancelled) return;
-          setCourseStage('requesting');
-          setStep(Math.min(1, steps.length - 1));
+          startCourseProgress();
           const response = await requestRecommendationResponse(request, { signal: requestToken.signal });
           if (cancelled || requestToken.signal.aborted) return;
-          setCourseStage('validating');
-          setStep(Math.min(2, steps.length - 1));
           const snapshot = await persistRecommendationSession(request.requestId);
           await logEvent('ai_card_created', { mode: 'make_course', card_count: response.cards.length });
           if (cancelled || requestToken.signal.aborted) return;
-          setCourseStage('ready');
+          await completeCourseProgress();
+          if (cancelled || requestToken.signal.aborted) return;
           setStep(steps.length - 1);
           router.replace({
             pathname: '/mode-flow/course-result',
@@ -129,6 +150,7 @@ export default function GeneratingScreen() {
           }),
         } as any);
       } catch (error) {
+        if (progressTimer) clearInterval(progressTimer);
         if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
         setRequestExpired(isCourse && isPreparedRequestExpiredError(error));
         setCourseError(isCourse && error instanceof RecommendationRequestError ? error : null);
@@ -139,6 +161,8 @@ export default function GeneratingScreen() {
     return () => {
       cancelled = true;
       requestToken.abort();
+      if (progressTimer) clearInterval(progressTimer);
+      resolveCompletion?.();
     };
   }, [
     getPreparedRecommendationRequest,
@@ -211,7 +235,16 @@ export default function GeneratingScreen() {
     );
   }
 
-  return <GeneratingView heading={heading} steps={steps} step={courseStage === 'preparing' ? 0 : step} />;
+  const courseStep = Math.min(
+    Math.floor((courseProgress / 100) * Math.max(steps.length, 1)),
+    Math.max(steps.length - 1, 0),
+  );
+  return <GeneratingView
+    heading={heading}
+    steps={steps}
+    step={isCourse ? courseStep : step}
+    progressPercent={isCourse ? courseProgress : undefined}
+  />;
 }
 
 // 생성 실패·완화 안내 화면. 마스코트 일러스트 + 헤딩 + 메시지 + 주/보조 액션.

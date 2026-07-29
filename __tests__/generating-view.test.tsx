@@ -26,6 +26,7 @@ describe('GeneratingView contract', () => {
     const txt = tree.root.findAllByType(Text).map((n: any) => n.props.children).flat().join(' ');
     expect(txt).toContain('코스를 만드는 중');
     expect(txt).toContain('장소 찾기');
+    expect(txt).toContain('0%');
     TR.act(() => { tree.unmount(); });
   });
 
@@ -47,7 +48,7 @@ describe('GeneratingView contract', () => {
     TR.act(() => { tree.unmount(); });
   });
 
-  it('keeps showing the "current / total" count label', () => {
+  it('shows the completion percentage label', () => {
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {
       tree = TR.create(
@@ -55,7 +56,19 @@ describe('GeneratingView contract', () => {
       );
     });
     const txt = tree.root.findAllByType(Text).map((n: any) => n.props.children).flat().join(' ');
-    expect(txt).toContain('3 / 4');
+    expect(txt).toContain('67%');
+    TR.act(() => { tree.unmount(); });
+  });
+
+  it('uses a supplied progress value for continuous loading updates', () => {
+    let tree!: ReturnType<typeof TR.create>;
+    TR.act(() => {
+      tree = TR.create(
+        <GeneratingView heading="코스를 만드는 중" steps={['a', 'b', 'c']} step={0} progressPercent={42} />,
+      );
+    });
+    const txt = tree.root.findAllByType(Text).map((n: any) => n.props.children).flat().join(' ');
+    expect(txt).toContain('42%');
     TR.act(() => { tree.unmount(); });
   });
 
