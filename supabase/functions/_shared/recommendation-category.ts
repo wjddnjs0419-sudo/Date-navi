@@ -93,7 +93,7 @@ export function verifiedPlaceMatchesCategory(
   const taxonomyCompatibleGroup = !place.categoryGroupCode
     || place.categoryGroupCode === 'CT1'
     || place.categoryGroupCode === 'AT4'
-    || place.categoryGroupCode === 'CE7';
+    || (normalized === 'activity' && place.categoryGroupCode === 'CE7');
   if ((normalized === 'activity' || normalized === 'culture')
     && taxonomyCompatibleGroup
     && taxonomyKeywords.some((keyword) => haystack.includes(keyword.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, '')))) return true;

@@ -7,7 +7,6 @@ import type {
   ParsedPreferenceInput,
   RecommendationLocation,
 } from '../shared/recommendation/contracts';
-import { MAX_STEP_INTENT_TAGS } from '../shared/recommendation/step-intent-tag-catalog';
 
 export const COURSE_CATEGORIES = [
   'meal',

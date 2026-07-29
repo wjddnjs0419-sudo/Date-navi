@@ -118,6 +118,17 @@ describe('candidate-only selection schema', () => {
   ])('rejects %s', (_case, value) => {
     expect(candidateOnlySelectionSchema.safeParse(value).success).toBe(false);
   });
+
+  it('does not treat a CE7 museum cafe as a culture venue', () => {
+    expect(candidateMatchesCategory({
+      ...candidate('museum-cafe', 'museum-cafe-id', 'CE7', 127),
+      categoryGroupCode: 'CE7',
+      categoryGroupName: '카페',
+      categoryName: '카페 > 커피전문점',
+      name: '미술관 카페',
+      matchedSearchEvidence: [],
+    }, 'culture')).toBe(false);
+  });
 });
 
 describe('verified Kakao category matching', () => {
