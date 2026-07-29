@@ -3,36 +3,34 @@ import {
   placePriceFieldsFromRows,
   recordPlaceKnowledge,
   type PlaceLedgerCandidate,
-  type PlaceLedgerRow,
 } from '../supabase/functions/_shared/place-ledger';
 
 function fakeDb() {
   const upserts: Record<string, unknown>[] = [];
-  const updates: { id: string; patch: Record<string, unknown> }[] = [];
-  let existing: Partial<PlaceLedgerRow>[] = [];
+  const rpcCalls: { functionName: string; parameters: Record<string, unknown> }[] = [];
+  let claimable = new Set<string>();
   const client = {
     from: (_table: string) => ({
       upsert: async (rows: Record<string, unknown>[]) => {
         upserts.push(...rows);
         return { error: null };
       },
-      select: (_columns: string) => ({
-        in: async () => ({ data: existing, error: null }),
-      }),
-      update: (patch: Record<string, unknown>) => ({
-        eq: async (_col: string, id: string) => {
-          updates.push({ id, patch });
-          return { error: null };
-        },
-      }),
     }),
+    rpc: async (functionName: string, parameters: Record<string, unknown>) => {
+      rpcCalls.push({ functionName, parameters });
+      if (functionName === 'claim_place_price_estimation') {
+        const ids = parameters.p_kakao_place_ids as string[];
+        return { data: ids.filter((id) => claimable.has(id)).map((kakao_place_id) => ({ kakao_place_id })), error: null };
+      }
+      return { data: true, error: null };
+    },
   };
   return {
     client,
     upserts,
-    updates,
-    setExisting: (rows: Partial<PlaceLedgerRow>[]) => {
-      existing = rows;
+    rpcCalls,
+    setExisting: (rows: { kakao_place_id: string; estimated_at: string | null }[]) => {
+      claimable = new Set(rows.filter((row) => row.estimated_at === null).map((row) => row.kakao_place_id));
     },
   };
 }
@@ -99,7 +97,7 @@ describe('recordPlaceKnowledge', () => {
       model: 'm',
     });
     expect(called).toBe(0);
-    expect(db.updates).toHaveLength(0);
+    expect(db.rpcCalls.filter((call) => call.functionName === 'complete_place_price_estimation')).toHaveLength(0);
   });
 
   it('추정이 없는 장소만 추정해 estimated_* 컬럼을 채운다', async () => {
@@ -111,12 +109,11 @@ describe('recordPlaceKnowledge', () => {
       estimate: async () => ({ minKRW: 8000, maxKRW: 12000 }),
       model: 'claude-haiku-4-5',
     });
-    expect(db.updates).toHaveLength(1);
-    expect(db.updates[0].id).toBe('k1');
-    expect(db.updates[0].patch).toMatchObject({
-      estimated_min_krw: 8000,
-      estimated_max_krw: 12000,
-      estimate_model: 'claude-haiku-4-5',
+    expect(db.rpcCalls.find((call) => call.functionName === 'complete_place_price_estimation')?.parameters).toMatchObject({
+      p_kakao_place_id: 'k1',
+      p_min_krw: 8000,
+      p_max_krw: 12000,
+      p_model: 'claude-haiku-4-5',
     });
   });
 
@@ -133,7 +130,7 @@ describe('recordPlaceKnowledge', () => {
         model: 'm',
       }),
     ).resolves.toBeUndefined();
-    expect(db.updates).toHaveLength(0);
+    expect(db.rpcCalls.filter((call) => call.functionName === 'complete_place_price_estimation')).toHaveLength(0);
   });
 
   it('추정 파싱 실패(null)도 컬럼을 채우지 않는다', async () => {
@@ -145,7 +142,23 @@ describe('recordPlaceKnowledge', () => {
       estimate: async () => null,
       model: 'm',
     });
-    expect(db.updates).toHaveLength(0);
+    expect(db.rpcCalls.filter((call) => call.functionName === 'complete_place_price_estimation')).toHaveLength(0);
+    expect(db.rpcCalls.find((call) => call.functionName === 'release_place_price_estimation_claim')?.parameters)
+      .toMatchObject({ p_kakao_place_id: 'k1' });
+  });
+
+  it('원자적 claim을 얻은 장소만 AI로 추정한다', async () => {
+    const db = fakeDb();
+    db.setExisting([{ kakao_place_id: 'k1', estimated_at: null }]);
+    const estimate = jest.fn(async () => ({ minKRW: 5000, maxKRW: 9000 }));
+    await recordPlaceKnowledge({
+      client: db.client as never,
+      places: [place, { ...place, kakaoPlaceId: 'k2' }],
+      estimate,
+      model: 'm',
+    });
+    expect(estimate).toHaveBeenCalledTimes(1);
+    expect(estimate).toHaveBeenCalledWith(place);
   });
 
   it('upsert 실패도 밖으로 던지지 않는다 — 부가 기록이 원본 흐름을 되돌리지 않는다', async () => {
