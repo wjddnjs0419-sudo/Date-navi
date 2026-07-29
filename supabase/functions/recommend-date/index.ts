@@ -51,6 +51,10 @@ Deno.serve(async (request) => {
       body = undefined;
     }
   }
+  const rateLimitClient = createClient<any>(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
 
   const result = await handleRecommendDate({
     method: request.method,
@@ -59,32 +63,16 @@ Deno.serve(async (request) => {
   }, {
     rateLimit: {
       acquire: async ({ userId, requestId }) => {
-        const serviceClient = createClient<any>(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-        );
-        return acquireCourseGenerationLock(serviceClient, { userId, requestId });
+        return acquireCourseGenerationLock(rateLimitClient, { userId, requestId });
       },
       release: async ({ userId, requestId }) => {
-        const serviceClient = createClient<any>(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-        );
-        await releaseCourseGenerationLock(serviceClient, { userId, requestId });
+        await releaseCourseGenerationLock(rateLimitClient, { userId, requestId });
       },
       consume: async ({ userId }) => {
-        const serviceClient = createClient<any>(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-        );
-        return consumeCourseGenerationQuota(serviceClient, { userId });
+        return consumeCourseGenerationQuota(rateLimitClient, { userId });
       },
       recordEvent: async ({ userId, eventType }) => {
-        const serviceClient = createClient<any>(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-        );
-        await recordAiRateLimitEvent(serviceClient, { userId, eventType });
+        await recordAiRateLimitEvent(rateLimitClient, { userId, eventType });
       },
     },
     authenticate: async (authorization) => {

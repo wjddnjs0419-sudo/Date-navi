@@ -385,8 +385,8 @@ describe('recommend-date dependency-injected handler', () => {
   it('returns distinct lock, burst, and daily limit responses without calling Claude', async () => {
     const scenarios = [
       { lock: { acquired: false as const, retryAfterSeconds: 12 }, status: 409, code: 'AI_REQUEST_ALREADY_RUNNING' },
-      { quota: { allowed: false as const, limitType: 'burst' as const, retryAfterSeconds: 30 }, status: 429, code: 'AI_BURST_LIMITED' },
-      { quota: { allowed: false as const, limitType: 'daily' as const, resetsAt: '2026-07-15T00:00:00+09:00' }, status: 429, code: 'AI_DAILY_LIMITED' },
+      { quota: { allowed: false as const, limitType: 'burst' as const, retryAfterSeconds: 30 }, status: 429, code: 'AI_RATE_LIMITED' },
+      { quota: { allowed: false as const, limitType: 'daily' as const, resetsAt: '2026-07-15T00:00:00+09:00' }, status: 429, code: 'AI_DAILY_LIMIT_REACHED' },
     ];
     for (const scenario of scenarios) {
       const deps = dependencies({
@@ -398,7 +398,16 @@ describe('recommend-date dependency-injected handler', () => {
         },
       });
       const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
-      expect(result).toMatchObject({ status: scenario.status, body: { error: { code: scenario.code } } });
+      expect(result).toMatchObject({
+        status: scenario.status,
+        body: {
+          error: {
+            code: scenario.code,
+            ...(scenario.quota?.limitType === 'burst' ? { limitType: 'burst', retryAfterSeconds: 30 } : {}),
+            ...(scenario.quota?.limitType === 'daily' ? { limitType: 'daily', resetsAt: '2026-07-15T00:00:00+09:00' } : {}),
+          },
+        },
+      });
       expect(deps.generateSelection).not.toHaveBeenCalled();
       if (scenario.lock) expect(deps.rateLimit!.release).not.toHaveBeenCalled();
       else expect(deps.rateLimit!.release).toHaveBeenCalledTimes(1);
@@ -423,6 +432,39 @@ describe('recommend-date dependency-injected handler', () => {
 
     expect(result.status).toBe(200);
     expect(rateLimit.consume).not.toHaveBeenCalled();
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(rateLimit.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not consume quota when Kakao candidate search fails, but releases the request lock', async () => {
+    const rateLimit = {
+      acquire: jest.fn(async () => ({ acquired: true as const })),
+      consume: jest.fn(async () => ({ allowed: true as const })),
+      release: jest.fn(async () => undefined),
+      recordEvent: jest.fn(async () => undefined),
+    };
+    const deps = dependencies({ rateLimit, searchCandidates: jest.fn(async () => { throw new Error('kakao unavailable'); }) });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+
+    expect(result).toMatchObject({ status: 504, body: { error: { code: 'PLACE_SEARCH_TIMEOUT' } } });
+    expect(rateLimit.consume).not.toHaveBeenCalled();
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+    expect(rateLimit.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed when the quota RPC fails and does not call Claude', async () => {
+    const rateLimit = {
+      acquire: jest.fn(async () => ({ acquired: true as const })),
+      consume: jest.fn(async () => { throw new Error('quota unavailable'); }),
+      release: jest.fn(async () => undefined),
+      recordEvent: jest.fn(async () => undefined),
+    };
+    const deps = dependencies({ rateLimit });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: request() }, deps);
+
+    expect(result).toMatchObject({ status: 503, body: { error: { code: 'AI_LIMIT_UNAVAILABLE' } } });
     expect(deps.generateSelection).not.toHaveBeenCalled();
     expect(rateLimit.release).toHaveBeenCalledTimes(1);
   });

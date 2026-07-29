@@ -398,8 +398,8 @@ export async function handleRecommendDate(
           const eventType = quota.limitType === 'burst' ? 'burst_rejected' : 'daily_rejected';
           void dependencies.rateLimit.recordEvent({ userId: authenticatedUser.id, eventType }).catch(() => undefined);
           return quota.limitType === 'burst'
-            ? withHistory(rateLimitResult(429, 'AI_BURST_LIMITED', { retryAfterSeconds: quota.retryAfterSeconds }))
-            : withHistory(rateLimitResult(429, 'AI_DAILY_LIMITED', { resetsAt: quota.resetsAt }));
+            ? withHistory(rateLimitResult(429, 'AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: quota.retryAfterSeconds }))
+            : withHistory(rateLimitResult(429, 'AI_DAILY_LIMIT_REACHED', { limitType: 'daily', resetsAt: quota.resetsAt }));
         }
       }
       let downstream: unknown;
