@@ -54,7 +54,9 @@ export function shouldUnreactOnTap(current: ReactionType | null, tapped: Reactio
 // 코스 스텝 라벨이 이미 화면에 있는 태그는 같은 말을 두 번 하는 셈이라 감춘다.
 export function visibleTags(tags: string[] | null | undefined, steps: CourseStep[]): string[] {
   const norm = (v: string) => v.trim().toLowerCase();
-  const stepLabels = new Set(steps.map(step => norm(step.label)));
+  const stepLabels = new Set(
+    steps.flatMap((step) => typeof step.label === 'string' ? [norm(step.label)] : []),
+  );
   return (tags ?? []).filter(tag => !stepLabels.has(norm(tag)));
 }
 

@@ -53,6 +53,9 @@ supabase/migrations_backup_*/
 docs/screenshots/**/*.png
 docs/screenshots/**/*.zip
 
+# 시뮬레이터 목업 검수 캡처(재생성 가능) — 로컬 전용
+artifacts/mock-qa-*/
+
 # UI 전면 교체 참고 목업(GPT 생성, 24M) — 로컬 참고용, 리포 제외
 UI RENEW/
 

@@ -32,7 +32,7 @@ ROUTES=(
   "23-modeflow-generating|/shot?m=generating"
   "25-modeflow-course-result|/mode-flow/course-result?requestId=req-phase8-001&sessionId=req-phase8-001"
   "26-modeflow-place-search|/mode-flow/place-search"
-  "27-modeflow-place-detail|/mode-flow/place-detail?name=어니언 성수&address=서울 성동구 왕십리로 2&kakaoPlaceId=place-cafe&mapUrl=https://place.map.kakao.com/place-cafe"
+  "27-mode-tab|/(tabs)/mode"
   "30-card-detail|/card/card-1"
   "31-card-confirm|/card/confirm"
   "32-card-review|/card/review"

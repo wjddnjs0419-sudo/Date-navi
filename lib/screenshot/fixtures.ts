@@ -20,9 +20,9 @@ const cardI18n = (
 });
 
 const steps = [
-  { order: 1, title: '서울숲', category: '공원', kakaoPlaceId: '111', address: '서울 성동구 뚝섬로', locked: false },
-  { order: 2, title: '어니언 성수', category: '카페', kakaoPlaceId: '222', address: '서울 성동구 아차산로', locked: false },
-  { order: 3, title: '성수동 이탈리안', category: '음식점', kakaoPlaceId: '333', address: '서울 성동구 연무장길', locked: false },
+  { label: '서울숲 산책', place_name: '서울숲', place_address: '서울 성동구 뚝섬로', kakaoPlaceId: '111' },
+  { label: '어니언 성수', place_name: '어니언 성수', place_address: '서울 성동구 아차산로', kakaoPlaceId: '222' },
+  { label: '성수동 이탈리안 디너', place_name: '성수동 이탈리안', place_address: '서울 성동구 연무장길', kakaoPlaceId: '333' },
 ];
 
 export const SCREENSHOT_FIXTURES: Record<string, any[]> = {

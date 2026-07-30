@@ -127,6 +127,10 @@ describe('visibleTags', () => {
   it('tolerates a missing tag list', () => {
     expect(visibleTags(null, [{ label: '카페' }])).toEqual([]);
   });
+
+  it('ignores a legacy step without a label', () => {
+    expect(visibleTags(['카페'], [{}] as any)).toEqual(['카페']);
+  });
 });
 
 describe('card detail tag row', () => {
