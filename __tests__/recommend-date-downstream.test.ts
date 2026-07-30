@@ -10,6 +10,7 @@ const input = {
   supabaseUrl: 'https://example.supabase.co',
   anonKey: 'anon-key',
   authorization: 'Bearer user-token',
+  internalAiToken: 'internal-token',
   prompt: 'server-only prompt',
   promptVersion: 'recommend-date-v1',
 };
@@ -61,6 +62,7 @@ describe('recommend-date downstream timeout boundary', () => {
       action: 'recommend_date_select',
       prompt_version: input.promptVersion,
     });
+    expect((fetchImpl as jest.Mock).mock.calls[0][1].headers['x-internal-ai-token']).toBe('internal-token');
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -135,17 +137,17 @@ describe('recommend-date downstream timeout boundary', () => {
     });
   });
 
-  it('sends a caller-provided action in the request body instead of the recommend_date_select default', async () => {
+  it('sends the other allowed internal action when requested', async () => {
     const fetchImpl: DownstreamFetch = jest.fn(async () => ({
       ok: true,
       status: 200,
       json: async () => ({ candidateIds: ['candidate-1'] }),
     }));
 
-    await invokeGenerateAiSelection({ ...input, action: 'replacement_select' }, { fetchImpl });
+    await invokeGenerateAiSelection({ ...input, action: 'estimate_place_price' }, { fetchImpl });
 
     expect(JSON.parse((fetchImpl as jest.Mock).mock.calls[0][1].body)).toMatchObject({
-      action: 'replacement_select',
+      action: 'estimate_place_price',
     });
   });
 });

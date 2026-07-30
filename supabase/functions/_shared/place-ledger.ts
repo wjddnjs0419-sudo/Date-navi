@@ -22,11 +22,8 @@ export type PlaceLedgerRow = {
 type MinimalClient = {
   from: (table: string) => {
     upsert: (rows: Record<string, unknown>[]) => Promise<{ error: unknown }>;
-    select: (columns: string) => {
-      in: (col: string, ids: string[]) => Promise<{ data: PlaceLedgerRow[] | null; error: unknown }>;
-    };
-    update: (patch: Record<string, unknown>) => { eq: (col: string, id: string) => Promise<{ error: unknown }> };
   };
+  rpc: (functionName: string, parameters: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 };
 
 export type PlacePriceRow = {
@@ -107,44 +104,52 @@ export async function recordPlaceKnowledge(input: {
     );
     if (upsertError) throw upsertError;
 
-    const { data: rows, error: selectError } = await input.client
-      .from('places')
-      .select('kakao_place_id, estimated_at')
-      .in(
-        'kakao_place_id',
-        input.places.map((place) => place.kakaoPlaceId),
-      );
-    if (selectError) throw selectError;
-    const needsEstimate = new Set(
-      (rows ?? []).filter((row) => row.estimated_at === null).map((row) => row.kakao_place_id),
+    const claimId = crypto.randomUUID();
+    const { data: claimedRows, error: claimError } = await input.client.rpc('claim_place_price_estimation', {
+      p_kakao_place_ids: input.places.map((place) => place.kakaoPlaceId),
+      p_claim_id: claimId,
+    });
+    if (claimError || !Array.isArray(claimedRows)) throw claimError ?? new Error('place price claim returned malformed data');
+    const claimedPlaceIds = new Set(
+      claimedRows
+        .filter((row): row is { kakao_place_id: string } => (
+          typeof row === 'object' && row !== null && typeof (row as { kakao_place_id?: unknown }).kakao_place_id === 'string'
+        ))
+        .map((row) => row.kakao_place_id),
     );
 
     let estimated = 0;
     let estimateFailed = 0;
     for (const place of input.places) {
-      if (!needsEstimate.has(place.kakaoPlaceId)) continue;
+      if (!claimedPlaceIds.has(place.kakaoPlaceId)) continue;
       try {
         const estimate = await input.estimate(place);
         // 추정 실패는 컬럼을 비워둔 채 넘어간다 — 다음 노출 때 자연히 재시도된다.
         if (!estimate) {
           estimateFailed += 1;
+          await input.client.rpc('release_place_price_estimation_claim', {
+            p_kakao_place_id: place.kakaoPlaceId,
+            p_claim_id: claimId,
+          });
           continue;
         }
-        const estimatedAt = new Date().toISOString();
-        const { error: updateError } = await input.client
-          .from('places')
-          .update({
-            estimated_min_krw: estimate.minKRW,
-            estimated_max_krw: estimate.maxKRW,
-            estimated_at: estimatedAt,
-            estimate_model: input.model,
-            updated_at: estimatedAt,
-          })
-          .eq('kakao_place_id', place.kakaoPlaceId);
-        if (updateError) throw updateError;
+        const { data: completed, error: completeError } = await input.client.rpc('complete_place_price_estimation', {
+          p_kakao_place_id: place.kakaoPlaceId,
+          p_claim_id: claimId,
+          p_min_krw: estimate.minKRW,
+          p_max_krw: estimate.maxKRW,
+          p_model: input.model,
+        });
+        if (completeError || completed !== true) throw completeError ?? new Error('place price completion claim was lost');
         estimated += 1;
       } catch (error) {
         estimateFailed += 1;
+        try {
+          await input.client.rpc('release_place_price_estimation_claim', {
+            p_kakao_place_id: place.kakaoPlaceId,
+            p_claim_id: claimId,
+          });
+        } catch { /* release failure is reported with the original estimate failure */ }
         console.error(
           JSON.stringify({
             event: 'place_price_estimate_failed',
@@ -159,7 +164,7 @@ export async function recordPlaceKnowledge(input: {
     console.error(JSON.stringify({
       event: 'place_ledger_recorded',
       upserted: input.places.length,
-      needsEstimate: needsEstimate.size,
+      needsEstimate: claimedPlaceIds.size,
       estimated,
       estimateFailed,
     }));

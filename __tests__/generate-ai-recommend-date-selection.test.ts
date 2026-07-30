@@ -4,10 +4,13 @@ import { join } from 'node:path';
 describe('generate-ai candidate-only recommend-date action', () => {
   const source = readFileSync(join(process.cwd(), 'supabase/functions/generate-ai/index.ts'), 'utf8');
 
-  it('defines a separate strict recommend_date_select action without changing legacy course_select', () => {
+  it('defines a strict recommend_date_select action and no legacy direct action', () => {
     expect(source).toContain('RECOMMEND_DATE_SELECT_SCHEMA');
     expect(source).toContain("recommend_date_select: { schema: RECOMMEND_DATE_SELECT_SCHEMA");
-    expect(source).toContain("course_select: { schema: COURSE_SELECT_SCHEMA");
+    const actionConfig = source.slice(source.indexOf('const ACTION_CONFIG'), source.indexOf('const MODEL'));
+    for (const action of ['cards', 'soft_message', 'feeling_select', 'course_select', 'replacement_select', 'parse_step_intents']) {
+      expect(actionConfig).not.toContain(`${action}:`);
+    }
   });
 
   it('limits structured selection steps to stepId and candidateId only', () => {
@@ -38,5 +41,14 @@ describe('generate-ai candidate-only recommend-date action', () => {
   it('returns the strict recommend-date selection without the legacy usage envelope field', () => {
     expect(source).toContain("if (typeof action === 'string' && RAW_PASSTHROUGH_ACTIONS.has(action)) return json(parsed);");
     expect(source).toMatch(/RAW_PASSTHROUGH_ACTIONS = new Set\(\[[^\]]*'recommend_date_select'[^\]]*\]\)/s);
+  });
+
+  it('requires the private internal token and enforces action-specific prompt caps', () => {
+    expect(source).toContain("req.headers.get('x-internal-ai-token')");
+    expect(source).toContain("Deno.env.get('INTERNAL_AI_TOKEN')");
+    expect(source).toContain("AI_ACTION_FORBIDDEN");
+    expect(source).toContain("AI_PROMPT_TOO_LARGE");
+    expect(source).toContain('maxPromptChars: 20_000');
+    expect(source).toContain('maxPromptChars: 1_000');
   });
 });

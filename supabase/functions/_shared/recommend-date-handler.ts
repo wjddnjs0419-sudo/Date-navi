@@ -38,6 +38,7 @@ import {
   type HistoryExperimentVariant,
 } from '../../../shared/recommendation/history-experiment.ts';
 import type { RecommendationHistoryLoad } from './recommendation-history.ts';
+import type { LockResult, QuotaResult } from './ai-rate-limit.ts';
 
 // 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
 // AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
@@ -102,6 +103,13 @@ export type RecommendDateDependencies = {
   onCourseValidationFailure?: (stage: CourseValidationFailureStage) => void;
   /** 응답과 무관한 부가 기록(장소 원장). 던져도 무시된다 — 원본 흐름을 절대 실패시키지 않는다. */
   recordPlaceKnowledge?: (input: { places: PlaceCandidate[] }) => void;
+  /** course_generate만 보호한다. Edge 어댑터가 반드시 주입하며, 테스트에서는 선택적으로 대체한다. */
+  rateLimit?: {
+    acquire: (input: { userId: string; requestId: string }) => Promise<LockResult>;
+    release: (input: { userId: string; requestId: string }) => Promise<void>;
+    consume: (input: { userId: string }) => Promise<QuotaResult>;
+    recordEvent: (input: { userId: string; eventType: 'lock_conflict' | 'burst_rejected' | 'daily_rejected' }) => Promise<void>;
+  };
   now?: () => string;
 };
 
@@ -128,6 +136,14 @@ const errorResult = (
   status,
   body: { error: createRecommendationError(code) },
 });
+
+function rateLimitResult(
+  status: number,
+  code: Parameters<typeof createRecommendationError>[0],
+  detail: Record<string, string | number>,
+): RecommendDateHandlerResult {
+  return { status, body: { error: { ...createRecommendationError(code), ...detail } } };
+}
 
 function courseValidationFailure(
   dependencies: RecommendDateDependencies,
@@ -177,6 +193,25 @@ export async function handleRecommendDate(
   // so it must not be promoted to structured search, ranking, or exclusion constraints.
   const { parsedPreferences: _untrustedParsedPreferences, ...trustedRequest } = parsedRequest.data;
   const serverRequest = trustedRequest;
+
+  let lockAcquired = false;
+  if (dependencies.rateLimit) {
+    try {
+      const lock = await dependencies.rateLimit.acquire({
+        userId: authenticatedUser.id,
+        requestId: serverRequest.requestId,
+      });
+      if (!lock.acquired) {
+        void dependencies.rateLimit.recordEvent({ userId: authenticatedUser.id, eventType: 'lock_conflict' }).catch(() => undefined);
+        return rateLimitResult(409, 'AI_REQUEST_ALREADY_RUNNING', { retryAfterSeconds: lock.retryAfterSeconds });
+      }
+      lockAcquired = true;
+    } catch {
+      return errorResult(503, 'AI_LIMIT_UNAVAILABLE');
+    }
+  }
+
+  try {
 
   // Structured tags are resolved once per request. Additional free text is prompt-only.
   const resolved = await resolveStepIntents(serverRequest);
@@ -352,6 +387,21 @@ export async function handleRecommendDate(
       });
     }
     if (!built) {
+      if (dependencies.rateLimit) {
+        let quota: QuotaResult;
+        try {
+          quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id });
+        } catch {
+          return withHistory(errorResult(503, 'AI_LIMIT_UNAVAILABLE'));
+        }
+        if (!quota.allowed) {
+          const eventType = quota.limitType === 'burst' ? 'burst_rejected' : 'daily_rejected';
+          void dependencies.rateLimit.recordEvent({ userId: authenticatedUser.id, eventType }).catch(() => undefined);
+          return quota.limitType === 'burst'
+            ? withHistory(rateLimitResult(429, 'AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: quota.retryAfterSeconds }))
+            : withHistory(rateLimitResult(429, 'AI_DAILY_LIMIT_REACHED', { limitType: 'daily', resetsAt: quota.resetsAt }));
+        }
+      }
       let downstream: unknown;
       try {
         downstream = await dependencies.generateSelection({
@@ -523,4 +573,13 @@ export async function handleRecommendDate(
   }
   const { candidatePool: _candidatePool, ...publicResponse } = response.data;
   return withHistory({ status: 200, body: publicResponse });
+  } finally {
+    if (lockAcquired) {
+      try {
+        await dependencies.rateLimit?.release({ userId: authenticatedUser.id, requestId: serverRequest.requestId });
+      } catch {
+        // A stale lock expires after its TTL; never replace a generated response with a release failure.
+      }
+    }
+  }
 }

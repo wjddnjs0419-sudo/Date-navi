@@ -26,6 +26,10 @@ export const RECOMMENDATION_ERROR_METADATA: Record<RecommendationErrorCode, Omit
   },
   AI_TIMEOUT: { messages: { ko: '추천을 정리하는 데 시간이 오래 걸려요. 다시 시도해 주세요.', en: 'Recommendation generation took too long. Please try again.' }, retryable: true, requiresConditionEdit: false },
   AI_INVALID_RESPONSE: { messages: { ko: '추천 결과를 확인하지 못했어요. 다시 시도해 주세요.', en: 'We could not validate the recommendation. Please try again.' }, retryable: true, requiresConditionEdit: false },
+  AI_REQUEST_ALREADY_RUNNING: { messages: { ko: '이미 코스를 만들고 있어요. 잠시만 기다려 주세요.', en: 'A course is already being created. Please wait a moment.' }, retryable: true, requiresConditionEdit: false },
+  AI_RATE_LIMITED: { messages: { ko: '짧은 시간에 생성 요청이 많아요. 잠시 후 다시 시도해 주세요.', en: 'Too many course requests in a short time. Please try again shortly.' }, retryable: true, requiresConditionEdit: false },
+  AI_DAILY_LIMIT_REACHED: { messages: { ko: '오늘의 코스 생성 횟수를 모두 사용했어요. 자정 이후 다시 시도해 주세요.', en: 'You have used today’s course generations. Please try again after midnight.' }, retryable: true, requiresConditionEdit: false },
+  AI_LIMIT_UNAVAILABLE: { messages: { ko: '생성 한도를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.', en: 'We could not verify your generation limit. Please try again shortly.' }, retryable: true, requiresConditionEdit: false },
   COURSE_VALIDATION_FAILED: { messages: { ko: '코스 조건을 모두 만족하는 결과를 만들지 못했어요. 조건을 조정해 주세요.', en: 'We could not build a course that satisfies every condition. Try adjusting the conditions.' }, retryable: false, requiresConditionEdit: true },
   AUTH_EXPIRED: { messages: { ko: '로그인이 만료됐어요. 다시 로그인해 주세요.', en: 'Your session has expired. Please sign in again.' }, retryable: false, requiresConditionEdit: false },
   NETWORK_ERROR: { messages: { ko: '네트워크 연결을 확인한 뒤 다시 시도해 주세요.', en: 'Check your network connection and try again.' }, retryable: true, requiresConditionEdit: false },
@@ -33,7 +37,7 @@ export const RECOMMENDATION_ERROR_METADATA: Record<RecommendationErrorCode, Omit
 };
 
 export const recommendationErrorSchema = z.object({
-  code: z.enum(['LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED', 'INSUFFICIENT_CANDIDATES', 'STEP_INTENT_UNSATISFIED', 'STEP_PIN_UNAVAILABLE', 'AI_TIMEOUT', 'AI_INVALID_RESPONSE', 'COURSE_VALIDATION_FAILED', 'AUTH_EXPIRED', 'NETWORK_ERROR', 'UNKNOWN']),
+  code: z.enum(['LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED', 'INSUFFICIENT_CANDIDATES', 'STEP_INTENT_UNSATISFIED', 'STEP_PIN_UNAVAILABLE', 'AI_TIMEOUT', 'AI_INVALID_RESPONSE', 'AI_REQUEST_ALREADY_RUNNING', 'AI_RATE_LIMITED', 'AI_DAILY_LIMIT_REACHED', 'AI_LIMIT_UNAVAILABLE', 'COURSE_VALIDATION_FAILED', 'AUTH_EXPIRED', 'NETWORK_ERROR', 'UNKNOWN']),
   messages: z.object({ ko: z.string().min(1), en: z.string().min(1) }),
   retryable: z.boolean(),
   requiresConditionEdit: z.boolean(),

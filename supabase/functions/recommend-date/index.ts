@@ -2,6 +2,12 @@ import { createClient } from 'npm:@supabase/supabase-js@2.106.1';
 
 import { handleRecommendDate } from '../_shared/recommend-date-handler.ts';
 import { invokeGenerateAiSelection } from '../_shared/recommend-date-downstream.ts';
+import {
+  acquireCourseGenerationLock,
+  consumeCourseGenerationQuota,
+  recordAiRateLimitEvent,
+  releaseCourseGenerationLock,
+} from '../_shared/ai-rate-limit.ts';
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
 import {
@@ -45,12 +51,30 @@ Deno.serve(async (request) => {
       body = undefined;
     }
   }
+  const rateLimitClient = createClient<any>(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
 
   const result = await handleRecommendDate({
     method: request.method,
     authorization: request.headers.get('Authorization'),
     body,
   }, {
+    rateLimit: {
+      acquire: async ({ userId, requestId }) => {
+        return acquireCourseGenerationLock(rateLimitClient, { userId, requestId });
+      },
+      release: async ({ userId, requestId }) => {
+        await releaseCourseGenerationLock(rateLimitClient, { userId, requestId });
+      },
+      consume: async ({ userId }) => {
+        return consumeCourseGenerationQuota(rateLimitClient, { userId });
+      },
+      recordEvent: async ({ userId, eventType }) => {
+        await recordAiRateLimitEvent(rateLimitClient, { userId, eventType });
+      },
+    },
     authenticate: async (authorization) => {
       const userClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
@@ -156,6 +180,7 @@ Deno.serve(async (request) => {
       ...input,
       supabaseUrl: Deno.env.get('SUPABASE_URL')!,
       anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
+      internalAiToken: Deno.env.get('INTERNAL_AI_TOKEN')!,
     }),
     stageAttestation: async ({ ownerUserId, request, response }) => {
       const serviceClient = createClient(
@@ -203,6 +228,7 @@ Deno.serve(async (request) => {
             supabaseUrl: Deno.env.get('SUPABASE_URL')!,
             anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
             authorization,
+            internalAiToken: Deno.env.get('INTERNAL_AI_TOKEN')!,
             action: 'estimate_place_price',
             prompt: buildPlacePriceEstimationPrompt({
               placeName: place.name,

@@ -6,8 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { generateInviteMessage } from '../../lib/ai';
-import { Share2, Sparkles } from 'lucide-react-native';
+import { Share2 } from 'lucide-react-native';
 import { C } from '../../constants/colors';
 import { G, SP, R, T } from '../../constants/theme';
 import { BackBar, BigButton, Chip, CourseStepList, MetaChipRow, SectionLabel, SoftCard, SuccessModal } from '../../components/ui';
@@ -33,7 +32,6 @@ export default function SendScreen() {
   const [card, setCard] = useState<CardInfo | null>(null);
   const [message, setMessage] = useState(t('share.send.defaultMessage'));
   const [loading, setLoading] = useState(!!cardId);
-  const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
 
@@ -57,19 +55,6 @@ export default function SendScreen() {
     const title = card?.title ?? t('share.cardTitleFallback');
     const summary = card?.summary ?? t('share.cardDescFallback');
     await Share.share({ title, message: `${title}\n${summary}` });
-  }
-
-  async function handleSuggestMessage() {
-    setGenerating(true);
-    try {
-      const text = await generateInviteMessage(
-        { title: card?.title ?? t('share.cardTitleFallback'), summary: card?.summary, tags: card?.tags },
-        language,
-      );
-      setMessage(text);
-    } finally {
-      setGenerating(false);
-    }
   }
 
   async function handleSend() {
@@ -171,18 +156,6 @@ export default function SendScreen() {
               placeholderTextColor={C.textFaint}
             />
           </View>
-          <TouchableOpacity
-            style={s.suggestBtn}
-            onPress={handleSuggestMessage}
-            disabled={generating}
-          >
-            {generating
-              ? <ActivityIndicator size="small" color={C.lavenderFg} />
-              : <>
-                  <Sparkles size={13} color={C.lavenderFg} />
-                  <Text style={s.suggestBtnText}>{t('share.send.suggestCta')}</Text>
-                </>}
-          </TouchableOpacity>
         </View>
 
         <View style={s.bottomSpacer} />
@@ -236,18 +209,6 @@ const s = StyleSheet.create({
     minHeight: 80,
   },
   messageInput: { fontSize: 13, color: C.text, lineHeight: 22 },
-  suggestBtn: {
-    marginTop: SP.sm,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.xs + 2,
-    borderRadius: R.xl,
-    paddingHorizontal: SP.md,
-    paddingVertical: SP.xs + 2,
-    backgroundColor: C.lavender,
-  },
-  suggestBtnText: { fontSize: 12, fontWeight: '600', color: C.lavenderFg },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,

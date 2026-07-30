@@ -26,6 +26,38 @@ import {
   buildStructuredCourseResultParams,
 } from '../../lib/recommendation-route';
 
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+export function courseRateLimitNotice(
+  error: RecommendationRequestError,
+  t: Translate,
+  remainingSeconds?: number,
+): { title: string; body: string } | null {
+  if (error.code === 'AI_REQUEST_ALREADY_RUNNING') {
+    return {
+      title: t('modeFlow.generating.rateLimit.alreadyRunningTitle'),
+      body: t('modeFlow.generating.rateLimit.alreadyRunningBody'),
+    };
+  }
+  if (error.code === 'AI_RATE_LIMITED') {
+    const remaining = remainingSeconds ?? error.retryAfterSeconds ?? 1;
+    return {
+      title: t('modeFlow.generating.rateLimit.burstTitle'),
+      body: t('modeFlow.generating.rateLimit.burstBody', {
+        minutes: Math.floor(remaining / 60),
+        seconds: remaining % 60,
+      }),
+    };
+  }
+  if (error.code === 'AI_DAILY_LIMIT_REACHED') {
+    return {
+      title: t('modeFlow.generating.rateLimit.dailyTitle'),
+      body: t('modeFlow.generating.rateLimit.dailyBody'),
+    };
+  }
+  return null;
+}
+
 export default function GeneratingScreen() {
   const {
     mode,
@@ -44,6 +76,7 @@ export default function GeneratingScreen() {
   const [courseProgress, setCourseProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [courseError, setCourseError] = useState<RecommendationRequestError | null>(null);
+  const [burstRemainingSeconds, setBurstRemainingSeconds] = useState<number | null>(null);
   const [requestExpired, setRequestExpired] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -194,8 +227,29 @@ export default function GeneratingScreen() {
     t,
   ]);
 
+  useEffect(() => {
+    if (courseError?.code !== 'AI_RATE_LIMITED' || courseError.retryAfterSeconds == null) {
+      setBurstRemainingSeconds(null);
+      return;
+    }
+
+    const retryAt = Date.now() + courseError.retryAfterSeconds * 1000;
+    const updateRemaining = () => {
+      setBurstRemainingSeconds(Math.max(Math.ceil((retryAt - Date.now()) / 1000), 0));
+    };
+
+    updateRemaining();
+    const timer = setInterval(() => {
+      updateRemaining();
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [courseError]);
+
   const unsatisfiedIntents = courseError?.code === 'STEP_INTENT_UNSATISFIED' ? courseError.unsatisfiedIntents ?? [] : [];
   const canRelax = typeof requestId === 'string' && unsatisfiedIntents.length > 0;
+  const rateLimitNotice = courseError
+    ? courseRateLimitNotice(courseError, t, burstRemainingSeconds ?? undefined)
+    : null;
 
   const handleRelax = () => {
     if (typeof requestId !== 'string') return;
@@ -227,6 +281,17 @@ export default function GeneratingScreen() {
     );
   }
 
+  if (rateLimitNotice) {
+    return (
+      <GeneratingFallback
+        heading={rateLimitNotice.title}
+        message={rateLimitNotice.body}
+        primaryLabel={t('modeFlow.generating.rateLimit.confirm')}
+        onPrimary={() => router.replace('/mode-flow/course' as any)}
+      />
+    );
+  }
+
   if (errorMsg !== '') {
     const message = `${errorMsg}${requestExpired ? '' : `\n${t('modeFlow.generating.errorSuffix')}`}`;
     // 만료된 준비 요청은 재시도 불가 → 편집만 (기존 동작 유지, requestExpired ⇒ isCourse).
@@ -245,7 +310,13 @@ export default function GeneratingScreen() {
         heading={t('modeFlow.generating.errorTitle')}
         message={message}
         primaryLabel={t('modeFlow.result.retry')}
-        onPrimary={() => { setErrorMsg(''); setCourseError(null); setStep(0); setRetryKey(k => k + 1); }}
+        onPrimary={() => {
+          setErrorMsg('');
+          setCourseError(null);
+          setBurstRemainingSeconds(null);
+          setStep(0);
+          setRetryKey(k => k + 1);
+        }}
         secondaryLabel={isCourse ? t('modeFlow.generating.courseEdit') : undefined}
         onSecondary={isCourse ? () => router.replace('/mode-flow/course' as any) : undefined}
       />

@@ -34,9 +34,10 @@ type GenerateAiSelectionInput = {
   supabaseUrl: string;
   anonKey: string;
   authorization: string;
+  internalAiToken: string;
   prompt: string;
   promptVersion: string;
-  action?: string;
+  action?: 'recommend_date_select' | 'estimate_place_price';
 };
 
 type GenerateAiSelectionOptions = {
@@ -61,6 +62,7 @@ export async function invokeGenerateAiSelection(
       method: 'POST',
       headers: {
         Authorization: input.authorization,
+        'x-internal-ai-token': input.internalAiToken,
         apikey: input.anonKey,
         'Content-Type': 'application/json',
       },
