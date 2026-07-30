@@ -19,6 +19,7 @@
 
 - 원격 migration history의 과거 불일치를 CLI `migration repair`로 정렬했다. 스키마·데이터를 직접 수정하지 않고 history만 조정한 뒤 `db push --dry-run`에서 이번 두 migration만 대상임을 확인했다.
 - `supabase db push`로 `20260729120000_ai_rate_limits.sql`, `20260729130000_place_price_estimation_claim.sql`을 순서대로 적용했다.
+- 사용자 QA에서 확인된 고정 창 경계 문제를 `20260730010000_ai_rolling_burst_limit.sql`로 교체했다. 이제 성공 시각 기준 rolling 5분 내에는 정확히 3회만 허용하며, 기존 fixed burst count는 이력 복원이 불가능해 새 rolling 소비 행에서 새로 시작한다.
 - 새 무작위 `INTERNAL_AI_TOKEN`을 Edge secret으로 설정하고 `generate-ai` v29, `recommend-date` v40을 배포했다.
 - 인증 없는 두 Function의 POST는 모두 HTTP 401로 차단됨을 확인했다.
 
