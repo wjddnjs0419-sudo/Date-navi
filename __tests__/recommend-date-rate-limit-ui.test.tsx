@@ -25,4 +25,13 @@ describe('course rate-limit notices', () => {
     courseRateLimitNotice(new RecommendationRequestError('AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: 91 }), t);
     expect(t).toHaveBeenCalledWith('modeFlow.generating.rateLimit.burstBody', { minutes: 1, seconds: 31 });
   });
+
+  it('uses the live countdown rather than the original server value', () => {
+    courseRateLimitNotice(
+      new RecommendationRequestError('AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: 91 }),
+      t,
+      30,
+    );
+    expect(t).toHaveBeenCalledWith('modeFlow.generating.rateLimit.burstBody', { minutes: 0, seconds: 30 });
+  });
 });

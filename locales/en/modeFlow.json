@@ -73,7 +73,7 @@
         "alreadyRunningTitle": "Your course is being created",
         "alreadyRunningBody": "A course is already being created for this account. Please wait a moment.",
         "burstTitle": "Please wait before creating another course",
-        "burstBody": "There have been several requests recently. Try again in {{minutes}}m {{seconds}}s.",
+        "burstBody": "There have been several requests recently.\nPlease try again in {{minutes}}m {{seconds}}s.",
         "dailyTitle": "You've used today's course generations",
         "dailyBody": "You can create another course after midnight.",
         "confirm": "OK"

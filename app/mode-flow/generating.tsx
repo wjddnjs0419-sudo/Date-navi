@@ -28,7 +28,11 @@ import {
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-export function courseRateLimitNotice(error: RecommendationRequestError, t: Translate): { title: string; body: string } | null {
+export function courseRateLimitNotice(
+  error: RecommendationRequestError,
+  t: Translate,
+  remainingSeconds?: number,
+): { title: string; body: string } | null {
   if (error.code === 'AI_REQUEST_ALREADY_RUNNING') {
     return {
       title: t('modeFlow.generating.rateLimit.alreadyRunningTitle'),
@@ -36,7 +40,7 @@ export function courseRateLimitNotice(error: RecommendationRequestError, t: Tran
     };
   }
   if (error.code === 'AI_RATE_LIMITED') {
-    const remaining = error.retryAfterSeconds ?? 1;
+    const remaining = remainingSeconds ?? error.retryAfterSeconds ?? 1;
     return {
       title: t('modeFlow.generating.rateLimit.burstTitle'),
       body: t('modeFlow.generating.rateLimit.burstBody', {
@@ -72,6 +76,7 @@ export default function GeneratingScreen() {
   const [courseProgress, setCourseProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [courseError, setCourseError] = useState<RecommendationRequestError | null>(null);
+  const [burstRemainingSeconds, setBurstRemainingSeconds] = useState<number | null>(null);
   const [requestExpired, setRequestExpired] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -222,9 +227,29 @@ export default function GeneratingScreen() {
     t,
   ]);
 
+  useEffect(() => {
+    if (courseError?.code !== 'AI_RATE_LIMITED' || courseError.retryAfterSeconds == null) {
+      setBurstRemainingSeconds(null);
+      return;
+    }
+
+    const retryAt = Date.now() + courseError.retryAfterSeconds * 1000;
+    const updateRemaining = () => {
+      setBurstRemainingSeconds(Math.max(Math.ceil((retryAt - Date.now()) / 1000), 0));
+    };
+
+    updateRemaining();
+    const timer = setInterval(() => {
+      updateRemaining();
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [courseError]);
+
   const unsatisfiedIntents = courseError?.code === 'STEP_INTENT_UNSATISFIED' ? courseError.unsatisfiedIntents ?? [] : [];
   const canRelax = typeof requestId === 'string' && unsatisfiedIntents.length > 0;
-  const rateLimitNotice = courseError ? courseRateLimitNotice(courseError, t) : null;
+  const rateLimitNotice = courseError
+    ? courseRateLimitNotice(courseError, t, burstRemainingSeconds ?? undefined)
+    : null;
 
   const handleRelax = () => {
     if (typeof requestId !== 'string') return;
@@ -285,7 +310,13 @@ export default function GeneratingScreen() {
         heading={t('modeFlow.generating.errorTitle')}
         message={message}
         primaryLabel={t('modeFlow.result.retry')}
-        onPrimary={() => { setErrorMsg(''); setCourseError(null); setStep(0); setRetryKey(k => k + 1); }}
+        onPrimary={() => {
+          setErrorMsg('');
+          setCourseError(null);
+          setBurstRemainingSeconds(null);
+          setStep(0);
+          setRetryKey(k => k + 1);
+        }}
         secondaryLabel={isCourse ? t('modeFlow.generating.courseEdit') : undefined}
         onSecondary={isCourse ? () => router.replace('/mode-flow/course' as any) : undefined}
       />
