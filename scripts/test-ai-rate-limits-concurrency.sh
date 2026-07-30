@@ -37,7 +37,7 @@ release_barrier() {
     sleep 0.05
   done
   [[ "$backend_pid" =~ ^[0-9]+$ ]]
-  docker exec "$db_container" psql -U postgres -d postgres -Atqc "select pg_terminate_backend($backend_pid)" | grep -qx 't'
+  docker exec "$db_container" psql -U postgres -d postgres -Atqc "select pg_terminate_backend($backend_pid, 0)" | grep -qx 't'
 }
 
 start_barrier "$tmp_dir/lock-barrier-pid"
