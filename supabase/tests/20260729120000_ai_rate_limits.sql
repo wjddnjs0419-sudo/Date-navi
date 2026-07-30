@@ -13,7 +13,7 @@ select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-
 select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000002','course_generate','2026-07-29T10:00:01Z')), true, 'burst attempt two is allowed');
 select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000002','course_generate','2026-07-29T10:00:02Z')), true, 'burst attempt three is allowed');
 select is((select limit_type from public.consume_ai_quota('00000000-0000-0000-0000-000000000002','course_generate','2026-07-29T10:00:03Z')), 'burst', 'fourth request is burst-limited');
-select is((select count(distinct bucket_type) from public.ai_quota_buckets where user_id='00000000-0000-0000-0000-000000000002'), 2::bigint, 'every allowed call writes both quota buckets');
+select is((select count(distinct bucket_type) from public.ai_quota_buckets where user_id='00000000-0000-0000-0000-000000000002'), 1::bigint, 'rolling burst keeps successful timestamps separately and writes the daily bucket');
 select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000003','course_generate','2026-07-29T14:59:59Z')), true, 'request before Seoul midnight is allowed');
 select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000003','course_generate','2026-07-29T15:00:00Z')), true, 'request after Seoul midnight is allowed in a new daily bucket');
 select is((select count(*) from public.ai_quota_buckets where user_id='00000000-0000-0000-0000-000000000003' and bucket_type='daily'), 2::bigint, 'Seoul midnight creates a second daily bucket');
