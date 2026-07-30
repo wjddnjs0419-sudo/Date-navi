@@ -1,6 +1,6 @@
 # RESULT.md
 
-## 2026-07-30 — AI 코스 생성 제한 구현 완료 (원격 배포 대기)
+## 2026-07-30 — AI 코스 생성 제한 구현·원격 배포 완료
 
 - 브랜치: `feat/ai-rate-limits`. 코스 생성(`course_generate`)만 사용자 ID 기준으로 보호한다: 동일 사용자 요청 lock 2분, 고정 5분 burst 3회, Asia/Seoul 일일 20회.
 - 차감 시점은 Kakao 후보 검증 뒤 실제 Claude 선택 직전이다. 인증·입력·Kakao 실패와 전량 핀/교체 결정론 경로는 차감하지 않으며, Claude 호출 이후 실패는 차감 유지한다.
@@ -15,13 +15,17 @@
 - 전체 `npm test -- --runInBand` 통과. 기존 테스트의 `console.warn`/React `act` 경고만 출력되며 실패는 없었다.
 - A–F 각 묶음은 설계 문서와 계획을 컨텍스트로 한 read-only subagent 리뷰 승인 후 진행했다.
 
-원격 배포 전 수행할 절차 (아직 실행하지 않음):
+배포 완료 기록:
 
-1. 로컬 Supabase에서 두 migration을 검증한 뒤 Supabase CLI의 `supabase db push`로 `20260729120000_ai_rate_limits.sql`, 이어서 `20260729130000_place_price_estimation_claim.sql`을 순서대로 적용한다. SQL Editor 직접 실행은 migration history를 남기지 않아 이후 CLI 배포와 충돌하므로 사용하지 않는다. 이미 history mismatch가 있으면 먼저 `supabase migration list`로 원격 이력을 정리한다.
-2. 충분히 긴 무작위 값으로 `INTERNAL_AI_TOKEN` Edge secret을 설정하고, 같은 값을 `generate-ai`와 `recommend-date`가 읽도록 한다.
-3. `generate-ai`를 먼저, `recommend-date`를 다음으로 배포한다.
-4. authenticated JWT로 7개 quota/lock/price RPC가 거부되고 service role만 허용되는지, 토큰 없는 `generate-ai`가 403인지 확인한다.
-5. staging에서 동시 요청 409, 4번째 burst 429, 일일 20회 초과, Kakao 실패 미차감, 동일 신규 장소의 가격 추정 1회만을 확인한다.
+- 원격 migration history의 과거 불일치를 CLI `migration repair`로 정렬했다. 스키마·데이터를 직접 수정하지 않고 history만 조정한 뒤 `db push --dry-run`에서 이번 두 migration만 대상임을 확인했다.
+- `supabase db push`로 `20260729120000_ai_rate_limits.sql`, `20260729130000_place_price_estimation_claim.sql`을 순서대로 적용했다.
+- 새 무작위 `INTERNAL_AI_TOKEN`을 Edge secret으로 설정하고 `generate-ai` v29, `recommend-date` v40을 배포했다.
+- 인증 없는 두 Function의 POST는 모두 HTTP 401로 차단됨을 확인했다.
+
+남은 staging 계정 검증:
+
+1. authenticated JWT로 7개 quota/lock/price RPC가 거부되고 service role만 허용되는지, 내부 token 없는 authenticated `generate-ai`가 403인지 확인한다.
+2. staging에서 동시 요청 409, 4번째 burst 429, 일일 20회 초과, Kakao 실패 미차감, 동일 신규 장소의 가격 추정 1회만을 확인한다.
 
 출시 후 지표: 사용자별 `course_generate` 일평균, burst/daily reject 비율, lock conflict 수, Anthropic 429 수.
 
