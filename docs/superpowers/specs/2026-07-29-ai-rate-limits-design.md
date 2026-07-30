@@ -40,7 +40,7 @@ Claude를 호출하기 직전에 burst 및 daily bucket을 원자적으로 소�
 | `course_generate` | 5분 3회 | Asia/Seoul 하루 20회 | Claude 호출 직전 소비 |
 | `estimate_place_price` | 없음 | 없음 | 서버 내부·장소당 claim |
 
-burst bucket은 5분 단위 고정 창이며, `retryAfterSeconds`는 현재 창 종료까지의 초다. daily bucket은 Asia/Seoul 자정에 경계가 바뀌며 `resetsAt`은 해당 다음 자정의 ISO timestamp다.
+burst는 각 성공 시각을 기준으로 하는 rolling 5분 창이며, `retryAfterSeconds`는 창에서 가장 오래된 성공 요청이 만료될 때까지의 초다. daily bucket은 Asia/Seoul 자정에 경계가 바뀌며 `resetsAt`은 해당 다음 자정의 ISO timestamp다.
 
 ## 데이터 모델과 RPC 경계
 
@@ -50,7 +50,7 @@ burst bucket은 5분 단위 고정 창이며, `retryAfterSeconds`는 현재 창 
 
 `user_id uuid`, `action text`, `bucket_type text`, `bucket_start timestamptz`, `used_count integer`, `updated_at timestamptz`를 가진다. PK는 `(user_id, action, bucket_type, bucket_start)`이다. `bucket_type`은 `burst` 또는 `daily`로 제한하고 `used_count >= 0`를 보장한다.
 
-`consume_ai_quota(p_user_id uuid, p_action text, p_now timestamptz default now())`는 해당 사용자의 두 bucket을 잠그거나 UPSERT한 뒤 한도를 확인하고, 둘 다 허용될 때만 두 count를 증가시킨다. burst 초과면 `burst`와 retry 초를, daily 초과면 `daily`와 reset 시간을 반환한다. 하나만 증가한 뒤 실패하는 상태가 없어야 한다.
+`consume_ai_quota(p_user_id uuid, p_action text, p_now timestamptz default now())`는 사용자/action advisory lock 아래 최근 5분 성공 소비 행과 daily bucket을 확인한다. 둘 다 허용될 때만 성공 소비 시각과 daily count를 기록한다. burst 초과면 `burst`와 가장 오래된 성공 요청 기준 retry 초를, daily 초과면 `daily`와 reset 시간을 반환한다. 하나만 증가한 뒤 실패하는 상태가 없어야 한다.
 
 ### `ai_request_locks`
 

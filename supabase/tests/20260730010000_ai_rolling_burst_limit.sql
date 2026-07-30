@@ -1,0 +1,13 @@
+begin;
+select plan(6);
+set local session_replication_role = replica;
+delete from public.ai_quota_consumptions;
+delete from public.ai_quota_buckets;
+select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:04:50Z')), true, 'first request is allowed');
+select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:04:51Z')), true, 'second request is allowed');
+select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:05:01Z')), true, 'crossing a fixed-window boundary does not reset rolling quota');
+select is((select limit_type from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:05:02Z')), 'burst', 'fourth request within five minutes is rejected');
+select is((select retry_after_seconds from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:05:02Z')), 288, 'retry is measured from the oldest successful request');
+select is((select allowed from public.consume_ai_quota('00000000-0000-0000-0000-000000000010','course_generate','2026-07-30T10:09:51Z')), true, 'expired oldest request leaves the rolling window');
+select * from finish();
+rollback;
