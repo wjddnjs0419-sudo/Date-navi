@@ -11,7 +11,7 @@ describe('Phase 10 replacement/detail wiring', () => {
     expect(edge).toContain('handleReplacementCandidates');
     expect(edge).toContain('authenticate');
     expect(edge).toContain('original_request,latest_request');
-    expect(handler).toContain('session?.latestRequest ?? session?.originalRequest');
+    expect(handler).toContain('const baseRequest = latestRequest.success ? latestRequest : originalRequest');
     expect(handler).toContain('rankReplacementCandidates');
     expect(handler).toContain('const top = ranked.top.map(toReplacementCandidateDisplay)');
     expect(handler).toContain('const additional = ranked.additional.map(toReplacementCandidateDisplay)');
@@ -32,7 +32,10 @@ describe('Phase 10 replacement/detail wiring', () => {
   });
 
   it('searches only the target step category instead of every category in the multi-step course', () => {
-    expect(handler).toContain('courseSteps: [{ id: target.step_id, category: target.category, label: target.label }]');
+    expect(handler).toContain('courseSteps: [{');
+    expect(handler).toContain('id: target.step_id');
+    expect(handler).toContain('const targetIntentTags = targetInputStep?.intentTags ?? originalTargetStep?.intentTags');
+    expect(handler).toContain('intentTags: targetIntentTags');
     expect(handler).not.toContain('courseSteps: rows.map((row) => ({ id: row.step_id, category: row.category, label: row.label }))');
   });
 

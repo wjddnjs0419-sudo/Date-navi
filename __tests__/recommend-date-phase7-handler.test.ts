@@ -165,6 +165,30 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
     expect(result.status).toBe(200);
   });
 
+  it.each([
+    ['a suggested ramen tag', '라멘'],
+    ['a custom salad tag', '샐러드'],
+  ] as const)('returns STEP_INTENT_UNSATISFIED for %s instead of substituting a generic meal', async (_case, tag) => {
+    const taggedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: [tag] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+    };
+    const deps = dependencies();
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: taggedRequest }, deps);
+
+    expect(result).toMatchObject({
+      status: 422,
+      body: { error: { ...createRecommendationError('STEP_INTENT_UNSATISFIED'), unsatisfiedIntents: [
+        expect.objectContaining({ canonicalTerm: tag }),
+      ] } },
+    });
+    expect(deps.generateSelection).not.toHaveBeenCalled();
+  });
+
   it('does not make a free-text culture mention a required intent', async () => {
     // culture 스텝은 CT1 후보로 category 게이트를 통과하지만, "무조건 전시" required intent를
     // 만족하는 후보는 이름만 전시인 FD6뿐이라 culture ∩ 전시 매칭은 0 → STEP_INTENT_UNSATISFIED.
@@ -316,7 +340,7 @@ describe('recommend-date step intent resolve 배선', () => {
     expect(result.status).toBe(200);
     expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
       resolvedStepIntents: expect.arrayContaining([
-        expect.objectContaining({ canonicalTerm: '삼겹살', strength: 'preferred' }),
+        expect.objectContaining({ canonicalTerm: '삼겹살', strength: 'required' }),
       ]),
     }), expect.anything());
   });

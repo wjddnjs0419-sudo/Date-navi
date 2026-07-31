@@ -11,7 +11,12 @@ import type { RecommendationCourseStep } from '../../../shared/recommendation/co
 import type { PlaceCandidate } from './recommendation-ranking.ts';
 import type { RecommendationHistoryLoad } from './recommendation-history.ts';
 import { candidateMatchesCategory } from './recommendation-course-selection.ts';
-import { effectiveStepIntents, placeMatchesStepIntent } from './step-intent.ts';
+import {
+  effectiveExcludedIntents,
+  effectiveStepIntents,
+  placeMatchesStepIntent,
+} from './step-intent.ts';
+import { resolveStepIntents } from './step-intent-resolve.ts';
 
 const bodySchema = z.object({
   sessionId: z.string().trim().min(1).max(120),
@@ -120,19 +125,53 @@ export async function handleReplacementCandidates(
     dependencies.loadSession(parsed.data.sessionId),
     dependencies.loadSteps(parsed.data.sessionId),
   ]);
-  const baseRequest = recommendationRequestSchema.safeParse(session?.latestRequest ?? session?.originalRequest);
+  const latestRequest = recommendationRequestSchema.safeParse(session?.latestRequest);
+  const originalRequest = recommendationRequestSchema.safeParse(session?.originalRequest);
+  const baseRequest = latestRequest.success ? latestRequest : originalRequest;
   const target = rows.find((row) => row.step_id === parsed.data.targetStepId);
-  if (!baseRequest.success || !target || rows.length < 2) return result(404, { error: 'NOT_FOUND' });
+  const targetInputStep = baseRequest.success
+    ? baseRequest.data.courseSteps.find((step) => step.id === parsed.data.targetStepId)
+    : undefined;
+  const originalTargetStep = originalRequest.success
+    ? originalRequest.data.courseSteps.find((step) => step.id === parsed.data.targetStepId)
+    : undefined;
+  // Older mutation RPCs rebuilt latest_request.courseSteps from row columns and
+  // accidentally dropped intentTags. Prefer the current tag when present, then
+  // recover the immutable original step tag so replacement cannot broaden to a
+  // generic category after a lock/reorder/regenerate action.
+  const targetIntentTags = targetInputStep?.intentTags ?? originalTargetStep?.intentTags;
+  if (!baseRequest.success || !target || !targetInputStep || rows.length < 2) {
+    return result(404, { error: 'NOT_FOUND' });
+  }
 
-  const currentRequest: RecommendationRequest = {
+  const scopedRequest: RecommendationRequest = {
     ...baseRequest.data,
     // 대상 스텝 하나로 좁히므로 예산도 몫으로 낮춘다 — 코스 전체 예산을 그대로 두면
     // 앵커(예산÷장소수)가 전체 예산이 되어 예산 점수가 무의미해진다.
     ...(baseRequest.data.totalBudgetKRW
       ? { totalBudgetKRW: Math.round(baseRequest.data.totalBudgetKRW / Math.max(rows.length, 1)) }
       : {}),
-    courseSteps: [{ id: target.step_id, category: target.category, label: target.label }],
+    courseSteps: [{
+      id: target.step_id,
+      category: target.category,
+      label: target.label,
+      ...(targetIntentTags ? { intentTags: targetIntentTags } : {}),
+    }],
     excludedPlaceIds: [...new Set([...(baseRequest.data.excludedPlaceIds ?? []), ...rows.map((row) => row.current_kakao_place_id)])],
+  };
+  const resolved = await resolveStepIntents(scopedRequest);
+  // 신규 태그 세션은 공통 resolver 결과를 사용한다. 태그 도입 전 저장된 세션은
+  // additionalRequest 기반 intent만 있으므로 기존 규칙 파서를 계속 지원한다.
+  const resolvedStepIntents = resolved.source === 'tag'
+    ? resolved.stepIntents
+    : effectiveStepIntents(scopedRequest);
+  const resolvedExcludedIntents = resolved.source === 'tag'
+    ? resolved.excludedIntents
+    : effectiveExcludedIntents(scopedRequest);
+  const currentRequest = {
+    ...scopedRequest,
+    resolvedStepIntents,
+    resolvedExcludedIntents,
   };
   const startedAt = (dependencies.now ?? Date.now)();
   // Disabling the experiment intentionally overrides a persisted Treatment arm.

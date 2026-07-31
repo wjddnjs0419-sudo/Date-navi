@@ -12,6 +12,7 @@ import {
 export const KAKAO_CACHE_GRID_DEGREES = 0.005;
 export const KAKAO_SEARCH_CACHE_TTL_DAYS = 30;
 const DEFAULT_KEYWORD_QUERY = '데이트 장소';
+const KAKAO_SEARCH_CACHE_KEY_VERSION = 'radius10km';
 
 export function snapCoordinateToCacheGrid(value: number): number {
   return Math.round(value / KAKAO_CACHE_GRID_DEGREES) * KAKAO_CACHE_GRID_DEGREES;
@@ -33,7 +34,8 @@ type CacheKeyCenter = { latitude: number; longitude: number };
 export function buildKakaoSearchCacheKey(query: CacheKeyQuery, center: CacheKeyCenter): string {
   const endpoint = query.categoryCode ? 'category' : 'keyword';
   const term = query.categoryCode ?? query.queryText ?? DEFAULT_KEYWORD_QUERY;
-  return [endpoint, term, gridKeyPart(center.latitude), gridKeyPart(center.longitude), String(query.page)].join('|');
+  return [KAKAO_SEARCH_CACHE_KEY_VERSION, endpoint, term,
+    gridKeyPart(center.latitude), gridKeyPart(center.longitude), String(query.page)].join('|');
 }
 
 export type KakaoSearchCacheEntry = {

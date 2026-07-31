@@ -132,6 +132,27 @@ describe('candidate-only selection schema', () => {
 });
 
 describe('verified Kakao category matching', () => {
+  it.each([
+    '음식점 > 술집',
+    '음식점 > 주점',
+    '음식점 > 일식 > 이자카야',
+    '음식점 > 와인바',
+    '음식점 > 펍',
+    '음식점 > 포장마차',
+  ])('does not treat the shared FD6 category %s as a meal', (categoryName) => {
+    expect(candidateMatchesCategory({
+      ...candidate('drink-venue', 'drink-venue-id', 'FD6', 127),
+      categoryGroupCode: 'FD6',
+      categoryGroupName: '음식점',
+      categoryName,
+      name: '라멘을 파는 술집',
+      matchedSearchEvidence: [{
+        queryId: 'ramen-query', source: 'keyword', page: 1, queryText: '라멘',
+        phase: 'step_intent', canonicalTerm: '라멘', expansionLevel: 0,
+      }],
+    }, 'meal')).toBe(false);
+  });
+
   it.each(STEP_INTENT_DICTIONARY.filter((entry) => entry.targetCategory === 'activity' || entry.targetCategory === 'culture'))(
     'accepts the representative Kakao category-name fixture for $canonicalTerm',
     (entry) => {
@@ -194,6 +215,17 @@ describe('verified Kakao category matching', () => {
 
     expect(candidateMatchesCategory(restaurantFromDrinksQuery, 'drinks')).toBe(false);
     expect(candidateMatchesCategory(genericFromActivityQuery, 'activity')).toBe(false);
+  });
+
+  it('does not accept a generic business merely because its name contains 액티비티', () => {
+    expect(candidateMatchesCategory({
+      ...candidate('generic-activity-company', 'generic-activity-company-id', '', 127),
+      name: '액티비티코리아',
+      categoryGroupCode: '',
+      categoryGroupName: '서비스업',
+      categoryName: '서비스업 > 여행사',
+      matchedSearchEvidence: [],
+    }, 'activity')).toBe(false);
   });
 
   it.each([

@@ -282,6 +282,22 @@ export const SCREENSHOT_SESSION_ID = RECO_REQUEST_ID;
 export const SCREENSHOT_RPC_RESULTS: Record<string, any> = {
   get_recommendation_session: recoSessionPayload,
   persist_recommendation_session: recoSessionPayload,
+  get_course_places_for_review: [
+    {
+      session_id: RECO_REQUEST_ID,
+      step_id: 'step-meal',
+      step_order: 1,
+      place_name: '황보네분식',
+      kakao_place_id: 'place-meal',
+    },
+    {
+      session_id: RECO_REQUEST_ID,
+      step_id: 'step-cafe',
+      step_order: 2,
+      place_name: '베스티',
+      kakao_place_id: 'place-cafe',
+    },
+  ],
 };
 
 /** edge function invoke 반환값. */

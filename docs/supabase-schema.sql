@@ -1976,3 +1976,55 @@ end;
 $$;
 revoke all on function public.consume_ai_quota(uuid,text,timestamptz) from public, anon, authenticated;
 grant execute on function public.consume_ai_quota(uuid,text,timestamptz) to service_role;
+-- Recommendation session mutations rebuild latest_request.courseSteps from
+-- normalized rows. Preserve per-step keyword tags across those updates.
+create or replace function public.preserve_recommendation_step_intent_tags()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+  v_course_steps jsonb;
+begin
+  if new.latest_request is null
+    or jsonb_typeof(new.latest_request -> 'courseSteps') <> 'array'
+  then
+    return new;
+  end if;
+
+  select coalesce(jsonb_agg(
+    case
+      when next_step.value ? 'intentTags' then next_step.value
+      else next_step.value || coalesce((
+        select jsonb_build_object('intentTags', source_step -> 'intentTags')
+        from (
+          select value as source_step, 1 as priority
+          from jsonb_array_elements(coalesce(old.latest_request -> 'courseSteps', '[]'::jsonb))
+          union all
+          select value as source_step, 2 as priority
+          from jsonb_array_elements(coalesce(old.original_request -> 'courseSteps', '[]'::jsonb))
+        ) sources
+        where source_step ->> 'id' = next_step.value ->> 'id'
+          and source_step ->> 'category' = next_step.value ->> 'category'
+          and jsonb_typeof(source_step -> 'intentTags') = 'array'
+        order by priority
+        limit 1
+      ), '{}'::jsonb)
+    end
+    order by next_step.ordinality
+  ), '[]'::jsonb)
+  into v_course_steps
+  from jsonb_array_elements(new.latest_request -> 'courseSteps')
+    with ordinality as next_step(value, ordinality);
+
+  new.latest_request := jsonb_set(new.latest_request, '{courseSteps}', v_course_steps);
+  return new;
+end;
+$$;
+
+drop trigger if exists preserve_recommendation_step_intent_tags
+  on public.recommendation_sessions;
+create trigger preserve_recommendation_step_intent_tags
+before update of latest_request on public.recommendation_sessions
+for each row
+execute function public.preserve_recommendation_step_intent_tags();

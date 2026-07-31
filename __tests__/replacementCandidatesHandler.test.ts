@@ -126,6 +126,59 @@ describe('replacement candidates handler', () => {
     expect([...body.top, ...body.additional].map((entry) => entry.kakaoPlaceId)).toEqual(['place-exact-pork']);
   });
 
+  it('preserves and resolves the target step tag when searching replacement candidates', async () => {
+    const genericMeal = candidate('generic-meal', 'FD6');
+    const exactRamen = {
+      ...candidate('exact-ramen', 'FD6'),
+      matchedSearchEvidence: [{
+        queryId: 'ramen-query',
+        source: 'keyword' as const,
+        page: 1,
+        queryText: '라멘',
+        phase: 'step_intent' as const,
+        stepId: 'meal',
+        canonicalTerm: '라멘',
+        strength: 'required' as const,
+        expansionLevel: 0 as const,
+      }],
+    };
+    const searchCandidates = jest.fn(async () => ({ candidates: [genericMeal, exactRamen] }));
+    const baseSession = session();
+    const taggedSession = {
+      ...baseSession,
+      originalRequest: {
+        ...baseSession.originalRequest,
+        courseSteps: baseSession.originalRequest.courseSteps.map((step) => (
+          step.id === 'meal' ? { ...step, intentTags: ['라멘'] } : step
+        )),
+      },
+      // Existing mutation RPCs reconstructed latest_request.courseSteps without
+      // intentTags. Replacement must recover the original per-step tag instead
+      // of silently broadening back to the generic category.
+      latestRequest: {
+        ...baseSession.originalRequest,
+        requestId: 'request-latest',
+      },
+    };
+
+    const result = await handleReplacementCandidates({
+      method: 'POST', authorization: 'Bearer token', body: { sessionId: 'session-1', targetStepId: 'meal' },
+    }, dependencies({
+      experimentMode: 'off',
+      loadSession: jest.fn(async () => taggedSession),
+      searchCandidates,
+    }));
+    const body = result.body as { top: Array<{ kakaoPlaceId: string }>; additional: Array<{ kakaoPlaceId: string }> };
+
+    expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
+      courseSteps: [expect.objectContaining({ id: 'meal', intentTags: ['라멘'] })],
+      resolvedStepIntents: [expect.objectContaining({
+        stepId: 'meal', canonicalTerm: '라멘', strength: 'required',
+      })],
+    }));
+    expect([...body.top, ...body.additional].map((entry) => entry.kakaoPlaceId)).toEqual(['place-exact-ramen']);
+  });
+
   it('stores the exact displayed ranks behind an opaque server attestation', async () => {
     const stageCandidateList = jest.fn(async () => 'replacement-list-001');
     const result = await handleReplacementCandidates({

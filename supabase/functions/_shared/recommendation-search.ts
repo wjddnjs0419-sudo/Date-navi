@@ -92,6 +92,12 @@ export const KAKAO_SEARCH_LIMITS = {
   timeoutMs: 4000,
 } as const;
 
+// Kakao does not expose a numeric relevance score. For user-selected step
+// keywords, only the leading accuracy-ranked results are strong enough to act
+// as hard-constraint evidence.
+const STEP_INTENT_RELEVANCE_LIMIT = 5;
+const KAKAO_SEARCH_RADIUS_METERS = 10_000;
+
 type SearchLimits = {
   maxRequests: number;
   pageSize: number;
@@ -101,17 +107,27 @@ type SearchLimits = {
   timeoutMs: number;
 };
 
-const CATEGORY_SEARCH: Record<string, { categoryCode?: string; queryText?: string }> = {
-  meal: { categoryCode: 'FD6' },
-  restaurant: { categoryCode: 'FD6' },
-  cafe: { categoryCode: 'CE7' },
-  culture: { categoryCode: 'CT1' },
-  walk: { categoryCode: 'AT4' },
-  attraction: { categoryCode: 'AT4' },
-  drinks: { queryText: '술집' },
-  bar: { queryText: '술집' },
-  activity: { queryText: '액티비티' },
-  ai_decide: { queryText: '데이트 장소' },
+type CategorySearchMapping = { categoryCode?: string; queryText?: string };
+
+const CATEGORY_SEARCH: Record<string, readonly CategorySearchMapping[]> = {
+  meal: [{ categoryCode: 'FD6' }],
+  restaurant: [{ categoryCode: 'FD6' }],
+  cafe: [{ categoryCode: 'CE7' }],
+  culture: [{ categoryCode: 'CT1' }],
+  walk: [{ categoryCode: 'AT4' }],
+  attraction: [{ categoryCode: 'AT4' }],
+  drinks: [{ queryText: '술집' }],
+  bar: [{ queryText: '술집' }],
+  // Kakao has no activity category code. Searching the abstract word
+  // "액티비티" mostly returns businesses that use it in their company name.
+  // Use the shipped high-confidence venue families for useful nearby variety.
+  activity: [
+    { queryText: '보드게임카페' },
+    { queryText: '방탈출' },
+    { queryText: '볼링장' },
+    { queryText: '클라이밍장' },
+  ],
+  ai_decide: [{ queryText: '데이트 장소' }],
 };
 
 export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearchPlanItem[] {
@@ -121,14 +137,16 @@ export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearc
     const normalizedCategory = step.category === 'restaurant' ? 'meal' : step.category;
     if (seenCategories.has(normalizedCategory)) continue;
     seenCategories.add(normalizedCategory);
-    const mapping = CATEGORY_SEARCH[normalizedCategory] ?? { queryText: '데이트 장소' };
-    items.push({
-      source: mapping.categoryCode ? 'category' : 'keyword',
-      phase: 'required',
-      category: normalizedCategory,
-      ...(mapping.categoryCode ? { categoryCode: mapping.categoryCode } : {}),
-      ...(mapping.queryText ? { queryText: mapping.queryText } : {}),
-    });
+    const mappings = CATEGORY_SEARCH[normalizedCategory] ?? [{ queryText: '데이트 장소' }];
+    for (const mapping of mappings) {
+      items.push({
+        source: mapping.categoryCode ? 'category' : 'keyword',
+        phase: 'required',
+        category: normalizedCategory,
+        ...(mapping.categoryCode ? { categoryCode: mapping.categoryCode } : {}),
+        ...(mapping.queryText ? { queryText: mapping.queryText } : {}),
+      });
+    }
   }
 
   const stepIntents = effectiveStepIntents(request);
@@ -283,7 +301,13 @@ export async function fetchKakaoSearchPage(
     y: String(center.latitude),
     size: String(KAKAO_SEARCH_LIMITS.pageSize),
     page: String(query.page),
-    sort: 'distance',
+    radius: String(KAKAO_SEARCH_RADIUS_METERS),
+    // Step tags are semantic queries. Kakao's distance sort can rank a nearby,
+    // weakly-related restaurant above an actual specialist venue, while every
+    // returned document later carries the same intent evidence. Preserve
+    // distance sorting for broad/category discovery, but use Kakao relevance
+    // ordering for user-selected step keywords.
+    sort: query.phase === 'step_intent' ? 'accuracy' : 'distance',
   });
   if (query.categoryCode) parameters.set('category_group_code', query.categoryCode);
   else parameters.set('query', query.queryText ?? '데이트 장소');
@@ -308,10 +332,13 @@ export async function fetchKakaoSearchPage(
       };
     }
     const body = await response.json() as { documents?: unknown };
+    const documents = Array.isArray(body.documents) ? body.documents as KakaoDocument[] : [];
     return {
       query,
       status: 'success',
-      documents: Array.isArray(body.documents) ? body.documents as KakaoDocument[] : [],
+      documents: query.phase === 'step_intent'
+        ? documents.slice(0, STEP_INTENT_RELEVANCE_LIMIT)
+        : documents,
     };
   } catch {
     return { query, status: timedOut ? 'timeout' : 'failure', documents: [] };
@@ -365,8 +392,9 @@ export async function executeKakaoSearchPlan(
   }
   for (let page = 2; page <= limits.maxPagesPerQuery && uniqueCount() < limits.minUniqueCandidates; page++) {
     for (const item of plan) {
-      // 예산 보호: step-intent expansion(레벨 1·2)은 page 2 재실행 대상에서 제외.
-      if (item.phase === 'step_intent' && item.expansionLevel !== 0) continue;
+      // Step intent is a semantic proof boundary: page 2 is weaker than the
+      // accuracy-ranked leaders and must not satisfy a required user keyword.
+      if (item.phase === 'step_intent') continue;
       await run(item, page);
       if (outcomes.length >= limits.maxRequests || uniqueCount() >= limits.minUniqueCandidates) break;
     }

@@ -20,8 +20,12 @@ const VERIFIED_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
   culture: ['문화시설', '미술관', '박물관', '전시', '공연장', '극장'],
   walk: ['관광명소', '공원', '산책', '정원'],
   drinks: ['술집', '주점', '이자카야', '와인바', '칵테일바', '펍', '포차', '포장마차', '호프'],
-  activity: ['액티비티', '체험', '영화관', '볼링', '방탈출', '공방', '놀이공원', '테마파크'],
+  activity: ['체험', '영화관', '볼링', '방탈출', '공방', '놀이공원', '테마파크'],
 };
+
+// 카카오 FD6(음식점)는 일반 식당과 술집을 함께 담는다. 식사 스텝에서 그룹 코드만으로
+// 통과시키면 라멘·파스타 등 식사 키워드 검색에 섞인 주점이 후보가 된다.
+const DRINK_VENUE_CATEGORY_KEYWORDS = VERIFIED_CATEGORY_KEYWORDS.drinks;
 
 const TAXONOMY_CATEGORY_KEYWORDS: Record<string, readonly string[]> = {
   activity: STEP_INTENT_DICTIONARY
@@ -82,6 +86,10 @@ export function verifiedPlaceMatchesCategory(
   const normalized = normalizeRecommendationCategory(category);
   if (normalized === 'ai_decide') return true;
   const code = CATEGORY_CODES[normalized];
+  const categoryHaystack = `${place.categoryGroupName} ${place.categoryName}`.normalize('NFKC');
+  if (normalized === 'meal'
+    && place.categoryGroupCode === 'FD6'
+    && DRINK_VENUE_CATEGORY_KEYWORDS.some((keyword) => categoryHaystack.includes(keyword))) return false;
   if (code && place.categoryGroupCode === code) return true;
   // A mismatched broad code is normally decisive. Activity/culture are the exception: Kakao
   // frequently puts a verified subtype (climbing, aquarium, botanical garden) under CT1/AT4.

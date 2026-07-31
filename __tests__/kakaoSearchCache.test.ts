@@ -66,14 +66,14 @@ describe('grid snap and cache key', () => {
     expect(snapped.longitude).toBeCloseTo(126.985, 10);
     expect(snapped.label).toBe(location.label);
     expect(buildKakaoSearchCacheKey({ categoryCode: 'CE7', page: 1 }, { latitude: 37.5674, longitude: 126.9827 }))
-      .toBe('category|CE7|37.565|126.985|1');
+      .toBe('radius10km|category|CE7|37.565|126.985|1');
   });
 
   it('keys keyword queries by their query text with the shared default', () => {
     expect(buildKakaoSearchCacheKey({ queryText: '술집', page: 2 }, { latitude: 37.5674, longitude: 126.9827 }))
-      .toBe('keyword|술집|37.565|126.985|2');
+      .toBe('radius10km|keyword|술집|37.565|126.985|2');
     expect(buildKakaoSearchCacheKey({ page: 1 }, { latitude: 37.5674, longitude: 126.9827 }))
-      .toBe('keyword|데이트 장소|37.565|126.985|1');
+      .toBe('radius10km|keyword|데이트 장소|37.565|126.985|1');
   });
 
   it('shares the same key inside one grid cell and splits across cells', () => {

@@ -1,5 +1,24 @@
 # RESULT.md
 
+## 2026-07-31 — 코스 키워드 필수 조건 전환·원격 배포 완료
+
+- 사용자가 코스 스텝에서 선택하는 기본 제안 칩과 직접 입력 키워드를 구분하지 않고 모두 `required` intent로 전환했다. 적용 범위는 식사·카페·술·액티비티·문화·산책 전체다.
+- 이전에는 키워드가 `preferred`라 검색·랭킹 가점만 받고 최종 선택에서 일반 카테고리 장소로 완화될 수 있었다. 이제 기존 required 게이트가 AI 선택과 결정론 폴백 모두에서 키워드 검증 후보만 허용한다.
+- 매칭 후보가 없으면 일반 장소로 바꾸지 않고 `STEP_INTENT_UNSATISFIED`와 기존 조건 수정 UI를 반환한다. 라멘(기본 제안)·샐러드(직접 입력) 회귀 테스트로 이 경로와 AI 호출 전 차단을 고정했다.
+- 태그 전환 뒤 교체 후보 요청이 대상 스텝의 `intentTags`를 버리던 회귀를 수정했다. 저장된 원 요청에서 태그를 다시 resolve하므로 최초 추천과 교체 후보가 같은 필수 intent를 사용한다.
+- 코스 편집 RPC가 `latest_request.courseSteps`를 재구성할 때 모든 카테고리의 `intentTags`를 삭제하던 DB 회귀를 수정했다. BEFORE UPDATE 트리거가 동일 step/category의 태그를 최신·원본 요청에서 보존하며, 마이그레이션 백필로 이미 손상된 세션도 복구한다. 교체 Edge도 원본 태그를 별도로 복구해 이중 방어한다.
+- 카카오 단계 키워드 검색을 거리순에서 정확도순으로 변경하고, 정확도 상위 5개·1페이지만 필수 키워드 증거로 인정한다. 기존 거리순과 무제한 evidence는 `샐러드`처럼 의미가 약하게 연결된 가까운 일반 식당도 동일한 exact evidence로 인정해 최종 선택되는 문제가 있었다. 일반 카테고리·주변 탐색은 거리순을 유지한다.
+- 키워드 없는 기본 액티비티가 추상어 `액티비티`를 검색해 동명의 업체와 전국 레저 사업자를 반환하던 경로를 제거했다. 기본 검색을 `보드게임카페·방탈출·볼링장·클라이밍장`으로 분산하고 모든 Kakao 검색을 중심 반경 10km로 제한했다. 반경 도입 전 30일 캐시와 섞이지 않도록 캐시 키 버전도 분리했다.
+- 설계: `docs/superpowers/specs/2026-07-31-course-keyword-hard-constraint-design.md`. 실행 계획: `docs/superpowers/plans/2026-07-31-course-keyword-hard-constraint.md`.
+
+검증·배포:
+
+- 최종 대상 Jest 9 suites / 351 tests 통과.
+- `npm run validate` 통과.
+- 태그·기본 액티비티 검색 공통 코드가 포함된 `recommend-date` v45와 `replacement-candidates` v36의 ACTIVE 상태를 확인했다.
+- `20260731183000_preserve_recommendation_step_intent_tags.sql`을 원격 DB에 적용하고 migration history 반영을 확인했다.
+- 실제 로그인 사용자로 라멘·샐러드·의도적 무매칭 키워드를 생성하는 프로덕션 QA는 이 세션에서 수행하지 못했다.
+
 ## 2026-07-30 — AI 코스 생성 제한 구현·원격 배포 완료
 
 - 브랜치: `feat/ai-rate-limits`. 코스 생성(`course_generate`)만 사용자 ID 기준으로 보호한다: 동일 사용자 요청 lock 2분, 고정 5분 burst 3회, Asia/Seoul 일일 20회.

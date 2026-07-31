@@ -206,7 +206,10 @@ export async function resolveStepIntents(
         kakaoSearchTerms: dictionaryEntry
           ? stableUnique([dictionaryEntry.canonicalTerm, ...dictionaryEntry.searchExpansions]).slice(0, 3)
           : [tag],
-        strength: 'preferred' as StepIntentStrength,
+        // 코스 편집기에서 사용자가 명시적으로 선택·입력한 키워드는 해당 스텝의 필수 조건이다.
+        // 후보가 부족할 때 일반 카테고리 장소로 무음 완화하지 않고, 기존 required 게이트가
+        // STEP_INTENT_UNSATISFIED로 조건 수정을 안내한다.
+        strength: 'required' as StepIntentStrength,
         displayLabel: dictionaryEntry?.displayLabel ?? { ko: tag, en: tag },
       } satisfies ParsedStepIntent];
     });

@@ -192,7 +192,7 @@ describe('recommend-date conservative preference merge and conflicts', () => {
 });
 
 describe('structured step intent tags', () => {
-  it('resolves a known tag as a preferred intent on its own step', async () => {
+  it('resolves a known tag as a required intent on its own step', async () => {
     const resolved = await resolveStepIntents({
       ...request(''),
       courseSteps: [
@@ -204,24 +204,44 @@ describe('structured step intent tags', () => {
     expect(resolved.stepIntents).toEqual([expect.objectContaining({
       stepId: 'meal',
       canonicalTerm: '라멘',
-      strength: 'preferred',
+      strength: 'required',
       kakaoSearchTerms: ['라멘', '일본식라면', '일식'],
     })]);
     expect(resolved.excludedIntents).toEqual([]);
   });
 
-  it('keeps a custom tag as a preferred keyword and never creates exclusions from text', async () => {
+  it('keeps a custom tag as a required keyword and never creates exclusions from text', async () => {
     const resolved = await resolveStepIntents({
       ...request('초밥 말고 라멘'),
       courseSteps: [
-        { id: 'meal', category: 'meal', label: '식사', intentTags: ['바질크림뇨끼'] },
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['샐러드'] },
         { id: 'cafe', category: 'cafe', label: '카페' },
       ],
     });
 
     expect(resolved.stepIntents).toEqual([expect.objectContaining({
-      stepId: 'meal', canonicalTerm: '바질크림뇨끼', kakaoSearchTerms: ['바질크림뇨끼'], strength: 'preferred',
+      stepId: 'meal', canonicalTerm: '샐러드', kakaoSearchTerms: ['샐러드'], strength: 'required',
     })]);
     expect(resolved.excludedIntents).toEqual([]);
+  });
+
+  it.each([
+    ['cafe', '루프탑 카페'],
+    ['drinks', '와인바'],
+    ['activity', '방탈출'],
+    ['culture', '전시'],
+    ['walk', '한강 산책'],
+  ] as const)('treats a %s tag as a required constraint', async (category, tag) => {
+    const resolved = await resolveStepIntents({
+      ...request(''),
+      courseSteps: [
+        { id: 'tagged-step', category, label: category, intentTags: [tag] },
+        { id: 'meal-step', category: 'meal', label: '식사' },
+      ],
+    });
+
+    expect(resolved.stepIntents).toEqual([expect.objectContaining({
+      stepId: 'tagged-step', canonicalTerm: tag, strength: 'required',
+    })]);
   });
 });

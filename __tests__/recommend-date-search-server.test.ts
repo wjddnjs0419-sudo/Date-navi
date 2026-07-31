@@ -78,8 +78,9 @@ describe('recommend-date deterministic Kakao search plan', () => {
     const en = buildKakaoSearchPlan({ ...request(['meal', 'cafe', 'culture', 'walk', 'activity']), language: 'en' });
 
     expect(en).toEqual(ko);
-    expect(ko.slice(0, 5).map((item) => item.categoryCode ?? item.queryText))
-      .toEqual(['FD6', 'CE7', 'CT1', 'AT4', '액티비티']);
+    expect(ko.filter((item) => item.phase === 'required').map((item) => item.categoryCode ?? item.queryText))
+      .toEqual(['FD6', 'CE7', 'CT1', 'AT4', '보드게임카페', '방탈출', '볼링장', '클라이밍장']);
+    expect(ko.some((item) => item.queryText === '액티비티')).toBe(false);
   });
 
   it('runs required page-one searches before broad searches and requests page two only on shortage', async () => {
@@ -147,6 +148,7 @@ describe('recommend-date Kakao fetch adapter and evidence', () => {
     expect(url).toContain('y=37.5444');
     expect(url).toContain('size=15');
     expect(url).toContain('page=2');
+    expect(url).toContain('radius=10000');
     expect(init.headers).toEqual({ Authorization: 'KakaoAK secret-key' });
     expect(init.signal).toBeDefined();
   });
@@ -160,6 +162,35 @@ describe('recommend-date Kakao fetch adapter and evidence', () => {
     const url = new URL((fetcher as jest.Mock).mock.calls[0][0]);
     expect(url.pathname).toBe('/v2/local/search/keyword.json');
     expect(url.searchParams.get('query')).toBe('술집');
+    expect(url.searchParams.get('sort')).toBe('distance');
+    expect(url.searchParams.get('radius')).toBe('10000');
+  });
+
+  it('keeps only Kakao relevance leaders as proof for a required step keyword', async () => {
+    const fetcher = jest.fn(async () => response(200, {
+      documents: Array.from({ length: 8 }, (_, index) => document(`salad-${index + 1}`)),
+    })) as KakaoFetch;
+    const query: KakaoSearchQuery = {
+      queryId: 'query-salad',
+      source: 'keyword',
+      phase: 'step_intent',
+      queryText: '샐러드',
+      stepId: 'step-0',
+      canonicalTerm: '샐러드',
+      strength: 'required',
+      expansionLevel: 0,
+      page: 1,
+    };
+
+    const result = await fetchKakaoSearchPage(query, request().location, 'secret-key', fetcher);
+
+    const url = new URL((fetcher as jest.Mock).mock.calls[0][0]);
+    expect(url.pathname).toBe('/v2/local/search/keyword.json');
+    expect(url.searchParams.get('query')).toBe('샐러드');
+    expect(url.searchParams.get('sort')).toBe('accuracy');
+    expect(result.documents.map((place) => place.id)).toEqual([
+      'salad-1', 'salad-2', 'salad-3', 'salad-4', 'salad-5',
+    ]);
   });
 
   it.each([
@@ -477,5 +508,23 @@ describe('executeKakaoSearchPlan — step intent progressive expansion', () => {
     await executeKakaoSearchPlan(intentPlan(), search);
     expect(executed.filter((query) => query.phase === 'step_intent').map((query) => query.expansionLevel))
       .toEqual([0, 1, 2]);
+  });
+
+  it('키워드 증거를 약한 정확도 2페이지까지 넓히지 않는다', async () => {
+    const executed: KakaoSearchQuery[] = [];
+    const search = async (query: KakaoSearchQuery) => {
+      executed.push(query);
+      return outcomeFor(query, []);
+    };
+
+    await executeKakaoSearchPlan(intentPlan(), search, {
+      ...KAKAO_SEARCH_LIMITS,
+      maxRequests: 50,
+      minUniqueCandidates: 999,
+    });
+
+    expect(executed.filter((query) => query.phase === 'step_intent').map((query) => query.page))
+      .toEqual([1, 1, 1]);
+    expect(executed.some((query) => query.phase !== 'step_intent' && query.page === 2)).toBe(true);
   });
 });
