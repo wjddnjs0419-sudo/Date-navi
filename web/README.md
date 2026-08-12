@@ -7,6 +7,7 @@
 
 - Marketing URL: `https://date-navi.vercel.app/`
 - Support URL: `https://date-navi.vercel.app/support`
+- Privacy Policy URL: `https://date-navi.vercel.app/privacy`
 
 두 페이지는 방문자의 브라우저 언어에 따라 한국어 또는 영어로 표시된다. App Store 제품 페이지가
 만들어진 뒤 Vercel에 `NEXT_PUBLIC_APP_STORE_URL`을 설정하면 마케팅 페이지의 다운로드 버튼이 해당

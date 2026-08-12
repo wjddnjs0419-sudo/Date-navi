@@ -7,6 +7,7 @@ type Faq = { question: string; answer: string };
 type PublicSiteCopy = {
   home: string;
   support: string;
+  privacy: string;
   store: string;
   comingSoon: string;
   heroEyebrow: string;
@@ -31,6 +32,7 @@ export const PUBLIC_SITE_COPY: Record<Lang, PublicSiteCopy> = {
   ko: {
     home: '홈',
     support: '고객 지원',
+    privacy: '개인정보처리방침',
     store: 'App Store에서 받기',
     comingSoon: 'App Store 출시 예정',
     heroEyebrow: '둘만의 다음 데이트',
@@ -63,6 +65,7 @@ export const PUBLIC_SITE_COPY: Record<Lang, PublicSiteCopy> = {
   en: {
     home: 'Home',
     support: 'Support',
+    privacy: 'Privacy Policy',
     store: 'Download on the App Store',
     comingSoon: 'Coming soon to the App Store',
     heroEyebrow: 'Your next date, together',
@@ -115,7 +118,10 @@ export function PublicSiteShell({ lang, children }: { lang: Lang; children: Reac
       {children}
       <footer style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 24px 42px', color: '#8c7d83', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <span>© 2026 Date Navi</span>
-        <a href="/support" style={{ ...navLink, color: '#8c7d83' }}>{copy.support}</a>
+        <span style={{ display: 'flex', gap: 16 }}>
+          <a href="/privacy" style={{ ...navLink, color: '#8c7d83' }}>{copy.privacy}</a>
+          <a href="/support" style={{ ...navLink, color: '#8c7d83' }}>{copy.support}</a>
+        </span>
       </footer>
     </main>
   );
