@@ -3,6 +3,15 @@
 커플 초대 공유 링크(`https://date-navi.vercel.app/invite?code=DN-XXXX&l=ko`)의
 랜딩 페이지와, 카톡·문자·인스타 프리뷰용 동적 OG 이미지를 제공하는 Next.js 앱.
 
+## App Store 웹사이트 URL
+
+- Marketing URL: `https://date-navi.vercel.app/`
+- Support URL: `https://date-navi.vercel.app/support`
+
+두 페이지는 방문자의 브라우저 언어에 따라 한국어 또는 영어로 표시된다. App Store 제품 페이지가
+만들어진 뒤 Vercel에 `NEXT_PUBLIC_APP_STORE_URL`을 설정하면 마케팅 페이지의 다운로드 버튼이 해당
+주소로 연결된다.
+
 ## 구조
 
 - `app/invite/page.tsx` — 랜딩. **받는 사람 언어**(Accept-Language)로 렌더. 앱 설치 시 유니버설

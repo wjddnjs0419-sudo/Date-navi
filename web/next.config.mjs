@@ -6,12 +6,6 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/og': ['./assets/Pretendard-Bold.subset.otf', './public/mascot.png'],
   },
-  async redirects() {
-    return [
-      // 루트로 들어오면 초대 랜딩으로.
-      { source: '/', destination: '/invite', permanent: false },
-    ];
-  },
 };
 
 export default nextConfig;
