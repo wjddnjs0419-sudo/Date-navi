@@ -10,6 +10,16 @@ import {
 } from '../_shared/ai-rate-limit.ts';
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
+import { normalizeKakaoPlace } from '../_shared/place-provider.ts';
+import { resolveKakaoPlaceLink, searchKakaoPlacesForLink } from '../_shared/kakao-place-link.ts';
+import { fetchNaverLocalPlaces, fetchNaverLocalPlacesWithStatus } from '../_shared/providers/naver-place-provider.ts';
+import { createNaverSearchCache } from '../_shared/naver-search-cache.ts';
+import { discoverProviderNeutralCandidates } from '../_shared/provider-neutral-discovery-pipeline.ts';
+import {
+  naverShadowQueries,
+  providerNeutralSessionPersistenceEnabled,
+  resolveRecommendationDiscoveryStrategy,
+} from '../_shared/recommendation-discovery-strategy.ts';
 import {
   createSupabaseRecommendationHistoryQueryAdapter,
   loadRecommendationHistoryAssignmentScope,
@@ -35,6 +45,7 @@ const corsHeaders = {
 
 // generate-ai가 실제로 쓰는 모델과 같아야 estimate_model 기록이 진실이 된다.
 const PLACE_PRICE_ESTIMATE_MODEL = 'claude-haiku-4-5';
+const naverSearchCache = createNaverSearchCache();
 
 function historyExperimentMode(value: string | undefined): HistoryExperimentMode {
   return value === 'ab50' || value === 'treatment' ? value : 'off';
@@ -43,6 +54,10 @@ function historyExperimentMode(value: string | undefined): HistoryExperimentMode
 Deno.serve(async (request) => {
   const startedAt = Date.now();
   const experimentMode = historyExperimentMode(Deno.env.get('RECOMMENDATION_HISTORY_EXPERIMENT'));
+  const discoveryStrategy = resolveRecommendationDiscoveryStrategy(Deno.env.get('RECOMMENDATION_DISCOVERY_STRATEGY'));
+  const providerPersistenceReady = providerNeutralSessionPersistenceEnabled(
+    Deno.env.get('RECOMMENDATION_PROVIDER_SESSION_PERSISTENCE'),
+  );
   let body: unknown;
   if (request.method === 'POST') {
     try {
@@ -86,6 +101,34 @@ Deno.serve(async (request) => {
     },
     searchCandidates: async (input, history) => {
       const startedAt = Date.now();
+      if (discoveryStrategy === 'naver_shadow') {
+        const naverClientId = Deno.env.get('NAVER_CLIENT_ID') ?? '';
+        const naverClientSecret = Deno.env.get('NAVER_CLIENT_SECRET') ?? '';
+        const queries = naverShadowQueries({
+          locationLabel: input.location.label,
+          locationSource: input.location.source,
+          stepLabels: input.courseSteps.map((step) => step.label),
+        });
+        const shadow = Promise.all(queries.map((query) => fetchNaverLocalPlacesWithStatus({
+          query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache,
+        }))).then((results) => {
+          const outcomes = results.reduce<Record<string, number>>((counts, result) => {
+            counts[result.outcome] = (counts[result.outcome] ?? 0) + 1;
+            return counts;
+          }, {});
+          const httpStatusCodes = [...new Set(results.flatMap((result) => result.statusCode === undefined ? [] : [result.statusCode]))];
+          console.error(JSON.stringify({
+            event: 'recommend_date_naver_shadow',
+            queryCount: queries.length,
+            resultCount: results.reduce((count, result) => count + result.places.length, 0),
+            outcomes,
+            httpStatusCodes,
+            elapsedMs: Date.now() - startedAt,
+          }));
+        }).catch(() => undefined);
+        const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime;
+        edgeRuntime?.waitUntil?.(shadow);
+      }
       const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
       const serviceClient = createClient(
         Deno.env.get('SUPABASE_URL')!,
@@ -107,6 +150,86 @@ Deno.serve(async (request) => {
       }));
       return result;
     },
+    ...(discoveryStrategy === 'naver_primary_with_kakao_fallback' && providerPersistenceReady ? {
+      searchProviderNeutralCandidates: async (input) => {
+        const serviceClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        const naverClientId = Deno.env.get('NAVER_CLIENT_ID') ?? '';
+        const naverClientSecret = Deno.env.get('NAVER_CLIENT_SECRET') ?? '';
+        const semanticQueries = naverShadowQueries({
+          locationLabel: input.location.label,
+          locationSource: input.location.source,
+          stepLabels: input.courseSteps.map((step) => step.label),
+        });
+        const primaryAttempts = semanticQueries.map((query) => async () => (
+          fetchNaverLocalPlaces({ query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache })
+        ));
+        const fallbackAttempts = [async () => {
+          const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
+          const fallback = await searchAndRankRecommendation(input, {
+            kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
+            fetcher: fetch,
+            cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
+            cacheMetrics,
+          });
+          console.error(JSON.stringify({
+            event: 'recommend_date_kakao_fallback',
+            strategy: discoveryStrategy,
+            ...cacheMetrics,
+          }));
+          return fallback.candidates.map(normalizeKakaoPlace);
+        }];
+        const result = await discoverProviderNeutralCandidates({
+          request: input,
+          primaryAttempts,
+          fallbackAttempts,
+          minQualifiedCandidates: Math.max(input.courseSteps.length * 2, input.courseSteps.length),
+        });
+        console.error(JSON.stringify({
+          event: 'recommend_date_provider_discovery',
+          strategy: discoveryStrategy,
+          attemptsRun: result.discovery.attemptsRun,
+          fallbackUsed: result.discovery.fallbackUsed,
+          fewerResults: result.discovery.fewerResults,
+          candidateCount: result.candidates.length,
+          qualifiedByCategory: result.candidates.reduce<Record<string, number>>((counts, candidate) => {
+            const category = candidate.place.category.normalized;
+            counts[category] = (counts[category] ?? 0) + 1;
+            return counts;
+          }, {}),
+          qualifiedByProvider: result.candidates.reduce<Record<string, number>>((counts, candidate) => {
+            const provider = candidate.place.identity.provider;
+            counts[provider] = (counts[provider] ?? 0) + 1;
+            return counts;
+          }, {}),
+        }));
+        return result;
+      },
+      resolveProviderNeutralKakaoLinks: async (selected) => {
+        const kakaoRestApiKey = Deno.env.get('KAKAO_REST_API_KEY') ?? '';
+        const cache = new Map<string, Promise<ReturnType<typeof searchKakaoPlacesForLink>>>();
+        const searchKakao = (query: string) => {
+          const existing = cache.get(query);
+          if (existing) return existing;
+          const pending = searchKakaoPlacesForLink({ query, kakaoRestApiKey, fetcher: fetch });
+          cache.set(query, pending);
+          return pending;
+        };
+        const resolved = await Promise.all(selected.map(async (candidate) => {
+          const link = await resolveKakaoPlaceLink(candidate.place, searchKakao);
+          return link ? [candidate.candidateId, link] as const : undefined;
+        }));
+        const links = new Map(resolved.filter((entry): entry is readonly [string, { kakaoPlaceId: string; mapUrl: string }] => Boolean(entry)));
+        console.error(JSON.stringify({
+          event: 'recommend_date_kakao_link_resolution',
+          selectedNaverCount: selected.length,
+          linkedCount: links.size,
+        }));
+        return links;
+      },
+    } : {}),
     loadHistory: async ({ authenticatedUserId, request: historyRequest }) => {
       const serviceClient = createClient<any>(
         Deno.env.get('SUPABASE_URL')!,
@@ -188,6 +311,21 @@ Deno.serve(async (request) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       );
       const sessionId = response.course.sessionId;
+      const existingAttestationResponse = async () => {
+        const { data: existing, error } = await serviceClient
+          .from('recommendation_generation_attestations')
+          .select('session_id,owner_user_id,request_json,response_json')
+          .eq('request_id', request.requestId)
+          .maybeSingle();
+        if (error || !existing) return undefined;
+        if (existing.session_id !== sessionId || existing.owner_user_id !== ownerUserId
+          || existing.request_json?.requestId !== request.requestId) {
+          throw new Error('attestation request ownership mismatch');
+        }
+        return existing.response_json;
+      };
+      const existing = await existingAttestationResponse();
+      if (existing) return existing;
       if (sessionId !== request.requestId) {
         const { data: session, error: sessionError } = await serviceClient
           .from('recommendation_sessions')
@@ -206,10 +344,18 @@ Deno.serve(async (request) => {
         request_json: request,
         response_json: response,
       });
-      if (error) throw error;
+      if (!error) return undefined;
+      if (error.code === '23505') {
+        const raced = await existingAttestationResponse();
+        if (raced) return raced;
+      }
+      throw error;
     },
     onCourseValidationFailure: (stage) => {
       console.error(JSON.stringify({ event: 'recommend_date_course_validation_failed', stage }));
+    },
+    onProviderNeutralFailure: (failure) => {
+      console.error(JSON.stringify({ event: 'recommend_date_provider_neutral_failure', ...failure }));
     },
     recordPlaceKnowledge: ({ places }) => {
       const serviceClient = createClient(

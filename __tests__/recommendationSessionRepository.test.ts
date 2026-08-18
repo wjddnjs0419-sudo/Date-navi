@@ -67,6 +67,27 @@ describe('recommendation session mapper/repository', () => {
     expect(mapRecommendationSessionPayload(payload).updatedAt).toBe('2026-07-14T10:00:01+00:00');
   });
 
+  it('hydrates a Naver session whose legacy Kakao IDs are null', () => {
+    const payload = JSON.parse(JSON.stringify(recommendationSessionRpcFixture())) as any;
+    for (const [index, step] of payload.steps.entries()) {
+      const identity = { provider: 'naver', providerPlaceId: `local:${String(index + 1).padStart(64, '0')}` };
+      step.original_kakao_place_id = null;
+      step.current_kakao_place_id = null;
+      step.original_place_provider = 'naver';
+      step.original_provider_place_id = identity.providerPlaceId;
+      step.current_place_provider = 'naver';
+      step.current_provider_place_id = identity.providerPlaceId;
+      payload.session.current_course.steps[index].kakaoPlaceId = undefined;
+      payload.session.current_course.steps[index].placeIdentity = identity;
+      payload.session.cards[0].steps[index].kakaoPlaceId = undefined;
+      payload.session.cards[0].steps[index].placeIdentity = identity;
+    }
+
+    const snapshot = mapRecommendationSessionPayload(payload);
+    expect(snapshot.steps[0]).toMatchObject({ currentPlaceIdentity: { provider: 'naver' } });
+    expect(snapshot.steps[0]).not.toHaveProperty('currentKakaoPlaceId');
+  });
+
   it.each([
     ['session/request mismatch', () => {
       const payload = recommendationSessionRpcFixture();

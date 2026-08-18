@@ -10,6 +10,10 @@ const uniqueStrings = (maxLength: number) => z.array(boundedText(maxLength)).sup
 
 export const recommendationLanguageSchema = z.enum(['ko', 'en']);
 export const recommendationModeSchema = z.enum(['course', 'single_place']);
+export const providerPlaceIdentitySchema = z.object({
+  provider: z.enum(['kakao', 'naver']),
+  providerPlaceId: boundedText(500),
+}).strict();
 
 export const recommendationLocationSchema = z.object({
   source: z.enum(['current', 'kakao']),
@@ -130,6 +134,7 @@ const recommendDateCardStepSchema = z.object({
   desc: z.string().max(500).optional(),
   candidateId: boundedText(120).optional(),
   kakaoPlaceId: boundedText(120).optional(),
+  placeIdentity: providerPlaceIdentitySchema.optional(),
   place_name: boundedText(200).optional(),
   place_address: boundedText(300).optional(),
   map_url: boundedText(1000).optional(),
@@ -177,7 +182,10 @@ export const recommendationCourseStepSchema = z.object({
   category: boundedText(80),
   label: boundedText(120),
   candidateId: boundedText(120),
-  kakaoPlaceId: boundedText(120),
+  // Legacy Kakao-only responses omit placeIdentity. New responses always carry
+  // the provider-scoped tuple; keep the old field only for Kakao compatibility.
+  kakaoPlaceId: boundedText(120).optional(),
+  placeIdentity: providerPlaceIdentitySchema.optional(),
   name: boundedText(160),
   address: z.string().max(300),
   roadAddress: z.string().max(300),
@@ -186,7 +194,17 @@ export const recommendationCourseStepSchema = z.object({
   longitude: z.number().finite().min(-180).max(180),
   reason: boundedText(500),
   locked: z.boolean(),
-}).strict();
+}).strict().superRefine((step, ctx) => {
+  if (!step.placeIdentity && !step.kakaoPlaceId) {
+    ctx.addIssue({ code: 'custom', path: ['placeIdentity'], message: 'A provider place identity is required.' });
+  }
+  // A Naver identity may carry a separately verified Kakao ID solely for
+  // review/map links. It never replaces the provider-scoped identity.
+  if (step.placeIdentity?.provider === 'kakao' && step.kakaoPlaceId
+    && step.placeIdentity.providerPlaceId !== step.kakaoPlaceId) {
+    ctx.addIssue({ code: 'custom', path: ['placeIdentity'], message: 'Kakao provider identity must match kakaoPlaceId.' });
+  }
+});
 
 export const recommendationCourseSchema = z.object({
   requestId: boundedText(120),
@@ -200,7 +218,14 @@ export const recommendationCourseSchema = z.object({
   };
   unique(course.steps.map((step) => step.stepId), 'stepId', 'Step IDs must be unique.');
   unique(course.steps.map((step) => step.candidateId), 'candidateId', 'Candidate IDs must be unique.');
-  unique(course.steps.map((step) => step.kakaoPlaceId), 'kakaoPlaceId', 'Kakao place IDs must be unique.');
+  const kakaoPlaceIds = course.steps
+    .map((step) => step.kakaoPlaceId)
+    .filter((placeId): placeId is string => Boolean(placeId));
+  unique(kakaoPlaceIds, 'kakaoPlaceId', 'Kakao place IDs must be unique.');
+  unique(course.steps.map((step) => {
+    const identity = step.placeIdentity ?? { provider: 'kakao', providerPlaceId: step.kakaoPlaceId! };
+    return `${identity.provider}:${identity.providerPlaceId}`;
+  }), 'placeIdentity', 'Provider place identities must be unique.');
   const expectedOrders = course.steps.map((_, index) => index + 1);
   if (course.steps.map((step) => step.order).join(',') !== expectedOrders.join(',')) {
     ctx.addIssue({ code: 'custom', path: ['steps'], message: 'Step order must be consecutive and start at 1.' });
@@ -293,7 +318,8 @@ const candidateScoreBreakdownSchema = z.object({
 
 export const candidatePoolSnapshotSchema = z.object({
   candidateId: boundedText(120),
-  kakaoPlaceId: boundedText(120),
+  kakaoPlaceId: boundedText(120).optional(),
+  placeIdentity: providerPlaceIdentitySchema.optional(),
   category: boundedText(300),
   rank: z.number().int().positive(),
   totalScore: z.number().finite(),
@@ -305,14 +331,22 @@ export const candidatePoolSnapshotSchema = z.object({
     maxKRW: z.number().int().nonnegative().nullable(),
   }).strict(),
   selectedInitially: z.boolean(), forced: z.boolean(), pinned: z.boolean(), reintroducedByHistory: z.boolean(),
-}).strict();
+}).strict().superRefine((snapshot, ctx) => {
+  if (!snapshot.kakaoPlaceId && !snapshot.placeIdentity) {
+    ctx.addIssue({ code: 'custom', path: ['placeIdentity'], message: 'A provider place identity is required.' });
+  }
+});
 
 export const candidatePoolSnapshotsSchema = z.array(candidatePoolSnapshotSchema).max(40).superRefine((snapshots, ctx) => {
   const unique = (values: string[], field: string) => {
     if (new Set(values).size !== values.length) ctx.addIssue({ code: 'custom', path: [field], message: `${field} must be unique.` });
   };
   unique(snapshots.map((snapshot) => snapshot.candidateId), 'candidateId');
-  unique(snapshots.map((snapshot) => snapshot.kakaoPlaceId), 'kakaoPlaceId');
+  unique(snapshots.map((snapshot) => {
+    const identity = snapshot.placeIdentity
+      ?? { provider: 'kakao', providerPlaceId: snapshot.kakaoPlaceId! };
+    return `${identity.provider}:${identity.providerPlaceId}`;
+  }), 'placeIdentity');
   unique(snapshots.map((snapshot) => String(snapshot.rank)), 'rank');
   snapshots.forEach((snapshot, index) => {
     if (snapshot.rank !== index + 1) ctx.addIssue({ code: 'custom', path: [index, 'rank'], message: 'Ranks must be consecutive and one-based.' });
@@ -402,6 +436,14 @@ export const recommendDateResponseSchema = z.object({
       }
       if (cardStep.kakaoPlaceId !== courseStep.kakaoPlaceId) {
         issue(['cards', cardIndex, 'steps', stepIndex, 'kakaoPlaceId'], 'Card Kakao place ID must match the ordered course step.');
+      }
+      const courseIdentity = courseStep.placeIdentity
+        ?? (courseStep.kakaoPlaceId ? { provider: 'kakao' as const, providerPlaceId: courseStep.kakaoPlaceId } : undefined);
+      const cardIdentity = cardStep.placeIdentity
+        ?? (cardStep.kakaoPlaceId ? { provider: 'kakao' as const, providerPlaceId: cardStep.kakaoPlaceId } : undefined);
+      if (courseIdentity?.provider !== cardIdentity?.provider
+        || courseIdentity?.providerPlaceId !== cardIdentity?.providerPlaceId) {
+        issue(['cards', cardIndex, 'steps', stepIndex, 'placeIdentity'], 'Card provider place identity must match the ordered course step.');
       }
       if (cardStep.place_name !== courseStep.name) {
         issue(['cards', cardIndex, 'steps', stepIndex, 'place_name'], 'Card place name must match the ordered course step.');

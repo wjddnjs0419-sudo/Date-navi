@@ -363,6 +363,36 @@ describe('course result screen', () => {
     expect(payload).toMatchObject({ stepId: 'step-meal', candidateId: 'candidate_007', kakaoPlaceId: 'k-new' });
   });
 
+  it('uses the provider-neutral endpoint for a Naver step instead of requiring a Kakao ID', async () => {
+    const snapshot = buildSnapshot();
+    snapshot.steps[0] = {
+      ...snapshot.steps[0], currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+    };
+    snapshot.response.course.steps[0] = {
+      ...snapshot.response.course.steps[0], kakaoPlaceId: undefined,
+      placeIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    mockSupabaseFunctionsInvoke
+      .mockResolvedValueOnce({ data: { targetStepId: 'step-meal', attestationId: '00000000-0000-4000-8000-000000000001', candidates: [{ candidateId: 'naver_replacement_001', providerPlaceId: 'naver-meal-2', name: '새 네이버 식당', address: 'addr', roadAddress: 'road', latitude: 37.55, longitude: 127.05 }] }, error: null })
+      .mockResolvedValueOnce({ data: { ok: true }, error: null });
+    mockLoadRecommendationSession.mockResolvedValueOnce(snapshot);
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
+    act(() => { card.props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+    expect(mockSupabaseFunctionsInvoke).toHaveBeenCalledWith('provider-neutral-replacements', {
+      body: { action: 'list', sessionId: 'session-1', targetStepId: 'step-meal' },
+    });
+    await act(async () => { instance.root.findByProps({ testID: 'course-replacement-pick-naver-meal-2' }).props.onPress(); });
+    expect(mockSupabaseFunctionsInvoke).toHaveBeenLastCalledWith('provider-neutral-replacements', {
+      body: { action: 'apply', sessionId: 'session-1', targetStepId: 'step-meal', attestationId: '00000000-0000-4000-8000-000000000001', providerPlaceId: 'naver-meal-2' },
+    });
+    expect(mockRequestRecommendationResponse).not.toHaveBeenCalled();
+  });
+
   it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({

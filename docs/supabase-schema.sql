@@ -525,9 +525,17 @@ create table if not exists public.recommendation_course_steps (
   category text not null check (length(btrim(category)) > 0),
   label text not null check (length(btrim(label)) > 0),
   original_candidate_id text not null check (length(btrim(original_candidate_id)) > 0),
-  original_kakao_place_id text not null check (length(btrim(original_kakao_place_id)) > 0),
+  -- Kakao remains the legacy compatibility field. Naver rows persist only the
+  -- provider tuple below and intentionally leave this null.
+  original_kakao_place_id text check (original_kakao_place_id is null or length(btrim(original_kakao_place_id)) > 0),
+  -- Additive provider tuple. Legacy Kakao fields are retained during V3 rollout.
+  original_place_provider text check (original_place_provider is null or original_place_provider in ('kakao', 'naver')),
+  original_provider_place_id text,
   current_candidate_id text not null check (length(btrim(current_candidate_id)) > 0),
-  current_kakao_place_id text not null check (length(btrim(current_kakao_place_id)) > 0),
+  current_kakao_place_id text check (current_kakao_place_id is null or length(btrim(current_kakao_place_id)) > 0),
+  current_kakao_link_place_id text check (current_kakao_link_place_id is null or length(btrim(current_kakao_link_place_id)) > 0),
+  current_place_provider text check (current_place_provider is null or current_place_provider in ('kakao', 'naver')),
+  current_provider_place_id text,
   place_name text not null check (length(btrim(place_name)) > 0),
   address text not null default '',
   road_address text not null default '',
@@ -540,7 +548,9 @@ create table if not exists public.recommendation_course_steps (
   updated_at timestamptz not null default now(),
   primary key (session_id, step_id),
   unique (session_id, step_order),
-  check (length(btrim(step_id)) > 0)
+  check (length(btrim(step_id)) > 0),
+  check ((original_place_provider is null) = (original_provider_place_id is null)),
+  check ((current_place_provider is null) = (current_provider_place_id is null))
 );
 
 create table if not exists public.recommendation_step_events (
@@ -565,6 +575,9 @@ create index if not exists recommendation_sessions_couple_idx
   on public.recommendation_sessions(couple_id, updated_at desc) where couple_id is not null;
 create index if not exists recommendation_course_steps_session_order_idx
   on public.recommendation_course_steps(session_id, step_order);
+create unique index if not exists recommendation_course_steps_current_provider_place_identity_key
+  on public.recommendation_course_steps(session_id, current_place_provider, current_provider_place_id)
+  where current_place_provider is not null and current_provider_place_id is not null;
 create index if not exists recommendation_step_events_session_created_idx
   on public.recommendation_step_events(session_id, created_at desc);
 
@@ -2028,3 +2041,12 @@ create trigger preserve_recommendation_step_intent_tags
 before update of latest_request on public.recommendation_sessions
 for each row
 execute function public.preserve_recommendation_step_intent_tags();
+-- Remote minimum-version gate. Public read is intentional: it contains only
+-- release policy metadata and lets the app enforce an update before login.
+create table if not exists public.app_version_policies (
+  platform text primary key check (platform in ('ios')),
+  minimum_version text not null check (minimum_version ~ '^[0-9]([.][0-9]){0,2}$'),
+  store_url text not null check (store_url ~ '^https://apps[.]apple[.]com/'),
+  enforced boolean not null default false,
+  updated_at timestamptz not null default now()
+);

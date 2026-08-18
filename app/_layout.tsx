@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,8 +16,13 @@ import { buildPushNavigationTarget, type PushNotificationType } from '../lib/pus
 import { ensureStartupPermissions } from '../lib/startupPermissions';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
 import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
+import { loadIosVersionPolicy, resolveAppVersionPolicy } from '../lib/app-version-policy';
+import { withStartupTimeout } from '../lib/startup-timeout';
 
 SplashScreen.preventAutoHideAsync();
+
+const VERSION_POLICY_TIMEOUT_MS = 2_000;
+const STARTUP_ROUTE_TIMEOUT_MS = 2_000;
 
 async function rememberInviteUrl(url?: string | null) {
   const code = parseInviteCodeFromUrl(url);
@@ -63,6 +70,7 @@ async function getDestination(session: Session | null): Promise<string> {
 
 export default function RootLayout() {
   const router = useRouter();
+  const [updateStoreUrl, setUpdateStoreUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function routeForSession(session: Session | null) {
@@ -72,13 +80,35 @@ export default function RootLayout() {
 
     (async () => {
       try {
-        await rememberInviteUrl(await ExpoLinking.getInitialURL());
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) void ensureStartupPermissions();
-        await routeForSession(session);
+        const routed = await withStartupTimeout(
+          (async () => {
+            await rememberInviteUrl(await ExpoLinking.getInitialURL());
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) void ensureStartupPermissions();
+            await routeForSession(session);
+            return true;
+          })(),
+          false,
+          STARTUP_ROUTE_TIMEOUT_MS,
+        );
+        if (!routed) router.replace('/(auth)');
       } finally {
         await SplashScreen.hideAsync();
       }
+    })();
+
+    void (async () => {
+      const currentVersion = Constants.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '';
+      if (!currentVersion) return;
+      const versionPolicy = await resolveAppVersionPolicy(
+        currentVersion,
+        () => withStartupTimeout(loadIosVersionPolicy(), {
+          enforced: false,
+          minimumIosVersion: currentVersion,
+          storeUrl: '',
+        }, VERSION_POLICY_TIMEOUT_MS),
+      );
+      if (versionPolicy.blocked && versionPolicy.storeUrl) setUpdateStoreUrl(versionPolicy.storeUrl);
     })();
 
     const urlSubscription = ExpoLinking.addEventListener('url', ({ url }) => {
@@ -115,6 +145,18 @@ export default function RootLayout() {
     };
   }, []);
 
+  if (updateStoreUrl) {
+    return (
+      <View style={styles.updateScreen}>
+        <Text style={styles.updateTitle}>새 버전이 필요해요</Text>
+        <Text style={styles.updateBody}>계속 이용하려면 Date Navi를 최신 버전으로 업데이트해 주세요.</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={() => void Linking.openURL(updateStoreUrl)} style={styles.updateButton}>
+          <Text style={styles.updateButtonText}>App Store에서 업데이트</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <I18nProvider>
       <RecommendationSessionProvider>
@@ -140,3 +182,11 @@ export default function RootLayout() {
     </I18nProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  updateScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#fff9fc' },
+  updateTitle: { fontSize: 27, fontWeight: '800', color: '#252029', marginBottom: 14 },
+  updateBody: { fontSize: 16, lineHeight: 24, color: '#756b72', textAlign: 'center', marginBottom: 28 },
+  updateButton: { alignSelf: 'stretch', minHeight: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111' },
+  updateButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+});

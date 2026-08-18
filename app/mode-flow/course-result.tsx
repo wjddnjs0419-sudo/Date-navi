@@ -35,8 +35,18 @@ import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
 
 type ReplacementCandidateGroups = {
-  top: ReplacementCandidate[];
-  additional: ReplacementCandidate[];
+  top: Array<ReplacementCandidate | ProviderReplacementCandidate>;
+  additional: Array<ReplacementCandidate | ProviderReplacementCandidate>;
+};
+
+type ProviderReplacementCandidate = {
+  candidateId: string;
+  providerPlaceId: string;
+  name: string;
+  address: string;
+  roadAddress: string;
+  latitude: number;
+  longitude: number;
 };
 
 const EMPTY_REPLACEMENT_CANDIDATE_GROUPS: ReplacementCandidateGroups = { top: [], additional: [] };
@@ -109,6 +119,7 @@ export default function CourseResultScreen() {
   const [replacementTargetId, setReplacementTargetId] = useState<string | null>(null);
   const [replacementCandidates, setReplacementCandidates] = useState<ReplacementCandidateGroups>(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
   const [replacementCandidateListAttestationId, setReplacementCandidateListAttestationId] = useState<string | null>(null);
+  const [providerReplacementAttestationId, setProviderReplacementAttestationId] = useState<string | null>(null);
   const [replacementTab, setReplacementTab] = useState<'recommend' | 'search'>('recommend');
   const [actionSheetStepId, setActionSheetStepId] = useState<string | null>(null);
   // "Search a place"로 이동하는 동안 대상 스텝(replacementTargetId)은 유지한 채
@@ -161,6 +172,7 @@ export default function CourseResultScreen() {
   }
 
   function toLockedStep(step: RecommendationSessionSnapshot['steps'][number]) {
+    if (!step.currentKakaoPlaceId) throw new Error('Provider-neutral session editing is not available yet.');
     return {
       stepId: step.stepId,
       candidateId: step.currentCandidateId,
@@ -176,7 +188,7 @@ export default function CourseResultScreen() {
   }
 
   async function regenerateUnlocked(targetStepId?: string) {
-    if (!snapshot || snapshot.status === 'confirmed') return;
+    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
     setEditing(true);
     setEditError('');
     try {
@@ -191,7 +203,7 @@ export default function CourseResultScreen() {
         lockedSteps: lockedSteps.length > 0 ? lockedSteps : undefined,
         excludedPlaceIds: [...new Set([
           ...(snapshot.request.excludedPlaceIds ?? []),
-          ...snapshot.steps.filter((step) => targetStepId ? step.stepId === targetStepId : !step.locked).map((step) => step.currentKakaoPlaceId),
+          ...snapshot.steps.filter((step) => targetStepId ? step.stepId === targetStepId : !step.locked).flatMap((step) => step.currentKakaoPlaceId ? [step.currentKakaoPlaceId] : []),
         ])],
       };
       await requestRecommendationResponse(request);
@@ -212,6 +224,20 @@ export default function CourseResultScreen() {
     setEditing(true);
     setEditError('');
     try {
+      const target = snapshot.steps.find((step) => step.stepId === targetStepId);
+      if (target?.currentPlaceIdentity?.provider === 'naver') {
+        const { data, error } = await supabase.functions.invoke('provider-neutral-replacements', {
+          body: { action: 'list', sessionId: snapshot.sessionId, targetStepId },
+        });
+        if (error || !data || data.targetStepId !== targetStepId || typeof data.attestationId !== 'string' || !Array.isArray(data.candidates)) throw error ?? new Error('Invalid Naver candidates');
+        setReplacementTab('recommend');
+        setReplacementTargetId(targetStepId);
+        setReplacementCandidates({ top: data.candidates.slice(0, 3) as ProviderReplacementCandidate[], additional: data.candidates.slice(3, 15) as ProviderReplacementCandidate[] });
+        setProviderReplacementAttestationId(data.attestationId);
+        setReplacementCandidateListAttestationId(null);
+        return;
+      }
+      if (snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
       const { data, error } = await supabase.functions.invoke('replacement-candidates', {
         body: { sessionId: snapshot.sessionId, targetStepId },
       });
@@ -224,6 +250,7 @@ export default function CourseResultScreen() {
         additional: data.additional.slice(0, 12) as ReplacementCandidate[],
       });
       setReplacementCandidateListAttestationId(data.candidateListAttestationId);
+      setProviderReplacementAttestationId(null);
     } catch {
       setEditError(t('modeFlow.courseResult.editError'));
     } finally {
@@ -231,8 +258,22 @@ export default function CourseResultScreen() {
     }
   }
 
+  async function replaceWithProviderCandidate(targetStepId: string, candidate: ProviderReplacementCandidate) {
+    if (!snapshot || !providerReplacementAttestationId) return;
+    setEditing(true); setEditError('');
+    try {
+      const { error } = await supabase.functions.invoke('provider-neutral-replacements', {
+        body: { action: 'apply', sessionId: snapshot.sessionId, targetStepId, attestationId: providerReplacementAttestationId, providerPlaceId: candidate.providerPlaceId },
+      });
+      if (error) throw error;
+      const next = await loadRecommendationSession(snapshot.sessionId, snapshot.requestId);
+      setSnapshot(next);
+      setReplacementTargetId(null); setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS); setProviderReplacementAttestationId(null);
+    } catch { setEditError(t('modeFlow.courseResult.editError')); } finally { setEditing(false); }
+  }
+
   async function replaceWithCandidate(targetStepId: string, kakaoPlaceId: string, pickedName?: string) {
-    if (!snapshot) return;
+    if (!snapshot || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
     setEditing(true);
     setEditError('');
     try {
@@ -250,7 +291,7 @@ export default function CourseResultScreen() {
             : {}),
         },
         lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map(toLockedStep),
-        excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.map((step) => step.currentKakaoPlaceId)])],
+        excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.flatMap((step) => step.currentKakaoPlaceId ? [step.currentKakaoPlaceId] : [])])],
       };
       const response = await requestRecommendationResponse(request);
       const replaced = response.course.steps.find((step) => step.stepId === targetStepId && step.kakaoPlaceId === kakaoPlaceId);
@@ -260,6 +301,7 @@ export default function CourseResultScreen() {
       setReplacementTargetId(null);
       setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
       setReplacementCandidateListAttestationId(null);
+      setProviderReplacementAttestationId(null);
       router.replace({ pathname: '/mode-flow/course-result', params: buildStructuredCourseResultParams(next.requestId, next.sessionId) } as any);
     } catch {
       setEditError(t('modeFlow.courseResult.editError'));
@@ -269,7 +311,7 @@ export default function CourseResultScreen() {
   }
 
   async function addVerifiedStep() {
-    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.length >= 4) return;
+    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.length >= 4 || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
     setEditing(true);
     setEditError('');
     try {
@@ -392,6 +434,7 @@ export default function CourseResultScreen() {
     setReplacementTargetId(null);
     setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
     setReplacementCandidateListAttestationId(null);
+    setProviderReplacementAttestationId(null);
   }
 
   // 직접 검색 탭에서 고른 장소는 브리지로 돌아온다. 열려 있는 교체 대상 스텝에
@@ -551,11 +594,11 @@ export default function CourseResultScreen() {
                   {step.reason ? <Text numberOfLines={2} style={s.timelineReason}>{step.reason}</Text> : null}
                   <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
                   <View style={s.cardActions}>
-                    <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId, mapUrl: step.mapUrl })} style={s.cardActionBtn}>
+                    {(step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId) && <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId!, mapUrl: step.mapUrl })} style={s.cardActionBtn}>
                       <Text style={s.cardActionText}>{t('modeFlow.courseResult.placeReviews')}</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity>}
                     {snapshot.status !== 'confirmed' && (
-                      <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked} onPress={() => void loadReplacementCandidates(step.stepId)} style={[s.cardActionBtn, step.locked && s.cardActionBtnDisabled]}>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')} onPress={() => void loadReplacementCandidates(step.stepId)} style={[s.cardActionBtn, (step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')) && s.cardActionBtnDisabled]}>
                         <Text style={s.cardActionText}>{t('modeFlow.courseResult.otherPlaceBtn')}</Text>
                       </TouchableOpacity>
                     )}
@@ -618,30 +661,26 @@ export default function CourseResultScreen() {
                   <ScrollView style={s.replacementList} showsVerticalScrollIndicator={false}>
                     <View testID="course-replacement-top-group">
                       {replacementCandidates.top.map((candidate) => (
-                        <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
+                        <View key={'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId} style={s.replacementRow}>
                           <View style={s.replacementCopy}>
                             <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            <View style={s.externalActions}>
-                              <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity>
-                            </View>
+                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>
                       ))}
                     </View>
                     <View testID="course-replacement-additional-group">
                       {replacementCandidates.additional.map((candidate) => (
-                        <View key={candidate.kakaoPlaceId} style={s.replacementRow}>
+                        <View key={'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId} style={s.replacementRow}>
                           <View style={s.replacementCopy}>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            <View style={s.externalActions}>
-                              <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity>
-                            </View>
+                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>
                       ))}
                     </View>

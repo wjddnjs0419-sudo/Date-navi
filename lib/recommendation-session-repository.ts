@@ -38,9 +38,14 @@ const stepRowSchema = z.object({
   category: nonEmpty,
   label: nonEmpty,
   original_candidate_id: nonEmpty,
-  original_kakao_place_id: nonEmpty,
+  original_kakao_place_id: nonEmpty.nullable().optional(),
+  original_place_provider: z.enum(['kakao', 'naver']).nullable().optional(),
+  original_provider_place_id: nonEmpty.nullable().optional(),
   current_candidate_id: nonEmpty,
-  current_kakao_place_id: nonEmpty,
+  current_kakao_place_id: nonEmpty.nullable().optional(),
+  current_kakao_link_place_id: nonEmpty.nullable().optional(),
+  current_place_provider: z.enum(['kakao', 'naver']).nullable().optional(),
+  current_provider_place_id: nonEmpty.nullable().optional(),
   place_name: nonEmpty,
   address: z.string(),
   road_address: z.string(),
@@ -65,9 +70,13 @@ export type RecommendationSessionStep = {
   category: string;
   label: string;
   originalCandidateId: string;
-  originalKakaoPlaceId: string;
+  originalKakaoPlaceId?: string;
+  originalPlaceIdentity?: { provider: 'kakao' | 'naver'; providerPlaceId: string };
   currentCandidateId: string;
-  currentKakaoPlaceId: string;
+  currentKakaoPlaceId?: string;
+  /** Verified map/review link; not the identity of a Naver place. */
+  currentKakaoLinkPlaceId?: string;
+  currentPlaceIdentity?: { provider: 'kakao' | 'naver'; providerPlaceId: string };
   placeName: string;
   address: string;
   roadAddress: string;
@@ -169,6 +178,12 @@ export function mapRecommendationSessionPayload(input: unknown): RecommendationS
 
     const steps = payload.steps.map((row, index): RecommendationSessionStep => {
       const courseStep = response.course.steps[index];
+      const currentIdentity = row.current_place_provider && row.current_provider_place_id
+        ? { provider: row.current_place_provider, providerPlaceId: row.current_provider_place_id }
+        : row.current_kakao_place_id ? { provider: 'kakao' as const, providerPlaceId: row.current_kakao_place_id } : undefined;
+      const originalIdentity = row.original_place_provider && row.original_provider_place_id
+        ? { provider: row.original_place_provider, providerPlaceId: row.original_provider_place_id }
+        : row.original_kakao_place_id ? { provider: 'kakao' as const, providerPlaceId: row.original_kakao_place_id } : undefined;
       if (row.session_id !== payload.session.id
         || row.step_order !== index + 1
         || !courseStep
@@ -176,7 +191,8 @@ export function mapRecommendationSessionPayload(input: unknown): RecommendationS
         || row.category !== courseStep.category
         || row.label !== courseStep.label
         || row.current_candidate_id !== courseStep.candidateId
-        || row.current_kakao_place_id !== courseStep.kakaoPlaceId
+        || ((currentIdentity?.provider === 'kakao' ? row.current_kakao_place_id : row.current_kakao_link_place_id) ?? undefined) !== courseStep.kakaoPlaceId
+        || JSON.stringify(currentIdentity) !== JSON.stringify(courseStep.placeIdentity ?? (courseStep.kakaoPlaceId ? { provider: 'kakao', providerPlaceId: courseStep.kakaoPlaceId } : undefined))
         || row.place_name !== courseStep.name
         || row.address !== courseStep.address
         || row.road_address !== courseStep.roadAddress
@@ -194,9 +210,12 @@ export function mapRecommendationSessionPayload(input: unknown): RecommendationS
         category: row.category,
         label: row.label,
         originalCandidateId: row.original_candidate_id,
-        originalKakaoPlaceId: row.original_kakao_place_id,
+        ...(row.original_kakao_place_id ? { originalKakaoPlaceId: row.original_kakao_place_id } : {}),
+        ...(originalIdentity ? { originalPlaceIdentity: originalIdentity } : {}),
         currentCandidateId: row.current_candidate_id,
-        currentKakaoPlaceId: row.current_kakao_place_id,
+        ...(row.current_kakao_place_id ? { currentKakaoPlaceId: row.current_kakao_place_id } : {}),
+        ...(row.current_kakao_link_place_id ? { currentKakaoLinkPlaceId: row.current_kakao_link_place_id } : {}),
+        ...(currentIdentity ? { currentPlaceIdentity: currentIdentity } : {}),
         placeName: row.place_name,
         address: row.address,
         roadAddress: row.road_address,

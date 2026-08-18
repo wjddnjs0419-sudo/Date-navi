@@ -3,6 +3,7 @@ import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { effectiveStepIntents, parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 import { retrieveGeneratedFoodIntents } from './food-intent-dictionary.ts';
 import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
+import type { ProviderNeutralCandidate } from './provider-neutral-course-selection.ts';
 
 export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v6-step-tags';
 export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v2';
@@ -97,6 +98,32 @@ export function buildRecommendationPrompt(
     JSON.stringify(structuredConstraints, null, 2),
     'Verified Kakao candidates:',
     JSON.stringify(verifiedCandidates, null, 2),
+  ].join('\n');
+}
+
+export function buildProviderNeutralRecommendationPrompt(
+  request: RecommendationRequest,
+  candidates: readonly ProviderNeutralCandidate[],
+): string {
+  return [
+    'Select one qualified candidate for every requested date-course step.',
+    'Return only stepId and candidateId. Never invent a place or use an ID outside the supplied candidates.',
+    `Return exactly ${request.courseSteps.length} entries in request order.`,
+    'A candidate may be selected only once.',
+    'Requested steps:',
+    JSON.stringify(request.courseSteps.map((step) => ({ stepId: step.id, category: step.category, label: step.label })), null, 2),
+    'Qualified provider-neutral candidates:',
+    JSON.stringify(candidates.map((candidate) => ({
+      candidateId: candidate.candidateId,
+      placeIdentity: candidate.place.identity,
+      name: candidate.place.name,
+      normalizedCategory: candidate.place.category.normalized,
+      providerCategory: candidate.place.category.providerRaw ?? null,
+      address: candidate.place.address?.display ?? null,
+      distanceFromSearchCenterMeters: candidate.distanceFromSearchCenterMeters,
+      popularityBonus: candidate.popularityBonus,
+    })), null, 2),
+    'Strict JSON: {"steps":[{"stepId":"<requested-step-id>","candidateId":"<candidate-id>"}]}.',
   ].join('\n');
 }
 

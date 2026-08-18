@@ -1,6 +1,7 @@
 import {
   deserializeRecommendationRequest,
   recommendDateMetadataSchema,
+  recommendDateResponseSchema,
   recommendationCourseSchema,
   recommendationRequestSchema,
   serializeRecommendationRequest,
@@ -198,6 +199,75 @@ describe('RecommendationCourse contracts', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('accepts a Naver course step with a provider-scoped identity and no Kakao ID', () => {
+    const naverCourse = {
+      ...course,
+      steps: course.steps.map((step, index) => ({
+        ...step,
+        label: index === 0 ? '저녁 식사' : '카페',
+        address: '서울 성동구',
+        roadAddress: '서울 성동구 연무장길',
+        mapUrl: '',
+        ...(index === 0
+          ? {
+            kakaoPlaceId: undefined,
+            placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/v5/entry/place/12345' },
+          }
+          : { placeIdentity: { provider: 'kakao', providerPlaceId: step.kakaoPlaceId } }),
+      })),
+    };
+
+    expect(recommendationCourseSchema.safeParse(naverCourse).success).toBe(true);
+  });
+
+  it('accepts an optional Kakao review link without changing a Naver provider identity', () => {
+    const naverCourse = {
+      ...course,
+      steps: course.steps.map((step, index) => ({
+        ...step,
+        label: index === 0 ? '저녁' : '카페',
+        address: '서울',
+        roadAddress: '서울',
+        mapUrl: index === 0 ? 'https://place.map.kakao.com/kakao-review-link' : '',
+        ...(index === 0
+          ? { kakaoPlaceId: 'kakao-review-link', placeIdentity: { provider: 'naver', providerPlaceId: 'naver-place-001' } }
+          : { placeIdentity: { provider: 'kakao', providerPlaceId: step.kakaoPlaceId } }),
+      })),
+    };
+
+    expect(recommendationCourseSchema.safeParse(naverCourse).success).toBe(true);
+  });
+
+  it('requires card steps to echo a Naver provider identity instead of inventing a Kakao ID', () => {
+    const response = {
+      requestId: 'request-001',
+      course: {
+        requestId: 'request-001',
+        sessionId: 'session-001',
+        relaxedConstraints: [],
+        generatedAt: '2026-07-14T00:00:00.000Z',
+        steps: [
+          { stepId: 'meal', order: 1, category: 'restaurant', label: '저녁', candidateId: 'n1', placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/p/1' }, name: '식당', address: '서울', roadAddress: '서울', mapUrl: 'https://map.naver.com/p/1', latitude: 37.5, longitude: 127, reason: '검증됨', locked: false },
+          { stepId: 'cafe', order: 2, category: 'cafe', label: '카페', candidateId: 'k1', kakaoPlaceId: 'k1', placeIdentity: { provider: 'kakao', providerPlaceId: 'k1' }, name: '카페', address: '서울', roadAddress: '서울', mapUrl: '', latitude: 37.5, longitude: 127, reason: '검증됨', locked: false },
+        ],
+      },
+      cards: [{
+        requestId: 'request-001', sessionId: 'session-001', title: '코스', summary: '요약', tags: [], why_recommended: '이유',
+        steps: [
+          { label: '저녁', candidateId: 'n1', placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/p/1' }, place_name: '식당', place_address: '서울', map_url: 'https://map.naver.com/p/1' },
+          { label: '카페', candidateId: 'k1', kakaoPlaceId: 'k1', placeIdentity: { provider: 'kakao', providerPlaceId: 'k1' }, place_name: '카페', place_address: '서울' },
+        ],
+      }],
+      metadata: {
+        fallbackUsed: false, selectionSource: 'ai', selectionReason: 'none',
+        search: { requestCount: 1, successfulCount: 1, failedCount: 0, rateLimitedCount: 0, timeoutCount: 0, candidateCount: 2 },
+        route: { distanceMethod: 'haversine_straight_line', adjacentDistanceMeters: [0], totalDistanceMeters: 0, walkingHeuristicMetersPerMinute: 80, walkingLimitAssessment: 'not_requested', hardConstraintValidated: false },
+      },
+    };
+
+    expect(recommendDateResponseSchema.safeParse(response).success).toBe(true);
   });
 });
 

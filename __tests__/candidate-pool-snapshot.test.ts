@@ -21,7 +21,7 @@ describe('buildCandidatePoolSnapshots', () => {
     });
 
     expect(snapshots).toEqual([{
-      candidateId: 'candidate_001', kakaoPlaceId: 'place-1', category: '음식점 > 한식', rank: 1,
+      candidateId: 'candidate_001', kakaoPlaceId: 'place-1', placeIdentity: { provider: 'kakao', providerPlaceId: 'place-1' }, category: '음식점 > 한식', rank: 1,
       totalScore: 17, scoreBreakdown: candidate.scoreBreakdown, distanceFromSearchCenterMeters: 123,
       priceAtRanking: { source: 'estimated', minKRW: 12000, maxKRW: 22000 },
       selectedInitially: true, forced: true, pinned: true, reintroducedByHistory: true,
@@ -33,5 +33,21 @@ describe('buildCandidatePoolSnapshots', () => {
   it('records unknown pricing when ranking had no ledger result', () => {
     expect(buildCandidatePoolSnapshots({ candidates: [{ ...candidate, priceAtRanking: undefined }] })[0].priceAtRanking)
       .toEqual({ source: 'unknown', minKRW: null, maxKRW: null });
+  });
+
+  it('preserves a Naver provider identity without writing it into the Kakao field', () => {
+    const [snapshot] = buildCandidatePoolSnapshots({
+      candidates: [{
+        ...candidate,
+        kakaoPlaceId: undefined,
+        placeIdentity: { provider: 'naver' as const, providerPlaceId: 'https://map.naver.com/p/123' },
+      }],
+    });
+
+    expect(snapshot).toMatchObject({
+      candidateId: 'candidate_001',
+      placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/p/123' },
+    });
+    expect(snapshot).not.toHaveProperty('kakaoPlaceId');
   });
 });

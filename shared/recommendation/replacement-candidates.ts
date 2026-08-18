@@ -73,7 +73,8 @@ export function rankReplacementCandidates(input: {
   const history = input.history ?? EMPTY_RECOMMENDATION_HISTORY;
   const adjacentKakaoPlaceIds = [input.previous, input.next]
     .filter((step): step is RecommendationCourseStep => Boolean(step))
-    .map((step) => step.kakaoPlaceId);
+    .map((step) => step.kakaoPlaceId)
+    .filter((id): id is string => Boolean(id));
   const pool = input.candidates
     // The Edge supplies category-compatible input. Current course IDs remain absolute exclusions.
     .filter((candidate) => !existing.has(candidate.kakaoPlaceId))

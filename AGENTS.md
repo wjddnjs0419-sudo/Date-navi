@@ -163,6 +163,8 @@ handleGenerateAiOptions()
 
 ## 🚫 Anti-Patterns & Lessons Learned
 
+- Node 25 환경에서 TypeScript 5.9의 대규모 flow analysis가 기본 호출 스택을 초과할 수 있다 — 검증 스크립트는 `node --stack_size=8192 ./node_modules/typescript/bin/tsc --noEmit`로 실행한다.
+
 - Anthropic structured output 스키마에 `integer` + `minimum`/`maximum` 금지 — 400 ("For 'integer' type, properties maximum, minimum are not supported"). 범위는 파서(zod)에서 검증한다.
 - 사용자가 손으로 고른 장소(교체·핀)는 `rankPlaceCandidates`의 `limit` 컷에서 보호할 것 — 잘리면 서버가 그 장소를 못 찾아 422(교체)·STEP_PIN_UNAVAILABLE(핀)로 나온다.
 - `.map(toOption)` 사용 금지 — array index가 두 번째 인자로 넘어가 타입 충돌 발생. 항상 `.map((row) => toOption(row))`로 래핑.

@@ -102,7 +102,10 @@ export type RecommendationCourseStep = {
   category: string;
   label: string;
   candidateId: string;
-  kakaoPlaceId: string;
+  /** Legacy compatibility field. Present for Kakao places only. */
+  kakaoPlaceId?: string;
+  /** Stable provider-scoped identity; omitted only by pre-V3 Kakao responses. */
+  placeIdentity?: { provider: 'kakao' | 'naver'; providerPlaceId: string };
   name: string;
   address: string;
   roadAddress: string;

@@ -7,6 +7,7 @@ import {
 } from '../../../shared/recommendation/schemas.ts';
 import {
   buildRecommendationPrompt,
+  buildProviderNeutralRecommendationPrompt,
   RECOMMEND_DATE_PROMPT_VERSION,
 } from './recommendation-prompt.ts';
 import { resolveStepIntents } from './step-intent-resolve.ts';
@@ -39,6 +40,12 @@ import {
 } from '../../../shared/recommendation/history-experiment.ts';
 import type { RecommendationHistoryLoad } from './recommendation-history.ts';
 import type { LockResult, QuotaResult } from './ai-rate-limit.ts';
+import {
+  buildProviderNeutralCourse,
+  ProviderNeutralCourseSelectionError,
+  type ProviderNeutralCandidate,
+} from './provider-neutral-course-selection.ts';
+import type { ProviderNeutralDiscoveryResult } from './provider-neutral-discovery-pipeline.ts';
 
 // 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
 // AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
@@ -67,6 +74,21 @@ export type RecommendDateDependencies = {
     request: RecommendationRequest,
     history: RecommendationHistoryContext,
   ) => Promise<RecommendationSearchPipelineResult>;
+  /** V3 provider boundary. Supplying this enables Naver-first discovery for fresh, unpinned courses. */
+  searchProviderNeutralCandidates?: (request: RecommendationRequest) => Promise<ProviderNeutralDiscoveryResult>;
+  /**
+   * Optional post-selection enrichment. It never participates in discovery or
+   * eligibility: a Kakao ID returned here is only a high-confidence map/review
+   * link for an already selected Naver place.
+   */
+  resolveProviderNeutralKakaoLinks?: (candidates: readonly ProviderNeutralCandidate[]) => Promise<ReadonlyMap<string, { kakaoPlaceId: string; mapUrl: string }>>;
+  /** De-identified provider-neutral failure telemetry for live rollout diagnosis. */
+  onProviderNeutralFailure?: (input: {
+    stage: 'candidate_count' | 'selection_unavailable';
+    requestedCategories: string[];
+    candidateCount: number;
+    candidateCategories: Record<string, number>;
+  }) => void;
   /** Server-only history dependency. No request field can select an experiment arm or inject history. */
   loadHistory?: (input: {
     authenticatedUserId: string;
@@ -99,7 +121,7 @@ export type RecommendDateDependencies = {
     ownerUserId: string;
     request: RecommendationRequest;
     response: import('../../../shared/recommendation/schemas.ts').RecommendDateResponse;
-  }) => Promise<void>;
+  }) => Promise<import('../../../shared/recommendation/schemas.ts').RecommendDateResponse | void>;
   onCourseValidationFailure?: (stage: CourseValidationFailureStage) => void;
   /** 응답과 무관한 부가 기록(장소 원장). 던져도 무시된다 — 원본 흐름을 절대 실패시키지 않는다. */
   recordPlaceKnowledge?: (input: { places: PlaceCandidate[] }) => void;
@@ -262,6 +284,205 @@ export async function handleRecommendDate(
       ...(historyExperimentMetadata ? { historyExperiment: historyExperimentMetadata } : {}),
     },
   });
+
+  // Provider-neutral rollout is deliberately limited to fresh courses until
+  // the editable-session RPC has completed its additive identity migration.
+  // Existing Kakao pins, replacements, and persisted locks retain the proven
+  // Kakao-only path below rather than being silently reinterpreted.
+  const canUseProviderNeutralPath = Boolean(dependencies.searchProviderNeutralCandidates)
+    && !serverRequest.sessionId
+    && !serverRequest.replacement
+    && !(serverRequest.lockedSteps?.length)
+    && !serverRequest.courseSteps.some((step) => step.pinnedKakaoPlaceId);
+  if (canUseProviderNeutralPath) {
+    let providerDiscovery: ProviderNeutralDiscoveryResult;
+    try {
+      providerDiscovery = await dependencies.searchProviderNeutralCandidates!(intentAwareRequest);
+    } catch {
+      return withHistory(errorResult(504, 'PLACE_SEARCH_TIMEOUT'));
+    }
+    const providerNeutralFailure = (stage: 'candidate_count' | 'selection_unavailable') => {
+      const candidateCategories = providerDiscovery.candidates.reduce<Record<string, number>>((counts, candidate) => {
+        const category = candidate.place.category.normalized;
+        counts[category] = (counts[category] ?? 0) + 1;
+        return counts;
+      }, {});
+      dependencies.onProviderNeutralFailure?.({
+        stage,
+        requestedCategories: serverRequest.courseSteps.map((step) => step.category),
+        candidateCount: providerDiscovery.candidates.length,
+        candidateCategories,
+      });
+    };
+    if (providerDiscovery.candidates.length < serverRequest.courseSteps.length) {
+      providerNeutralFailure('candidate_count');
+      return withHistory(errorResult(422, 'INSUFFICIENT_CANDIDATES'));
+    }
+    const deterministicSelection = (): { steps: Array<{ stepId: string; candidateId: string }> } | undefined => {
+      const used = new Set<string>();
+      const steps = serverRequest.courseSteps.map((step) => {
+        const requested = step.category === 'restaurant' ? 'meal' : step.category === 'bar' ? 'drinks' : step.category;
+        const candidate = providerDiscovery.candidates.find((entry) => (
+          !used.has(entry.candidateId)
+          && (requested === 'ai_decide' || entry.place.category.normalized === requested)
+        ));
+        if (!candidate) return undefined;
+        used.add(candidate.candidateId);
+        return { stepId: step.id, candidateId: candidate.candidateId };
+      });
+      return steps.every((step): step is { stepId: string; candidateId: string } => Boolean(step)) ? { steps } : undefined;
+    };
+    let fallbackUsed = false;
+    let selectionReason: 'none' | 'ai_timeout' | 'ai_malformed' | 'ai_invalid_selection' | 'ai_route_constraint' | 'ai_unavailable' = 'none';
+    let selection: unknown;
+    if (dependencies.rateLimit) {
+      try {
+        const quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id });
+        if (!quota.allowed) return quota.limitType === 'burst'
+          ? withHistory(rateLimitResult(429, 'AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: quota.retryAfterSeconds }))
+          : withHistory(rateLimitResult(429, 'AI_DAILY_LIMIT_REACHED', { limitType: 'daily', resetsAt: quota.resetsAt }));
+      } catch {
+        return withHistory(errorResult(503, 'AI_LIMIT_UNAVAILABLE'));
+      }
+    }
+    try {
+      selection = await dependencies.generateSelection({
+        authorization,
+        prompt: buildProviderNeutralRecommendationPrompt(intentAwareRequest, providerDiscovery.candidates),
+        promptVersion: RECOMMEND_DATE_PROMPT_VERSION,
+      });
+    } catch (error) {
+      fallbackUsed = true;
+      selectionReason = error instanceof RecommendDateDownstreamTimeoutError ? 'ai_timeout' : 'ai_unavailable';
+      selection = deterministicSelection();
+    }
+    if (!fallbackUsed && !candidateOnlySelectionSchema.safeParse(selection).success) {
+      fallbackUsed = true;
+      selectionReason = 'ai_malformed';
+      selection = deterministicSelection();
+    }
+    if (!selection) {
+      providerNeutralFailure('selection_unavailable');
+      return withHistory(errorResult(422, 'INSUFFICIENT_CANDIDATES'));
+    }
+    let built: ReturnType<typeof buildProviderNeutralCourse>;
+    try {
+      built = buildProviderNeutralCourse({
+        request: intentAwareRequest,
+        candidates: providerDiscovery.candidates,
+        selection,
+        generatedAt: dependencies.now?.() ?? new Date().toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof ProviderNeutralCourseSelectionError && !fallbackUsed) {
+        fallbackUsed = true;
+        selectionReason = 'ai_invalid_selection';
+        const deterministic = deterministicSelection();
+        if (!deterministic) {
+          providerNeutralFailure('selection_unavailable');
+          return withHistory(errorResult(422, 'INSUFFICIENT_CANDIDATES'));
+        }
+        try {
+          built = buildProviderNeutralCourse({
+            request: intentAwareRequest,
+            candidates: providerDiscovery.candidates,
+            selection: deterministic,
+            generatedAt: dependencies.now?.() ?? new Date().toISOString(),
+          });
+        } catch {
+          return withHistory(errorResult(422, 'COURSE_VALIDATION_FAILED'));
+        }
+      } else if (error instanceof ProviderNeutralCourseSelectionError) {
+        return withHistory(errorResult(422, 'COURSE_VALIDATION_FAILED'));
+      } else {
+        return withHistory(courseValidationFailure(dependencies, 'course_build'));
+      }
+    }
+    let linkedCourse = built.course;
+    let linkedCards = built.cards;
+    if (dependencies.resolveProviderNeutralKakaoLinks) {
+      try {
+        const selected = providerDiscovery.candidates.filter((candidate) => (
+          candidate.place.identity.provider === 'naver'
+          && built.course.steps.some((step) => step.candidateId === candidate.candidateId)
+        ));
+        const links = await dependencies.resolveProviderNeutralKakaoLinks(selected);
+        if (links.size > 0) {
+          linkedCourse = {
+            ...built.course,
+            steps: built.course.steps.map((step) => {
+              const link = links.get(step.candidateId);
+              return link ? { ...step, kakaoPlaceId: link.kakaoPlaceId, mapUrl: link.mapUrl } : step;
+            }),
+          };
+          linkedCards = built.cards.map((card) => ({
+            ...card,
+            steps: card.steps?.map((step) => {
+              const link = step.candidateId ? links.get(step.candidateId) : undefined;
+              return link ? { ...step, kakaoPlaceId: link.kakaoPlaceId, map_url: link.mapUrl } : step;
+            }),
+          }));
+        }
+      } catch {
+        // The link is optional convenience metadata. It must not make a
+        // quality-qualified recommendation unavailable.
+      }
+    }
+    const response = recommendDateResponseSchema.safeParse({
+      requestId: serverRequest.requestId,
+      course: linkedCourse,
+      cards: linkedCards,
+      candidatePool: providerDiscovery.candidates.map((candidate, index) => ({
+        candidateId: candidate.candidateId,
+        placeIdentity: candidate.place.identity,
+        category: candidate.place.category.normalized,
+        rank: index + 1,
+        totalScore: candidate.popularityBonus,
+        scoreBreakdown: { intent: 0, distance: 0, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: candidate.popularityBonus },
+        distanceFromSearchCenterMeters: candidate.distanceFromSearchCenterMeters,
+        priceAtRanking: { source: 'unknown', minKRW: null, maxKRW: null },
+        selectedInitially: built.course.steps.some((step) => step.candidateId === candidate.candidateId),
+        forced: false,
+        pinned: false,
+        reintroducedByHistory: false,
+      })),
+      metadata: {
+        fallbackUsed,
+        selectionSource: fallbackUsed ? 'deterministic_fallback' : 'ai',
+        selectionReason,
+        search: {
+          requestCount: providerDiscovery.discovery.attemptsRun,
+          successfulCount: providerDiscovery.discovery.attemptsRun,
+          failedCount: 0,
+          rateLimitedCount: 0,
+          timeoutCount: 0,
+          candidateCount: providerDiscovery.candidates.length,
+        },
+        route: built.route,
+      },
+    });
+    if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
+    try {
+      validateRecommendDateResponseForRequest(serverRequest, response.data);
+    } catch {
+      return withHistory(courseValidationFailure(dependencies, 'request_response_validation'));
+    }
+    let attestedResponse = response.data;
+    if (dependencies.stageAttestation) {
+      try {
+        const existingResponse = await dependencies.stageAttestation({ ownerUserId: authenticatedUser.id, request: serverRequest, response: response.data });
+        if (existingResponse) {
+          const parsedExisting = recommendDateResponseSchema.safeParse(existingResponse);
+          if (!parsedExisting.success) throw new Error('existing attestation response is invalid');
+          validateRecommendDateResponseForRequest(serverRequest, parsedExisting.data);
+          attestedResponse = parsedExisting.data;
+        }
+      } catch {
+        return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
+      }
+    }
+    return withHistory({ status: 200, body: attestedResponse });
+  }
 
   let search: RecommendationSearchPipelineResult;
   try {
@@ -493,7 +714,9 @@ export async function handleRecommendDate(
     cards: built.cards,
     candidatePool: buildCandidatePoolSnapshots({
       candidates: search.candidates,
-      selectedKakaoPlaceIds: built.course.steps.map((step) => step.kakaoPlaceId),
+      selectedKakaoPlaceIds: built.course.steps
+        .map((step) => step.kakaoPlaceId)
+        .filter((id): id is string => Boolean(id)),
       forcedKakaoPlaceId: serverRequest.replacement?.kakaoPlaceId,
       pinnedKakaoPlaceIds: [
         ...serverRequest.courseSteps.map((step) => step.pinnedKakaoPlaceId),
@@ -554,9 +777,16 @@ export async function handleRecommendDate(
   } catch {
     return withHistory(courseValidationFailure(dependencies, 'request_response_validation'));
   }
+  let attestedLegacyResponse = response.data;
   if (dependencies.stageAttestation) {
     try {
-      await dependencies.stageAttestation({ ownerUserId: authenticatedUser.id, request: serverRequest, response: response.data });
+      const existingResponse = await dependencies.stageAttestation({ ownerUserId: authenticatedUser.id, request: serverRequest, response: response.data });
+      if (existingResponse) {
+        const parsedExisting = recommendDateResponseSchema.safeParse(existingResponse);
+        if (!parsedExisting.success) throw new Error('existing attestation response is invalid');
+        validateRecommendDateResponseForRequest(serverRequest, parsedExisting.data);
+        attestedLegacyResponse = parsedExisting.data;
+      }
     } catch {
       return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
     }
@@ -565,13 +795,13 @@ export async function handleRecommendDate(
     try {
       // 응답 스텝에는 Kakao 세분 카테고리가 없다 — 후보 풀에서 kakaoPlaceId로 역참조한다.
       // 후보 풀에 없는 스텝(이전 세션에서 잠긴 장소)은 그때 이미 기록됐으므로 건너뛴다.
-      const selectedPlaceIds = new Set(response.data.course.steps.map((step) => step.kakaoPlaceId));
+      const selectedPlaceIds = new Set(attestedLegacyResponse.course.steps.map((step) => step.kakaoPlaceId));
       dependencies.recordPlaceKnowledge({
         places: search.candidates.filter((candidate) => selectedPlaceIds.has(candidate.kakaoPlaceId)),
       });
     } catch { /* 부가 기록은 응답을 막지 않는다 */ }
   }
-  const { candidatePool: _candidatePool, ...publicResponse } = response.data;
+  const { candidatePool: _candidatePool, ...publicResponse } = attestedLegacyResponse;
   return withHistory({ status: 200, body: publicResponse });
   } finally {
     if (lockAcquired) {
