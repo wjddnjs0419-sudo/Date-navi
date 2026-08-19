@@ -23,13 +23,47 @@ const kakaoPlace = (overrides: Partial<NormalizedPlace> = {}): NormalizedPlace =
 });
 
 describe('resolveKakaoPlaceLink', () => {
-  it('returns a Kakao link only for one exact name, road-address, and nearby-coordinate match', async () => {
+  it('returns a Kakao link for one same-address, same-place match', async () => {
     const result = await resolveKakaoPlaceLink(naverPlace, async () => [kakaoPlace()]);
     expect(result).toEqual({ kakaoPlaceId: 'kakao-1', mapUrl: 'https://place.map.kakao.com/kakao-1' });
   });
 
+  it('allows branch suffix differences when the road address is the same', async () => {
+    const result = await resolveKakaoPlaceLink(naverPlace, async () => [kakaoPlace({
+      name: '역전할머니맥주 서울낙성대역직영점',
+      address: { display: '서울 관악구 봉천동 1 (1층)', road: '서울 관악구 남부순환로 1' },
+    })]);
+    expect(result).toEqual({ kakaoPlaceId: 'kakao-1', mapUrl: 'https://place.map.kakao.com/kakao-1' });
+  });
+
+  it('falls back to an address-only search when the provider names differ', async () => {
+    const queries: string[] = [];
+    const result = await resolveKakaoPlaceLink(naverPlace, async (query) => {
+      queries.push(query);
+      return query === naverPlace.address!.road ? [kakaoPlace({ name: '역전할머니맥주 서울낙성대역직영점' })] : [];
+    });
+    expect(queries).toEqual([
+      naverPlace.address!.road,
+    ]);
+    expect(result).toEqual({ kakaoPlaceId: 'kakao-1', mapUrl: 'https://place.map.kakao.com/kakao-1' });
+  });
+
+  it('falls back when the primary query returns only unrelated candidates', async () => {
+    const queries: string[] = [];
+    const result = await resolveKakaoPlaceLink(naverPlace, async (query) => {
+      queries.push(query);
+      if (query === naverPlace.address!.road) return [];
+      if (query === `${naverPlace.name} ${naverPlace.address!.road}`) return [kakaoPlace({ name: '역전할머니맥주 서울낙성대역직영점' })];
+      return [];
+    });
+    expect(queries).toEqual([
+      naverPlace.address!.road,
+      `${naverPlace.name} ${naverPlace.address!.road}`,
+    ]);
+    expect(result).toEqual({ kakaoPlaceId: 'kakao-1', mapUrl: 'https://place.map.kakao.com/kakao-1' });
+  });
+
   it.each([
-    ['different name', kakaoPlace({ name: '역전할머니맥주 서울대입구점' })],
     ['different road address', kakaoPlace({ address: { display: '서울 관악구 봉천동 2', road: '서울 관악구 남부순환로 2' } })],
     ['distant coordinate', kakaoPlace({ coordinates: { latitude: 37.477, longitude: 126.963 } })],
   ])('rejects a %s', async (_case, result) => {
