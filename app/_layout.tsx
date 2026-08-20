@@ -11,9 +11,6 @@ import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
 import { resolveOnboardingDestination } from '../lib/onboarding-routing';
-import * as Notifications from 'expo-notifications';
-import { buildPushNavigationTarget, type PushNotificationType } from '../lib/push';
-import { ensureStartupPermissions } from '../lib/startupPermissions';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
 import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
 import { loadIosVersionPolicy, resolveAppVersionPolicy } from '../lib/app-version-policy';
@@ -24,6 +21,7 @@ SplashScreen.preventAutoHideAsync();
 
 const VERSION_POLICY_TIMEOUT_MS = 2_000;
 const STARTUP_ROUTE_TIMEOUT_MS = 2_000;
+const SCREENSHOT_MODE = process.env.EXPO_PUBLIC_SCREENSHOT === '1';
 
 async function rememberInviteUrl(url?: string | null) {
   const code = parseInviteCodeFromUrl(url);
@@ -85,7 +83,10 @@ export default function RootLayout() {
           (async () => {
             await rememberInviteUrl(await ExpoLinking.getInitialURL());
             const { data: { session } } = await supabase.auth.getSession();
-            if (session) void ensureStartupPermissions();
+            if (session && !SCREENSHOT_MODE) {
+              const { ensureStartupPermissions } = require('../lib/startupPermissions');
+              void ensureStartupPermissions();
+            }
             await routeForSession(session);
             return true;
           })(),
@@ -128,21 +129,30 @@ export default function RootLayout() {
         setTimeout(() => {
           void routeForSession(session);
         }, 0);
-        if (event === 'SIGNED_IN') void ensureStartupPermissions();
+        if (event === 'SIGNED_IN' && !SCREENSHOT_MODE) {
+          const { ensureStartupPermissions } = require('../lib/startupPermissions');
+          void ensureStartupPermissions();
+        }
       }
     });
 
-    const notificationSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as { type?: PushNotificationType; card_id?: string };
-      if (!data?.type) return;
-      const target = buildPushNavigationTarget(data.type, { card_id: data.card_id });
-      router.push(target as any);
-    });
+    const notificationSubscription = SCREENSHOT_MODE
+      ? null
+      : (() => {
+        const Notifications = require('expo-notifications');
+        const { buildPushNavigationTarget } = require('../lib/push');
+        return Notifications.addNotificationResponseReceivedListener((response: any) => {
+          const data = response.notification.request.content.data as { type?: string; card_id?: string };
+          if (!data?.type) return;
+          const target = buildPushNavigationTarget(data.type, { card_id: data.card_id });
+          router.push(target as any);
+        });
+      })();
 
     return () => {
       subscription.unsubscribe();
       urlSubscription.remove();
-      notificationSubscription.remove();
+      notificationSubscription?.remove();
     };
   }, []);
 

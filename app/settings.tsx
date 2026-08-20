@@ -6,7 +6,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import * as Notifications from 'expo-notifications';
 import * as ExpoLocation from 'expo-location';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
@@ -183,6 +182,7 @@ export default function SettingsScreen() {
   }
 
   async function handleNotifications() {
+    const Notifications = require('expo-notifications');
     const { status, canAskAgain } = await Notifications.getPermissionsAsync();
 
     // 아직 한 번도 안 물어봤으면 iOS 권한 팝업을 띄운다(이때부터 설정에 알림 항목 생김).
