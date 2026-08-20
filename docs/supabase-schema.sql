@@ -2041,6 +2041,32 @@ create trigger preserve_recommendation_step_intent_tags
 before update of latest_request on public.recommendation_sessions
 for each row
 execute function public.preserve_recommendation_step_intent_tags();
+
+-- Authenticated analytics mirror. Firebase remains the full analytics source of truth;
+-- anonymous clients are deliberately unable to insert into this table.
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_name text not null,
+  user_id uuid default auth.uid() references auth.users(id) on delete set null,
+  params jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.analytics_events enable row level security;
+revoke all on table public.analytics_events from anon;
+revoke all on table public.analytics_events from authenticated;
+grant insert on table public.analytics_events to authenticated;
+drop policy if exists "Users can insert own events" on public.analytics_events;
+drop policy if exists analytics_events_authenticated_insert on public.analytics_events;
+create policy analytics_events_authenticated_insert on public.analytics_events
+  for insert to authenticated
+  with check (
+    auth.uid() is not null
+    and user_id = auth.uid()
+    and (auth.jwt() ->> 'is_anonymous') is distinct from 'true'
+  );
+create index if not exists analytics_events_event_name_idx on public.analytics_events (event_name);
+create index if not exists analytics_events_user_id_idx on public.analytics_events (user_id);
+create index if not exists analytics_events_created_at_idx on public.analytics_events (created_at desc);
 -- Remote minimum-version gate. Public read is intentional: it contains only
 -- release policy metadata and lets the app enforce an update before login.
 create table if not exists public.app_version_policies (

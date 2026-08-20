@@ -23,7 +23,6 @@ import {
   type IntentMode,
 } from './recommendation';
 import type { RecommendationSession } from './recommendationSession';
-import { logEvent } from './analytics';
 import { attachRecommendationIdentity, createRecommendationRequestId } from './recommendationIdentity';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
 import type { StructuredCourseInput } from './course-draft';
@@ -268,16 +267,6 @@ export async function regenerateDateCards(
       intentMode, session.candidates, session.intent, session.input, session.prefs, language, session.previousPlaceIds,
     );
     if (res.cards.length > 0) {
-      void logEvent('recommendation_regenerated', {
-        mode: session.mode,
-        intent_purpose: session.intent.purpose,
-        ranked_candidate_count: session.candidates.length,
-        final_recommendation_count: res.cards.length,
-        fallback_recommendation_count: res.fallbackCount,
-        claude_latency_ms: res.claudeLatencyMs,
-        claude_input_tokens: res.usage?.input_tokens,
-        claude_output_tokens: res.usage?.output_tokens,
-      });
     }
     return attachRecommendationIdentity(res.cards, { requestId, sessionId: session.sessionId });
   } catch {
@@ -332,26 +321,12 @@ export async function generateDateCards(
         const res = await runCandidateFlow(intentMode, candidates, intent, input, prefs, language, previousPlaceIds);
         if (res.cards.length > 0) {
           opts?.onSession?.({ intent, candidates, usedPlaceIds: collectPlaceIds(res.cards) });
-          void logEvent('recommendation_generated', {
-            mode,
-            intent_purpose: intent.purpose,
-            raw_candidate_count: search.places.length,
-            ranked_candidate_count: candidates.length,
-            haiku_candidate_count: Math.min(candidates.length, RECOMMENDATION_CONFIG.haikuCandidateLimit),
-            final_recommendation_count: res.cards.length,
-            fallback_recommendation_count: res.fallbackCount,
-            retrieval_latency_ms: retrievalLatencyMs,
-            claude_latency_ms: res.claudeLatencyMs,
-            claude_input_tokens: res.usage?.input_tokens,
-            claude_output_tokens: res.usage?.output_tokens,
-          });
           return attachRecommendationIdentity(res.cards, { requestId });
         }
       }
     }
     return attachRecommendationIdentity(await runFreeGenFlow(input, mode, prefs, language), { requestId });
   } catch {
-    void logEvent('recommendation_fallback', { mode, reason: 'error' });
     return attachRecommendationIdentity(FALLBACK_CARDS_BY_LANGUAGE[language], { requestId });
   }
 }

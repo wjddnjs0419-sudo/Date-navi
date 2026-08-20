@@ -1,37 +1,57 @@
-import { getAnalytics, logEvent as logFirebaseEvent } from '@react-native-firebase/analytics';
+import {
+  getAnalytics,
+  logEvent as logFirebaseEvent,
+  logScreenView as logFirebaseScreenView,
+} from '@react-native-firebase/analytics';
 import { supabase } from './supabase';
 
-type EventName =
-  | 'signup'
+export type AnalyticsEventName =
   | 'login'
   | 'couple_connected'
-  | 'mode_selected'
-  | 'ai_card_created'
-  | 'date_completed'
   | 'onboarding_completed'
-  // 추천 파이프라인 계측 (V2 §18) — analytics_events.params(jsonb)에 지표 적재.
-  | 'recommendation_generated'
-  | 'recommendation_regenerated'
-  | 'recommendation_fallback';
+  | 'recommendation_request_started'
+  | 'recommendation_request_succeeded'
+  | 'recommendation_request_failed'
+  | 'place_selected'
+  | 'course_regenerate_requested'
+  | 'course_saved'
+  | 'proposal_sent';
 
-export async function logEvent(name: EventName, params?: Record<string, unknown>) {
-  const eventParams = params ?? {};
-  // `login`은 Firebase Analytics SDK의 예약 이벤트명이므로 사용자 정의 이름을 사용한다.
-  const ga4EventName = name === 'login' ? 'user_login' : name;
+type AnalyticsParams = Record<string, unknown>;
 
+const SCREEN_CLASS = 'DateNavi';
+
+async function recordAuthenticatedEvent(name: AnalyticsEventName | 'screen_view', params: AnalyticsParams) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    try {
-      logFirebaseEvent(getAnalytics(), ga4EventName, eventParams);
-    } catch {
-      // Firebase 전송 실패는 기존 Supabase 이벤트 기록에 영향 없음
-    }
-    await supabase.from('analytics_events').insert({
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.is_anonymous) return;
+
+    const { error } = await supabase.from('analytics_events').insert({
       event_name: name,
-      user_id: user?.id ?? null,
-      params: eventParams,
+      params,
     });
-  } catch {
-    // 이벤트 로그 실패는 앱 플로우에 영향 없음
+    if (error) console.warn('[analytics] Supabase event insert failed', error);
+  } catch (error) {
+    console.warn('[analytics] Supabase event insert failed', error);
   }
+}
+
+export async function logEvent(name: AnalyticsEventName, params?: AnalyticsParams) {
+  const eventParams = params ?? {};
+  try {
+    await logFirebaseEvent(getAnalytics(), name as any, eventParams);
+  } catch (error) {
+    console.warn('[analytics] Firebase event log failed', error);
+  }
+  await recordAuthenticatedEvent(name, eventParams);
+}
+
+export async function logScreenView(screenName: string) {
+  const params = { screen_name: screenName, screen_class: SCREEN_CLASS };
+  try {
+    await logFirebaseScreenView(getAnalytics(), params);
+  } catch (error) {
+    console.warn('[analytics] Firebase screen view log failed', error);
+  }
+  await recordAuthenticatedEvent('screen_view', params);
 }

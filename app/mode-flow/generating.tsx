@@ -6,6 +6,7 @@ import { createSession, getSession, addPreviousPlaceIds } from '../../lib/recomm
 import { collectPlaceIds } from '../../lib/recommendation';
 import { attachRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { logEvent } from '../../lib/analytics';
+import { normalizeRecommendationRequestError } from '../../lib/analytics-course';
 import { useI18n } from '../../lib/i18n';
 import { C } from '../../constants/colors';
 import { SP } from '../../constants/theme';
@@ -144,7 +145,11 @@ export default function GeneratingScreen() {
             }));
           }
           const snapshot = await persistRecommendationSession(request.requestId);
-          await logEvent('ai_card_created', { mode: 'make_course', card_count: response.cards.length });
+          await logEvent('recommendation_request_succeeded', {
+            mode: 'make_course',
+            card_count: response.cards.length,
+            step_count: request.courseSteps.length,
+          });
           if (cancelled || requestToken.signal.aborted) return;
           await completeCourseProgress();
           if (cancelled || requestToken.signal.aborted) return;
@@ -161,8 +166,6 @@ export default function GeneratingScreen() {
 
         const parsedInput: FeelingInput = JSON.parse(input ?? '{}');
         const m = mode ?? 'feeling';
-        await logEvent('mode_selected', { mode: m });
-
         let result: DateCard[] = [];
         let sessionId = sessionIdParam;
 
@@ -188,7 +191,6 @@ export default function GeneratingScreen() {
           }
         }
 
-        await logEvent('ai_card_created', { mode: m, card_count: result.length });
         if (cancelled) return;
         router.replace({
           pathname: '/mode-flow/result',
@@ -202,6 +204,12 @@ export default function GeneratingScreen() {
       } catch (error) {
         if (progressTimer) clearInterval(progressTimer);
         if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
+        if (typeof requestId === 'string') {
+          await logEvent('recommendation_request_failed', {
+            mode: 'make_course',
+            ...normalizeRecommendationRequestError(error),
+          });
+        }
         setRequestExpired(isCourse && isPreparedRequestExpiredError(error));
         setCourseError(isCourse && error instanceof RecommendationRequestError ? error : null);
         setErrorMsg(isCourse ? courseErrorMessage(error) : t('modeFlow.generating.defaultError'));

@@ -18,6 +18,8 @@ import { publishPickedPlace } from '../../lib/place-pick-bridge';
 import { loadRecentPlaceSearches, saveRecentPlaceSearch } from '../../lib/recentPlaceSearches';
 import { Illustration } from '../../components/illustration';
 import { Chip } from '../../components/ui';
+import { logEvent } from '../../lib/analytics';
+import { buildPlaceSelectedParams, type PlaceSelectionContext } from '../../lib/analytics-course-actions';
 
 type Place = {
   placeId: string;
@@ -55,10 +57,11 @@ function categoryLeaf(category: string): string {
 }
 
 export default function PlaceSearchScreen() {
-  const { x, y, categoryCode } = useLocalSearchParams<{
+  const { x, y, categoryCode, selectionContext } = useLocalSearchParams<{
     x: string;
     y: string;
     categoryCode?: string;
+    selectionContext?: PlaceSelectionContext;
   }>();
   const router = useRouter();
   const { t } = useI18n();
@@ -127,6 +130,9 @@ export default function PlaceSearchScreen() {
   }, [query, x, y, categoryCode]);
 
   const onPick = (place: Place) => {
+    if (selectionContext === 'course_pin' || selectionContext === 'course_replace') {
+      void logEvent('place_selected', buildPlaceSelectedParams(selectionContext));
+    }
     publishPickedPlace({
       kakaoPlaceId: place.placeId,
       name: place.name,

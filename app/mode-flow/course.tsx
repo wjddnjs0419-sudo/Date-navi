@@ -39,6 +39,8 @@ import { buildStructuredGeneratingParams } from '../../lib/recommendation-route'
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 import { usePersonalStepTagCatalog } from '../../components/recommendation/use-personal-step-tag-catalog';
+import { logEvent } from '../../lib/analytics';
+import { buildRecommendationRequestStartedParams } from '../../lib/analytics-course';
 
 const WALKING_OPTIONS: { value: WalkingLimit; labelKey: string }[] = [
   { value: 5, labelKey: 'course.walking.options.five' },
@@ -159,7 +161,11 @@ export default function CourseScreen() {
     setPinTargetStepId(stepId);
     router.push({
       pathname: '/mode-flow/place-search',
-      params: { x: String(draft.location.longitude), y: String(draft.location.latitude) },
+      params: {
+        x: String(draft.location.longitude),
+        y: String(draft.location.latitude),
+        selectionContext: 'course_pin',
+      },
     } as any);
   }
 
@@ -174,6 +180,7 @@ export default function CourseScreen() {
     if (!validation.valid) return;
     const input = buildCourseInput({ draft, categoryLabels });
     if (!input.courseDraft) return;
+    void logEvent('recommendation_request_started', buildRecommendationRequestStartedParams(draft));
     const request = buildRecommendationRequest(
       input.courseDraft,
       createRecommendationRequestId(),

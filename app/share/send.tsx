@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, TextInput, Share,
+  ActivityIndicator, Alert, TextInput, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,6 +13,8 @@ import { BackBar, BigButton, Chip, CourseStepList, MetaChipRow, SectionLabel, So
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
+import { logEvent } from '../../lib/analytics';
+import { buildProposalSentParams, shouldTrackProposalSent } from '../../lib/analytics-course-save';
 
 type CardInfo = {
   id: string;
@@ -25,7 +27,7 @@ type CardInfo = {
 };
 
 export default function SendScreen() {
-  const { cardId } = useLocalSearchParams<{ cardId: string }>();
+  const { cardId, sourceScreen } = useLocalSearchParams<{ cardId: string; sourceScreen?: string }>();
   const router = useRouter();
   const { t, language } = useI18n();
 
@@ -71,7 +73,7 @@ export default function SendScreen() {
 
       if (!profile?.couple_id) return;
 
-      await supabase.from('soft_messages').insert({
+      const { error } = await supabase.from('soft_messages').insert({
         id: `sm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         couple_id: profile.couple_id,
         user_id: user.id,
@@ -81,8 +83,14 @@ export default function SendScreen() {
         generated_text: message,
         used: true,
       });
+      if (error) throw error;
 
+      if (shouldTrackProposalSent(sourceScreen)) {
+        void logEvent('proposal_sent', buildProposalSentParams());
+      }
       setSuccessVisible(true);
+    } catch {
+      Alert.alert(t('common.error'), t('modeFlow.result.sendError'));
     } finally {
       setSending(false);
     }

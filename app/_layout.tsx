@@ -18,6 +18,7 @@ import { RecommendationSessionProvider } from '../components/recommendation/reco
 import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
 import { loadIosVersionPolicy, resolveAppVersionPolicy } from '../lib/app-version-policy';
 import { withStartupTimeout } from '../lib/startup-timeout';
+import { AnalyticsScreenTracker } from '../components/analytics/screen-tracker';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -161,6 +162,7 @@ export default function RootLayout() {
     <I18nProvider>
       <RecommendationSessionProvider>
         <StatusBar style="dark" />
+        <AnalyticsScreenTracker />
         <ScreenshotNavigator />
         <Stack screenOptions={{ headerShown: false }}>
           {/* 최상위 상태 화면들은 router.replace로 전환된다. 스와이프 제스처로

@@ -33,6 +33,9 @@ import { useRecommendationSessionStore } from '../../components/recommendation/r
 import { StepActionSheet } from '../../components/recommendation/step-action-sheet';
 import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
+import { logEvent } from '../../lib/analytics';
+import { buildCourseRegenerateRequestedParams } from '../../lib/analytics-course-actions';
+import { buildCourseSavedParams } from '../../lib/analytics-course-save';
 
 type ReplacementCandidateGroups = {
   top: Array<ReplacementCandidate | ProviderReplacementCandidate>;
@@ -189,6 +192,7 @@ export default function CourseResultScreen() {
 
   async function regenerateUnlocked(targetStepId?: string) {
     if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
+    void logEvent('course_regenerate_requested', buildCourseRegenerateRequestedParams(snapshot.steps));
     setEditing(true);
     setEditError('');
     try {
@@ -405,8 +409,12 @@ export default function CourseResultScreen() {
         if (!updated?.length) throw new Error('title update affected no rows');
       }
       if (action === 'send') {
-        if (cardId) router.push({ pathname: '/share/send', params: { cardId } } as any);
+        if (cardId) router.push({
+          pathname: '/share/send',
+          params: { cardId, sourceScreen: 'course_recommendation_result' },
+        } as any);
       } else {
+        void logEvent('course_saved', buildCourseSavedParams(snapshot.steps.length, finalTitle !== defaultTitle));
         setSaved(true);
         setSavedModalVisible(true);
       }
@@ -702,6 +710,7 @@ export default function CourseResultScreen() {
                     setSearchScreenActive(true);
                     router.push({ pathname: '/mode-flow/place-search', params: {
                       x: String(center.longitude), y: String(center.latitude),
+                      selectionContext: 'course_replace',
                       ...(targetCategoryCode ? { categoryCode: targetCategoryCode } : {}),
                     } } as any);
                   }}
