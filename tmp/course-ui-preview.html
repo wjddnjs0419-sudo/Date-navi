@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Date-navi course UI preview</title>
+  <style>
+    :root { --bg:#fffafc; --white:#fff; --pink:#f26b7a; --pink-deep:#c24b57; --pink-light:#ffedf0; --pink-border:#f2a8b0; --text:#3b2e2e; --sub:#8a7f76; --label:#8a8075; --border:#f2e7dc; --divider:#f5e5e8; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; background:#e9e5e5; }
+    body { display:flex; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Apple SD Gothic Neo",Arial,sans-serif; color:var(--text); }
+    .phone { position:relative; width:390px; height:844px; overflow:hidden; background:var(--bg); }
+    .screen { position:absolute; inset:0; display:none; }
+    .screen.active { display:block; }
+    .header { position:absolute; left:20px; top:20px; width:350px; height:44px; display:flex; align-items:center; justify-content:space-between; }
+    .back { width:44px; height:44px; display:grid; place-items:center; color:var(--text); }
+    .back svg { width:24px; height:24px; }
+    .dots { display:flex; gap:10px; align-items:center; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#f4e2de; }
+    .dot.active { background:var(--pink); }
+    .count { width:24px; color:var(--label); font-size:11px; line-height:16px; text-align:right; }
+    .intro { position:absolute; left:20px; top:80px; width:350px; display:flex; flex-direction:column; gap:4px; }
+    h1 { margin:0; height:44px; font-size:26px; line-height:44px; letter-spacing:-.9px; font-weight:800; }
+    .subtitle { margin:0; height:24px; color:var(--label); font-size:13px; line-height:24px; white-space:nowrap; }
+    .field { position:absolute; left:20px; top:185px; width:350px; height:50px; display:flex; align-items:center; gap:10px; padding:0 16px; border:1.5px solid var(--border); border-radius:25px; background:var(--white); color:var(--sub); }
+    .field svg { width:18px; height:18px; flex:none; }
+    .placeholder { color:#c8bcb1; font-size:14px; }
+    .current { position:absolute; left:20px; top:247px; width:350px; height:50px; display:flex; align-items:center; justify-content:center; gap:10px; border:1.5px solid var(--pink-border); border-radius:25px; background:var(--white); color:var(--label); font-size:13px; font-weight:700; }
+    .current svg { width:18px; height:18px; }
+    .recent { position:absolute; left:20px; top:320px; width:350px; }
+    .section-title { display:flex; align-items:center; gap:6px; height:24px; color:var(--label); font-size:12px; font-weight:700; }
+    .section-title svg { width:14px; height:14px; }
+    .recent-list { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+    .recent-card { width:350px; height:42px; display:flex; align-items:center; justify-content:space-between; padding:0 14px; border:1px solid var(--border); border-radius:14px; background:var(--white); color:var(--sub); font-size:13px; }
+    .recent-card svg { width:18px; height:18px; }
+    .disabled-cta, .primary-cta { position:absolute; left:20px; width:350px; height:52px; display:grid; place-items:center; border-radius:18px; font-size:15px; font-weight:700; }
+    .disabled-cta { top:772px; background:#efe7df; color:#b8aea6; }
+
+    /* Flow 4 / 03B: native-date + custom 30-minute chips composition. */
+    .underlying .time-card { position:absolute; left:20px; width:350px; height:78px; padding:16px; border:1px solid var(--pink-border); border-radius:18px; background:var(--white); }
+    .underlying .time-card.now { top:184px; }
+    .underlying .time-card.tonight { top:270px; }
+    .time-card-title { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; }
+    .time-card-title svg { width:18px; height:18px; color:var(--sub); }
+    .time-card-copy { margin-top:6px; color:var(--sub); font-size:12px; }
+    .dim { position:absolute; inset:0; z-index:2; background:rgba(31,31,36,.28); }
+    .sheet { position:absolute; left:0; right:0; bottom:0; z-index:3; height:490px; padding:0 20px; border-radius:24px 24px 0 0; background:var(--white); }
+    .handle { position:absolute; top:10px; left:173px; width:44px; height:4px; border-radius:4px; background:#f2e0dc; }
+    .sheet-title { position:absolute; top:37px; left:20px; height:18px; color:var(--text); font-size:15px; line-height:18px; font-weight:700; }
+    .month-nav { position:absolute; top:78px; left:20px; width:350px; height:24px; display:flex; align-items:center; justify-content:space-between; }
+    .month-nav svg { width:24px; height:24px; color:var(--sub); }
+    .month { font-size:15px; font-weight:700; }
+    .calendar { position:absolute; top:118px; left:20px; width:350px; height:214px; }
+    .week, .weekdays { display:grid; grid-template-columns:repeat(7,50px); height:28px; }
+    .weekdays { height:22px; color:var(--sub); }
+    .weekday, .day { display:grid; place-items:center; font-size:12px; font-weight:700; }
+    .day.muted { color:#a89b92; }
+    .day.selected span { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:var(--pink); color:var(--white); }
+    .time-label { position:absolute; top:348px; left:20px; height:18px; font-size:12px; line-height:18px; font-weight:700; }
+    .time-chips { position:absolute; top:382px; left:20px; width:350px; height:30px; display:flex; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+    .time-chips::-webkit-scrollbar { display:none; }
+    .time-chip { width:58px; height:30px; flex:none; display:grid; place-items:center; background:var(--white); color:var(--text); font-size:12px; line-height:18px; }
+    .time-chip:first-child { border-radius:20px 0 0 20px; }
+    .time-chip:last-child { border-radius:0 20px 20px 0; }
+    .time-chip.selected { border-radius:20px; background:var(--pink); color:var(--white); font-weight:600; }
+    .apply { position:absolute; top:428px; left:20px; width:350px; height:52px; display:grid; place-items:center; border-radius:18px; background:var(--pink); color:var(--white); font-size:15px; font-weight:700; }
+
+    /* A focused picker-only preview keeps the entire editor visible for review. */
+    body.focus-sheet { background:var(--white); }
+    body.focus-sheet .phone { height:490px; border-radius:24px; }
+    body.focus-sheet .underlying, body.focus-sheet .dim { display:none; }
+    body.focus-sheet .sheet { top:0; bottom:auto; height:490px; border-radius:24px; }
+
+    /* Flow 4 / 05: candidate review screen. */
+    .review-summary { position:absolute; left:20px; top:184px; width:350px; height:310px; padding:14px 16px 16px; overflow:hidden; border:1px solid #f2bdc2; border-radius:18px; background:var(--white); }
+    .review-course { height:45px; }
+    .review-label { color:var(--label); font-size:11px; line-height:13px; font-weight:700; }
+    .course-row { height:24px; margin-top:8px; display:flex; align-items:center; gap:8px; white-space:nowrap; color:var(--sub); font-size:12px; line-height:24px; font-weight:700; }
+    .course-row svg, .review-value svg { width:18px; height:18px; flex:none; }
+    .review-separator { height:1px; margin-top:16px; margin-bottom:9px; background:var(--divider); }
+    .review-field { height:48px; margin-bottom:16px; }
+    .review-field:last-child { margin-bottom:0; }
+    .review-value-row { height:24px; margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .review-value { min-width:0; display:flex; align-items:center; gap:8px; overflow:hidden; color:var(--sub); font-size:13px; line-height:24px; font-weight:700; white-space:nowrap; }
+    .edit { flex:none; color:var(--pink-deep); font-size:11px; line-height:24px; font-weight:700; }
+    .promise { position:absolute; left:20px; top:510px; width:350px; height:65px; display:flex; flex-direction:column; gap:4px; padding:16px; overflow:hidden; border:1px solid var(--pink); border-radius:18px; background:var(--pink-light); }
+    .promise .lead { color:var(--label); font-size:11px; line-height:13px; }
+    .promise .body { color:var(--pink-deep); font-size:13px; line-height:16px; font-weight:700; white-space:nowrap; }
+    .review-cta { top:760px; background:var(--pink); color:var(--white); }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="screen" data-screen="location">
+      <div class="header"><div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></div><div class="dots"><i class="dot"></i><i class="dot active"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><div class="count">2 / 5</div></div>
+      <div class="intro"><h1>어디서 만날까요?</h1><p class="subtitle">만날 지역이나 역을 선택해주세요.</p></div>
+      <div class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><span class="placeholder">예: 성수동, 홍대입구역</span></div>
+      <div class="current"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 3-7.5 18-3-7.5L3 10.5 21 3Z"></path></svg><span>현재 위치 사용</span></div>
+      <div class="recent"><div class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span>최근 선택</span></div><div class="recent-list"><div class="recent-card"><span>홍대입구역</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div><div class="recent-card"><span>성수동</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div><div class="recent-card"><span>홍대입구역 2호선</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div><div class="recent-card"><span>흑산도</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div></div></div>
+      <div class="disabled-cta">다음</div>
+    </section>
+
+    <section class="screen" data-screen="time">
+      <div class="underlying"><div class="header"><div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></div><div class="dots"><i class="dot"></i><i class="dot"></i><i class="dot active"></i><i class="dot"></i><i class="dot"></i></div><div class="count">3 / 5</div></div><div class="intro"><h1>언제 만날까요?</h1><p class="subtitle">추천 결과를 더 정확하게 만들 수 있어요.</p></div><div class="time-card now"><div class="time-card-title"><span>⚡</span><span>지금 바로</span></div><div class="time-card-copy">바로 추천받고 싶어요</div></div><div class="time-card tonight"><div class="time-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span>오늘 저녁</span></div><div class="time-card-copy">오늘 저녁에 만나요 (17:00 이후)</div></div><div class="disabled-cta">다음</div></div>
+      <div class="dim"></div>
+      <div class="sheet"><div class="handle"></div><div class="sheet-title">날짜와 시간 선택</div><div class="month-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"></path></svg><span class="month">2026년 8월</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div class="calendar"><div class="weekdays"><span class="weekday">일</span><span class="weekday">월</span><span class="weekday">화</span><span class="weekday">수</span><span class="weekday">목</span><span class="weekday">금</span><span class="weekday">토</span></div><div class="week"><span class="day muted">27</span><span class="day muted">28</span><span class="day muted">29</span><span class="day muted">30</span><span class="day muted">31</span><span class="day">1</span><span class="day">2</span></div><div class="week"><span class="day">3</span><span class="day">4</span><span class="day">5</span><span class="day">6</span><span class="day">7</span><span class="day">8</span><span class="day">9</span></div><div class="week"><span class="day">10</span><span class="day">11</span><span class="day">12</span><span class="day">13</span><span class="day">14</span><span class="day">15</span><span class="day">16</span></div><div class="week"><span class="day">17</span><span class="day">18</span><span class="day">19</span><span class="day">20</span><span class="day">21</span><span class="day">22</span><span class="day">23</span></div><div class="week"><span class="day">24</span><span class="day">25</span><span class="day">26</span><span class="day">27</span><span class="day">28</span><span class="day selected"><span>29</span></span><span class="day">30</span></div><div class="week"><span class="day">31</span><span class="day muted">1</span><span class="day muted">2</span><span class="day muted">3</span><span class="day muted">4</span><span class="day muted">5</span><span class="day muted">6</span></div></div>
+        <div class="time-label">시간</div><div class="time-chips" id="time-chips"></div><div class="apply">적용</div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="review">
+      <div class="header"><div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg></div><div class="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot active"></i></div><div class="count">5 / 5</div></div>
+      <div class="intro"><h1>이대로 만들까요?</h1><p class="subtitle">선택한 내용을 확인하고 데이트 코스를 만들어볼까요?</p></div>
+      <div class="review-summary"><div class="review-course"><div class="review-label">코스</div><div class="course-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4v16M4 4v6a3 3 0 0 0 6 0V4M4 8h6M17 4v16M14 4v6a3 3 0 0 0 6 0V4M14 8h6"></path></svg><span>식사</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"></path></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10h13a3 3 0 0 1 0 6H7a3 3 0 0 1-3-3v-3ZM7 10V6h3v4M11 6V4M14 6V4"></path></svg><span>카페</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"></path></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 5c-2 0-3 2-3 5s1 5 3 5M16 5c2 0 3 2 3 5s-1 5-3 5M8 15v4M16 15v4"></path></svg><span>산책</span></div></div><div class="review-separator"></div>
+        <div class="review-field"><div class="review-label">지역</div><div class="review-value-row"><div class="review-value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="3"></circle><path d="M19 10c0 5-7 10-7 10S5 15 5 10a7 7 0 1 1 14 0Z"></path></svg><span>성수동</span></div><span class="edit">수정</span></div></div><div class="review-separator"></div>
+        <div class="review-field"><div class="review-label">시간</div><div class="review-value-row"><div class="review-value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span>오늘 오후 6:00</span></div><span class="edit">수정</span></div></div><div class="review-separator"></div>
+        <div class="review-field"><div class="review-label">분위기</div><div class="review-value-row"><div class="review-value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 8.5c0 5-8 10-8 10s-8-5-8-10a4.5 4.5 0 0 1 8-2.7A4.5 4.5 0 0 1 20 8.5Z"></path></svg><span>감성적인 · 조용한</span></div><span class="edit">수정</span></div></div>
+      </div>
+      <div class="promise"><div class="lead">이 선택을 바탕으로</div><div class="body">취향 + 동선 + 장소를 함께 보고 추천해요.</div></div>
+      <div class="primary-cta review-cta">데이트 코스 만들기</div>
+    </section>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const screen = params.get('screen') || 'review';
+    document.querySelector(`[data-screen="${screen}"]`)?.classList.add('active');
+    if (params.get('focus') === 'sheet') document.body.classList.add('focus-sheet');
+    const timeChips = document.querySelector('#time-chips');
+    if (timeChips) {
+      const selectedMinutes = (18 * 60) + 30;
+      for (let minutes = 0; minutes < 24 * 60; minutes += 30) {
+        const chip = document.createElement('div');
+        chip.className = `time-chip${minutes === selectedMinutes ? ' selected' : ''}`;
+        chip.dataset.time = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+        chip.textContent = chip.dataset.time;
+        chip.addEventListener('click', () => {
+          timeChips.querySelectorAll('.time-chip').forEach((item) => item.classList.remove('selected'));
+          chip.classList.add('selected');
+        });
+        timeChips.append(chip);
+      }
+      timeChips.scrollLeft = Math.max(0, ((selectedMinutes / 30) - 1) * 58);
+    }
+  </script>
+</body>
+</html>

@@ -1810,7 +1810,7 @@ create or replace function public.validate_candidate_pool_snapshot(p_pool jsonb)
 returns boolean language plpgsql immutable set search_path = public, pg_temp as $$
 declare v_item jsonb;
 begin
-  if jsonb_typeof(p_pool) <> 'array' or jsonb_array_length(p_pool) not between 2 and 40 then return false; end if;
+  if jsonb_typeof(p_pool) <> 'array' or jsonb_array_length(p_pool) not between 2 and 50 then return false; end if;
   if (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'candidateId') from jsonb_array_elements(p_pool))
     or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'kakaoPlaceId') from jsonb_array_elements(p_pool))
     or (select count(*) from jsonb_array_elements(p_pool)) <> (select count(distinct value ->> 'rank') from jsonb_array_elements(p_pool)) then return false; end if;

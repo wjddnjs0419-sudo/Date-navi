@@ -9,8 +9,6 @@ import type { ParsedStepIntent } from '../supabase/functions/_shared/step-intent
 
 const request = (additionalRequest?: string): RecommendationRequest => ({
   requestId: 'req-resolve',
-  // Course requests deliberately use tags only. These are compatibility tests
-  // for the retained non-course natural-language resolver.
   mode: 'single_place',
   language: 'ko',
   location: { source: 'kakao', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark' },
@@ -19,6 +17,11 @@ const request = (additionalRequest?: string): RecommendationRequest => ({
     { id: 'step-2', category: 'cafe', label: '카페' },
   ],
   ...(additionalRequest ? { additionalRequest } : {}),
+});
+
+const courseRequest = (additionalRequest?: string): RecommendationRequest => ({
+  ...request(additionalRequest),
+  mode: 'course',
 });
 
 const parsedIntent = (overrides: Partial<ParsedStepIntent> = {}): ParsedStepIntent => ({
@@ -70,6 +73,15 @@ describe('resolveStepIntents — non-course compatibility AI gate', () => {
     const resolved = await resolveStepIntents(request('삼겹살 먹고 싶어'), { invokeAi });
     expect(resolved.source).toBe('rule');
     expect(resolved.stepIntents.map((i) => i.canonicalTerm)).toEqual(['삼겹살']);
+    expect(invokeAi).not.toHaveBeenCalled();
+  });
+
+  it('코스의 레거시 additionalRequest도 규칙 intent로 복원한다', async () => {
+    const invokeAi = jest.fn();
+    const resolved = await resolveStepIntents(courseRequest('삼겹살 먹고 싶어'), { invokeAi });
+    expect(resolved.source).toBe('rule');
+    expect(resolved.stepIntents.map((intent) => intent.canonicalTerm)).toEqual(['삼겹살']);
+    expect(resolved.stepIntents[0]?.strength).toBe('preferred');
     expect(invokeAi).not.toHaveBeenCalled();
   });
 

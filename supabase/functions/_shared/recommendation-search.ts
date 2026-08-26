@@ -87,7 +87,7 @@ export const KAKAO_SEARCH_LIMITS = {
   maxRequests: 12,
   pageSize: 15,
   minUniqueCandidates: 12,
-  maxUniqueCandidates: 40,
+  maxUniqueCandidates: 50,
   maxPagesPerQuery: 2,
   timeoutMs: 4000,
 } as const;

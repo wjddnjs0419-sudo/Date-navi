@@ -1,35 +1,23 @@
-import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react-native';
+import { ChevronRight, Clock3, Gift, Heart, Moon, Smile, Sparkles, Star, MapPin } from 'lucide-react-native';
 import { BackBar, BigButton } from '../../components/ui';
 import { CourseStepEditor } from '../../components/recommendation/course-step-editor';
+import { CourseTimeSelector, formatMeetingTime } from '../../components/recommendation/course-time-selector';
 import { LocationSelector } from '../../components/recommendation/location-selector';
-import { StepSlider } from '../../components/recommendation/step-slider';
 import { C, R, SP } from '../../constants/theme';
 import {
   COURSE_CATEGORIES,
   COURSE_MOODS,
-  DURATION_MAX_HOURS,
-  PER_PERSON_BUDGET_MAX_KRW,
-  PER_PERSON_BUDGET_STEP_KRW,
   courseDraftReducer,
   createInitialCourseDraft,
-  parseDurationHours,
-  parsePerPersonBudgetKRW,
+  getCourseCategoryIcon,
   validateCourseDraft,
   type CourseCategory,
   type CourseDraftIssue,
-  type WalkingLimit,
+  type CourseMood,
 } from '../../lib/course-draft';
 import { useI18n } from '../../lib/i18n';
 import { buildCourseInput } from '../../lib/modeForm';
@@ -37,80 +25,120 @@ import { buildRecommendationRequest } from '../../lib/recommend-date';
 import { createRecommendationRequestId } from '../../lib/recommendationIdentity';
 import { buildStructuredGeneratingParams } from '../../lib/recommendation-route';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
-import { subscribePickedPlace } from '../../lib/place-pick-bridge';
-import { usePersonalStepTagCatalog } from '../../components/recommendation/use-personal-step-tag-catalog';
 import { logEvent } from '../../lib/analytics';
 import { buildRecommendationRequestStartedParams } from '../../lib/analytics-course';
 
-const WALKING_OPTIONS: { value: WalkingLimit; labelKey: string }[] = [
-  { value: 5, labelKey: 'course.walking.options.five' },
-  { value: 10, labelKey: 'course.walking.options.ten' },
-  { value: 20, labelKey: 'course.walking.options.twenty' },
-  { value: undefined, labelKey: 'course.walking.options.any' },
-];
-
+type FlowStep = 1 | 2 | 3 | 4 | 5;
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
-function issueMessage(
-  issue: CourseDraftIssue,
-  categoryLabels: Record<CourseCategory, string>,
-  t: Translate,
-): string {
+const MOOD_ICONS = { emotional: Heart, quiet: Moon, lively: Sparkles, romantic: Heart, comfortable: Gift, novel: Star } as const;
+
+function issueMessage(issue: CourseDraftIssue, t: Translate) {
   return t(`course.validation.${issue.code}`);
 }
 
-// 목업 P0/03 섹션 헤더: 핑크 번호 배지 + 라벨(+힌트). 번호는 화면 내 섹션 순서.
-function SectionTitle({ number, label, hint }: { number: number; label: string; hint?: string }) {
+function ProgressHeader({ step, onBack, t }: { step: FlowStep; onBack: () => void; t: Translate }) {
   return (
-    <View style={styles.sectionTitleRow}>
-      <View style={styles.sectionBadge}>
-        <Text style={styles.sectionBadgeText}>{number}</Text>
+    <View style={styles.progressHeader}>
+      <BackBar onPress={onBack} />
+      <View style={styles.progressDots} accessibilityLabel={t('course.accessibility.progress', { step, total: 5 })}>
+        {Array.from({ length: 5 }, (_, index) => (
+          <View key={index} style={[styles.progressDot, index + 1 === step && styles.progressDotActive]} />
+        ))}
       </View>
-      <View style={styles.sectionTitleCopy}>
-        <Text style={styles.sectionLabel}>{label}</Text>
-        {hint != null && <Text style={styles.hint}>{hint}</Text>}
-      </View>
+      <Text style={styles.progressCount}>{step} / 5</Text>
     </View>
   );
 }
 
-function OptionalSection({
-  number,
-  label,
-  expanded,
-  onToggle,
-  children,
-  t,
-}: {
-  number: number;
-  label: string;
-  expanded: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-  t: Translate;
-}) {
-  const Chevron = expanded ? ChevronUp : ChevronDown;
+function Intro({ title, subtitle, helper }: { title: string; subtitle: string; helper?: string }) {
+  return <View style={styles.intro}><Text style={styles.title}>{title}</Text><Text style={styles.subtitle}>{subtitle}</Text>{helper && <Text style={styles.introHelper}>{helper}</Text>}</View>;
+}
+
+function MoodPicker({ moods, onToggle, t }: { moods: readonly CourseMood[]; onToggle: (mood: CourseMood) => void; t: Translate }) {
   return (
-    <View style={styles.optionalSection}>
+    <View style={styles.moodContent}>
+      <View style={styles.moodGrid}>
+        {[COURSE_MOODS.slice(0, 3), COURSE_MOODS.slice(3)].map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.moodRow} testID="course-mood-row">
+            {row.map((mood) => {
+              const Icon = MOOD_ICONS[mood];
+              const selected = moods.includes(mood);
+              return (
+                <TouchableOpacity
+                  key={mood}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => onToggle(mood)}
+                  style={[styles.moodCard, selected && styles.moodCardSelected]}
+                  testID={`course-mood-${mood}`}
+                >
+                  <Icon size={22} color={selected ? C.pinkDeep : C.textMuted} strokeWidth={1.8} />
+                  <Text style={[styles.moodText, selected && styles.moodTextSelected]}>{t(`course.moods.options.${mood}`)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={t(
-          expanded ? 'course.accessibility.collapseOptional' : 'course.accessibility.expandOptional',
-          { label },
-        )}
-        accessibilityState={{ expanded }}
-        activeOpacity={0.72}
-        onPress={onToggle}
-        style={styles.optionalSectionTrigger}
-        testID={`course-toggle-${number}`}
+        onPress={() => moods.forEach((mood) => onToggle(mood))}
+        style={[styles.unsure, moods.length === 0 && styles.unsureSelected]}
+        testID="course-mood-unsure"
       >
-        <View style={styles.sectionBadge}>
-          <Text style={styles.sectionBadgeText}>{number}</Text>
-        </View>
-        <Text style={styles.sectionLabel}>{label}</Text>
-        <Chevron size={20} color={C.textSub} strokeWidth={2} />
+        <Smile size={17} color={C.textMuted} strokeWidth={1.8} />
+        <Text style={styles.unsureText}>{t('course.moods.unsure')}</Text>
       </TouchableOpacity>
-      {expanded && <View style={styles.optionalSectionBody}>{children}</View>}
+    </View>
+  );
+}
+
+function Review({ draft, categoryLabels, language, t, onEdit }: {
+  draft: ReturnType<typeof createInitialCourseDraft>;
+  categoryLabels: Record<CourseCategory, string>;
+  language: 'ko' | 'en';
+  t: Translate;
+  onEdit: (step: FlowStep) => void;
+}) {
+  return (
+    <View style={styles.reviewCard}>
+      <Text style={styles.reviewCourseLabel}>{t('course.review.courseLabel')}</Text>
+      <View style={styles.reviewCourseRow}>
+        {draft.steps.map((step, index) => (
+          <View key={step.id} style={styles.reviewCourseItem}>
+            {(() => {
+              const Icon = getCourseCategoryIcon(step.category);
+              return <Icon size={18} color={C.textSub} strokeWidth={1.8} />;
+            })()}
+            <Text style={styles.reviewCourseText}>{categoryLabels[step.category]}</Text>
+            {index < draft.steps.length - 1 && <ChevronRight size={18} color={C.textSub} strokeWidth={1.8} />}
+          </View>
+        ))}
+      </View>
+      <View style={styles.reviewDivider} />
+      <ReviewRow icon={<MapPin size={18} color={C.textSub} />} label={t('course.review.locationLabel')} value={draft.location?.label ?? t('course.unselected')} onPress={() => onEdit(2)} t={t} />
+      <ReviewRow icon={<Clock3 size={18} color={C.textSub} />} label={t('course.review.timeLabel')} value={formatMeetingTime(draft.meetingTime, language, t)} onPress={() => onEdit(3)} t={t} />
+      <ReviewRow icon={<Heart size={18} color={C.textSub} />} label={t('course.review.moodLabel')} value={draft.moods.length > 0 ? draft.moods.map((mood) => t(`course.moods.options.${mood}`)).join(' · ') : t('course.moods.unsureShort')} onPress={() => onEdit(4)} t={t} />
+    </View>
+  );
+}
+
+function ReviewRow({ icon, label, value, onPress, t }: { icon: ReactNode; label: string; value: string; onPress: () => void; t: Translate }) {
+  return (
+    <View style={styles.reviewRow}>
+      <View style={styles.reviewRowCopy}><Text style={styles.reviewRowLabel}>{label}</Text><View style={styles.reviewValueRow}>{icon}<Text style={styles.reviewValue}>{value}</Text></View></View>
+      <TouchableOpacity accessibilityRole="button" onPress={onPress}><Text style={styles.editText}>{t('course.review.edit')}</Text></TouchableOpacity>
+    </View>
+  );
+}
+
+function ReviewPromise({ t }: { t: Translate }) {
+  const [lead, body] = t('course.review.tip').split('\n');
+  return (
+    <View style={styles.reviewTip}>
+      <Text style={styles.reviewTipLead}>{lead}</Text>
+      <Text style={styles.reviewTipBody}>{body ?? ''}</Text>
     </View>
   );
 }
@@ -119,61 +147,48 @@ export default function CourseScreen() {
   const router = useRouter();
   const { language, t } = useI18n();
   const { prepareRecommendationRequest } = useRecommendationSessionStore();
-  const personalTagCatalog = usePersonalStepTagCatalog();
   const idSequence = useRef(0);
-  const [draft, dispatch] = useReducer(
-    courseDraftReducer,
-    undefined,
-    () => createInitialCourseDraft(() => `course-step-${++idSequence.current}`),
-  );
+  const [draft, dispatch] = useReducer(courseDraftReducer, undefined, () => createInitialCourseDraft(() => `course-step-${++idSequence.current}`));
+  const [flowStep, setFlowStep] = useState<FlowStep>(1);
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const categoryLabels = useMemo(() => Object.fromEntries(
     COURSE_CATEGORIES.map((category) => [category, t(`course.steps.categories.${category}`)]),
   ) as Record<CourseCategory, string>, [t]);
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
 
-  const [pinTargetStepId, setPinTargetStepId] = useState<string | null>(null);
-  const [expandedOptionalSections, setExpandedOptionalSections] = useState<Record<number, boolean>>({});
-
-  function toggleOptionalSection(number: number) {
-    setExpandedOptionalSections((current) => ({ ...current, [number]: !current[number] }));
-  }
-
-  useEffect(() => {
-    const unsub = subscribePickedPlace((place) => {
-      if (!pinTargetStepId) return;
-      dispatch({
-        type: 'setStepPin',
-        stepId: pinTargetStepId,
-        pin: { kakaoPlaceId: place.kakaoPlaceId, name: place.name, address: place.address },
-      });
-      setPinTargetStepId(null);
-    });
-    return unsub;
-  }, [pinTargetStepId]);
-
-  function requestPick(stepId: string) {
-    if (!draft.location) {
-      // 장소 검색은 주변 좌표 bias가 필요하므로 만나는 위치를 먼저 골라야 한다.
-      // 조용히 무시하면 버튼이 죽은 것처럼 보이므로 이유를 안내한다.
-      Alert.alert(t('course.steps.pin.locationFirstTitle'), t('course.steps.pin.locationFirstBody'));
+  function toggleCategory(category: Exclude<CourseCategory, 'ai_decide'>) {
+    const selected = draft.steps.find((step) => step.category === category);
+    if (selected) {
+      if (expandedStepId !== selected.id) {
+        setExpandedStepId(selected.id);
+        return;
+      }
+      dispatch({ type: 'toggleCategory', category, stepId: selected.id });
+      if (expandedStepId === selected.id) setExpandedStepId(null);
       return;
     }
-    setPinTargetStepId(stepId);
-    router.push({
-      pathname: '/mode-flow/place-search',
-      params: {
-        x: String(draft.location.longitude),
-        y: String(draft.location.latitude),
-        selectionContext: 'course_pin',
-      },
-    } as any);
+    const stepId = `course-step-${++idSequence.current}`;
+    dispatch({ type: 'toggleCategory', category, stepId });
+    setExpandedStepId(stepId);
   }
 
-  function addStep() {
-    dispatch({
-      type: 'addStep',
-      step: { id: `course-step-${++idSequence.current}`, category: 'ai_decide' },
-    });
+  function selectPreference(stepId: string, tag?: string) {
+    dispatch({ type: 'setStepPreference', stepId, tag });
+    const index = draft.steps.findIndex((step) => step.id === stepId);
+    const nextStep = index >= 0 ? draft.steps[index + 1] : undefined;
+    setExpandedStepId(nextStep?.id ?? stepId);
+  }
+
+  function goBack() {
+    if (flowStep === 1) router.back();
+    else setFlowStep((flowStep - 1) as FlowStep);
+  }
+
+  function goNext() {
+    if (flowStep === 1 && draft.steps.length >= 2) setFlowStep(2);
+    else if (flowStep === 2 && draft.location) setFlowStep(3);
+    else if (flowStep === 3 && draft.meetingTime) setFlowStep(4);
+    else if (flowStep === 4) setFlowStep(5);
   }
 
   function handleGenerate() {
@@ -181,217 +196,80 @@ export default function CourseScreen() {
     const input = buildCourseInput({ draft, categoryLabels });
     if (!input.courseDraft) return;
     void logEvent('recommendation_request_started', buildRecommendationRequestStartedParams(draft));
-    const request = buildRecommendationRequest(
-      input.courseDraft,
-      createRecommendationRequestId(),
-      language,
-    );
+    const request = buildRecommendationRequest(input.courseDraft, createRecommendationRequestId(), language);
     prepareRecommendationRequest(request);
-    router.replace({
-      pathname: '/mode-flow/generating',
-      params: buildStructuredGeneratingParams(request.requestId),
-    } as any);
+    router.replace({ pathname: '/mode-flow/generating', params: buildStructuredGeneratingParams(request.requestId) } as any);
   }
+
+  const nextDisabled = flowStep === 1
+    ? draft.steps.length < 2
+    : flowStep === 2
+      ? !draft.location
+      : flowStep === 3
+        ? !draft.meetingTime
+        : false;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        automaticallyAdjustKeyboardInsets
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <BackBar largeTouchTarget />
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('course.title')}</Text>
-          <Text style={styles.subtitle}>{t('course.subtitle')}</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ProgressHeader step={flowStep} onBack={goBack} t={t} />
 
-        <View style={styles.section}>
-          <SectionTitle number={1} label={t('course.steps.label')} hint={t('course.steps.hint')} />
-          <View style={styles.stepList}>
-            {draft.steps.map((step, index) => (
-              <CourseStepEditor
-                key={step.id}
-                step={step}
-                index={index}
-                total={draft.steps.length}
-                categoryLabels={categoryLabels}
-                dispatch={dispatch}
-                onRequestPick={requestPick}
-                suggestions={personalTagCatalog.suggestionsFor(step.category)}
-                onAddSuggestedTag={(tag) => personalTagCatalog.addSuggestion(step.category, tag)}
-                onRemoveSuggestedTag={(tag) => personalTagCatalog.removeSuggestion(step.category, tag)}
-                language={language}
-                t={t}
-              />
-            ))}
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('course.accessibility.addStep')}
-              activeOpacity={0.72}
-              disabled={draft.steps.length >= 4}
-              onPress={addStep}
-              style={[styles.addButton, draft.steps.length >= 4 && styles.controlDisabled]}
-              testID="course-add-step"
-            >
-              <Plus size={18} color={C.pinkDeep} strokeWidth={2.5} />
-              <Text style={styles.addButtonText}>{t('course.steps.add')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <LocationSelector
-          required
-          badge={2}
-          value={draft.location}
-          onChange={(location) => dispatch({ type: 'setLocation', location })}
-        />
-
-        <OptionalSection
-          number={3}
-          label={t('course.walking.label')}
-          expanded={!!expandedOptionalSections[3]}
-          onToggle={() => toggleOptionalSection(3)}
-          t={t}
-        >
-          <View style={styles.choiceWrap}>
-            {WALKING_OPTIONS.map((option) => {
-              const selected = draft.maxWalkingMinutes === option.value;
-              return (
-                <TouchableOpacity
-                  key={option.value ?? 'any'}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={t('course.accessibility.walking', { option: t(option.labelKey) })}
-                  activeOpacity={0.72}
-                  onPress={() => dispatch({ type: 'setWalkingLimit', minutes: option.value })}
-                  style={[styles.choice, selected && styles.choiceSelected]}
-                >
-                  <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>{t(option.labelKey)}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </OptionalSection>
-
-        <OptionalSection
-          number={4}
-          label={t('course.budget.label')}
-          expanded={!!expandedOptionalSections[4]}
-          onToggle={() => toggleOptionalSection(4)}
-          t={t}
-        >
-          <StepSlider
-            min={0}
-            max={PER_PERSON_BUDGET_MAX_KRW}
-            step={PER_PERSON_BUDGET_STEP_KRW}
-            value={parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput) ?? 0}
-            onChange={(v) => dispatch({ type: 'setBudgetInput', value: v === 0 ? '' : String(v) })}
-            formatValue={(v) => (v === 0 ? t('course.unselected') : t('course.budget.amount', { amount: v.toLocaleString() }))}
-            accessibilityLabel={t('course.accessibility.budget')}
-            testID="course-budget-slider"
-          />
-          <Text style={styles.hint}>{t('course.budget.hint')}</Text>
-        </OptionalSection>
-
-        <OptionalSection
-          number={5}
-          label={t('course.moods.label')}
-          expanded={!!expandedOptionalSections[5]}
-          onToggle={() => toggleOptionalSection(5)}
-          t={t}
-        >
-          <View style={styles.choiceWrap}>
-            {COURSE_MOODS.map((mood) => {
-              const selected = draft.moods.includes(mood);
-              return (
-                <TouchableOpacity
-                  key={mood}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={t('course.accessibility.mood', { mood: t(`course.moods.options.${mood}`) })}
-                  activeOpacity={0.72}
-                  onPress={() => dispatch({ type: 'toggleMood', mood })}
-                  style={[styles.choice, selected && styles.choiceSelected]}
-                >
-                  <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>
-                    {t(`course.moods.options.${mood}`)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </OptionalSection>
-
-        <OptionalSection
-          number={6}
-          label={t('course.duration.label')}
-          expanded={!!expandedOptionalSections[6]}
-          onToggle={() => toggleOptionalSection(6)}
-          t={t}
-        >
-          <StepSlider
-            min={0}
-            max={DURATION_MAX_HOURS}
-            step={1}
-            value={parseDurationHours(draft.duration) ?? 0}
-            onChange={(hours) => dispatch({
-              type: 'setDuration',
-              duration: hours === 0 ? undefined : t('course.duration.hoursLabel', { count: hours }),
-            })}
-            formatValue={(hours) => (hours === 0 ? t('course.unselected') : t('course.duration.hoursLabel', { count: hours }))}
-            accessibilityLabel={t('course.accessibility.duration')}
-            testID="course-duration-slider"
-          />
-        </OptionalSection>
-
-        <OptionalSection
-          number={7}
-          label={t('course.additional.label')}
-          expanded={!!expandedOptionalSections[7]}
-          onToggle={() => toggleOptionalSection(7)}
-          t={t}
-        >
-          <TextInput
-            accessibilityLabel={t('course.accessibility.additionalRequest')}
-            style={styles.additionalInput}
-            placeholder={t('course.additional.placeholder')}
-            placeholderTextColor={C.textFaint}
-            value={draft.additionalRequest}
-            onChangeText={(value) => dispatch({ type: 'setAdditionalRequest', value })}
-            multiline
-            maxLength={500}
-            textAlignVertical="top"
-          />
-          <Text style={styles.counter}>{t('course.additional.maxLength', { count: draft.additionalRequest.length })}</Text>
-        </OptionalSection>
-
-        {validation.issues.length > 0 && (
-          <View style={styles.validation}>
-            {validation.issues.map((issue) => (
-              <Text
-                key={issue.code}
-                selectable
-                style={styles.validationText}
-                testID="course-validation"
-              >
-                {issueMessage(issue, categoryLabels, t)}
-              </Text>
-            ))}
+        {flowStep === 1 && (
+          <View testID="course-flow-step-1">
+            <Intro title={t('course.flow.steps.title')} subtitle={t('course.flow.steps.subtitle')} helper={t('course.steps.selectionHint')} />
+            <CourseStepEditor
+              steps={draft.steps}
+              categoryLabels={categoryLabels}
+              expandedStepId={expandedStepId}
+              onToggleCategory={toggleCategory}
+              onSelectPreference={selectPreference}
+              onToggleStep={(stepId) => setExpandedStepId((current) => current === stepId ? null : stepId)}
+              language={language}
+              t={t}
+            />
           </View>
         )}
+
+        {flowStep === 2 && (
+          <View testID="course-flow-step-2">
+            <Intro title={t('course.flow.location.title')} subtitle={t('course.flow.location.subtitle')} />
+            <LocationSelector required value={draft.location} onChange={(location) => dispatch({ type: 'setLocation', location })} />
+          </View>
+        )}
+
+        {flowStep === 3 && (
+          <View testID="course-flow-step-3">
+            <Intro title={t('course.flow.time.title')} subtitle={t('course.flow.time.subtitle')} />
+            <CourseTimeSelector value={draft.meetingTime} onChange={(meetingTime) => dispatch({ type: 'setMeetingTime', meetingTime })} language={language} t={t} />
+          </View>
+        )}
+
+        {flowStep === 4 && (
+          <View testID="course-flow-step-4">
+            <Intro title={t('course.flow.mood.title')} subtitle={t('course.flow.mood.subtitle')} />
+            <MoodPicker moods={draft.moods} onToggle={(mood) => dispatch({ type: 'toggleMood', mood })} t={t} />
+          </View>
+        )}
+
+        {flowStep === 5 && (
+          <View testID="course-flow-step-5">
+            <Intro title={t('course.review.title')} subtitle={t('course.review.subtitle')} />
+            <Review draft={draft} categoryLabels={categoryLabels} language={language} t={t} onEdit={setFlowStep} />
+            <ReviewPromise t={t} />
+            {validation.issues.length > 0 && <View style={styles.validation}>{validation.issues.map((issue) => <Text key={issue.code} selectable style={styles.validationText}>{issueMessage(issue, t)}</Text>)}</View>}
+          </View>
+        )}
+
         <BigButton
-          accessibilityLabel={t('course.accessibility.generate')}
-          disabled={!validation.valid}
-          onPress={validation.valid ? handleGenerate : undefined}
-          style={styles.generateButton}
-          variant={validation.valid ? 'primary' : 'disabled'}
+          testID={flowStep === 5 ? 'course-review-generate' : 'course-flow-next'}
+          accessibilityLabel={t(flowStep === 5 ? 'course.accessibility.generate' : 'course.accessibility.next')}
+          disabled={flowStep === 5 ? !validation.valid : nextDisabled}
+          onPress={flowStep === 5 ? handleGenerate : goNext}
+          variant={(flowStep === 5 ? validation.valid : !nextDisabled) ? 'primary' : 'disabled'}
+          style={[styles.nextButton, flowStep === 5 && styles.generateButton]}
         >
-          {t('course.generateButton')}
+          {t(flowStep === 5 ? 'course.review.generate' : 'course.flow.next')}
         </BigButton>
-        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -399,74 +277,43 @@ export default function CourseScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.sm, paddingBottom: 60 },
-  header: { paddingTop: SP.lg, gap: SP.sm, alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '800', color: C.text, textAlign: 'center', lineHeight: 31 },
-  subtitle: { fontSize: 14, color: C.textSub, textAlign: 'center', lineHeight: 20 },
-  section: { paddingTop: SP.xxl, gap: SP.sm },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm },
-  sectionBadge: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: C.pink,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 1,
-  },
-  sectionBadgeText: { fontSize: 13, fontWeight: '800', color: C.white },
-  sectionTitleCopy: { flex: 1, gap: SP.xs },
-  sectionLabel: { fontSize: 15, fontWeight: '700', color: C.text, lineHeight: 22 },
-  optionalSection: {
-    marginTop: SP.xxl,
-    paddingTop: SP.xxl,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.borderLight,
-  },
-  optionalSectionTrigger: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  optionalSectionBody: { paddingTop: SP.md },
-  hint: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
-  addButton: {
-    minHeight: 44,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.xs,
-    paddingHorizontal: SP.md,
-    borderRadius: R.md,
-    backgroundColor: C.pinkLight,
-  },
-  addButtonText: { fontSize: 12, fontWeight: '600', color: C.pinkDeep },
-  controlDisabled: { opacity: 0.35 },
-  stepList: { gap: SP.md },
-  choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
-  choice: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: SP.md,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
-  },
-  choiceSelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
-  choiceText: { fontSize: 12, color: C.inkSoft, fontWeight: '600' },
-  choiceTextSelected: { color: C.pinkDeep },
-  additionalInput: {
-    minHeight: 108,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: R.md,
-    padding: SP.lg,
-    fontSize: 14,
-    lineHeight: 21,
-    color: C.text,
-    backgroundColor: C.white,
-  },
-  counter: { alignSelf: 'flex-end', fontSize: 12, color: C.textMuted, fontVariant: ['tabular-nums'] },
-  preview: { marginTop: SP.lg, padding: SP.md, gap: SP.sm, borderRadius: R.md, backgroundColor: C.gray },
-  previewTitle: { fontSize: 13, color: C.text, fontWeight: '600' },
-  previewChips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
-  validation: { paddingVertical: SP.lg, gap: SP.xs },
-  validationText: { fontSize: 12, lineHeight: 18, color: C.danger },
-  conflictText: { fontWeight: '700' },
-  generateButton: { minHeight: 52, marginTop: SP.xxl },
-  bottomSpacer: { height: SP.xxl },
+  content: { flexGrow: 1, paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xl, gap: SP.lg },
+  progressHeader: { height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  progressDots: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },
+  progressDotActive: { backgroundColor: C.pink },
+  progressCount: { width: 28, color: C.textMuted, fontSize: 11, textAlign: 'right' },
+  intro: { gap: SP.xs, marginBottom: SP.xxxl },
+  title: { color: C.text, fontSize: 26, lineHeight: 44, fontWeight: '800' },
+  subtitle: { color: C.locationMuted, fontSize: 13, lineHeight: 24 },
+  introHelper: { color: C.pinkDeep, fontSize: 11, lineHeight: 16, fontWeight: '600' },
+  nextButton: { marginTop: 'auto' },
+  generateButton: { marginTop: 'auto' },
+  moodContent: { gap: SP.lg },
+  moodGrid: { gap: SP.md },
+  moodRow: { flexDirection: 'row', gap: SP.sm },
+  moodCard: { flex: 1, minHeight: 104, borderRadius: R.btn, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', gap: SP.sm },
+  moodCardSelected: { backgroundColor: C.pinkLight, borderColor: C.pink },
+  moodText: { color: C.text, fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  moodTextSelected: { color: C.pinkDeep },
+  unsure: { minHeight: 56, borderRadius: R.btn, backgroundColor: C.cream, borderWidth: 1, borderColor: '#f4e2ce', flexDirection: 'row', alignItems: 'center', gap: SP.sm, paddingHorizontal: SP.lg },
+  unsureSelected: { borderColor: C.pinkBorder },
+  unsureText: { color: C.textMuted, fontSize: 12, fontWeight: '600' },
+  reviewCard: { height: 310, borderRadius: R.btn, borderWidth: 1, borderColor: '#F2BDC2', backgroundColor: C.white, paddingHorizontal: SP.lg, paddingTop: 14, paddingBottom: SP.lg, overflow: 'hidden' },
+  reviewCourseLabel: { color: C.locationMuted, fontSize: 11, lineHeight: 13, fontWeight: '700' },
+  reviewCourseRow: { height: 24, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 0, marginTop: SP.sm, overflow: 'hidden' },
+  reviewCourseItem: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, height: 24 },
+  reviewCourseText: { color: C.textSub, fontSize: 12, lineHeight: 24, fontWeight: '700' },
+  reviewDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#F5E5E8', marginTop: SP.md, marginBottom: 9 },
+  reviewRow: { height: 48, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SP.md },
+  reviewRowCopy: { flex: 1 },
+  reviewRowLabel: { color: C.locationMuted, fontSize: 11, lineHeight: 16, fontWeight: '700' },
+  reviewValueRow: { height: 24, flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginTop: SP.sm, overflow: 'hidden' },
+  reviewValue: { color: C.textSub, fontSize: 13, lineHeight: 24, fontWeight: '700' },
+  editText: { color: C.pinkDeep, fontSize: 11, lineHeight: 24, fontWeight: '700' },
+  reviewTip: { height: 65, borderRadius: R.btn, borderWidth: 1, borderColor: C.pink, backgroundColor: C.pinkLight, padding: SP.lg, gap: SP.xs, marginTop: SP.md, overflow: 'hidden' },
+  reviewTipLead: { color: C.locationMuted, fontSize: 11, lineHeight: 13 },
+  reviewTipBody: { color: C.pinkDeep, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  validation: { gap: SP.xs },
+  validationText: { color: C.danger, fontSize: 12, lineHeight: 18 },
 });

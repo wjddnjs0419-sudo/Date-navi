@@ -7,6 +7,10 @@ const SOURCES = {
   'mascot-heart-single': require('../assets/illustrations/mascot-heart-single.png'),
   'mascot-heart-couple': require('../assets/illustrations/mascot-heart-couple.png'),
   'mascot-heart-couple-check': require('../assets/illustrations/mascot-heart-couple-check.png'),
+  'mascot-heart-loading-preference': require('../assets/illustrations/mascot-heart-loading-preference.png'),
+  'mascot-heart-loading-places': require('../assets/illustrations/mascot-heart-loading-places.png'),
+  'mascot-heart-loading-route': require('../assets/illustrations/mascot-heart-loading-route.png'),
+  'mascot-heart-loading-finish': require('../assets/illustrations/mascot-heart-loading-finish.png'),
   'bg-park': require('../assets/illustrations/bg-park.png'),
   'mini-skyline-route': require('../assets/illustrations/mini-skyline-route.png'),
   'mini-park-bench': require('../assets/illustrations/mini-park-bench.png'),
@@ -19,13 +23,15 @@ export type IllustrationName = keyof typeof SOURCES;
 export const MINI_ILLUSTRATION_WIDTH = 130;
 
 export function Illustration({
-  name, width, height, style, resizeMode = 'contain',
+  name, width, height, style, resizeMode = 'contain', accessible = true, accessibilityLabel,
 }: {
   name: IllustrationName;
   width?: number;
   height?: number;
   style?: StyleProp<ImageStyle>;
   resizeMode?: ImageResizeMode;
+  accessible?: boolean;
+  accessibilityLabel?: string;
 }) {
   const source = SOURCES[name];
   const meta = Image.resolveAssetSource(source);
@@ -37,8 +43,9 @@ export function Illustration({
   return (
     <Image
       source={source}
-      accessible
+      accessible={accessible}
       accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
       resizeMode={resizeMode}
       style={[sizeStyle, style]}
     />

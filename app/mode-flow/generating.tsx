@@ -12,7 +12,9 @@ import { C } from '../../constants/colors';
 import { SP } from '../../constants/theme';
 import { BigButton, GeneratingView } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
+import { QuickPlanningLoading, type QuickPlanningLoadingConditions } from '../../components/recommendation/quick-planning-loading';
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
+import { RecommendationSessionRepositoryError } from '../../lib/recommendation-session-repository';
 import { addPersonalStepTag, PERSONAL_STEP_TAG_CATEGORIES } from '../../lib/personal-step-tag-catalog';
 import { supabase } from '../../lib/supabase';
 import { canonicalizeStepIntentTag, isShippedStepIntentTag } from '../../shared/recommendation/step-intent-tag-catalog';
@@ -26,8 +28,31 @@ import {
   buildLegacyResultParams,
   buildStructuredCourseResultParams,
 } from '../../lib/recommendation-route';
+import type { RecommendationRequest } from '../../shared/recommendation/contracts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+function buildQuickPlanningConditions(
+  request: RecommendationRequest,
+  language: 'ko' | 'en',
+  t: Translate,
+): QuickPlanningLoadingConditions {
+  const meetingTimePrefix = language === 'en' ? 'Meeting time:' : '만날 시간:';
+  const meetingTimeLine = request.additionalRequest
+    ?.split('\n')
+    .find(line => line.trim().startsWith(meetingTimePrefix));
+  const time = meetingTimeLine?.slice(meetingTimeLine.indexOf(':') + 1).trim() || '—';
+  const moods = request.moods ?? request.selectedMoodTags ?? [];
+  const mood = moods.length > 0
+    ? moods.map(moodTag => t(`course.moods.options.${moodTag}`)).join(' · ')
+    : t('course.moods.unsureShort');
+
+  return {
+    location: request.location.label,
+    time,
+    mood,
+  };
+}
 
 export function courseRateLimitNotice(
   error: RecommendationRequestError,
@@ -59,6 +84,14 @@ export function courseRateLimitNotice(
   return null;
 }
 
+export function normalizeCourseGenerationError(error: unknown): RecommendationRequestError | null {
+  if (error instanceof RecommendationRequestError) return error;
+  if (error instanceof RecommendationSessionRepositoryError && error.code === 'unauthorized') {
+    return new RecommendationRequestError('AUTH_EXPIRED');
+  }
+  return null;
+}
+
 export default function GeneratingScreen() {
   const {
     mode,
@@ -77,12 +110,15 @@ export default function GeneratingScreen() {
   const [courseProgress, setCourseProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [courseError, setCourseError] = useState<RecommendationRequestError | null>(null);
+  const [courseConditions, setCourseConditions] = useState<QuickPlanningLoadingConditions | null>(null);
   const [burstRemainingSeconds, setBurstRemainingSeconds] = useState<number | null>(null);
   const [requestExpired, setRequestExpired] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   const isCourse = typeof requestId === 'string' || mode === 'make_course';
   const steps = t(isCourse ? 'modeFlow.generating.courseSteps' : 'modeFlow.generating.defaultSteps', { returnObjects: true }) as string[];
+  const courseBubbleMessages = t('modeFlow.generating.courseBubbleMessages', { returnObjects: true }) as string[];
+  const courseStatusMessages = t('modeFlow.generating.courseStatusMessages', { returnObjects: true }) as string[];
   const heading = t(isCourse ? 'modeFlow.generating.courseHeading' : 'modeFlow.generating.defaultHeading');
 
   const courseErrorMessage = (error: unknown) => {
@@ -125,8 +161,10 @@ export default function GeneratingScreen() {
         if (typeof requestId === 'string') {
           setStep(0);
           setCourseProgress(0);
+          setCourseConditions(null);
           const request = getPreparedRecommendationRequest(requestId);
           if (cancelled) return;
+          setCourseConditions(buildQuickPlanningConditions(request, language === 'en' ? 'en' : 'ko', t));
           startCourseProgress();
           const response = await requestRecommendationResponse(request, { signal: requestToken.signal });
           if (cancelled || requestToken.signal.aborted) return;
@@ -204,15 +242,16 @@ export default function GeneratingScreen() {
       } catch (error) {
         if (progressTimer) clearInterval(progressTimer);
         if (cancelled || requestToken.signal.aborted || (error as { name?: string } | null)?.name === 'AbortError') return;
+        const normalizedCourseError = isCourse ? normalizeCourseGenerationError(error) : null;
         if (typeof requestId === 'string') {
           await logEvent('recommendation_request_failed', {
             mode: 'make_course',
-            ...normalizeRecommendationRequestError(error),
+            ...normalizeRecommendationRequestError(normalizedCourseError ?? error),
           });
         }
         setRequestExpired(isCourse && isPreparedRequestExpiredError(error));
-        setCourseError(isCourse && error instanceof RecommendationRequestError ? error : null);
-        setErrorMsg(isCourse ? courseErrorMessage(error) : t('modeFlow.generating.defaultError'));
+        setCourseError(normalizedCourseError);
+        setErrorMsg(isCourse ? courseErrorMessage(normalizedCourseError ?? error) : t('modeFlow.generating.defaultError'));
       }
     })();
 
@@ -331,15 +370,26 @@ export default function GeneratingScreen() {
     );
   }
 
-  const courseStep = Math.min(
-    Math.floor((courseProgress / 100) * Math.max(steps.length, 1)),
-    Math.max(steps.length - 1, 0),
-  );
+  if (isCourse) {
+    return (
+      <QuickPlanningLoading
+        heading={heading}
+        subtitle={t('modeFlow.generating.courseSubtitle')}
+        stageLabels={steps}
+        bubbleMessages={courseBubbleMessages}
+        statusMessages={courseStatusMessages}
+        progressPercent={courseProgress}
+        conditions={courseConditions ?? { location: '—', time: '—', mood: '—' }}
+        conditionsLabel={t('modeFlow.generating.courseConditionsLabel')}
+        language={language === 'en' ? 'en' : 'ko'}
+      />
+    );
+  }
+
   return <GeneratingView
     heading={heading}
     steps={steps}
-    step={isCourse ? courseStep : step}
-    progressPercent={isCourse ? courseProgress : undefined}
+    step={step}
   />;
 }
 

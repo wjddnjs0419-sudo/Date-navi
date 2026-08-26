@@ -4,7 +4,7 @@ import type { RecommendationLocation } from '../shared/recommendation/contracts'
 
 type TestNode = { props: Record<string, any> };
 type TestRendererInstance = {
-  root: { findAllByType: (type: unknown) => TestNode[] };
+  root: { findByProps: (props: Record<string, unknown>) => TestNode; findAllByType: (type: unknown) => TestNode[] };
 };
 const TestRenderer = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => void | Promise<void>;
@@ -43,8 +43,8 @@ const searchedLocation: RecommendationLocation = {
   kind: 'station',
 };
 
-describe('LocationSelector recent-location icons', () => {
-  it('renders a Navigation icon for the current-location row and MapPin for other rows', async () => {
+describe('LocationSelector location controls', () => {
+  it('renders the current-location control with the default Figma colors', async () => {
     loadRecentLocations.mockResolvedValue([currentLocation, searchedLocation]);
     let renderer!: TestRendererInstance;
     await act(async () => {
@@ -52,9 +52,17 @@ describe('LocationSelector recent-location icons', () => {
       await Promise.resolve();
     });
 
-    expect(renderer.root.findAllByType(Navigation)).toHaveLength(2);
-    // MapPin also renders once for the search-bar leading icon, plus once per non-current row.
-    expect(renderer.root.findAllByType(MapPin)).toHaveLength(2);
+    expect(renderer.root.findAllByType(Navigation)).toHaveLength(1);
+    const currentButton = renderer.root.findByProps({ testID: 'location-current-button' });
+    expect(currentButton.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ backgroundColor: '#ffffff' }),
+    ]));
+    expect(currentButton.props.children[0].props.color).toBe('#8A8075');
+    expect(currentButton.props.children[1].props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ color: '#8A8075' }),
+    ]));
+    // Recent locations are vertically stacked cards; MapPin is reserved for search results.
+    expect(renderer.root.findAllByType(MapPin)).toHaveLength(0);
   });
 
   it('uses the Navigation icon (not LocateFixed) for the current-location search button', async () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Dimensions } from 'react-native';
+import { StyleSheet, Text, Dimensions } from 'react-native';
 import { C } from '../constants/colors';
 import { Wordmark } from '../components/brand';
 import { Illustration } from '../components/illustration';
@@ -132,5 +132,40 @@ describe('login hero matches UI RENEW mockup', () => {
     const renderer = await render();
 
     expect(renderer.root.findAllByProps({ testID: 'apple-login-button' })).toHaveLength(0);
+  });
+
+  it('gives Kakao and Google independent pressed styles instead of sharing Apple native feedback', async () => {
+    const renderer = await render();
+    const kakaoButton = renderer.root.findByProps({ testID: 'kakao-login-button' });
+    const googleButton = renderer.root.findByProps({ testID: 'google-login-button' });
+
+    expect(typeof kakaoButton.props.style).toBe('function');
+    expect(typeof googleButton.props.style).toBe('function');
+
+    const kakaoIdle = StyleSheet.flatten(kakaoButton.props.style({ pressed: false }));
+    const kakaoPressed = StyleSheet.flatten(kakaoButton.props.style({ pressed: true }));
+    const googleIdle = StyleSheet.flatten(googleButton.props.style({ pressed: false }));
+    const googlePressed = StyleSheet.flatten(googleButton.props.style({ pressed: true }));
+
+    expect(kakaoPressed.opacity).toBeLessThan(kakaoIdle.opacity ?? 1);
+    expect(googlePressed.opacity).toBeLessThan(googleIdle.opacity ?? 1);
+  });
+
+  it('dims only the provider whose login is in progress', async () => {
+    let resolveKakao!: (value: { cancelled: boolean }) => void;
+    mockSignInWithKakao.mockImplementation(() => new Promise((resolve) => { resolveKakao = resolve; }));
+
+    const renderer = await render();
+    const kakaoButton = renderer.root.findByProps({ testID: 'kakao-login-button' });
+    const googleButton = renderer.root.findByProps({ testID: 'google-login-button' });
+    const appleButton = renderer.root.findByProps({ testID: 'apple-login-button' });
+
+    await act(async () => { kakaoButton.props.onPress(); });
+
+    expect(StyleSheet.flatten(kakaoButton.props.style({ pressed: false })).opacity).toBe(0.5);
+    expect(StyleSheet.flatten(googleButton.props.style({ pressed: false })).opacity).toBeUndefined();
+    expect(StyleSheet.flatten(appleButton.props.style).opacity).toBeUndefined();
+
+    await act(async () => { resolveKakao({ cancelled: true }); });
   });
 });

@@ -1,4 +1,4 @@
-import { resolveKakaoPlaceLink } from '../supabase/functions/_shared/kakao-place-link';
+import { resolveKakaoPlaceLink, searchKakaoPlacesForLink } from '../supabase/functions/_shared/kakao-place-link';
 import type { NormalizedPlace } from '../supabase/functions/_shared/place-provider';
 
 const naverPlace: NormalizedPlace = {
@@ -72,5 +72,20 @@ describe('resolveKakaoPlaceLink', () => {
 
   it('rejects an ambiguous set of otherwise matching Kakao results', async () => {
     await expect(resolveKakaoPlaceLink(naverPlace, async () => [kakaoPlace(), kakaoPlace({ identity: { provider: 'kakao', providerPlaceId: 'kakao-2' }, legacy: { kakaoPlaceId: 'kakao-2' } })])).resolves.toBeUndefined();
+  });
+});
+
+describe('searchKakaoPlacesForLink', () => {
+  it('uses Kakao Local API authentication for Naver-to-Kakao linking', async () => {
+    const fetcher = jest.fn(async () => new Response(JSON.stringify({ documents: [] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+
+    await searchKakaoPlacesForLink({ query: '서울숲 식당', kakaoRestApiKey: 'rest-key', fetcher });
+
+    expect(fetcher).toHaveBeenCalledWith(expect.any(URL), expect.objectContaining({
+      headers: { Authorization: 'KakaoAK rest-key' },
+    }));
   });
 });

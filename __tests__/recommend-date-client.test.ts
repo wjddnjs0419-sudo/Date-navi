@@ -23,7 +23,8 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn() }));
 
 const invoke = jest.fn();
 const randomUUIDMock = jest.mocked(randomUUID);
-Object.assign(supabase, { functions: { invoke } });
+const rpc = jest.fn();
+Object.assign(supabase, { functions: { invoke }, rpc });
 
 const courseDraft: NonNullable<FeelingInput['courseDraft']> = {
   location: {
@@ -132,10 +133,22 @@ const response = (requestId: string) => ({
 
 beforeEach(() => {
   invoke.mockReset();
+  rpc.mockReset();
+  rpc.mockResolvedValue({ data: null, error: null });
   randomUUIDMock.mockReset();
 });
 
 describe('structured recommend-date client', () => {
+  it('maps an authentication failure from the consent RPC before invoking Edge', async () => {
+    const requestBody = buildRecommendationRequest(courseDraft, 'req-client-consent-auth-001', 'ko');
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'not authenticated' } });
+
+    await expect(requestRecommendationResponse(requestBody)).rejects.toEqual(
+      expect.objectContaining<Partial<RecommendationRequestError>>({ code: 'AUTH_EXPIRED' }),
+    );
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it('preserves the typed Edge error code instead of collapsing a failed course request', async () => {
     const requestBody = buildRecommendationRequest(courseDraft, 'req-client-error-001', 'ko');
     invoke.mockResolvedValue({
@@ -334,6 +347,17 @@ describe('structured recommend-date client', () => {
     expect(result).not.toHaveProperty('prompt');
     expect(result).not.toHaveProperty('fullPrompt');
     expect(result).not.toHaveProperty('systemPrompt');
+  });
+
+  it('carries the selected meeting time as localized request context without changing the Edge schema', () => {
+    const request = buildRecommendationRequest({
+      ...courseDraft,
+      meetingTime: { kind: 'custom', startsAt: '2026-08-29T18:30:00.000Z' },
+    }, 'req-client-meeting-time-001', 'ko');
+
+    expect(request).not.toHaveProperty('meetingTime');
+    expect(request.additionalRequest).toContain('만날 시간:');
+    expect(request.additionalRequest).toContain('야경을 보고 싶어');
   });
 
   it('uses only recommend-date for make_course + courseDraft and preserves its requestId on every card', async () => {

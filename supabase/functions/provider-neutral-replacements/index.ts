@@ -4,6 +4,10 @@ import { fetchNaverLocalPlaces } from '../_shared/providers/naver-place-provider
 import { createNaverSearchCache } from '../_shared/naver-search-cache.ts';
 import { discoverProviderNeutralCandidates } from '../_shared/provider-neutral-discovery-pipeline.ts';
 import { naverShadowQueries } from '../_shared/recommendation-discovery-strategy.ts';
+import {
+  createSupabaseRecommendationHistoryQueryAdapter,
+  loadRecommendationHistory,
+} from '../_shared/recommendation-history.ts';
 import { recommendationRequestSchema } from '../../../shared/recommendation/schemas.ts';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
@@ -36,11 +40,18 @@ Deno.serve(async (request) => {
     const target = (steps ?? []).find((step: { step_id: string }) => step.step_id === parsed.data.targetStepId);
     if (!stored.success || !target || target.current_place_provider !== 'naver') return new Response(JSON.stringify({ error: 'NOT_FOUND' }), { status: 404, headers: corsHeaders });
     const replacementRequest = { ...stored.data, courseSteps: [{ id: target.step_id, category: target.category, label: target.label }], excludedPlaceIds: [...new Set([...(stored.data.excludedPlaceIds ?? []), ...(steps ?? []).flatMap((step: { current_provider_place_id?: string | null }) => step.current_provider_place_id ? [step.current_provider_place_id] : [])])] };
+    const loadedHistory = await loadRecommendationHistory({
+      authenticatedUserId: user.id,
+      currentLocation: replacementRequest.location,
+      activeSessionId: session.id,
+      queries: createSupabaseRecommendationHistoryQueryAdapter(service),
+    });
     const queries = naverShadowQueries({ locationLabel: replacementRequest.location.label, locationSource: replacementRequest.location.source, stepLabels: [target.label] });
     const discovery = await discoverProviderNeutralCandidates({
       request: replacementRequest,
       primaryAttempts: queries.map((query) => () => fetchNaverLocalPlaces({ query, clientId: Deno.env.get('NAVER_CLIENT_ID') ?? '', clientSecret: Deno.env.get('NAVER_CLIENT_SECRET') ?? '', fetcher: fetch, cache })),
       fallbackAttempts: [], minQualifiedCandidates: 1,
+      ...(loadedHistory.status === 'loaded' ? { history: loadedHistory.context } : {}),
     });
     const candidates: StoredCandidate[] = discovery.candidates.filter((candidate) => candidate.place.category.normalized === (target.category === 'restaurant' ? 'meal' : target.category)).slice(0, 15).map((candidate, index) => ({
       candidateId: `naver_replacement_${String(index + 1).padStart(3, '0')}`,

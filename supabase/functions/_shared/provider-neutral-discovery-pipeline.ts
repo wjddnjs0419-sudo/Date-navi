@@ -4,6 +4,10 @@ import type { NormalizedPlace } from './place-provider.ts';
 import { evaluateHardEligibility, evaluateQualityGate, type DateQualityContext, type PopularityEligibility } from './place-quality.ts';
 import type { ProviderNeutralCandidate } from './provider-neutral-course-selection.ts';
 import { rankQualifiedPlaces } from './provider-neutral-ranking.ts';
+import {
+  recommendationPlaceIdentityKey,
+  type RecommendationHistoryContext,
+} from '../../../shared/recommendation/recommendation-history.ts';
 
 function dateQualityContext(request: RecommendationRequest): DateQualityContext {
   if (request.courseSteps.some((step) => step.category === 'cafe')
@@ -54,14 +58,22 @@ export async function discoverProviderNeutralCandidates(input: {
   primaryAttempts: Array<() => Promise<NormalizedPlace[]>>;
   fallbackAttempts: Array<() => Promise<NormalizedPlace[]>>;
   minQualifiedCandidates: number;
+  history?: RecommendationHistoryContext;
 }): Promise<ProviderNeutralDiscoveryResult> {
   const context = dateQualityContext(input.request);
   const requiredCategories = requiredCategoryCounts(input.request);
+  const recentHardIdentities = new Set([
+    ...(input.history?.recentHardPlaceIdentities ?? []),
+    // Kakao-only history is retained for v1.0.1 fixtures and becomes useful
+    // when this provider-neutral discovery falls back to Kakao.
+    ...(input.history?.recentHardPlaceIds ?? []).map((providerPlaceId) => ({ provider: 'kakao' as const, providerPlaceId })),
+  ].map(recommendationPlaceIdentityKey));
   const discovery = await discoverQualifiedPlaces({
     primaryAttempts: input.primaryAttempts,
     fallbackAttempts: input.fallbackAttempts,
     minQualifiedCandidates: input.minQualifiedCandidates,
     qualify: (place) => {
+      if (recentHardIdentities.has(recommendationPlaceIdentityKey(place.identity))) return false;
       if (!evaluateHardEligibility(place, {
         excludedPlaceIds: input.request.excludedPlaceIds,
         excludedCategories: input.request.excludedCategories,

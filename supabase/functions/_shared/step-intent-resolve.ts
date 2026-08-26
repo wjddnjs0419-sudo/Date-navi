@@ -127,6 +127,7 @@ function removeDictionaryAlias(text: string, alias: string): string {
 function stripKnownTerms(text: string): string {
   let out = text;
   for (const entry of ALL_STEP_INTENT_DICTIONARY) {
+    if (entry.stripFromResidual === false) continue;
     for (const alias of [entry.canonicalTerm, ...entry.aliases]) {
       out = removeDictionaryAlias(out, alias);
     }
@@ -218,25 +219,26 @@ export async function resolveStepIntents(
     return { source: 'tag', stepIntents: dedupeIntents(stepIntents), excludedIntents: [], unsupported: [], conflicts: [] };
   }
 
-  // Course additionalRequest is prompt-only context. The legacy parser remains exported for
-  // non-course compatibility, but is deliberately not consulted by this request path.
-  if (request.mode === 'course') {
-    return { source: 'none', stepIntents: [], excludedIntents: [], unsupported: [], conflicts: [] };
-  }
-
   const raw = request.additionalRequest?.trim();
   if (!raw) {
     return { source: 'none', stepIntents: [], excludedIntents: [], unsupported: [], conflicts: [] };
   }
 
   const rule = parseStepIntents(request);
-  const ruleFound = rule.stepIntents.length > 0 || rule.excludedIntents.length > 0;
+  // Legacy clients put natural-language preferences in additionalRequest. Keep
+  // those terms search-aware, but do not turn a prose emphasis marker such as
+  // "무조건" into the newer tag contract's hard-required gate. The redesigned
+  // client uses intentTags when a hard requirement is intentional.
+  const legacyRuleIntents = request.mode === 'course'
+    ? rule.stepIntents.map((intent) => ({ ...intent, strength: 'preferred' as StepIntentStrength }))
+    : rule.stepIntents;
+  const ruleFound = legacyRuleIntents.length > 0 || rule.excludedIntents.length > 0;
   const shouldTryAi = Boolean(deps.invokeAi) && hasMeaningfulResidual(raw);
 
   if (!shouldTryAi) {
     return {
       source: ruleFound ? 'rule' : 'none',
-      stepIntents: rule.stepIntents,
+      stepIntents: legacyRuleIntents,
       excludedIntents: rule.excludedIntents,
       unsupported: [],
       conflicts: [],
@@ -248,7 +250,7 @@ export async function resolveStepIntents(
     const excludedIntents = dedupeIntents([...rule.excludedIntents, ...(ai.excludedIntents ?? [])]);
     return {
       source: 'ai',
-      stepIntents: mergeRuleAndAiIntents(rule.stepIntents, ai.stepIntents, excludedIntents),
+      stepIntents: mergeRuleAndAiIntents(legacyRuleIntents, ai.stepIntents, excludedIntents),
       excludedIntents,
       unsupported: ai.unsupported ?? [],
       conflicts: ai.conflicts ?? [],
@@ -257,7 +259,7 @@ export async function resolveStepIntents(
     // AI 실패/타임아웃 → 규칙 결과로 graceful degrade.
     return {
       source: ruleFound ? 'rule' : 'none',
-      stepIntents: rule.stepIntents,
+      stepIntents: legacyRuleIntents,
       excludedIntents: rule.excludedIntents,
       unsupported: [],
       conflicts: [],

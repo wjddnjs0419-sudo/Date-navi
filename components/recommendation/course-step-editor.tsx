@@ -1,440 +1,169 @@
-import { type Dispatch, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, MapPin, Search, Trash2, X } from 'lucide-react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Coffee, Footprints, Palette, Utensils, Wine, Zap, Check, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import {
-  CATEGORY_ICONS,
   COURSE_CATEGORIES,
   type CourseCategory,
-  type CourseDraftAction,
   type CourseDraftStep,
 } from '../../lib/course-draft';
 import {
-  getStepIntentTagSuggestions,
+  getCoursePreferenceOptions,
   localizeStepIntentTag,
-  canonicalizeStepIntentTag,
 } from '../../shared/recommendation/step-intent-tag-catalog';
 import type { RecommendationLanguage } from '../../shared/recommendation/contracts';
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
-// 카테고리는 선택 사항. "AI가 결정"(ai_decide)은 상단 [AI 추천] 토글과 겹쳐 칩에서 제외하고,
-// 실제 카테고리 칩을 다시 누르면 ai_decide로 해제한다.
-const CATEGORY_CHIPS = COURSE_CATEGORIES.filter((category) => category !== 'ai_decide');
-
-function StepAction({
-  accessibilityLabel,
-  disabled,
-  icon,
-  onPress,
-  testID,
-}: {
-  accessibilityLabel: string;
-  disabled: boolean;
-  icon: 'up' | 'down' | 'remove';
-  onPress: () => void;
-  testID: string;
-}) {
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      activeOpacity={0.72}
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.stepAction, disabled && styles.controlDisabled]}
-      testID={testID}
-    >
-      {icon === 'up' && <ArrowUp size={18} color={C.textSub} strokeWidth={2} />}
-      {icon === 'down' && <ArrowDown size={18} color={C.textSub} strokeWidth={2} />}
-      {icon === 'remove' && <Trash2 size={18} color={C.danger} strokeWidth={2} />}
-    </TouchableOpacity>
-  );
-}
-
-export function CourseStepEditor({
-  step,
-  index,
-  total,
-  categoryLabels,
-  dispatch,
-  onRequestPick,
-  suggestions,
-  onAddSuggestedTag,
-  onRemoveSuggestedTag,
-  language,
-  t,
-}: {
-  step: CourseDraftStep;
-  index: number;
-  total: number;
+type Props = {
+  steps: readonly CourseDraftStep[];
   categoryLabels: Record<CourseCategory, string>;
-  dispatch: Dispatch<CourseDraftAction>;
-  onRequestPick: (stepId: string) => void;
-  suggestions?: readonly string[];
-  onAddSuggestedTag?: (tag: string) => Promise<void> | void;
-  onRemoveSuggestedTag?: (tag: string) => Promise<void> | void;
+  expandedStepId: string | null;
+  onToggleCategory: (category: Exclude<CourseCategory, 'ai_decide'>) => void;
+  onSelectPreference: (stepId: string, tag?: string) => void;
+  onToggleStep: (stepId: string) => void;
   language: RecommendationLanguage;
   t: Translate;
-}) {
-  const [mode, setMode] = useState<'ai' | 'pick'>(step.pin ? 'pick' : 'ai');
-  const [customTag, setCustomTag] = useState('');
-  const [tagsExpanded, setTagsExpanded] = useState(false);
+};
 
-  function switchToAi() {
-    // AI 추천 = AI가 장소를 고른다. 지정해둔 핀이 남으면 서버가 그 장소로 확정하므로 즉시 제거한다.
-    if (step.pin) dispatch({ type: 'clearStepPin', stepId: step.id });
-    setMode('ai');
-  }
+const selectableCategories = ['meal', 'cafe', 'walk', 'culture', 'activity', 'drinks'] as const satisfies readonly Exclude<CourseCategory, 'ai_decide'>[];
 
-  function selectCategory(category: CourseCategory) {
-    // 카테고리는 선택 사항: 이미 고른 칩을 다시 누르면 해제(ai_decide)해 AI가 종류까지 정하게 한다.
-    // 핀과 공존하므로 카테고리 선택은 핀을 지우지 않는다.
-    const next = step.category === category ? 'ai_decide' : category;
-    dispatch({ type: 'setStepCategory', stepId: step.id, category: next });
-  }
+const ICONS = { meal: Utensils, cafe: Coffee, drinks: Wine, activity: Zap, culture: Palette, walk: Footprints } as const;
 
-  const selectedTags = step.intentTags ?? [];
-  const visibleSuggestions = [...new Set([
-    ...selectedTags,
-    ...(suggestions ?? getStepIntentTagSuggestions(step.category).map((suggestion) => suggestion.value)),
-  ])];
-  const canAddTag = true;
-
-  function addCustomTag() {
-    const tag = canonicalizeStepIntentTag(customTag);
-    if (!tag || !canAddTag) return;
-    // The selected state is immediate; the reusable suggestion appears in its final slot after persistence.
-    dispatch({ type: 'selectStepIntentTag', stepId: step.id, tag });
-    // Shipped and recognized aliases are safe reusable suggestions. Unknown
-    // input remains selected for this request, but is saved only after the
-    // Edge confirms Kakao evidence.
-    if (tag !== customTag.trim()) void onAddSuggestedTag?.(tag);
-    setCustomTag('');
-  }
-
+export function CourseStepEditor({
+  steps,
+  categoryLabels,
+  expandedStepId,
+  onToggleCategory,
+  onSelectPreference,
+  onToggleStep,
+  language,
+  t,
+}: Props) {
   return (
-    <View style={styles.stepCard} testID="course-step">
-      <View style={styles.stepHeader}>
-        <Text style={styles.stepTitle}>{t('course.steps.stepLabel', { number: index + 1 })}</Text>
-        <View style={styles.stepActions}>
-          <StepAction
-            accessibilityLabel={t('course.accessibility.moveStepUp')}
-            disabled={index === 0}
-            icon="up"
-            onPress={() => dispatch({ type: 'moveStep', stepId: step.id, direction: 'up' })}
-            testID="course-move-step-up"
-          />
-          <StepAction
-            accessibilityLabel={t('course.accessibility.moveStepDown')}
-            disabled={index === total - 1}
-            icon="down"
-            onPress={() => dispatch({ type: 'moveStep', stepId: step.id, direction: 'down' })}
-            testID="course-move-step-down"
-          />
-          <StepAction
-            accessibilityLabel={t('course.accessibility.removeStep')}
-            disabled={total <= 2}
-            icon="remove"
-            onPress={() => dispatch({ type: 'removeStep', stepId: step.id })}
-            testID="course-remove-step"
-          />
-        </View>
-      </View>
-
-      <View style={styles.segment}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ selected: mode === 'ai' }}
-          accessibilityLabel={t('course.steps.pin.aiTab')}
-          activeOpacity={0.72}
-          onPress={switchToAi}
-          style={[styles.segmentBtn, mode === 'ai' && styles.segmentBtnOn]}
-          testID="course-step-tab-ai"
-        >
-          <Text style={[styles.segmentText, mode === 'ai' && styles.segmentTextOn]}>
-            {t('course.steps.pin.aiTab')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ selected: mode === 'pick' }}
-          accessibilityLabel={t('course.steps.pin.pickTab')}
-          activeOpacity={0.72}
-          onPress={() => setMode('pick')}
-          style={[styles.segmentBtn, mode === 'pick' && styles.segmentBtnOn]}
-          testID="course-step-tab-pick"
-        >
-          <Text style={[styles.segmentText, mode === 'pick' && styles.segmentTextOn]}>
-            {t('course.steps.pin.pickTab')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.categories}>
-        {CATEGORY_CHIPS.map((category) => {
-          const selected = step.category === category;
-          const Icon = CATEGORY_ICONS[category];
-          return (
-            <TouchableOpacity
-              key={category}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={t('course.accessibility.category', {
-                number: index + 1,
-                category: categoryLabels[category],
-              })}
-              activeOpacity={0.72}
-              onPress={() => selectCategory(category)}
-              style={[styles.category, selected && styles.categorySelected]}
-              testID={`course-step-category-${category}`}
-            >
-              <Icon size={18} color={selected ? C.pinkDeep : C.inkSoft} strokeWidth={2} />
-              <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
-                {categoryLabels[category]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {mode === 'ai' && step.category !== 'ai_decide' && (
-        <View style={styles.tagSection}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t(
-              tagsExpanded ? 'course.accessibility.collapseOptional' : 'course.accessibility.expandOptional',
-              { label: t('course.steps.tags.label') },
-            )}
-            accessibilityState={{ expanded: tagsExpanded }}
-            activeOpacity={0.72}
-            hitSlop={10}
-            onPress={() => setTagsExpanded((expanded) => !expanded)}
-            style={styles.tagToggle}
-            testID="course-step-tags-toggle"
-          >
-            <Text style={styles.tagLabel}>{t('course.steps.tags.label')}</Text>
-            {tagsExpanded
-              ? <ChevronUp size={18} color={C.textSub} strokeWidth={2} />
-              : <ChevronDown size={18} color={C.textSub} strokeWidth={2} />}
-          </TouchableOpacity>
-          {tagsExpanded && <>
-            <Text style={styles.tagHint}>{t('course.steps.tags.hint')}</Text>
-            {visibleSuggestions.length > 0 && (
-              <View style={styles.tagWrap}>
-              {visibleSuggestions.map((tag) => {
-                const displayTag = localizeStepIntentTag(tag, language);
-                return (
-                <View key={tag} style={styles.suggestionWithRemove}>
-                  {(() => {
-                    const selected = selectedTags.includes(tag);
-                    return (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={t('course.accessibility.addIntentTag', { tag: `#${displayTag}` })}
-                    activeOpacity={0.72}
-                    disabled={!selected && !canAddTag}
-                    onPress={() => dispatch(selected
-                      ? { type: 'removeStepIntentTag', stepId: step.id, tag }
-                      : { type: 'selectStepIntentTag', stepId: step.id, tag })}
-                    style={[styles.suggestedTag, selected && styles.suggestedTagSelected, !selected && !canAddTag && styles.controlDisabled]}
-                    testID={`course-step-tag-suggestion-${tag}`}
-                  >
-                    <Text style={[styles.suggestedTagText, selected && styles.suggestedTagTextSelected]}>#{displayTag}</Text>
-                  </TouchableOpacity>
-                    );
-                  })()}
-                  {onRemoveSuggestedTag && (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={t('course.accessibility.removeSuggestedIntentTag', { tag: `#${displayTag}` })}
-                      activeOpacity={0.72}
-                      onPress={() => { void onRemoveSuggestedTag(tag); }}
-                      style={styles.suggestionRemove}
-                      testID={`course-step-suggestion-remove-${tag}`}
-                    >
-                      <X size={10} color={C.white} strokeWidth={3} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ); })}
-              </View>
-            )}
-            <View style={styles.tagAddRow}>
-            <TextInput
-              accessibilityLabel={t('course.accessibility.customIntentTag')}
-              value={customTag}
-              onChangeText={setCustomTag}
-              placeholder={t('course.steps.tags.placeholder')}
-              placeholderTextColor={C.textFaint}
-              maxLength={40}
-              editable={canAddTag}
-              onSubmitEditing={addCustomTag}
-              returnKeyType="done"
-              style={styles.tagInput}
-              testID="course-step-tag-input"
-            />
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('course.accessibility.addCustomIntentTag')}
-              activeOpacity={0.72}
-              disabled={!canAddTag || !customTag.trim()}
-              onPress={addCustomTag}
-              style={[styles.tagAddButton, (!canAddTag || !customTag.trim()) && styles.controlDisabled]}
-              testID="course-step-tag-add"
-            >
-              <Text style={styles.tagAddButtonText}>{t('course.steps.tags.add')}</Text>
-            </TouchableOpacity>
-            </View>
-          </>}
-        </View>
-      )}
-
-      {mode === 'pick' && (
-        step.pin ? (
-          <View style={styles.pinnedRow}>
-            <MapPin size={18} color={C.textSub} strokeWidth={2} />
-            <View style={styles.pinnedInfo}>
-              <Text style={styles.pinnedName} numberOfLines={1}>{step.pin.name}</Text>
-              {step.pin.address ? (
-                <Text style={styles.pinnedAddress} numberOfLines={1}>{step.pin.address}</Text>
-              ) : null}
-            </View>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('course.steps.pin.clear')}
-              activeOpacity={0.72}
-              onPress={() => dispatch({ type: 'clearStepPin', stepId: step.id })}
-              style={styles.pinnedClear}
-              testID="course-step-pin-clear"
-            >
-              <Text style={styles.pinnedClearText}>{t('course.steps.pin.clear')}</Text>
-            </TouchableOpacity>
+    <View style={styles.container}>
+      <View style={styles.categoryGrid}>
+        {[selectableCategories.slice(0, 3), selectableCategories.slice(3)].map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.categoryRow}>
+            {row.map((category) => {
+              const selected = steps.some((step) => step.category === category);
+              const Icon = ICONS[category];
+              return (
+                <TouchableOpacity
+                  key={category}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={categoryLabels[category]}
+                  activeOpacity={0.72}
+                  onPress={() => onToggleCategory(category)}
+                  style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+                  testID={`course-category-${category}`}
+                >
+                  {selected && <Check size={14} color={C.pinkDeep} strokeWidth={2.5} />}
+                  <Icon size={18} color={selected ? C.pinkDeep : C.textSub} strokeWidth={2} />
+                  <Text style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}>
+                    {categoryLabels[category]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        ) : (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t('course.steps.pin.searchEntry')}
-            activeOpacity={0.72}
-            onPress={() => onRequestPick(step.id)}
-            style={styles.pickEntry}
-            testID="course-step-pick-entry"
-          >
-            <Search size={18} color={C.textSub} strokeWidth={2} />
-            <Text style={styles.pickEntryText}>{t('course.steps.pin.searchEntry')}</Text>
-          </TouchableOpacity>
-        )
+        ))}
+      </View>
+
+      {(expandedStepId !== null || steps.length > 1) && (
+        <View style={styles.stepList}>
+          {steps.map((step, index) => {
+          const expanded = step.id === expandedStepId;
+          const Icon = ICONS[step.category as Exclude<CourseCategory, 'ai_decide'>] ?? Zap;
+          const selectedTag = step.intentTags?.[0];
+          const summary = selectedTag ? localizeStepIntentTag(selectedTag, language) : t('course.preferences.anything');
+          const showAutoExpandHint = steps.length < 3;
+          return (
+            <View key={step.id} style={[styles.stepCard, expanded && styles.stepCardExpanded]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ expanded }}
+                accessibilityLabel={t('course.accessibility.step', { number: index + 1 })}
+                activeOpacity={0.72}
+                onPress={() => onToggleStep(step.id)}
+                style={styles.stepRow}
+                testID={`course-step-row-${step.id}`}
+              >
+                <Text style={styles.stepNumber}>{index + 1}</Text>
+                <Icon size={18} color={expanded ? C.pinkDeep : C.textSub} strokeWidth={2} />
+                <Text style={styles.stepLabel}>{categoryLabels[step.category]}</Text>
+                {!expanded && <Text testID={`course-step-preference-${step.id}`} style={styles.stepSummary} numberOfLines={1}>{summary}</Text>}
+                {expanded
+                  ? <ChevronUp size={18} color={C.textSub} strokeWidth={2} />
+                  : <ChevronDown size={18} color={C.textSub} strokeWidth={2} />}
+              </TouchableOpacity>
+
+              {expanded && (
+                <View style={styles.preferenceBody}>
+                  <Text style={styles.preferenceQuestion}>{t(`course.preferences.question.${step.category}`)}</Text>
+                  <View style={styles.preferenceWrap}>
+                    {getCoursePreferenceOptions(step.category, language).map((option) => {
+                      const selected = option.value
+                        ? step.intentTags?.[0] === option.value
+                        : !step.intentTags?.length;
+                      const optionKey = option.value ?? '아무거나';
+                      return (
+                        <TouchableOpacity
+                          key={optionKey}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          accessibilityLabel={option.label}
+                          activeOpacity={0.72}
+                          onPress={() => onSelectPreference(step.id, option.value)}
+                          style={[styles.preferenceChip, selected && styles.preferenceChipSelected]}
+                          testID={`course-preference-${step.category}-${optionKey}`}
+                        >
+                          <Text style={[styles.preferenceText, selected && styles.preferenceTextSelected]}>
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {showAutoExpandHint && <Text testID={`course-preference-auto-expand-${step.id}`} style={styles.preferenceHelper}>{t('course.preferences.autoExpand')}</Text>}
+                </View>
+              )}
+            </View>
+          );
+          })}
+        </View>
       )}
+      {steps.length < 3 && <Text testID="course-step-tip" style={styles.tipText}>{t('course.preferences.tip')}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stepCard: {
-    gap: SP.md,
-    padding: SP.md,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
+  container: { gap: SP.md },
+  categoryGrid: { gap: SP.md },
+  categoryRow: { flexDirection: 'row', gap: SP.xl },
+  categoryChip: {
+    flex: 1, minHeight: 34, borderRadius: R.md, backgroundColor: C.white,
+    borderWidth: 1.5, borderColor: C.pinkBorder, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 4, paddingHorizontal: 6,
   },
-  stepHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SP.sm },
-  stepTitle: { flex: 1, fontSize: 14, color: C.text, fontWeight: '700' },
-  stepActions: { flexDirection: 'row', gap: SP.xs },
-  stepAction: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: R.md,
-    backgroundColor: C.gray,
-  },
-  controlDisabled: { opacity: 0.35 },
-  segment: { flexDirection: 'row', backgroundColor: C.gray, borderRadius: R.md, padding: 3, gap: 3 },
-  segmentBtn: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: R.sm },
-  segmentBtnOn: { backgroundColor: C.white },
-  segmentText: { fontSize: 12, fontWeight: '700', color: C.inkSoft },
-  segmentTextOn: { color: C.pinkDeep },
-  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
-  category: {
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SP.xs,
-    paddingHorizontal: SP.sm,
-    paddingVertical: SP.xs,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
-  },
-  categorySelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
-  categoryText: { fontSize: 10, color: C.inkSoft, fontWeight: '600' },
-  categoryTextSelected: { color: C.pinkDeep },
-  tagSection: { gap: SP.xs, paddingTop: SP.xs },
-  tagToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tagLabel: { fontSize: 13, color: C.text, fontWeight: '700' },
-  tagHint: { fontSize: 11, color: C.textMuted },
-  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs },
-  suggestionWithRemove: { position: 'relative' },
-  selectedTag: {
-    minHeight: 34,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: SP.sm, borderRadius: 999,
-    backgroundColor: C.pinkLight, borderWidth: 1, borderColor: C.pinkBorder,
-  },
-  selectedTagText: { fontSize: 12, color: C.pinkDeep, fontWeight: '700' },
-  suggestedTag: {
-    minHeight: 34, justifyContent: 'center', paddingHorizontal: SP.sm,
-    borderRadius: 999, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
-  },
-  suggestedTagSelected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
-  suggestedTagText: { fontSize: 12, color: C.textSub, fontWeight: '600' },
-  suggestedTagTextSelected: { color: C.pinkDeep },
-  suggestionRemove: {
-    position: 'absolute', top: -5, right: -5, zIndex: 1,
-    width: 17, height: 17, alignItems: 'center', justifyContent: 'center',
-    borderRadius: 9, backgroundColor: C.textMuted,
-  },
-  tagAddRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  tagInput: {
-    flex: 1, minHeight: 42, paddingHorizontal: SP.sm,
-    borderRadius: R.sm, backgroundColor: C.gray, color: C.text, fontSize: 13,
-    paddingVertical: 0, textAlignVertical: 'center',
-  },
-  tagAddButton: {
-    minHeight: 42, justifyContent: 'center', paddingHorizontal: SP.md,
-    borderRadius: R.sm, backgroundColor: C.pinkDeep,
-  },
-  tagAddButtonText: { fontSize: 13, color: C.white, fontWeight: '700' },
-  pickEntry: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.sm,
-    paddingHorizontal: SP.md,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
-  },
-  pickEntryText: { fontSize: 13, color: C.textSub, fontWeight: '600' },
-  pinnedRow: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.sm,
-    paddingHorizontal: SP.md,
-    paddingVertical: SP.sm,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
-  },
-  pinnedInfo: { flex: 1, gap: 2 },
-  pinnedName: { fontSize: 13, color: C.text, fontWeight: '700' },
-  pinnedAddress: { fontSize: 11, color: C.textMuted },
-  pinnedClear: { minHeight: 44, justifyContent: 'center', paddingHorizontal: SP.sm },
-  pinnedClearText: { fontSize: 12, color: C.textSub, fontWeight: '700' },
+  categoryChipSelected: { backgroundColor: C.pinkLight, borderColor: C.pink },
+  categoryLabel: { fontSize: 12, color: C.textSub, fontWeight: '600' },
+  categoryLabelSelected: { color: C.pinkDeep },
+  stepList: { gap: SP.sm },
+  stepCard: { backgroundColor: C.white, borderRadius: R.card, borderWidth: 1, borderColor: C.borderLight, overflow: 'hidden' },
+  stepCardExpanded: { borderColor: C.pink, backgroundColor: C.pinkLight },
+  stepRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: SP.sm, paddingHorizontal: SP.md },
+  stepNumber: { width: 16, color: C.pinkDeep, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  stepLabel: { color: C.text, fontSize: 14, fontWeight: '700' },
+  stepSummary: { flex: 1, textAlign: 'right', color: C.textSub, fontSize: 12 },
+  preferenceBody: { paddingHorizontal: SP.md, paddingBottom: SP.md, gap: SP.sm },
+  preferenceQuestion: { color: C.text, fontSize: 13, fontWeight: '700' },
+  preferenceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
+  preferenceChip: { minHeight: 34, borderRadius: 17, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, justifyContent: 'center', paddingHorizontal: SP.md },
+  preferenceChipSelected: { backgroundColor: C.pink, borderColor: C.pink },
+  preferenceText: { color: C.pinkDeep, fontSize: 12, fontWeight: '600' },
+  preferenceTextSelected: { color: C.white },
+  preferenceHelper: { color: C.textMuted, fontSize: 11 },
+  tipText: { color: C.textMuted, fontSize: 11, lineHeight: 18, textAlign: 'center' },
 });

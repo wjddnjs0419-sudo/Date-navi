@@ -9,11 +9,11 @@ export type LockResult =
   | { acquired: false; retryAfterSeconds: number };
 
 export type QuotaResult =
-  | { allowed: true }
+  | { allowed: true; consumptionId?: number }
   | { allowed: false; limitType: 'burst'; retryAfterSeconds: number }
   | { allowed: false; limitType: 'daily'; resetsAt: string };
 
-type CourseGenerationInput = { userId: string; now?: string };
+type CourseGenerationInput = { userId: string; requestId?: string; now?: string };
 type LockInput = CourseGenerationInput & { requestId: string };
 type RateLimitEvent = 'lock_conflict' | 'burst_rejected' | 'daily_rejected';
 
@@ -76,14 +76,24 @@ export async function releaseCourseGenerationLock(client: RateLimitRpcClient, in
 }
 
 export async function consumeCourseGenerationQuota(client: RateLimitRpcClient, input: CourseGenerationInput): Promise<QuotaResult> {
-  const { data, error } = await client.rpc('consume_ai_quota', {
+  const parameters: Record<string, unknown> = {
     p_user_id: input.userId,
     p_action: 'course_generate',
+    ...(input.requestId ? { p_request_id: input.requestId } : {}),
     ...(input.now ? { p_now: input.now } : {}),
+  };
+  const { data, error } = await client.rpc('consume_ai_quota', {
+    ...parameters,
   });
   if (error) throwRpcError(error);
   const row = firstRow(data);
-  if (row.allowed === true) return { allowed: true };
+  if (row.allowed === true) {
+    if (row.consumption_id === undefined || row.consumption_id === null) return { allowed: true };
+    if (typeof row.consumption_id !== 'number' || !Number.isInteger(row.consumption_id) || row.consumption_id < 1) {
+      throw new Error('AI rate-limit RPC returned an invalid consumption id');
+    }
+    return { allowed: true, consumptionId: row.consumption_id };
+  }
   if (row.allowed !== false) throw new Error('AI rate-limit RPC returned an invalid quota result');
   if (row.limit_type === 'burst') {
     return { allowed: false, limitType: 'burst', retryAfterSeconds: positiveInteger(row.retry_after_seconds) };
@@ -92,6 +102,18 @@ export async function consumeCourseGenerationQuota(client: RateLimitRpcClient, i
     return { allowed: false, limitType: 'daily', resetsAt: isoTimestamp(row.resets_at) };
   }
   throw new Error('AI rate-limit RPC returned an unknown limit type');
+}
+
+export async function releaseCourseGenerationQuota(
+  client: RateLimitRpcClient,
+  input: { userId: string; consumptionId: number },
+): Promise<void> {
+  const { error } = await client.rpc('release_ai_quota', {
+    p_user_id: input.userId,
+    p_action: 'course_generate',
+    p_consumption_id: input.consumptionId,
+  });
+  if (error) throwRpcError(error);
 }
 
 export async function recordAiRateLimitEvent(

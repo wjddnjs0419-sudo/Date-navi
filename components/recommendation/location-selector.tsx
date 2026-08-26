@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { Check, Clock3, MapPin, Navigation } from 'lucide-react-native';
+import { Check, ChevronRight, Clock3, MapPin, Navigation, Search } from 'lucide-react-native';
 import { C, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import {
@@ -86,7 +86,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
   }
 
   async function selectLocation(location: RecommendationLocation) {
-    setQuery(location.label);
+    setQuery(location.source === 'current' ? '' : location.label);
     setSuggestions([]);
     onChange(location);
     try {
@@ -128,19 +128,13 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
     }
   }
 
-  const visibleLocations = shouldSearchLocations(query) ? suggestions : recent;
-  const showingRecent = !shouldSearchLocations(query) && recent.length > 0;
+  const searching = shouldSearchLocations(query);
+  const showingRecent = !searching && recent.length > 0;
 
   return (
     <View style={styles.container}>
-      <View style={styles.labelRow}>
-        {badge != null && (
-          <View style={styles.badge}><Text style={styles.badgeText}>{badge}</Text></View>
-        )}
-        <Text style={styles.label}>{t(required ? 'location.requiredLabel' : 'location.label')}</Text>
-      </View>
       <View style={styles.inputWrap}>
-        <MapPin size={18} color={C.pink} strokeWidth={2} />
+        <Search size={18} color={C.textSub} strokeWidth={2} />
         <TextInput
           accessibilityLabel={t('location.searchAccessibility')}
           style={[styles.input, value?.source === 'current' && styles.currentInput]}
@@ -152,29 +146,55 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
           autoCorrect={false}
         />
         {loading && <ActivityIndicator size="small" color={C.pink} />}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('location.currentAccessibility')}
-          style={[styles.gpsButton, value?.source === 'current' && styles.gpsButtonActive]}
-          activeOpacity={0.72}
-          disabled={locating}
-          onPress={selectCurrentLocation}
-        >
-          <Navigation size={18} color={value?.source === 'current' ? C.white : C.pinkDeep} strokeWidth={2} />
-        </TouchableOpacity>
       </View>
-      <Text style={styles.hint}>{t('location.autocompleteHint')}</Text>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={{ selected: value?.source === 'current' }}
+        accessibilityLabel={t('location.currentAccessibility')}
+        style={[styles.currentLocationButton, value?.source === 'current' && styles.currentLocationButtonActive]}
+        activeOpacity={0.72}
+        disabled={locating}
+        onPress={selectCurrentLocation}
+        testID="location-current-button"
+      >
+        <Navigation size={18} color={value?.source === 'current' ? C.white : C.locationMuted} strokeWidth={2} />
+        <Text style={[styles.currentLocationText, value?.source === 'current' && styles.currentLocationTextActive]}>
+          {value?.source === 'current' ? t('location.gpsActive') : t('location.currentButton')}
+        </Text>
+      </TouchableOpacity>
 
       {searchFailed && <Text selectable style={styles.error}>{t('location.searchError')}</Text>}
       {showingRecent && (
-        <View style={styles.sectionTitleRow}>
-          <Clock3 size={14} color={C.textMuted} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>{t('location.recentTitle')}</Text>
+        <View style={styles.recentSection}>
+          <View style={styles.sectionHeading}>
+            <Clock3 size={14} color={C.textMuted} strokeWidth={2} />
+            <Text style={styles.sectionTitle}>{t('location.recentTitle')}</Text>
+          </View>
+          <View style={styles.recentList}>
+            {recent.map((location) => {
+              const selected = value?.kakaoPlaceId === location.kakaoPlaceId;
+              return (
+                <TouchableOpacity
+                  key={`${location.source}:${location.kakaoPlaceId ?? `${location.latitude}:${location.longitude}`}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('location.suggestionAccessibility', { name: location.label })}
+                  accessibilityState={{ selected }}
+                  activeOpacity={0.72}
+                  style={[styles.recentCard, selected && styles.recentCardSelected]}
+                  onPress={() => selectLocation(location)}
+                  testID={`location-recent-${location.kakaoPlaceId ?? `${location.latitude}:${location.longitude}`}`}
+                >
+                  <Text style={[styles.recentCardText, selected && styles.recentCardTextSelected]} numberOfLines={1}>{location.label}</Text>
+                  <ChevronRight size={18} color={selected ? C.pinkDeep : C.textSub} strokeWidth={2} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       )}
-      {visibleLocations.length > 0 && (
+      {searching && suggestions.length > 0 && (
         <View style={styles.list}>
-          {visibleLocations.map((location) => {
+          {suggestions.map((location) => {
             const selected = value?.source === location.source
               && value?.kakaoPlaceId === location.kakaoPlaceId
               && value?.latitude === location.latitude
@@ -208,15 +228,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: SP.xl },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginBottom: SP.sm },
-  badge: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: C.pink,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  badgeText: { fontSize: 13, fontWeight: '800', color: C.white },
-  label: { fontSize: 15, fontWeight: '700', color: C.text },
+  container: { gap: SP.md },
   inputWrap: {
     minHeight: 52,
     flexDirection: 'row',
@@ -230,18 +242,38 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, minHeight: 44, fontSize: 14, color: C.text, paddingVertical: 0 },
   currentInput: { color: C.pinkDeep, fontWeight: '600' },
-  gpsButton: {
-    width: 44,
-    height: 44,
+  currentLocationButton: {
+    minHeight: 52,
     borderRadius: R.md,
-    backgroundColor: C.pinkLight,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: SP.sm,
   },
-  gpsButtonActive: { backgroundColor: C.pink },
-  hint: { fontSize: 11, color: C.textSub, paddingTop: SP.sm, lineHeight: 16 },
+  currentLocationButtonActive: { backgroundColor: C.pink, borderColor: C.pink },
+  currentLocationText: { color: C.locationMuted, fontSize: 13, fontWeight: '700' },
+  currentLocationTextActive: { color: C.white },
   error: { fontSize: 12, color: C.danger, paddingTop: SP.sm, lineHeight: 18 },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, paddingTop: SP.md },
+  recentSection: { gap: SP.sm, paddingTop: SP.xs },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  recentList: { gap: SP.sm },
+  recentCard: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SP.lg,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    borderRadius: R.md,
+    backgroundColor: C.white,
+  },
+  recentCardSelected: { borderColor: C.pink, backgroundColor: C.pinkLight },
+  recentCardText: { color: C.textSub, fontSize: 13, fontWeight: '500' },
+  recentCardTextSelected: { color: C.pinkDeep, fontWeight: '700' },
   sectionTitle: { fontSize: 12, color: C.textMuted, fontWeight: '600' },
   list: {
     marginTop: SP.sm,

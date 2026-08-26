@@ -493,7 +493,7 @@ describe('deterministic candidate-only fallback', () => {
       process.cwd(), 'supabase/functions/_shared/recommendation-course-selection.ts',
     ), 'utf8');
 
-    expect(MAX_CANDIDATE_POOL_SIZE).toBe(40);
+    expect(MAX_CANDIDATE_POOL_SIZE).toBe(50);
     expect(source).not.toContain('.slice(0, 8)');
     expect(source).not.toContain('const routes:');
   });
@@ -540,7 +540,7 @@ describe('deterministic candidate-only fallback', () => {
   it('rejects a candidate pool larger than the explicit handler bound', () => {
     const oversized = [
       candidate('meal', 'meal-id', 'FD6', 127),
-      ...Array.from({ length: 40 }, (_, index) => (
+      ...Array.from({ length: 50 }, (_, index) => (
         candidate(`cafe-${index}`, `cafe-id-${index}`, 'CE7', 127.001 + index / 10000)
       )),
     ];

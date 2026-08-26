@@ -93,6 +93,24 @@ function dependencies(overrides: Partial<RecommendDateDependencies> = {}): Recom
 }
 
 describe('recommend-date server prompt', () => {
+  it('routes a legacy course keyword through the intent-aware Kakao pipeline', async () => {
+    const providerSearch = jest.fn(async () => ({
+      candidates: [],
+      discovery: { places: [], attemptsRun: 0, fallbackUsed: false, fewerResults: false },
+    }));
+    const searchCandidates = jest.fn(async () => searchResult);
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: { ...request(), additionalRequest: '삼겹살 먹고 싶어' } },
+      dependencies({ searchCandidates, searchProviderNeutralCandidates: providerSearch }),
+    );
+
+    expect(result.status).toBe(200);
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(searchCandidates).toHaveBeenCalledWith(expect.objectContaining({
+      resolvedStepIntents: [expect.objectContaining({ stepCategory: 'meal', canonicalTerm: '삼겹살' })],
+    }), expect.anything());
+  });
+
   it('uses the provider-neutral Naver-first result for a fresh unpinned course', async () => {
     const providerSearch = jest.fn(async () => ({
       candidates: [
@@ -230,6 +248,27 @@ describe('recommend-date server prompt', () => {
       body: { error: { ...createRecommendationError('COURSE_VALIDATION_FAILED'), failureStage: 'stage_attestation' } },
     });
     expect(onCourseValidationFailure).toHaveBeenCalledWith('stage_attestation');
+  });
+
+  it('returns an AI quota reservation when an internal response stage fails', async () => {
+    const releaseQuota = jest.fn(async () => undefined);
+    const rateLimit = {
+      acquire: jest.fn(async () => ({ acquired: true as const })),
+      consume: jest.fn(async () => ({ allowed: true as const, consumptionId: 42 })),
+      releaseQuota,
+      release: jest.fn(async () => undefined),
+      recordEvent: jest.fn(async () => undefined),
+    };
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: request() },
+      dependencies({
+        rateLimit,
+        stageAttestation: jest.fn(async () => { throw new Error('temporary database failure'); }),
+      }),
+    );
+
+    expect(result).toMatchObject({ status: 422, body: { error: { failureStage: 'stage_attestation' } } });
+    expect(releaseQuota).toHaveBeenCalledWith({ userId: 'user-001', consumptionId: 42 });
   });
 
   it('returns an existing server-attested response when a retry reuses the same request ID', async () => {

@@ -35,16 +35,31 @@
     },
     "generating": {
       "courseSteps": [
-        "Checking your tastes and mood",
-        "Planning the route",
-        "Finding a low-risk course"
+        "Preferences",
+        "Places",
+        "Route",
+        "Finish"
+      ],
+      "courseBubbleMessages": [
+        "Analyzing\nyour preferences",
+        "Finding places\nfor you",
+        "Planning the\nroute",
+        "Finalizing your\nplan"
+      ],
+      "courseStatusMessages": [
+        "Analyzing preferences",
+        "Finding place options",
+        "Planning your route",
+        "Finalizing your plan"
       ],
       "defaultSteps": [
         "Checking today's energy",
         "Balancing budget and travel",
         "Finding the best date ideas"
       ],
-      "courseHeading": "Planning a course\nthat fits both of you",
+      "courseHeading": "Finding a date plan\nfor you both",
+      "courseSubtitle": "Just a moment, please!",
+      "courseConditionsLabel": "Current conditions",
       "defaultHeading": "Choosing ideas\nthat fit both of you",
       "courseError": "Something went wrong while creating the course.",
       "courseExpired": "This request has expired. Please review your conditions and try again.",

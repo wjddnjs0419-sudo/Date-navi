@@ -10,6 +10,7 @@
     "placeholder": "예: 성수동, 홍대입구역",
     "hint": "동네를 알려주면 실제 장소·맛집으로 추천해드려요.",
     "autocompleteHint": "두 글자 이상 입력하고 검색 중심을 선택해주세요.",
+    "currentButton": "현재 위치 사용",
     "searchAccessibility": "만날 위치 검색",
     "currentAccessibility": "현재 위치 사용",
     "suggestionAccessibility": "{{name}} 위치 선택",

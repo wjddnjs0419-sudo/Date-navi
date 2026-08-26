@@ -25,7 +25,7 @@ import {
   type RecommendationHistoryContext,
 } from '../../../shared/recommendation/recommendation-history.ts';
 
-export const MAX_CANDIDATE_POOL_SIZE = 40;
+export const MAX_CANDIDATE_POOL_SIZE = 50;
 
 const selectionStepSchema = z.object({
   stepId: z.string().trim().min(1).max(80),

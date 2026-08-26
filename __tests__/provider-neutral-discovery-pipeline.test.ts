@@ -1,5 +1,6 @@
 import { discoverProviderNeutralCandidates } from '../supabase/functions/_shared/provider-neutral-discovery-pipeline';
 import type { NormalizedPlace } from '../supabase/functions/_shared/place-provider';
+import type { RecommendationHistoryContext } from '../shared/recommendation/recommendation-history';
 
 const request = {
   requestId: 'req', mode: 'course' as const, language: 'ko' as const,
@@ -56,5 +57,25 @@ describe('provider-neutral discovery pipeline', () => {
     expect(mealAttempt).toHaveBeenCalledTimes(1);
     expect(kakao).not.toHaveBeenCalled();
     expect(result.candidates.map((candidate) => candidate.place.category.normalized)).toContain('meal');
+  });
+
+  it('excludes recent provider-scoped identities before ranking Naver-first candidates', async () => {
+    const history: RecommendationHistoryContext = {
+      recentHardPlaceIds: [],
+      recentExposure: {},
+      recentHardPlaceIdentities: [{ provider: 'naver', providerPlaceId: 'n-recent' }],
+      recentProviderExposure: { 'naver:n-recent': { lastSeenAt: '2026-07-24T00:00:00.000Z', sessionDistance: 1 } },
+      negativeActions: {}, feedback: {}, qualifiedPairs: [],
+    };
+    const result = await discoverProviderNeutralCandidates({
+      request,
+      primaryAttempts: [async () => [place('n-recent', 'meal'), place('n-fresh', 'meal'), place('n-cafe', 'cafe')]],
+      fallbackAttempts: [],
+      minQualifiedCandidates: 2,
+      history,
+    });
+
+    expect(result.candidates.map((candidate) => candidate.place.identity.providerPlaceId)).not.toContain('n-recent');
+    expect(result.candidates.map((candidate) => candidate.place.identity.providerPlaceId)).toEqual(['n-cafe', 'n-fresh']);
   });
 });

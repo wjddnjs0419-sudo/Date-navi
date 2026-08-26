@@ -9,6 +9,7 @@ jest.mock('expo-router', () => ({
 
 import { GeneratingFallback } from '../app/mode-flow/generating';
 import { Illustration } from '../components/illustration';
+import { RecommendationSessionRepositoryError } from '../lib/recommendation-session-repository';
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
@@ -19,6 +20,14 @@ const TR = require('react-test-renderer') as {
 };
 
 describe('GeneratingFallback', () => {
+  it('normalizes an authenticated session persistence failure for the course error UI', () => {
+    const { normalizeCourseGenerationError } = require('../app/mode-flow/generating') as typeof import('../app/mode-flow/generating');
+    expect(normalizeCourseGenerationError(new RecommendationSessionRepositoryError('unauthorized', 'expired'))).toEqual(
+      expect.objectContaining({ code: 'AUTH_EXPIRED' }),
+    );
+    expect(normalizeCourseGenerationError(new Error('unexpected'))).toBeNull();
+  });
+
   it('renders the mascot illustration, heading, message, and primary action', () => {
     let tree!: ReturnType<typeof TR.create>;
     TR.act(() => {

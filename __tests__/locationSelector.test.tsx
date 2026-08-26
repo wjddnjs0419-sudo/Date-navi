@@ -6,6 +6,15 @@ jest.mock('../lib/i18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
+jest.mock('../lib/recentLocations', () => ({
+  loadRecentLocations: jest.fn().mockResolvedValue([]),
+  saveRecentLocation: jest.fn().mockResolvedValue([]),
+}));
+
+const { loadRecentLocations } = jest.requireMock('../lib/recentLocations') as {
+  loadRecentLocations: { mockResolvedValue: (value: RecommendationLocation[]) => unknown };
+};
+
 type TestNode = { props: Record<string, any> };
 type TestRendererInstance = {
   root: {
@@ -13,6 +22,7 @@ type TestRendererInstance = {
     findByType: (type: unknown) => TestNode;
     findAllByType: (type: unknown) => TestNode[];
   };
+  unmount: () => void;
 };
 const TestRenderer = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => void | Promise<void>;
@@ -32,11 +42,15 @@ const suggestion: RecommendationLocation = {
 };
 
 describe('LocationSelector', () => {
+  const activeRenderers: TestRendererInstance[] = [];
+
   beforeEach(() => {
     jest.useFakeTimers();
   });
 
   afterEach(() => {
+    act(() => activeRenderers.splice(0).forEach((renderer) => renderer.unmount()));
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
@@ -46,6 +60,7 @@ describe('LocationSelector', () => {
     let renderer!: TestRendererInstance;
     await act(async () => {
       renderer = create(<LocationSelector value={null} onChange={onChange} search={search} />);
+      activeRenderers.push(renderer);
     });
     const input = renderer.root.findByProps({ accessibilityLabel: 'location.searchAccessibility' });
 
@@ -75,6 +90,7 @@ describe('LocationSelector', () => {
     let renderer!: TestRendererInstance;
     await act(async () => {
       renderer = create(<LocationSelector value={null} onChange={jest.fn()} search={jest.fn()} />);
+      activeRenderers.push(renderer);
     });
 
     const input = renderer.root.findByType(TextInput);
@@ -84,15 +100,41 @@ describe('LocationSelector', () => {
     ]));
   });
 
-  it('uses a required location label only when the caller marks the selector required', async () => {
+  it('keeps the location screen focused on search and recent location cards', async () => {
+    loadRecentLocations.mockResolvedValue([suggestion]);
     let renderer!: TestRendererInstance;
     await act(async () => {
       renderer = create(<LocationSelector value={null} onChange={jest.fn()} search={jest.fn()} required />);
+      activeRenderers.push(renderer);
+      await Promise.resolve();
     });
 
     const labels = renderer.root.findAllByType(Text).map((node) => node.props.children);
-    expect(labels).toContain('location.requiredLabel');
+    expect(labels).toContain('location.recentTitle');
+    expect(labels).not.toContain('location.popularTitle');
+    expect(labels).not.toContain('location.requiredLabel');
     expect(labels).not.toContain('location.label');
+  });
+
+  it('renders recent locations as vertically stacked cards and selects the whole card', async () => {
+    loadRecentLocations.mockResolvedValue([suggestion]);
+    const onChange = jest.fn();
+    let renderer!: TestRendererInstance;
+    await act(async () => {
+      renderer = create(<LocationSelector value={null} onChange={onChange} search={jest.fn()} />);
+      activeRenderers.push(renderer);
+      await Promise.resolve();
+    });
+
+    const row = renderer.root.findAllByType(TouchableOpacity).find(
+      (node: TestNode) => node.props.testID === `location-recent-${suggestion.kakaoPlaceId}`,
+    );
+    expect(row).toBeDefined();
+    expect(row!.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ minHeight: 52, backgroundColor: '#ffffff' }),
+    ]));
+    await act(async () => { await row!.props.onPress(); });
+    expect(onChange).toHaveBeenCalledWith(suggestion);
   });
 
   it('hides query A suggestions immediately when eligible query B starts debouncing', async () => {
@@ -102,6 +144,7 @@ describe('LocationSelector', () => {
     let renderer!: TestRendererInstance;
     await act(async () => {
       renderer = create(<LocationSelector value={null} onChange={jest.fn()} search={search} />);
+      activeRenderers.push(renderer);
     });
     const input = renderer.root.findByProps({ accessibilityLabel: 'location.searchAccessibility' });
 

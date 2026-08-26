@@ -52,7 +52,7 @@ describe('recommend-date deterministic Kakao search plan', () => {
       maxRequests: 12,
       pageSize: 15,
       minUniqueCandidates: 12,
-      maxUniqueCandidates: 40,
+      maxUniqueCandidates: 50,
       maxPagesPerQuery: 2,
       timeoutMs: 4000,
     });
@@ -339,7 +339,7 @@ describe('recommend-date Kakao fetch adapter and evidence', () => {
     expect(result.searchMetadata.failedCount).toBe(result.searchMetadata.requestCount);
   });
 
-  it('applies the 40-place bound after category-aware recall instead of lexical pre-slicing', async () => {
+  it('applies the 50-place bound after category-aware recall instead of lexical pre-slicing', async () => {
     const fourCategoryRequest = request(['meal', 'cafe', 'culture', 'walk']);
     const docsByCode: Record<string, ReturnType<typeof document>[]> = {
       FD6: Array.from({ length: 15 }, (_, index) => document(`a-meal-${index}`, {

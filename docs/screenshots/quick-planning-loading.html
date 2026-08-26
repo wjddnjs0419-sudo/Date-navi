@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Quick Planning Loading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #fff9fc;
+        --text: #3a2e2e;
+        --sub: #8a7f76;
+        --pink: #f26b7a;
+        --pink-deep: #c24b57;
+        --pink-light: #ffedef;
+        --pink-border: #f2a8b0;
+        --border: #f2e7dc;
+        --shadow: #785046;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; margin: 0; }
+      body {
+        overflow-x: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .screen {
+        width: min(100%, 390px);
+        min-height: 844px;
+        margin: 0 auto;
+        padding: 72px 20px 32px;
+        background: var(--bg);
+      }
+
+      h1, p { margin: 0; }
+      .heading {
+        width: 100%;
+        color: var(--text);
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 30px;
+        text-align: center;
+        white-space: pre-line;
+      }
+      .subtitle {
+        margin-top: 6px;
+        color: var(--sub);
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 20px;
+        text-align: center;
+      }
+
+      .mascot-stage {
+        position: relative;
+        width: 100%;
+        height: 155px;
+        margin-top: 7px;
+      }
+      .mascot {
+        position: absolute;
+        object-fit: contain;
+        opacity: 0;
+        transform: scale(.98);
+        transition: opacity 360ms ease-in-out, transform 360ms ease-in-out;
+        pointer-events: none;
+      }
+      .mascot.active { opacity: 1; transform: scale(1); }
+      .mascot.preference { left: 97px; top: 25px; width: 155px; height: 130px; }
+      .mascot.places { left: 79px; top: 23px; width: 192px; height: 132px; }
+      .mascot.route { left: 87px; top: 23px; width: 176px; height: 132px; }
+      .mascot.finish { left: 93px; top: 0; width: 171px; height: 155px; }
+
+      .bubble {
+        position: relative;
+        display: flex;
+        width: 118px;
+        height: 64px;
+        align-items: center;
+        justify-content: center;
+        margin: 8px auto 0;
+        padding: 0 10px;
+        border: 1px solid var(--pink-border);
+        border-radius: 16px;
+        background: var(--pink-light);
+        color: var(--pink-deep);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 22px;
+        text-align: center;
+        white-space: pre-line;
+        transition: width 200ms ease, opacity 200ms ease;
+      }
+      .bubble-text-stack { position: absolute; inset: 0; }
+      .bubble-text-layer {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        opacity: 0;
+        transition: opacity 360ms ease-in-out;
+      }
+      .bubble-text-layer.active { opacity: 1; }
+
+      .loading-progress { width: 100%; margin-top: 24px; }
+      .stepper { position: relative; display: flex; width: 100%; height: 76px; }
+      .step-item { position: relative; display: flex; width: 25%; flex-direction: column; align-items: center; }
+      .connector {
+        position: absolute;
+        z-index: 0;
+        top: 21px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--border);
+        transition: background-color 200ms ease;
+      }
+      .connector.active { background: var(--pink); }
+      .step-circle {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        background: #fff;
+        color: var(--sub);
+        transition: border-color 200ms ease, background-color 200ms ease, color 200ms ease;
+      }
+      .step-circle.active, .step-circle.reached { border-color: var(--pink); background: var(--pink-light); color: var(--pink-deep); }
+      .step-circle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+      .step-label {
+        max-width: 82px;
+        margin-top: 6px;
+        overflow: hidden;
+        color: var(--sub);
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 16px;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .step-label.active { color: var(--pink-deep); }
+
+      .conditions-card {
+        display: flex;
+        width: 100%;
+        height: 104px;
+        flex-direction: column;
+        justify-content: flex-start;
+        margin-top: 24px;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 4px 7px rgb(120 80 70 / 10%);
+      }
+      .conditions-title { font-size: 15px; font-weight: 700; line-height: 20px; }
+      .condition-meta-row { display: flex; width: 100%; height: 18px; align-items: center; gap: 16px; }
+      .condition-group { display: flex; min-width: 0; height: 18px; align-items: center; gap: 4px; }
+      .condition-time-group { flex: 1; }
+      .condition-group svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: var(--sub); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+      .condition-value { min-width: 0; overflow: hidden; color: var(--sub); font-size: 12px; font-weight: 500; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+
+      .status-row { display: flex; width: 100%; height: 20px; align-items: center; justify-content: space-between; margin-top: 24px; }
+      .status-text-stack { position: relative; flex: 1; height: 20px; }
+      .status-text-layer { position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 360ms ease-in-out; }
+      .status-text-layer.active { opacity: 1; }
+      .status, .percent { color: var(--pink); }
+      .status { font-size: 13px; font-weight: 500; line-height: 20px; }
+      .percent { font-size: 16px; font-weight: 600; line-height: 24px; }
+      .track { width: 100%; height: 8px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: var(--pink-light); }
+      .fill { width: 0%; height: 100%; border-radius: 999px; background: var(--pink); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .mascot, .bubble, .bubble-text-layer, .connector, .step-circle, .status-text-layer, .fill { transition-duration: 0ms; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="screen" aria-label="Quick Planning loading screen">
+      <h1 class="heading" id="heading"></h1>
+      <p class="subtitle" id="subtitle"></p>
+
+      <div class="mascot-stage" aria-hidden="true">
+        <img class="mascot preference" data-mascot="0" alt="" src="../../assets/illustrations/mascot-heart-loading-preference.png" />
+        <img class="mascot places" data-mascot="1" alt="" src="../../assets/illustrations/mascot-heart-loading-places.png" />
+        <img class="mascot route" data-mascot="2" alt="" src="../../assets/illustrations/mascot-heart-loading-route.png" />
+        <img class="mascot finish" data-mascot="3" alt="" src="../../assets/illustrations/mascot-heart-loading-finish.png" />
+      </div>
+
+      <div class="bubble" id="bubble" aria-hidden="true"><div class="bubble-text-stack" id="bubble-stack"></div></div>
+
+      <section class="loading-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-live="polite">
+        <div class="stepper" id="stepper"></div>
+        <div class="conditions-card">
+          <div class="conditions-title" id="conditions-title"></div>
+          <div class="condition-meta-row">
+            <div class="condition-group"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="condition-value" id="condition-location"></span></div>
+            <div class="condition-group condition-time-group"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2v5M8 2v5M3 10h18"/></svg><span class="condition-value" id="condition-time"></span></div>
+          </div>
+          <div class="condition-group"><svg viewBox="0 0 24 24"><path d="M20.8 8.6c0 5.4-8.8 11.2-8.8 11.2S3.2 14 3.2 8.6A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 8.8 2.6Z"/></svg><span class="condition-value" id="condition-mood"></span></div>
+        </div>
+        <div class="status-row"><div class="status-text-stack" id="status-stack"></div><span class="percent" id="percent"></span></div>
+        <div class="track"><div class="fill" id="fill"></div></div>
+      </section>
+    </main>
+
+    <script>
+      const query = new URLSearchParams(location.search);
+      const language = query.get('lang') === 'en' ? 'en' : 'ko';
+      const staticPreview = query.get('static') === '1';
+      const requestedProgress = Number(query.get('progress'));
+      let progress = Number.isFinite(requestedProgress) ? Math.max(0, Math.min(100, requestedProgress)) : 0;
+      let progressTarget = 90;
+      let displayedProgress = progress;
+      let progressAnimationRunning = false;
+      let lastProgressFrame = 0;
+
+      const copy = {
+        ko: {
+          heading: '둘에게 맞는\n코스를 찾고 있어요', subtitle: '조금만 기다려주세요!', conditionLabel: '지금까지의 조건',
+          steps: ['취향 분석', '장소 탐색', '동선 정리', '코스 완성'],
+          bubbles: ['취향과 분위기를\n분석하고 있어요', '조건에 맞는 장소들을\n찾고 있어요', '이동 동선을\n정리 중이에요', '코스를\n마무리하고 있어요'],
+          statuses: ['취향과 분위기 분석 중', '장소 후보 탐색 중', '동선 정리 중', '코스 완성 중'],
+          conditions: ['성수동', '오늘 오후 6시', '감성적인 · 조용한 분위기'],
+          bubbleWidths: [118, 148, 105, 131],
+        },
+        en: {
+          heading: 'Finding a date plan\nfor you both', subtitle: 'Just a moment, please!', conditionLabel: 'Current conditions',
+          steps: ['Preferences', 'Places', 'Route', 'Finish'],
+          bubbles: ['Analyzing\nyour preferences', 'Finding places\nfor you', 'Planning the\nroute', 'Finalizing your\nplan'],
+          statuses: ['Analyzing preferences', 'Finding place options', 'Planning your route', 'Finalizing your plan'],
+          conditions: ['Seongsu-dong', 'Today at 6 PM', 'Atmospheric · Quiet mood'],
+          bubbleWidths: [150, 148, 125, 131],
+        },
+      }[language];
+
+      const stageFor = value => value < 25 ? 0 : value < 53 ? 1 : value < 77 ? 2 : 3;
+      const icons = [
+        '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+        '<svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+        '<svg viewBox="0 0 18 18"><path d="M4.5 16.5C5.74264 16.5 6.75 15.4926 6.75 14.25C6.75 13.0074 5.74264 12 4.5 12C3.25736 12 2.25 13.0074 2.25 14.25C2.25 15.4926 3.25736 16.5 4.5 16.5Z"/><path d="M6.75 14.25H13.125C13.8212 14.25 14.4889 13.9734 14.9812 13.4812C15.4734 12.9889 15.75 12.3212 15.75 11.625C15.75 10.9288 15.4734 10.2611 14.9812 9.76884C14.4889 9.27656 13.8212 9 13.125 9H4.875C4.17881 9 3.51113 8.72344 3.01884 8.23116C2.52656 7.73887 2.25 7.07119 2.25 6.375C2.25 5.67881 2.52656 5.01113 3.01884 4.51884C3.51113 4.02656 4.17881 3.75 4.875 3.75H11.25"/><path d="M13.5 6C14.7426 6 15.75 4.99264 15.75 3.75C15.75 2.50736 14.7426 1.5 13.5 1.5C12.2574 1.5 11.25 2.50736 11.25 3.75C11.25 4.99264 12.2574 6 13.5 6Z"/></svg>',
+        '<svg viewBox="0 0 24 24"><path d="M20.8 8.6c0 5.4-8.8 11.2-8.8 11.2S3.2 14 3.2 8.6A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 8.8 2.6Z"/></svg>',
+      ];
+
+      const stepper = document.getElementById('stepper');
+      copy.steps.forEach((label, index) => {
+        const item = document.createElement('div');
+        item.className = 'step-item';
+        item.innerHTML = `${index < 3 ? '<span class="connector"></span>' : ''}<span class="step-circle">${icons[index]}</span><span class="step-label">${label}</span>`;
+        stepper.appendChild(item);
+      });
+
+      copy.bubbles.forEach(message => {
+        const node = document.createElement('span');
+        node.className = 'bubble-text-layer';
+        node.textContent = message;
+        document.getElementById('bubble-stack').appendChild(node);
+      });
+      copy.statuses.forEach(message => {
+        const node = document.createElement('span');
+        node.className = 'status status-text-layer';
+        node.textContent = message;
+        document.getElementById('status-stack').appendChild(node);
+      });
+
+      document.documentElement.lang = language;
+      document.getElementById('heading').textContent = copy.heading;
+      document.getElementById('subtitle').textContent = copy.subtitle;
+      document.getElementById('conditions-title').textContent = copy.conditionLabel;
+      document.getElementById('condition-location').textContent = copy.conditions[0];
+      document.getElementById('condition-time').textContent = copy.conditions[1];
+      document.getElementById('condition-mood').textContent = copy.conditions[2];
+
+      function render() {
+        const stage = stageFor(displayedProgress);
+        document.querySelectorAll('[data-mascot]').forEach(node => node.classList.toggle('active', Number(node.dataset.mascot) === stage));
+        const bubble = document.getElementById('bubble');
+        bubble.style.width = `${copy.bubbleWidths[stage]}px`;
+        document.querySelectorAll('.bubble-text-layer').forEach((node, index) => node.classList.toggle('active', index === stage));
+        document.querySelectorAll('.step-item').forEach((item, index) => {
+          item.querySelector('.connector')?.classList.toggle('active', index < stage);
+          item.querySelector('.step-circle').classList.toggle('active', index === stage);
+          item.querySelector('.step-circle').classList.toggle('reached', index < stage);
+          item.querySelector('.step-label').classList.toggle('active', index === stage);
+        });
+        document.querySelectorAll('.status-text-layer').forEach((node, index) => node.classList.toggle('active', index === stage));
+        document.getElementById('percent').textContent = `${Math.round(displayedProgress)}%`;
+        document.getElementById('fill').style.width = `${displayedProgress}%`;
+        document.querySelector('.loading-progress').setAttribute('aria-valuenow', `${Math.round(displayedProgress)}`);
+      }
+
+      function animateProgress(timestamp) {
+        const elapsed = lastProgressFrame === 0 ? 16 : timestamp - lastProgressFrame;
+        lastProgressFrame = timestamp;
+        const distance = progress - displayedProgress;
+        if (Math.abs(distance) < 0.05) {
+          displayedProgress = progress;
+          progressAnimationRunning = false;
+          lastProgressFrame = 0;
+          render();
+          return;
+        }
+        displayedProgress += distance * Math.min(1, elapsed / 400);
+        render();
+        requestAnimationFrame(animateProgress);
+      }
+
+      function requestProgressAnimation() {
+        if (progressAnimationRunning) return;
+        progressAnimationRunning = true;
+        requestAnimationFrame(animateProgress);
+      }
+
+      render();
+      if (!staticPreview) {
+        const timer = setInterval(() => {
+          const increment = progressTarget === 100 ? 4 : 1;
+          progress = Math.min(progress + increment, progressTarget);
+          requestProgressAnimation();
+          if (progress === 90) progressTarget = 100;
+          if (progress === 100) clearInterval(timer);
+        }, 80);
+      }
+    </script>
+  </body>
+</html>

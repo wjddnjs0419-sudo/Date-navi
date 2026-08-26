@@ -4,9 +4,31 @@
     "modeLabel": "Make it a plan",
     "title": "Plan your date course",
     "subtitle": "Pick the steps and preferences, and we'll suggest a course that fits.",
+    "flow": {
+      "steps": { "title": "What kind of date do you want?", "subtitle": "Choose the course steps in order." },
+      "location": { "title": "Where should we meet?", "subtitle": "Choose a neighborhood or station." },
+      "time": { "title": "When should we meet?", "subtitle": "This helps us make the recommendation more accurate." },
+      "mood": { "title": "What mood are you looking for?", "subtitle": "Select any moods that fit." },
+      "next": "Next"
+    },
+    "preferences": {
+      "question": {
+        "meal": "What kind of meal sounds good?",
+        "cafe": "What kind of cafe mood?",
+        "walk": "What kind of walk?",
+        "culture": "What kind of culture are you into?",
+        "activity": "What kind of activity?",
+        "drinks": "What kind of bar?"
+      },
+      "helper": "Choose Anything and AI will find the best fit.",
+      "anything": "Anything",
+      "autoExpand": "The next step opens automatically after you choose.",
+      "tip": "Details are optional. Anything is okay."
+    },
     "steps": {
       "label": "Date itinerary",
       "hint": "Arrange two to four steps in the order you want.",
+      "selectionHint": "Select at least 2",
       "add": "Add step",
       "stepLabel": "Step {{number}}",
       "categories": {
@@ -50,12 +72,24 @@
     "moods": {
       "label": "Preferred vibes (select any)",
       "options": {
+        "emotional": "Atmospheric",
         "comfortable": "Comfortable",
         "lively": "Lively",
         "romantic": "Romantic",
         "quiet": "Quiet",
-        "novel": "Different"
-      }
+        "novel": "New or special"
+      },
+      "unsure": "Not sure — let AI choose",
+      "unsureShort": "Let AI choose"
+    },
+    "time": {
+      "now": { "title": "Right now", "description": "Get recommendations now" },
+      "tonight": { "title": "Tonight", "description": "Tonight (after 5 PM)" },
+      "custom": { "title": "Choose date and time", "description": "Set the date and time yourself", "selectedDescription": "Custom date and time", "sheetTitle": "Choose date and time", "timeLabel": "Time", "apply": "Apply" },
+      "quick": { "title": "Quick picks", "today18": "Today at 6 PM", "today19": "Today at 7 PM", "weekendAfternoon": "Weekend afternoon", "thisWeekend": "This weekend" }
+    },
+    "review": {
+      "title": "Ready to make it?", "subtitle": "Review your choices and build your date course.", "courseLabel": "Course", "locationLabel": "Location", "timeLabel": "Time", "moodLabel": "Mood", "edit": "Edit", "tip": "We'll use your choices to recommend\npreferences + route + places together.", "generate": "Build date course", "back": "Back to previous step"
     },
     "duration": {
       "label": "Total time (optional)",
@@ -78,6 +112,7 @@
       "step_count_invalid": "Build a course with two to four steps.",
       "duplicate_step_ids": "Two course steps have the same identifier. Please reopen this screen.",
       "invalid_step_category": "One of the course steps is not supported.",
+      "meeting_time_required": "Choose when you will meet.",
       "budget_invalid": "The whole-course budget per person must be a number from KRW 1 to 10,000,000.",
       "additional_request_too_long": "Keep the additional request to 500 characters or fewer.",
       "exclusion_conflict": "Your selected steps conflict with an exclusion: {{categories}}. Edit the text or the steps."
@@ -100,7 +135,10 @@
       "additionalRequest": "Enter an additional request",
       "expandOptional": "Expand {{label}}",
       "collapseOptional": "Collapse {{label}}",
-      "generate": "Build the date course"
+      "generate": "Build the date course",
+      "step": "Expand step {{number}}",
+      "progress": "{{step}} / {{total}} steps",
+      "next": "Next"
     },
     "generateButton": "Get AI course",
     "back": "←"

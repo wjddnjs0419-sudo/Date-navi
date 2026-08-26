@@ -11,6 +11,7 @@ export const C = {
   pinkMid: '#FFD3D9',
   text: '#3A2E2E',
   textSub: '#8A7F76',
+  locationMuted: '#8A8075',
   textMuted: '#A89B92',
   textLight: '#B8AEA6',
   textFaint: '#C8BCB1',

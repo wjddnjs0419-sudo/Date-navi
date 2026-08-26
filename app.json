@@ -3,7 +3,7 @@
     "name": "Date Navi",
     "slug": "datemate-app",
     "scheme": "datenavi",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -103,7 +103,8 @@
             "withoutAdIdSupport": true
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {},

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -24,12 +24,14 @@ const KAKAO_BUTTON_IMAGE = {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SOCIAL_BUTTON_HEIGHT = socialButtonHeight(SCREEN_WIDTH);
 const SOCIAL_BUTTON_RADIUS = socialButtonRadius(SOCIAL_BUTTON_HEIGHT);
+type LoginMethod = 'kakao' | 'google' | 'apple';
 
 export default function AuthScreen() {
   const router = useRouter();
   const { t, language } = useI18n();
-  const [loading, setLoading] = useState(false);
+  const [loadingMethod, setLoadingMethod] = useState<LoginMethod | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const loading = loadingMethod !== null;
   // Sign in with Apple은 Apple 플랫폼에서만 제공된다. 다른 곳에서 Apple 버튼을 노출하는 건
   // 브랜드 가이드 위반이라, 사용 가능할 때만 렌더한다.
   const [appleAvailable, setAppleAvailable] = useState(false);
@@ -44,7 +46,7 @@ export default function AuthScreen() {
 
   async function handleKakaoSignIn() {
     setErrorMsg('');
-    setLoading(true);
+    setLoadingMethod('kakao');
     try {
       const { cancelled } = await signInWithKakao();
       if (!cancelled) await logEvent('login', { method: 'kakao' });
@@ -52,13 +54,13 @@ export default function AuthScreen() {
       const key = getKakaoSignInErrorMessageKey(e?.code);
       if (key) setErrorMsg(t(key));
     } finally {
-      setLoading(false);
+      setLoadingMethod(null);
     }
   }
 
   async function handleGoogleSignIn() {
     setErrorMsg('');
-    setLoading(true);
+    setLoadingMethod('google');
     try {
       const { cancelled } = await signInWithGoogle();
       if (!cancelled) await logEvent('login', { method: 'google' });
@@ -67,13 +69,13 @@ export default function AuthScreen() {
       const key = getGoogleSignInErrorMessageKey(code);
       if (key) setErrorMsg(t(key));
     } finally {
-      setLoading(false);
+      setLoadingMethod(null);
     }
   }
 
   async function handleAppleSignIn() {
     setErrorMsg('');
-    setLoading(true);
+    setLoadingMethod('apple');
     try {
       const { cancelled, fullName } = await signInWithApple();
       if (!cancelled) {
@@ -85,7 +87,7 @@ export default function AuthScreen() {
       const key = getAppleSignInErrorMessageKey(e?.code);
       if (key) setErrorMsg(t(key));
     } finally {
-      setLoading(false);
+      setLoadingMethod(null);
     }
   }
 
@@ -116,17 +118,20 @@ export default function AuthScreen() {
             label={t('auth.kakaoStart')}
             onPress={handleKakaoSignIn}
             disabled={loading}
+            busy={loadingMethod === 'kakao'}
           />
           <GoogleLoginButton
             label={t('auth.googleStart')}
             onPress={handleGoogleSignIn}
             disabled={loading}
+            busy={loadingMethod === 'google'}
           />
           {appleAvailable && (
             <AppleLoginButton
               label={t('auth.appleStart')}
               onPress={handleAppleSignIn}
               disabled={loading}
+              busy={loadingMethod === 'apple'}
             />
           )}
           {errorMsg !== '' && (
@@ -144,17 +149,17 @@ export default function AuthScreen() {
   );
 }
 
-function KakaoLoginButton({ language, label, onPress, disabled }: {
-  language: 'ko' | 'en'; label: string; onPress: () => void; disabled?: boolean;
+function KakaoLoginButton({ language, label, onPress, disabled, busy }: {
+  language: 'ko' | 'en'; label: string; onPress: () => void; disabled?: boolean; busy?: boolean;
 }) {
   return (
-    <TouchableOpacity
+    <Pressable
+      testID="kakao-login-button"
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={[s.kakaoBtn, disabled && s.socialBtnDisabled]}
+      style={({ pressed }) => [s.kakaoBtn, pressed && s.socialBtnPressed, busy && s.socialBtnBusy]}
     >
       <Image
         testID="kakao-official-button"
@@ -163,33 +168,33 @@ function KakaoLoginButton({ language, label, onPress, disabled }: {
         resizeMode="contain"
         accessible={false}
       />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
-function GoogleLoginButton({ label, onPress, disabled }: {
-  label: string; onPress: () => void; disabled?: boolean;
+function GoogleLoginButton({ label, onPress, disabled, busy }: {
+  label: string; onPress: () => void; disabled?: boolean; busy?: boolean;
 }) {
   return (
-    <TouchableOpacity
+    <Pressable
+      testID="google-login-button"
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={[s.socialBtn, s.socialBtnGoogle, disabled && s.socialBtnDisabled]}
+      style={({ pressed }) => [s.socialBtn, s.socialBtnGoogle, pressed && s.socialBtnPressed, busy && s.socialBtnBusy]}
     >
       <GoogleGLogo />
       <Text style={[s.socialBtnText, s.socialBtnTextGoogle]}>{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 // Apple 공식 버튼. 로고·문구·다국어·터치 피드백을 전부 Apple 네이티브 뷰가 그리므로
 // 라벨이나 아이콘을 직접 그리면 안 된다(브랜드 가이드). 우리가 정할 수 있는 건
 // 타입(SIGN_IN)·색(BLACK)·코너 반경·크기뿐이다.
-function AppleLoginButton({ label, onPress, disabled }: {
-  label: string; onPress: () => void; disabled?: boolean;
+function AppleLoginButton({ label, onPress, disabled, busy }: {
+  label: string; onPress: () => void; disabled?: boolean; busy?: boolean;
 }) {
   return (
     <AppleAuthentication.AppleAuthenticationButton
@@ -199,7 +204,7 @@ function AppleLoginButton({ label, onPress, disabled }: {
       cornerRadius={SOCIAL_BUTTON_RADIUS}
       accessibilityLabel={label}
       onPress={disabled ? () => {} : onPress}
-      style={[s.appleBtn, disabled && s.socialBtnDisabled]}
+      style={[s.appleBtn, busy && s.socialBtnBusy]}
     />
   );
 }
@@ -256,7 +261,8 @@ const s = StyleSheet.create({
   appleBtn: { height: SOCIAL_BUTTON_HEIGHT, width: '100%' },
   kakaoBtn: { height: SOCIAL_BUTTON_HEIGHT },
   kakaoImage: { width: '100%', height: '100%' },
-  socialBtnDisabled: { opacity: 0.5 },
+  socialBtnPressed: { opacity: 0.85 },
+  socialBtnBusy: { opacity: 0.5 },
   // Google 브랜딩 가이드: 라이트 버튼 텍스트 색 #1F1F1F.
   socialBtnText: { fontSize: 15, fontWeight: '600' },
   socialBtnTextGoogle: { color: '#1F1F1F' },

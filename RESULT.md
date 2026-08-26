@@ -1,5 +1,30 @@
 # RESULT.md
 
+## 2026-08-26 — 코스 생성 경로·피드백 후속 점검
+
+- 생성 요청의 인증 오류가 동의 RPC 또는 추천 결과 저장 RPC에서 발생해도 `AUTH_EXPIRED`로 일관되게 안내하도록 정규화했다. 시간값은 Edge 요청 스키마를 변경하지 않고 localized `additionalRequest` 문맥으로 전달하는 회귀 테스트를 추가했다.
+- 원격 `recommend-date` Edge Function은 ACTIVE v65, 로컬·원격 migration history는 `20260820090100`까지 일치한다. 인증 없는 직접 호출은 RPC/Edge 모두 정상적으로 차단되어 Edge 미배포 상태는 아닌 것으로 확인했다.
+- `npm run validate`, `npx expo export --platform web`, 대상 생성 테스트를 통과했다. 전체 Jest는 246 suites 중 244 suites / 1,694 tests 통과이며, 기존 `startup-permissions.test.ts` source regex와 `ios-native-brand-assets.test.ts` 에셋 해시 불일치 2 suites / 5 tests만 남는다.
+- 현재 작업 트리의 UI 변경을 포함한 EAS production build `1.0.2 (22)`를 생성해 App Store Connect에 제출했다. Apple processing 완료 후 TestFlight 내부 테스터에게 배포된다. 빌드 페이지: https://expo.dev/accounts/jjjeong/projects/datemate-app/builds/dcec74cc-a1b8-4a0d-ac9e-c4734e1f77a5
+- 새 native datetime picker가 포함된 빌드 22의 실기기 QA는 Apple processing 및 테스터 설치 후 진행할 단계로 남아 있다.
+
+## 2026-08-25 — Date-navi 코스 입력 5단계 리디자인
+
+- `/mode-flow/course` route는 유지하고 내부 `flowStep` 상태로 Figma Flow 4의 01A–05를 구현했다. 단계는 코스 카테고리/선호, 만남 장소, 시간, 분위기, 최종 검토·생성이다.
+- 첫 화면은 식사 1개로 시작하며 카테고리 2개 이상 4개 이하를 선택해야 다음 CTA가 활성화된다. `아무거나/Anything`은 `intentTags`를 저장하지 않는 기존 무키워드 상태로 매핑했다.
+- 새 선호값은 기존 intent taxonomy로 연결했다: 식사(고기·한식·일식·양식·가볍게), 카페(조용한·감성적인·뷰 좋은·대화하기 좋은), 산책(공원·강변·골목·야경·자연), 기존 술/활동/문화 제안값. 앱 사전과 Supabase Edge 공용 dictionary를 함께 갱신했다.
+- 시간 입력은 `@react-native-community/datetimepicker` native datetime picker로 날짜와 시간을 함께 선택한다. 빠른 선택값은 오늘 6/7시·주말 오후·이번 주말을 지원하고, 기존 서버 계약을 깨지 않도록 요청 시 만남 시간을 localized `additionalRequest` 메모로 전달한다.
+- 위치 화면에 Figma의 인기 지역 목록(성수동·홍대입구역·강남역·이태원·건대입구역·잠실역)과 한·영 카피를 추가했다. 분위기 6종과 추천 위임 선택, 최종 검토 편집 이동도 포함한다.
+- 갱신한 테스트: `course-draft.test.ts`, `course-screen.test.tsx`, `course-step-editor.test.tsx`, 관련 `course-ui-scope.test.tsx`. 대상 4 suites / 28 tests 통과, `npm run validate` 통과, `npx expo export --platform web` 통과.
+- 전체 Jest는 244 suites / 1687 tests 통과했다. 기존과 무관한 `startup-permissions.test.ts`의 오래된 source regex와 `ios-native-brand-assets.test.ts`의 기존 asset hash 불일치로 2 suites / 5 tests가 남는다. 이번 변경에서 해당 소스·에셋은 수정하지 않았다.
+
+### 후속 작업
+
+- `@react-native-community/datetimepicker`는 `app.json` plugin과 package에 추가했으므로 iOS/Android Dev Client native rebuild가 필요하다.
+- 새 intent dictionary를 포함한 `recommend-date` 및 `replacement-candidates` Edge Function을 Supabase project `wqjguifsmtblgrhdfnji`에 CLI로 배포했다.
+- TestFlight용 `expo.version`을 `1.0.2`로 올리고 EAS production build `1.0.2 (21)`을 생성했다. App Store Connect 제출 작업도 `FINISHED`로 확인했으며, Apple의 TestFlight processing 완료 후 내부 테스터 배포가 가능하다.
+- 기존 `1.0.1 (20)` 제출 시도는 App Store Connect에 해당 버전이 이미 제출된 상태라 거절됐고, 새 버전 `1.0.2 (21)`로 재제출해 해결했다.
+
 ## 2026-07-31 — 코스 키워드 필수 조건 전환·원격 배포 완료
 
 - 사용자가 코스 스텝에서 선택하는 기본 제안 칩과 직접 입력 키워드를 구분하지 않고 모두 `required` intent로 전환했다. 적용 범위는 식사·카페·술·액티비티·문화·산책 전체다.
@@ -900,4 +925,43 @@
 
 - 장소명·주소는 Kakao Local API 한계로 계속 한국어 고정(승인된 범위). 영어 모드에서도 "서울숲 date course"처럼 장소명만 한글.
 - 기존에 이미 확정된 `date_cards`는 `content_i18n`이 없어 생성 당시 언어로만 남음 — 새로 확정하는 카드부터 양쪽 언어 저장.
+
+## 2026-08-26 — 코스 생성/확정 파이프라인 계약 보강
+
+- 후보 풀 상한을 provider discovery와 맞춰 40개에서 50개로 통일했다. 공유 Zod 스키마, Kakao 검색 상한, 코스 선택 상한, DB attestation validator를 함께 갱신했다.
+- 코스 확정 RPC가 `date_cards.status = 'draft'`로 카드를 직접 생성하도록 바꿨고, `draft` 상태를 허용하도록 제약을 확장했다. 따라서 확정 직후 잘못된 `draft` 업데이트로 무음 실패하던 문제가 제거됐다. 저장/보내기 시 기존 흐름이 `active`로 승격한다.
+- AI quota 허용 결과에 reservation id를 추가하고 내부 응답 검증·attestation 실패 시 정확한 reservation을 반환하는 `release_ai_quota`를 추가했다. 3회/5분·20회/일 제한 자체는 유지한다.
+- linked Supabase에 `20260826130000_course_pipeline_contracts.sql`을 적용하고 `recommend-date` Edge Function을 version 66으로 배포했다. 원격 constraint, validator, confirm RPC, quota RPC를 확인했다.
+- 이번 변경은 네이티브 모듈이나 앱 JS 화면을 수정하지 않았으므로 iOS 빌드/TestFlight는 진행하지 않았다.
+
+### 검증
+
+- 대상 회귀 테스트 6 suites / 182 tests 통과.
+- `npm run validate`, `git diff --check` 통과.
+
+## 2026-08-26 — 코스 추천 intent·중복·Naver/Kakao 링크 회귀 수정
+
+- 원인: 코스 핸들러가 `additionalRequest`를 prompt-only로 취급해 1.0.1의 자유 키워드(예: 삼겹살)를 검색 intent로 전달하지 않고 있었다. 레거시 자연어는 `preferred` intent로 복원하고, 새 UI의 `intentTags`만 `required` 계약을 유지했다. 따라서 1.0.1 요청은 키워드 검색을 되찾으면서 새 hard-required 제약을 강제로 받지 않는다.
+- 원인: provider-neutral Naver-first 경로가 history를 전달하지 않았고, history loader도 Kakao ID만 읽었다. 세션의 provider + provider-local ID를 함께 로드해 최근 2개 동일 지역 세션의 Naver/Kakao 장소를 provider별로 제외하고, Naver 교체 후보에도 같은 정책을 연결했다.
+- 원인: Naver→Kakao 보조 검색의 Kakao Local API Authorization scheme이 `Kakao`로 잘못되어 있었다. `KakaoAK`로 수정해 이름·주소·좌표 대조 후 Kakao place ID/map URL enrichment가 다시 동작한다. 기존 완화 기준(주소 우선, 이름 호환, 100m 보조 거리)은 유지했다.
+- 변경은 앱/native 코드와 DB schema를 건드리지 않았다. 기존 provider identity 컬럼 migration이 이미 적용된 상태에서 Edge/shared 모듈만 갱신했다.
+- linked Supabase에 `recommend-date` v68, `replacement-candidates` v43, `provider-neutral-replacements` v3를 배포했고 `RECOMMENDATION_HISTORY_EXPERIMENT=treatment`를 명시했다. 기존 1.0.1 클라이언트와 호환되며 새 빌드/TestFlight는 필요하지 않다.
+
+### 검증
+
+- 대상 회귀 테스트 8 suites / 105 tests 통과.
+- `npm run validate` 및 `git diff --check` 통과.
+- 전체 Jest는 250 suites 중 246 suites 통과. 남은 4 suites는 현재 작업 트리의 기존 UI spacing, startup-permissions source expectation, iOS brand asset hash 불일치이며 이번 Edge 수정과 무관하다.
+- 전체 Jest는 249 suites 중 245 suites 통과. 남은 4개는 이번 변경과 무관한 기존 UI/권한/네이티브 asset 기대값 불일치로 보존했다.
 - Xcode 재빌드로 실기기 확인 필요(JS 변경만이라 Run만 다시 하면 됨. 아직 사용자 실기기 확인 전).
+
+## 2026-08-26 — provider-neutral 코스 확정 롤백 수정
+
+- 원격 Postgres 로그에서 코스 확정 실패 원인을 확인했다. 확정 이벤트 트리거의 `aggregate_confirmed_place_pairs()`가 Naver/provider-neutral 스텝의 `current_kakao_place_id = null`을 Kakao 전용 `place_pair_stat_couples`에 삽입해 `NOT NULL` 제약 위반을 일으키고, 확정 트랜잭션 전체를 롤백하고 있었다.
+- `20260826140000_fix_provider_neutral_pair_stats.sql`에서 Kakao ID가 없는 source/target 스텝을 pair 통계에서 제외했다. Kakao 기반 조합의 통계 집계는 유지하고, 분석 집계 실패가 코스 확정을 막지 않도록 write boundary에도 방어 조건을 추가했다.
+- linked Supabase에 migration을 적용하고 원격 `aggregate_confirmed_place_pairs()` 정의에서 두 null guard를 확인했다. 앱 JS/native 변경이 없어 빌드/TestFlight는 필요 없다.
+
+### 검증
+
+- 신규 provider-neutral pair-stat 회귀 테스트와 기존 pair-stat/learning migration 테스트: 4 tests 통과.
+- `npm run validate`, `git diff --check` 통과.

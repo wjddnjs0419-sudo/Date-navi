@@ -104,6 +104,27 @@ describe('recommendation history loader', () => {
     });
   });
 
+  it('loads provider-scoped Naver identities for the provider-neutral cooldown', async () => {
+    const queries = adapter({
+      getCourseSteps: jest.fn(async () => [
+        { sessionId: 'session-current', originalKakaoPlaceId: null, originalPlaceProvider: 'naver', originalProviderPlaceId: 'naver-current' },
+        { sessionId: 'session-partner', originalKakaoPlaceId: null, originalPlaceProvider: 'naver', originalProviderPlaceId: 'naver-partner' },
+      ]),
+    });
+
+    const result = await loadRecommendationHistory({
+      authenticatedUserId: 'user-001', currentLocation, activeSessionId: 'session-current', queries,
+    });
+
+    expect(result.context.recentHardPlaceIdentities).toEqual([
+      { provider: 'naver', providerPlaceId: 'naver-partner' },
+    ]);
+    expect(result.context.recentProviderExposure).toEqual({
+      'naver:naver-partner': { lastSeenAt: '2026-07-24T12:00:00.000Z', sessionDistance: 1 },
+    });
+    expect(result.recentHistoryExcludedCount).toBe(1);
+  });
+
   it('falls back to authenticated-owner sessions when profile or couple lookup cannot establish a linked couple', async () => {
     const queries = adapter({ getCouple: jest.fn(async () => { throw new Error('lookup unavailable'); }) });
 

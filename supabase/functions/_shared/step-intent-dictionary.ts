@@ -14,6 +14,8 @@ export type StepIntentDictionaryEntry = {
   /** 카카오 상세 categoryName 호환 서브타입 allowlist(스펙 §12.2). */
   categoryNameKeywords: readonly string[];
   displayLabel: { ko: string; en: string };
+  /** Low-signal preference terms still resolve when explicitly tagged, but remain residual context for legacy free-text AI gating. */
+  stripFromResidual?: boolean;
 };
 
 function activityEntry(
@@ -41,6 +43,76 @@ function cultureEntry(
 }
 
 export const STEP_INTENT_DICTIONARY: readonly StepIntentDictionaryEntry[] = [
+  {
+    canonicalTerm: '고기', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
+    searchExpansions: ['고기집', '삼겹살'], aliases: ['meat', 'meat restaurant'],
+    categoryNameKeywords: ['고기', '삼겹살', '돼지고기'], displayLabel: { ko: '고기', en: 'Meat' },
+  },
+  {
+    canonicalTerm: '한식', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
+    searchExpansions: ['한식당'], aliases: ['korean', 'korean food', 'korean restaurant'],
+    categoryNameKeywords: ['한식'], displayLabel: { ko: '한식', en: 'Korean' },
+  },
+  {
+    canonicalTerm: '일식', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
+    searchExpansions: ['일식당'], aliases: ['japanese', 'japanese food', 'japanese restaurant'],
+    categoryNameKeywords: ['일식', '초밥', '라멘'], displayLabel: { ko: '일식', en: 'Japanese' },
+  },
+  {
+    canonicalTerm: '양식', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
+    searchExpansions: ['이탈리안', '양식당'], aliases: ['western', 'western food', 'western restaurant'],
+    categoryNameKeywords: ['양식', '이탈리안', '파스타'], displayLabel: { ko: '양식', en: 'Western' },
+  },
+  {
+    canonicalTerm: '가볍게', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
+    searchExpansions: ['브런치', '샌드위치'], aliases: ['light', 'light meal', 'light food'],
+    categoryNameKeywords: ['브런치', '샌드위치', '샐러드'], displayLabel: { ko: '가볍게', en: 'Light meal' },
+  },
+  {
+    canonicalTerm: '조용한', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
+    searchExpansions: ['조용한 카페'], aliases: ['quiet', 'quiet cafe'], categoryNameKeywords: [],
+    displayLabel: { ko: '조용한', en: 'Quiet' }, stripFromResidual: false,
+  },
+  {
+    canonicalTerm: '감성적인', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
+    searchExpansions: ['감성 카페'], aliases: ['atmospheric', 'aesthetic cafe'], categoryNameKeywords: [],
+    displayLabel: { ko: '감성적인', en: 'Atmospheric' }, stripFromResidual: false,
+  },
+  {
+    canonicalTerm: '뷰 좋은', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
+    searchExpansions: ['뷰 좋은 카페'], aliases: ['good view', 'cafe with a view'], categoryNameKeywords: [],
+    displayLabel: { ko: '뷰 좋은', en: 'Good view' }, stripFromResidual: false,
+  },
+  {
+    canonicalTerm: '대화하기 좋은', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
+    searchExpansions: ['대화하기 좋은 카페'], aliases: ['good for conversation', 'conversation cafe'], categoryNameKeywords: [],
+    displayLabel: { ko: '대화하기 좋은', en: 'Good for conversation' }, stripFromResidual: false,
+  },
+  {
+    canonicalTerm: '골목 산책', intentType: 'venue_subtype', domain: 'culture', targetCategory: 'walk',
+    searchExpansions: ['골목길 산책'], aliases: ['alley walk', 'alley'], categoryNameKeywords: ['골목', '골목길'],
+    displayLabel: { ko: '골목 산책', en: 'Alley walk' },
+  },
+  {
+    canonicalTerm: '야경 산책', intentType: 'venue_subtype', domain: 'culture', targetCategory: 'walk',
+    searchExpansions: ['야경 명소'], aliases: ['night view walk', 'night view'], categoryNameKeywords: ['야경'],
+    displayLabel: { ko: '야경 산책', en: 'Night-view walk' },
+  },
+  {
+    canonicalTerm: '자연 산책', intentType: 'venue_subtype', domain: 'culture', targetCategory: 'walk',
+    searchExpansions: ['자연 산책로'], aliases: ['nature walk', 'nature'], categoryNameKeywords: ['공원', '숲', '산책로'],
+    displayLabel: { ko: '자연 산책', en: 'Nature walk' },
+  },
+  {
+    canonicalTerm: '한강 산책', intentType: 'venue_subtype', domain: 'culture', targetCategory: 'walk',
+    searchExpansions: ['한강공원'], aliases: ['riverside walk', 'riverside'], categoryNameKeywords: ['한강', '강변'],
+    displayLabel: { ko: '한강 산책', en: 'Riverside walk' },
+  },
+  {
+    canonicalTerm: '공원 산책', intentType: 'venue_subtype', domain: 'culture', targetCategory: 'walk',
+    searchExpansions: ['공원'], aliases: ['park walk', 'park'], categoryNameKeywords: ['공원'],
+    displayLabel: { ko: '공원 산책', en: 'Park walk' },
+  },
   {
     canonicalTerm: '삼겹살', intentType: 'dish', domain: 'food', targetCategory: 'meal',
     searchExpansions: ['돼지고기구이', '고기집'],

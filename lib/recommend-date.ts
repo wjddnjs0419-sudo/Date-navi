@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { AppLanguage } from './i18n';
 import type { StructuredCourseInput } from './course-draft';
+import { formatMeetingTime } from '../components/recommendation/course-time-selector';
 import type { RecommendationErrorCode } from '../shared/recommendation/contracts';
 import { RecommendationSessionCacheError } from './recommendation-session-cache';
 import {
@@ -95,7 +96,20 @@ export function relaxRequiredMarkers(additionalRequest: string | undefined): str
   return additionalRequest.replace(REQUIRED_MARKER_PATTERN, ' ').replace(/\s{2,}/g, ' ').trim();
 }
 
+function isAuthenticationError(error: unknown): boolean {
+  const candidate = (error ?? {}) as { code?: unknown; status?: unknown; message?: unknown };
+  const message = typeof candidate.message === 'string' ? candidate.message.toLowerCase() : '';
+  return candidate.code === '42501'
+    || candidate.code === 'PGRST301'
+    || candidate.status === 401
+    || candidate.status === 403
+    || message.includes('not authenticated')
+    || message.includes('jwt expired')
+    || message.includes('invalid jwt');
+}
+
 async function toRecommendationRequestError(error: unknown): Promise<RecommendationRequestError> {
+  if (isAuthenticationError(error)) return new RecommendationRequestError('AUTH_EXPIRED');
   const context = (error as { context?: { json?: () => Promise<unknown> } } | null)?.context;
   let payload: unknown;
   try { payload = await context?.json?.(); } catch { payload = undefined; }
@@ -132,8 +146,16 @@ export function buildRecommendationRequest(
   requestId: string,
   language: AppLanguage,
 ): RecommendationRequest {
+  const { meetingTime, additionalRequest, ...requestDraft } = courseDraft;
+  const meetingTimeNote = meetingTime
+    ? language === 'en'
+      ? `Meeting time: ${formatMeetingTime(meetingTime, 'en', (key) => key === 'course.time.now.title' ? 'Right now' : key === 'course.time.tonight.title' ? 'Tonight' : key)}`
+      : `만날 시간: ${formatMeetingTime(meetingTime, 'ko', (key) => key === 'course.time.now.title' ? '지금 바로' : key === 'course.time.tonight.title' ? '오늘 저녁' : key)}`
+    : undefined;
+  const combinedAdditionalRequest = [additionalRequest?.trim(), meetingTimeNote].filter(Boolean).join('\n') || undefined;
   return recommendationRequestSchema.parse({
-    ...courseDraft,
+    ...requestDraft,
+    ...(combinedAdditionalRequest ? { additionalRequest: combinedAdditionalRequest } : {}),
     requestId,
     mode: 'course',
     language,
@@ -153,7 +175,7 @@ export async function requestRecommendationResponse(
 ): Promise<import('../shared/recommendation/schemas').RecommendDateResponse> {
   if (typeof supabase.rpc === 'function') {
     const { error: consentError } = await supabase.rpc('record_ai_data_processing_consent');
-    if (consentError) throw consentError;
+    if (consentError) throw await toRecommendationRequestError(consentError);
   }
   const { data, error } = await supabase.functions.invoke('recommend-date', {
     body: request,

@@ -1,10 +1,22 @@
 export type RecommendationHistoryContext = {
   recentHardPlaceIds: string[];
   recentExposure: Record<string, { lastSeenAt: string; sessionDistance: number }>;
+  /** Provider-scoped identities for provider-neutral discovery. Optional for v1.0.1 fixtures/clients. */
+  recentHardPlaceIdentities?: RecommendationPlaceIdentity[];
+  recentProviderExposure?: Record<string, { lastSeenAt: string; sessionDistance: number }>;
   negativeActions: Record<string, { replacedCount: number; deletedCount: number; lastNegativeAt: string }>;
   feedback: Record<string, { revisit: boolean; quiet: number; noisy: number; photos: number; crowded: number }>;
   qualifiedPairs: Array<{ sourceKakaoPlaceId: string; targetKakaoPlaceId: string }>;
 };
+
+export type RecommendationPlaceIdentity = {
+  provider: 'kakao' | 'naver';
+  providerPlaceId: string;
+};
+
+export function recommendationPlaceIdentityKey(identity: RecommendationPlaceIdentity): string {
+  return `${identity.provider}:${identity.providerPlaceId}`;
+}
 
 export const EMPTY_RECOMMENDATION_HISTORY: RecommendationHistoryContext = Object.freeze({
   recentHardPlaceIds: Object.freeze([]) as unknown as string[],

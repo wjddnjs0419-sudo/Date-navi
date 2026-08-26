@@ -99,7 +99,7 @@ export async function searchKakaoPlacesForLink(input: {
     const url = new URL('https://dapi.kakao.com/v2/local/search/keyword.json');
     url.searchParams.set('query', input.query);
     url.searchParams.set('size', '5');
-    const response = await input.fetcher(url, { headers: { Authorization: `Kakao ${input.kakaoRestApiKey}` } });
+    const response = await input.fetcher(url, { headers: { Authorization: `KakaoAK ${input.kakaoRestApiKey}` } });
     if (!response.ok) return [];
     const payload = await response.json() as { documents?: KakaoDocument[] };
     return (payload.documents ?? []).flatMap((document) => {

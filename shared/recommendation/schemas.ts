@@ -337,7 +337,7 @@ export const candidatePoolSnapshotSchema = z.object({
   }
 });
 
-export const candidatePoolSnapshotsSchema = z.array(candidatePoolSnapshotSchema).max(40).superRefine((snapshots, ctx) => {
+export const candidatePoolSnapshotsSchema = z.array(candidatePoolSnapshotSchema).max(50).superRefine((snapshots, ctx) => {
   const unique = (values: string[], field: string) => {
     if (new Set(values).size !== values.length) ctx.addIssue({ code: 'custom', path: [field], message: `${field} must be unique.` });
   };

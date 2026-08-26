@@ -6,6 +6,7 @@ import {
   acquireCourseGenerationLock,
   consumeCourseGenerationQuota,
   recordAiRateLimitEvent,
+  releaseCourseGenerationQuota,
   releaseCourseGenerationLock,
 } from '../_shared/ai-rate-limit.ts';
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
@@ -83,8 +84,11 @@ Deno.serve(async (request) => {
       release: async ({ userId, requestId }) => {
         await releaseCourseGenerationLock(rateLimitClient, { userId, requestId });
       },
-      consume: async ({ userId }) => {
-        return consumeCourseGenerationQuota(rateLimitClient, { userId });
+      consume: async ({ userId, requestId }) => {
+        return consumeCourseGenerationQuota(rateLimitClient, { userId, requestId });
+      },
+      releaseQuota: async ({ userId, consumptionId }) => {
+        await releaseCourseGenerationQuota(rateLimitClient, { userId, consumptionId });
       },
       recordEvent: async ({ userId, eventType }) => {
         await recordAiRateLimitEvent(rateLimitClient, { userId, eventType });
@@ -151,7 +155,7 @@ Deno.serve(async (request) => {
       return result;
     },
     ...(discoveryStrategy === 'naver_primary_with_kakao_fallback' && providerPersistenceReady ? {
-      searchProviderNeutralCandidates: async (input) => {
+      searchProviderNeutralCandidates: async (input, history) => {
         const serviceClient = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -173,6 +177,7 @@ Deno.serve(async (request) => {
             fetcher: fetch,
             cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
             cacheMetrics,
+            history,
           });
           console.error(JSON.stringify({
             event: 'recommend_date_kakao_fallback',

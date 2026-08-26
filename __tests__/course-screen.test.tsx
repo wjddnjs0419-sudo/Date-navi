@@ -1,233 +1,177 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Coffee, Footprints, Smile, Utensils } from 'lucide-react-native';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
 
 const mockRouterReplace = jest.fn();
+const mockRouterBack = jest.fn();
 const mockPrepareRecommendationRequest = jest.fn();
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn(), replace: mockRouterReplace }),
+  useRouter: () => ({ back: mockRouterBack, replace: mockRouterReplace, push: jest.fn() }),
 }));
 
 jest.mock('../lib/i18n', () => ({
-  useI18n: () => ({
-    language: 'ko',
-    t: (key: string, values?: Record<string, string>) => (
-      values?.categories ? `${key}:${values.categories}` : key
-    ),
-    strings: {
-      course: {
-        modeLabel: 'course.modeLabel',
-        title: 'course.title',
-        ideaLabel: 'course.ideaLabel',
-        ideaPlaceholder: 'course.ideaPlaceholder',
-        ideaHint: 'course.ideaHint',
-        durationLabel: 'course.durationLabel',
-        durationOptions: [],
-        generateButton: 'course.generateButton',
-        errorEmpty: 'course.errorEmpty',
-      },
-    },
-  }),
+  useI18n: () => ({ language: 'ko', t: (key: string) => key }),
+}));
+
+jest.mock('../lib/analytics', () => ({
+  logEvent: jest.fn(),
 }));
 
 jest.mock('../components/recommendation/recommendation-session-provider', () => ({
-  useRecommendationSessionStore: () => ({
-    prepareRecommendationRequest: mockPrepareRecommendationRequest,
-  }),
+  useRecommendationSessionStore: () => ({ prepareRecommendationRequest: mockPrepareRecommendationRequest }),
 }));
 
-jest.mock('../lib/recommendationIdentity', () => ({
-  createRecommendationRequestId: () => 'req-course-screen-001',
+jest.mock('../components/recommendation/use-personal-step-tag-catalog', () => ({
+  usePersonalStepTagCatalog: () => ({ suggestionsFor: () => [], addSuggestion: jest.fn(), removeSuggestion: jest.fn() }),
 }));
 
 jest.mock('../components/recommendation/location-selector', () => {
   const ReactModule = require('react') as typeof React;
-  const { View } = require('react-native') as typeof import('react-native');
-  return {
-    LocationSelector: (props: Record<string, unknown>) => ReactModule.createElement(View, {
-      ...props,
-      testID: 'location-selector',
-    }),
-  };
+  const { View: NativeView } = require('react-native') as typeof import('react-native');
+  return { LocationSelector: (props: Record<string, unknown>) => ReactModule.createElement(NativeView, { ...props, testID: 'location-selector' }) };
 });
 
+jest.mock('../lib/recommendationIdentity', () => ({ createRecommendationRequestId: () => 'req-course-flow-001' }));
+
 type TestNode = { props: Record<string, any>; type: unknown };
-type TestRendererInstance = {
-  root: {
-    findByProps: (props: Record<string, unknown>) => TestNode;
-    findAllByProps: (props: Record<string, unknown>) => TestNode[];
-    findAllByType: (type: unknown) => TestNode[];
-    findAll: (predicate: (node: TestNode) => boolean) => TestNode[];
-  };
-};
-const TestRenderer = require('react-test-renderer') as {
-  act: (callback: () => void | Promise<void>) => void | Promise<void>;
-  create: (element: React.ReactElement) => TestRendererInstance;
-};
+type TestRendererInstance = { root: { findByProps: (props: Record<string, unknown>) => TestNode; findAllByType: (type: unknown) => TestNode[]; findAll: (predicate: (node: TestNode) => boolean) => TestNode[] } };
+const TestRenderer = require('react-test-renderer') as { act: (callback: () => void) => void; create: (element: React.ReactElement) => TestRendererInstance };
 const { act, create } = TestRenderer;
 const CourseScreen = require('../app/mode-flow/course').default as typeof import('../app/mode-flow/course').default;
 
 const location: RecommendationLocation = {
-  source: 'kakao',
-  kakaoPlaceId: 'origin-1',
-  label: '서울숲',
-  latitude: 37.5444,
-  longitude: 127.0374,
-  kind: 'landmark',
+  source: 'kakao', kakaoPlaceId: 'origin-1', label: '서울숲', latitude: 37.5444, longitude: 127.0374, kind: 'landmark',
 };
 
-function nestedKeys(value: unknown, prefix = ''): string[] {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix];
-  return Object.entries(value).flatMap(([key, child]) => nestedKeys(child, prefix ? `${prefix}.${key}` : key));
+function render() {
+  let renderer!: TestRendererInstance;
+  act(() => { renderer = create(<CourseScreen />); });
+  return renderer;
 }
 
-describe('structured course screen', () => {
+describe('five-step course screen', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 7, 26, 12, 0, 0));
     mockRouterReplace.mockClear();
+    mockRouterBack.mockClear();
     mockPrepareRecommendationRequest.mockClear();
   });
 
-  it('keeps every course string and accessibility label in ko/en parity', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('keeps Korean and English course locale keys in parity', () => {
     const ko = JSON.parse(readFileSync(join(__dirname, '../locales/ko/course.json'), 'utf8')).course;
     const en = JSON.parse(readFileSync(join(__dirname, '../locales/en/course.json'), 'utf8')).course;
-
-    expect(nestedKeys(ko).sort()).toEqual(nestedKeys(en).sort());
-    expect(nestedKeys(ko)).toEqual(expect.arrayContaining([
-      'steps.categories.meal',
-      'walking.options.any',
-      'budget.label',
-      'moods.options.comfortable',
-      'additional.maxLength',
-      'validation.location_required',
-      'validation.exclusion_conflict',
-      'accessibility.addStep',
-      'accessibility.moveStepUp',
-      'accessibility.moveStepDown',
-      'accessibility.removeStep',
-      'accessibility.generate',
-    ]));
+    const keys = (value: unknown, prefix = ''): string[] => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix];
+      return Object.entries(value).flatMap(([key, child]) => keys(child, prefix ? `${prefix}.${key}` : key));
+    };
+    expect(keys(ko).sort()).toEqual(keys(en).sort());
   });
 
-  it('shows the title and subtitle in the header (mockup P0/03), not the bare mode label', () => {
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
+  it('disables the first CTA until two categories are selected', () => {
+    const renderer = render();
+    expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(true);
 
-    const texts = renderer.root.findAllByType(Text).map((node) => node.props.children);
-    expect(texts).toContain('course.title');
-    expect(texts).toContain('course.subtitle');
-    expect(texts).not.toContain('course.modeLabel');
+    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(false);
   });
 
-  it('renders two default steps and enforces the two-to-four step controls', () => {
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
-
-    const steps = () => renderer.root.findAllByType(View).filter((node) => node.props.testID === 'course-step');
-    const removeButtons = () => renderer.root.findAllByType(TouchableOpacity).filter(
-      (node) => node.props.testID === 'course-remove-step',
-    );
-    expect(steps()).toHaveLength(2);
-    expect(removeButtons().every((node) => node.props.disabled)).toBe(true);
-
-    const add = renderer.root.findByProps({ testID: 'course-add-step' });
-    act(() => add.props.onPress());
-    act(() => add.props.onPress());
-
-    expect(steps()).toHaveLength(4);
-    expect(renderer.root.findByProps({ testID: 'course-add-step' }).props.disabled).toBe(true);
-    expect(removeButtons().every((node) => !node.props.disabled)).toBe(true);
+  it('keeps the initial category selection compact without an expanded step card', () => {
+    const renderer = render();
+    expect(renderer.root.findByProps({ testID: 'course-category-meal' }).props.accessibilityState.selected).toBe(true);
+    expect(renderer.root.findAll((node) => node.props?.testID === 'course-step-row-course-step-1')).toHaveLength(0);
   });
 
-  it('renders the add-step button after the last step card, not above the list', () => {
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
+  it('closes an expanded step when its up chevron is pressed again', () => {
+    const renderer = render();
+    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    expect(renderer.root.findAll((node) => node.props?.testID === 'course-preference-cafe-아무거나')).not.toHaveLength(0);
 
-    const order = renderer.root
-      .findAll((node) => typeof node.type === 'string' && !!node.props
-        && (node.props.testID === 'course-step' || node.props.testID === 'course-add-step'))
-      .map((node) => node.props.testID);
-
-    expect(order.filter((id) => id === 'course-step')).toHaveLength(2);
-    expect(order[order.length - 1]).toBe('course-add-step');
-
-    const add = renderer.root.findByProps({ testID: 'course-add-step' });
-    const flattened = StyleSheet.flatten(add.props.style);
-    expect(flattened.alignSelf).toBe('flex-start');
+    act(() => { renderer.root.findByProps({ testID: 'course-step-row-course-step-2' }).props.onPress(); });
+    expect(renderer.root.findAll((node) => node.props?.testID === 'course-preference-cafe-아무거나')).toHaveLength(0);
   });
 
-  it('exposes duration and budget as sliders that dispatch into the generated request', () => {
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
-
-    const findSlider = (testID: string) => renderer.root
-      .findAllByProps({ testID })
-      .find((node) => node.props.accessibilityValue)!;
-
-    expect(renderer.root.findAllByProps({ testID: 'course-duration-slider' })).toHaveLength(0);
-    expect(renderer.root.findAllByProps({ testID: 'course-budget-slider' })).toHaveLength(0);
-    act(() => renderer.root.findByProps({ testID: 'course-toggle-6' }).props.onPress());
-    act(() => renderer.root.findByProps({ testID: 'course-toggle-4' }).props.onPress());
-
-    expect(findSlider('course-duration-slider').props.accessibilityValue.now).toBe(0);
-    expect(findSlider('course-duration-slider').props.accessibilityValue.max).toBe(24);
-    expect(findSlider('course-budget-slider').props.accessibilityValue.now).toBe(0);
-    expect(findSlider('course-budget-slider').props.accessibilityValue.max).toBe(100_000);
+  it('advances inside the same route through location, time, mood, and review steps', () => {
+    const renderer = render();
+    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-step-2' })).toBeDefined();
 
     const locationSelector = renderer.root.findByProps({ testID: 'location-selector' });
-    act(() => locationSelector.props.onChange(location));
-    act(() => findSlider('course-duration-slider')
-      .props.onAccessibilityAction({ nativeEvent: { actionName: 'increment' } }));
-    act(() => findSlider('course-budget-slider')
-      .props.onAccessibilityAction({ nativeEvent: { actionName: 'increment' } }));
+    expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(true);
+    act(() => { locationSelector.props.onChange(location); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-step-3' })).toBeDefined();
 
-    const generate = () => renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.generate' });
-    act(() => generate().props.onPress());
+    act(() => { renderer.root.findByProps({ testID: 'course-meeting-time-tonight' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-step-4' })).toBeDefined();
+    expect(renderer.root.findAll((node) => typeof node.type === 'string' && node.props?.testID === 'course-mood-row')).toHaveLength(2);
+    expect(renderer.root.findAllByType(Smile)).not.toHaveLength(0);
 
-    const request = mockPrepareRecommendationRequest.mock.calls[0][0];
-    expect(request.duration).toBe('course.duration.hoursLabel');
-    // 슬라이더는 1인 기준(step 1,000)이고 엣지 계약엔 2인 총액으로 넘어간다: 1,000 × 2.
-    expect(request.totalBudgetKRW).toBe(2_000);
+    act(() => { renderer.root.findByProps({ testID: 'course-mood-emotional' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-step-5' })).toBeDefined();
+    expect(renderer.root.findAllByType(Text).map((node) => node.props.children)).toContain('course.review.title');
   });
 
-  it('requires location and keeps an additional request as supplementary context', () => {
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
-    const generate = () => renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.generate' });
+  it('opens an inline native date picker with horizontal time chips inside the dimmed sheet', () => {
+    const renderer = render();
+    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-meeting-time-custom' }).props.onPress(); });
 
-    expect(generate().props.disabled).toBe(true);
-    const locationSelector = renderer.root.findByProps({ testID: 'location-selector' });
-    expect(locationSelector.props.required).toBe(true);
-    act(() => locationSelector.props.onChange(location));
-    expect(generate().props.disabled).toBe(false);
+    const nativePicker = renderer.root.findByProps({ testID: 'course-native-datetime-picker' });
+    expect(nativePicker.props.mode).toBe('date');
+    expect(nativePicker.props.display).toBe('inline');
+    const timeScroll = renderer.root.findByProps({ testID: 'course-time-chip-scroll' });
+    expect(timeScroll.props.horizontal).toBe(true);
+    expect(renderer.root.findByProps({ testID: 'course-time-chip-18-30' })).toBeDefined();
+    const selectedChip = renderer.root.findByProps({ testID: 'course-time-chip-12-00' });
+    const unselectedChip = renderer.root.findByProps({ testID: 'course-time-chip-12-30' });
+    expect(StyleSheet.flatten(selectedChip.props.style)).toEqual(expect.objectContaining({ backgroundColor: '#F26B7A', borderRadius: 20 }));
+    expect(StyleSheet.flatten(unselectedChip.props.style)).toEqual(expect.objectContaining({ backgroundColor: '#ffffff' }));
+    const selectedText = renderer.root.findAllByType(Text).find((node) => node.props.children === '12:00');
+    const unselectedText = renderer.root.findAllByType(Text).find((node) => node.props.children === '12:30');
+    expect(StyleSheet.flatten(selectedText?.props.style)).toEqual(expect.objectContaining({ color: '#ffffff' }));
+    expect(StyleSheet.flatten(unselectedText?.props.style)).toEqual(expect.objectContaining({ color: '#3A2E2E' }));
+    expect(StyleSheet.flatten(selectedChip.props.style)).toEqual(expect.objectContaining({ width: 58, minWidth: 58, flexShrink: 0 }));
+    expect(StyleSheet.flatten(selectedText?.props.style)).toEqual(expect.objectContaining({ width: '100%', textAlign: 'center', fontVariant: ['tabular-nums'] }));
+    expect(renderer.root.findByProps({ testID: 'course-time-apply' })).toBeDefined();
+    expect(renderer.root.findAll((node) => node.props?.testID === 'course-time-sheet-close')).toHaveLength(0);
+  });
 
-    act(() => renderer.root.findByProps({ testID: 'course-toggle-7' }).props.onPress());
-    const additional = renderer.root.findByProps({ accessibilityLabel: 'course.accessibility.additionalRequest' });
-    act(() => additional.props.onChangeText('avoid cafes'));
-    expect(generate().props.disabled).toBe(false);
-    act(() => generate().props.onPress());
+  it('builds a recommendation only from the review CTA', () => {
+    const renderer = render();
+    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-meeting-time-custom' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-quick-time-today-18' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-mood-emotional' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-review-generate' }).props.onPress(); });
 
-    expect(mockRouterReplace).toHaveBeenCalledTimes(1);
-    const route = mockRouterReplace.mock.calls[0][0];
-    expect(route.params).toEqual({ requestId: 'req-course-screen-001' });
     expect(mockPrepareRecommendationRequest).toHaveBeenCalledTimes(1);
-    const request = mockPrepareRecommendationRequest.mock.calls[0][0];
-    expect(request.requestId).toBe('req-course-screen-001');
-    expect(request.location).toEqual(location);
-    expect(request.courseSteps).toHaveLength(2);
-    expect(request.additionalRequest).toBe('avoid cafes');
-  });
-
-  it('scrolls the focused input above the keyboard automatically (KAV는 공간만 만들고 스크롤은 안 해줘서 부족 — 실기기 확인)', () => {
-    const { KeyboardAvoidingView, ScrollView } = require('react-native') as typeof import('react-native');
-    let renderer!: TestRendererInstance;
-    act(() => { renderer = create(<CourseScreen />); });
-
-    const scrolls = renderer.root.findAllByType(ScrollView);
-    expect(scrolls).toHaveLength(1);
-    expect(scrolls[0].props.automaticallyAdjustKeyboardInsets).toBe(true);
-    expect(renderer.root.findAllByType(KeyboardAvoidingView)).toHaveLength(0);
+    expect(mockRouterReplace).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/mode-flow/generating' }));
+    expect(mockPrepareRecommendationRequest.mock.calls[0][0]).toMatchObject({
+      requestId: 'req-course-flow-001', location, courseSteps: expect.any(Array),
+    });
+    expect(renderer.root.findAll((node) => node.props?.children === 'course.review.back')).toHaveLength(0);
+    expect(renderer.root.findAllByType(Utensils)).toHaveLength(1);
+    expect(renderer.root.findAllByType(Coffee)).toHaveLength(1);
+    expect(renderer.root.findAllByType(Footprints)).toHaveLength(0);
   });
 });

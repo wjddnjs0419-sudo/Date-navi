@@ -1,5 +1,7 @@
 import {
   EMPTY_RECOMMENDATION_HISTORY,
+  recommendationPlaceIdentityKey,
+  type RecommendationPlaceIdentity,
   type RecommendationHistoryContext,
 } from '../../../shared/recommendation/recommendation-history.ts';
 
@@ -27,6 +29,8 @@ export type RecommendationHistoryQueryAdapter = {
   getCourseSteps: (sessionIds: readonly string[]) => Promise<Array<{
     sessionId: unknown;
     originalKakaoPlaceId: unknown;
+    originalPlaceProvider?: unknown;
+    originalProviderPlaceId?: unknown;
   }>>;
   getStepEvents: (sessionIds: readonly string[]) => Promise<Array<{
     sessionId: unknown;
@@ -93,10 +97,13 @@ export function createSupabaseRecommendationHistoryQueryAdapter(client: any): Re
     async getCourseSteps(sessionIds) {
       if (sessionIds.length === 0) return [];
       const data = await unwrap(client.from('recommendation_course_steps')
-        .select('session_id,original_kakao_place_id').in('session_id', sessionIds).limit(200));
+        .select('session_id,original_kakao_place_id,original_place_provider,original_provider_place_id')
+        .in('session_id', sessionIds).limit(200));
       return Array.isArray(data) ? data.map((row) => ({
         sessionId: row.session_id,
         originalKakaoPlaceId: row.original_kakao_place_id,
+        originalPlaceProvider: row.original_place_provider,
+        originalProviderPlaceId: row.original_provider_place_id,
       })) : [];
     },
     async getStepEvents(sessionIds) {
@@ -158,6 +165,20 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 
 function asNonEmptyString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+function providerIdentityFromStep(step: {
+  originalKakaoPlaceId: unknown;
+  originalPlaceProvider?: unknown;
+  originalProviderPlaceId?: unknown;
+}): RecommendationPlaceIdentity | undefined {
+  const provider = step.originalPlaceProvider === 'kakao' || step.originalPlaceProvider === 'naver'
+    ? step.originalPlaceProvider
+    : undefined;
+  const providerPlaceId = asNonEmptyString(step.originalProviderPlaceId);
+  if (provider && providerPlaceId) return { provider, providerPlaceId };
+  const kakaoPlaceId = asNonEmptyString(step.originalKakaoPlaceId);
+  return kakaoPlaceId ? { provider: 'kakao', providerPlaceId: kakaoPlaceId } : undefined;
 }
 
 function coordinateFrom(value: unknown): Coordinate | undefined {
@@ -267,19 +288,38 @@ export async function loadRecommendationHistory(input: {
     .map((session) => [session.id, session]));
 
   const stepIdsBySession = new Map<string, string[]>();
+  const placeIdentitiesBySession = new Map<string, RecommendationPlaceIdentity[]>();
   for (const step of courseSteps) {
     const sessionId = asNonEmptyString(step.sessionId);
-    const placeId = asNonEmptyString(step.originalKakaoPlaceId);
-    if (!sessionId || !placeId || !sessionById.has(sessionId)) continue;
-    const ids = stepIdsBySession.get(sessionId) ?? [];
-    if (!ids.includes(placeId)) ids.push(placeId);
-    stepIdsBySession.set(sessionId, ids);
+    const identity = providerIdentityFromStep(step);
+    if (!sessionId || !identity || !sessionById.has(sessionId)) continue;
+    const identities = placeIdentitiesBySession.get(sessionId) ?? [];
+    const identityKey = recommendationPlaceIdentityKey(identity);
+    if (!identities.some((entry) => recommendationPlaceIdentityKey(entry) === identityKey)) identities.push(identity);
+    placeIdentitiesBySession.set(sessionId, identities);
+    if (identity.provider === 'kakao') {
+      const ids = stepIdsBySession.get(sessionId) ?? [];
+      if (!ids.includes(identity.providerPlaceId)) ids.push(identity.providerPlaceId);
+      stepIdsBySession.set(sessionId, ids);
+    }
   }
 
   const recentHardPlaceIds: string[] = [];
   const recentExposure: RecommendationHistoryContext['recentExposure'] = {};
+  const recentHardPlaceIdentities: RecommendationPlaceIdentity[] = [];
+  const recentProviderExposure: NonNullable<RecommendationHistoryContext['recentProviderExposure']> = {};
   [...sessionById.values()].forEach((session, index) => {
     const sessionDistance = index + 1;
+    for (const identity of placeIdentitiesBySession.get(session.id) ?? []) {
+      const identityKey = recommendationPlaceIdentityKey(identity);
+      if (sessionDistance <= 2 && !recentHardPlaceIdentities.some((entry) => recommendationPlaceIdentityKey(entry) === identityKey)) {
+        recentHardPlaceIdentities.push(identity);
+      }
+      const providerPrior = recentProviderExposure[identityKey];
+      if (!providerPrior || sessionDistance < providerPrior.sessionDistance) {
+        recentProviderExposure[identityKey] = { lastSeenAt: session.createdAt, sessionDistance };
+      }
+    }
     for (const placeId of stepIdsBySession.get(session.id) ?? []) {
       if (sessionDistance <= 2 && !recentHardPlaceIds.includes(placeId)) recentHardPlaceIds.push(placeId);
       const prior = recentExposure[placeId];
@@ -353,8 +393,16 @@ export async function loadRecommendationHistory(input: {
   }
 
   return {
-    context: { recentHardPlaceIds, recentExposure, negativeActions, feedback, qualifiedPairs },
+    context: {
+      recentHardPlaceIds,
+      recentExposure,
+      recentHardPlaceIdentities,
+      recentProviderExposure,
+      negativeActions,
+      feedback,
+      qualifiedPairs,
+    },
     status: 'loaded',
-    recentHistoryExcludedCount: recentHardPlaceIds.length,
+    recentHistoryExcludedCount: new Set(recentHardPlaceIdentities.map(recommendationPlaceIdentityKey)).size,
   };
 }

@@ -4,9 +4,31 @@
     "modeLabel": "코스로 정리해줘",
     "title": "데이트 코스 만들기",
     "subtitle": "원하는 단계와 조건을 선택하면 딱 맞는 코스를 제안해드려요.",
+    "flow": {
+      "steps": { "title": "어떤 데이트를 원해요?", "subtitle": "원하는 코스를 순서대로 골라주세요." },
+      "location": { "title": "어디서 만날까요?", "subtitle": "만날 지역이나 역을 선택해주세요." },
+      "time": { "title": "언제 만날까요?", "subtitle": "추천 결과를 더 정확하게 만들 수 있어요." },
+      "mood": { "title": "어떤 분위기를 원해요?", "subtitle": "원하는 분위기를 선택해주세요. 복수 선택이 가능해요." },
+      "next": "다음"
+    },
+    "preferences": {
+      "question": {
+        "meal": "어떤 메뉴 느낌이 좋아요?",
+        "cafe": "어떤 분위기가 좋아요?",
+        "walk": "어떤 산책이 좋아요?",
+        "culture": "어떤 문화를 즐기고 싶어요?",
+        "activity": "어떤 액티비티가 좋아요?",
+        "drinks": "어떤 술집을 원해요?"
+      },
+      "helper": "아무거나를 고르면 AI가 가장 잘 어울리는 곳을 찾아요.",
+      "anything": "아무거나",
+      "autoExpand": "선택하면 다음 항목이 자동으로 펼쳐져요.",
+      "tip": "세부 선택은 선택사항이에요. 아무거나도 괜찮아요."
+    },
     "steps": {
       "label": "코스 단계",
       "hint": "2~4단계까지 순서대로 구성할 수 있어요.",
+      "selectionHint": "최소 2개 이상 선택 가능",
       "add": "단계 추가",
       "stepLabel": "{{number}}단계",
       "categories": {
@@ -50,12 +72,24 @@
     "moods": {
       "label": "원하는 분위기 (복수 선택 가능)",
       "options": {
+        "emotional": "감성적인",
         "comfortable": "편안한",
         "lively": "활기찬",
         "romantic": "로맨틱한",
         "quiet": "조용한",
-        "novel": "색다른"
-      }
+        "novel": "새로운/특별한"
+      },
+      "unsure": "잘 모르겠어요 — 추천에 맡길게요",
+      "unsureShort": "추천에 맡길게요"
+    },
+    "time": {
+      "now": { "title": "지금 바로", "description": "바로 추천받고 싶어요" },
+      "tonight": { "title": "오늘 저녁", "description": "오늘 저녁에 만나요 (17:00 이후)" },
+      "custom": { "title": "날짜와 시간 선택", "description": "원하는 날짜와 시간을 직접 정할게요", "selectedDescription": "직접 선택한 날짜와 시간", "sheetTitle": "날짜와 시간 선택", "timeLabel": "시간", "apply": "적용" },
+      "quick": { "title": "빠른 선택", "today18": "오늘 오후 6시", "today19": "오늘 오후 7시", "weekendAfternoon": "주말 오후", "thisWeekend": "이번 주말" }
+    },
+    "review": {
+      "title": "이대로 만들까요?", "subtitle": "선택한 내용을 확인하고 데이트 코스를 만들어볼까요?", "courseLabel": "코스", "locationLabel": "지역", "timeLabel": "시간", "moodLabel": "분위기", "edit": "수정", "tip": "이 선택을 바탕으로\n취향 + 동선 + 장소를 함께 보고 추천해요.", "generate": "데이트 코스 만들기", "back": "이전 단계로 돌아가기"
     },
     "duration": {
       "label": "전체 시간 (선택)",
@@ -78,6 +112,7 @@
       "step_count_invalid": "코스는 2~4단계로 구성해주세요.",
       "duplicate_step_ids": "코스 단계 식별자가 겹쳤어요. 화면을 다시 열어주세요.",
       "invalid_step_category": "지원하지 않는 코스 단계가 있어요.",
+      "meeting_time_required": "만날 시간을 선택해주세요.",
       "budget_invalid": "1인 전체 코스 예산은 1원 이상 10,000,000원 이하의 숫자로 입력해주세요.",
       "additional_request_too_long": "추가 요청은 500자 이하로 입력해주세요.",
       "exclusion_conflict": "선택한 단계와 제외 요청이 충돌해요: {{categories}}. 텍스트나 단계를 수정해주세요."
@@ -101,6 +136,9 @@
       "expandOptional": "{{label}} 펼치기",
       "collapseOptional": "{{label}} 접기",
       "generate": "데이트 코스 만들기"
+      ,"step": "{{number}}단계 펼치기"
+      ,"progress": "{{step}} / {{total}}단계"
+      ,"next": "다음"
     },
     "generateButton": "AI 코스 추천받기",
     "back": "←"

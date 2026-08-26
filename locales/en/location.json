@@ -10,6 +10,7 @@
     "placeholder": "Ex: Seongsu-dong, Hongdae Station",
     "hint": "Add a neighborhood and we can suggest real nearby places.",
     "autocompleteHint": "Enter at least two characters, then choose the search center.",
+    "currentButton": "Use current location",
     "searchAccessibility": "Search meeting location",
     "currentAccessibility": "Use current location",
     "suggestionAccessibility": "Select {{name}} as the location",

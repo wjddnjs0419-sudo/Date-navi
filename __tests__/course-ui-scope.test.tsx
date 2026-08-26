@@ -66,13 +66,14 @@ describe('Phase 4 shared UI scope', () => {
     expect(big.minHeight).toBe(52);
   });
 
-  it('keeps all dimension opt-ins explicit at the make_course call site', () => {
+  it('keeps the redesigned five-step flow and its course-only controls in the course screen', () => {
     const source = readFileSync(join(__dirname, '../app/mode-flow/course.tsx'), 'utf8');
 
-    expect(source).toContain('<BackBar largeTouchTarget />');
-    expect(source).toContain('testID="course-duration-slider"');
-    expect(source).toContain('testID="course-budget-slider"');
-    expect(source).toMatch(/<BigButton[\s\S]*?style=\{styles\.generateButton\}/);
+    expect(source).toContain('<BackBar onPress={onBack} />');
+    expect(source).toContain('testID="course-flow-step-5"');
+    expect(source).toContain('automaticallyAdjustKeyboardInsets');
+    expect(source).toContain('<CourseTimeSelector');
+    expect(source).toContain('generateButton: { marginTop: SP.lg }');
   });
 });
 

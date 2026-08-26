@@ -18,11 +18,15 @@ export const COURSE_CATEGORIES = [
   'ai_decide',
 ] as const;
 
-export const COURSE_MOODS = ['comfortable', 'lively', 'romantic', 'quiet', 'novel'] as const;
+export const COURSE_MOODS = ['emotional', 'quiet', 'lively', 'romantic', 'comfortable', 'novel'] as const;
 
 export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
 export type CourseMood = (typeof COURSE_MOODS)[number];
 export type WalkingLimit = 5 | 10 | 20 | undefined;
+export type CourseMeetingTime =
+  | { kind: 'now' }
+  | { kind: 'tonight' }
+  | { kind: 'custom'; startsAt: string };
 
 export const CATEGORY_ICONS: Record<CourseCategory, LucideIcon> = {
   meal: Utensils,
@@ -64,6 +68,7 @@ export type CourseDraft = {
   perPersonBudgetKRWInput: string;
   moods: readonly CourseMood[];
   duration?: string;
+  meetingTime?: CourseMeetingTime;
   additionalRequest: string;
 };
 
@@ -82,6 +87,9 @@ export type CourseDraftAction =
   | { type: 'setBudgetInput'; value: string }
   | { type: 'toggleMood'; mood: CourseMood }
   | { type: 'setDuration'; duration?: string }
+  | { type: 'setMeetingTime'; meetingTime?: CourseMeetingTime }
+  | { type: 'toggleCategory'; category: CourseCategory; stepId: string }
+  | { type: 'setStepPreference'; stepId: string; tag?: string }
   | { type: 'setAdditionalRequest'; value: string };
 
 export type CourseDraftIssue =
@@ -89,6 +97,7 @@ export type CourseDraftIssue =
   | { code: 'step_count_invalid' }
   | { code: 'duplicate_step_ids' }
   | { code: 'invalid_step_category' }
+  | { code: 'meeting_time_required' }
   | { code: 'budget_invalid' }
   | { code: 'additional_request_too_long' };
 
@@ -99,6 +108,7 @@ export type StructuredCourseInput = {
   totalBudgetKRW?: number;
   moods?: CourseMood[];
   duration?: string;
+  meetingTime?: CourseMeetingTime;
   additionalRequest?: string;
 };
 
@@ -106,20 +116,17 @@ const categorySet = new Set<string>(COURSE_CATEGORIES);
 
 export function createInitialCourseDraft(nextId: () => string): CourseDraft {
   const firstId = nextId();
-  const secondId = nextId();
-  if (!firstId || !secondId || firstId === secondId) {
+  if (!firstId) {
     throw new Error('Course step IDs must be non-empty and unique.');
   }
   return {
     location: null,
-    steps: [
-      { id: firstId, category: 'meal' },
-      { id: secondId, category: 'cafe' },
-    ],
+    steps: [{ id: firstId, category: 'meal' }],
     maxWalkingMinutes: undefined,
     perPersonBudgetKRWInput: '',
     moods: [],
     duration: undefined,
+    meetingTime: undefined,
     additionalRequest: '',
   };
 }
@@ -132,8 +139,15 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
       if (draft.steps.length >= 4 || draft.steps.some((step) => step.id === action.step.id)) return draft;
       return { ...draft, steps: [...draft.steps, action.step] };
     case 'removeStep':
-      if (draft.steps.length <= 2 || !draft.steps.some((step) => step.id === action.stepId)) return draft;
+      if (!draft.steps.some((step) => step.id === action.stepId)) return draft;
       return { ...draft, steps: draft.steps.filter((step) => step.id !== action.stepId) };
+    case 'toggleCategory': {
+      if (action.category === 'ai_decide') return draft;
+      const existing = draft.steps.find((step) => step.category === action.category);
+      if (existing) return { ...draft, steps: draft.steps.filter((step) => step.id !== existing.id) };
+      if (draft.steps.length >= 4 || draft.steps.some((step) => step.id === action.stepId)) return draft;
+      return { ...draft, steps: [...draft.steps, { id: action.stepId, category: action.category }] };
+    }
     case 'moveStep': {
       const index = draft.steps.findIndex((step) => step.id === action.stepId);
       const destination = action.direction === 'up' ? index - 1 : index + 1;
@@ -157,6 +171,20 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
         steps: draft.steps.map((step) => (
           step.id === action.stepId ? { ...step, intentTags: [tag] } : step
         )),
+      };
+    }
+    case 'setStepPreference': {
+      const tag = action.tag?.trim();
+      return {
+        ...draft,
+        steps: draft.steps.map((step) => {
+          if (step.id !== action.stepId) return step;
+          if (!tag) {
+            const { intentTags: _intentTags, ...rest } = step;
+            return rest;
+          }
+          return { ...step, intentTags: [tag] };
+        }),
       };
     }
     case 'addStepIntentTag': {
@@ -211,6 +239,8 @@ export function courseDraftReducer(draft: CourseDraft, action: CourseDraftAction
       };
     case 'setDuration':
       return { ...draft, duration: action.duration?.trim() || undefined };
+    case 'setMeetingTime':
+      return { ...draft, meetingTime: action.meetingTime };
     case 'setAdditionalRequest':
       return { ...draft, additionalRequest: action.value };
     default:
@@ -338,6 +368,23 @@ export function parseDurationHours(duration?: string): number | undefined {
   return match ? Number(match[1]) : undefined;
 }
 
+export type CourseQuickMeetingTime = 'today-18' | 'today-19' | 'weekend-afternoon' | 'this-weekend';
+
+function isoAtLocalClock(date: Date, hour: number): string {
+  const next = new Date(date);
+  next.setHours(hour, 0, 0, 0);
+  return next.toISOString();
+}
+
+export function getQuickMeetingTime(preset: CourseQuickMeetingTime, now = new Date()): CourseMeetingTime {
+  if (preset === 'today-18') return { kind: 'custom', startsAt: isoAtLocalClock(now, 18) };
+  if (preset === 'today-19') return { kind: 'custom', startsAt: isoAtLocalClock(now, 19) };
+  const weekend = new Date(now);
+  const daysUntilSaturday = (6 - weekend.getDay() + 7) % 7 || 7;
+  weekend.setDate(weekend.getDate() + daysUntilSaturday);
+  return { kind: 'custom', startsAt: isoAtLocalClock(weekend, preset === 'weekend-afternoon' ? 15 : 18) };
+}
+
 export function validateCourseDraft(draft: CourseDraft): { valid: boolean; issues: CourseDraftIssue[] } {
   const issues: CourseDraftIssue[] = [];
   if (!draft.location) issues.push({ code: 'location_required' });
@@ -348,6 +395,7 @@ export function validateCourseDraft(draft: CourseDraft): { valid: boolean; issue
   if (draft.steps.some((step) => !categorySet.has(step.category))) {
     issues.push({ code: 'invalid_step_category' });
   }
+  if (!draft.meetingTime) issues.push({ code: 'meeting_time_required' });
   if (draft.perPersonBudgetKRWInput.trim() && parsePerPersonBudgetKRW(draft.perPersonBudgetKRWInput) === undefined) {
     issues.push({ code: 'budget_invalid' });
   }
@@ -380,6 +428,7 @@ export function buildStructuredCourseInput(
       : {}),
     ...(draft.moods.length > 0 ? { moods: [...draft.moods] } : {}),
     ...(draft.duration ? { duration: draft.duration } : {}),
+    ...(draft.meetingTime ? { meetingTime: draft.meetingTime } : {}),
     ...(additionalRequest ? { additionalRequest } : {}),
   };
 }

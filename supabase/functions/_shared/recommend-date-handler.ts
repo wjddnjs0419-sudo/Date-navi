@@ -75,7 +75,7 @@ export type RecommendDateDependencies = {
     history: RecommendationHistoryContext,
   ) => Promise<RecommendationSearchPipelineResult>;
   /** V3 provider boundary. Supplying this enables Naver-first discovery for fresh, unpinned courses. */
-  searchProviderNeutralCandidates?: (request: RecommendationRequest) => Promise<ProviderNeutralDiscoveryResult>;
+  searchProviderNeutralCandidates?: (request: RecommendationRequest, history: RecommendationHistoryContext) => Promise<ProviderNeutralDiscoveryResult>;
   /**
    * Optional post-selection enrichment. It never participates in discovery or
    * eligibility: a Kakao ID returned here is only a high-confidence map/review
@@ -129,7 +129,8 @@ export type RecommendDateDependencies = {
   rateLimit?: {
     acquire: (input: { userId: string; requestId: string }) => Promise<LockResult>;
     release: (input: { userId: string; requestId: string }) => Promise<void>;
-    consume: (input: { userId: string }) => Promise<QuotaResult>;
+    consume: (input: { userId: string; requestId: string }) => Promise<QuotaResult>;
+    releaseQuota?: (input: { userId: string; consumptionId: number }) => Promise<void>;
     recordEvent: (input: { userId: string; eventType: 'lock_conflict' | 'burst_rejected' | 'daily_rejected' }) => Promise<void>;
   };
   now?: () => string;
@@ -284,12 +285,32 @@ export async function handleRecommendDate(
       ...(historyExperimentMetadata ? { historyExperiment: historyExperimentMetadata } : {}),
     },
   });
+  let quotaConsumptionId: number | undefined;
+  const refundQuota = async () => {
+    const consumptionId = quotaConsumptionId;
+    quotaConsumptionId = undefined;
+    if (consumptionId === undefined || !dependencies.rateLimit?.releaseQuota) return;
+    try {
+      await dependencies.rateLimit.releaseQuota({ userId: authenticatedUser.id, consumptionId });
+    } catch {
+      // Quota cleanup is best effort. The response must keep its sanitized failure contract.
+    }
+  };
+  const refundedCourseValidationFailure = async (stage: CourseValidationFailureStage) => {
+    await refundQuota();
+    return courseValidationFailure(dependencies, stage);
+  };
 
   // Provider-neutral rollout is deliberately limited to fresh courses until
   // the editable-session RPC has completed its additive identity migration.
   // Existing Kakao pins, replacements, and persisted locks retain the proven
   // Kakao-only path below rather than being silently reinterpreted.
   const canUseProviderNeutralPath = Boolean(dependencies.searchProviderNeutralCandidates)
+    // Provider-neutral discovery currently has no per-step intent evidence contract.
+    // Route tagged/legacy keyword requests through the intent-aware Kakao pipeline
+    // instead of silently broadening them to a generic category search.
+    && resolved.stepIntents.length === 0
+    && resolved.excludedIntents.length === 0
     && !serverRequest.sessionId
     && !serverRequest.replacement
     && !(serverRequest.lockedSteps?.length)
@@ -297,7 +318,7 @@ export async function handleRecommendDate(
   if (canUseProviderNeutralPath) {
     let providerDiscovery: ProviderNeutralDiscoveryResult;
     try {
-      providerDiscovery = await dependencies.searchProviderNeutralCandidates!(intentAwareRequest);
+      providerDiscovery = await dependencies.searchProviderNeutralCandidates!(intentAwareRequest, history);
     } catch {
       return withHistory(errorResult(504, 'PLACE_SEARCH_TIMEOUT'));
     }
@@ -337,7 +358,8 @@ export async function handleRecommendDate(
     let selection: unknown;
     if (dependencies.rateLimit) {
       try {
-        const quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id });
+        const quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id, requestId: serverRequest.requestId });
+        quotaConsumptionId = quota.allowed ? quota.consumptionId : undefined;
         if (!quota.allowed) return quota.limitType === 'burst'
           ? withHistory(rateLimitResult(429, 'AI_RATE_LIMITED', { limitType: 'burst', retryAfterSeconds: quota.retryAfterSeconds }))
           : withHistory(rateLimitResult(429, 'AI_DAILY_LIMIT_REACHED', { limitType: 'daily', resetsAt: quota.resetsAt }));
@@ -393,9 +415,9 @@ export async function handleRecommendDate(
           return withHistory(errorResult(422, 'COURSE_VALIDATION_FAILED'));
         }
       } else if (error instanceof ProviderNeutralCourseSelectionError) {
-        return withHistory(errorResult(422, 'COURSE_VALIDATION_FAILED'));
+        return withHistory(await refundedCourseValidationFailure('course_build'));
       } else {
-        return withHistory(courseValidationFailure(dependencies, 'course_build'));
+        return withHistory(await refundedCourseValidationFailure('course_build'));
       }
     }
     let linkedCourse = built.course;
@@ -461,11 +483,11 @@ export async function handleRecommendDate(
         route: built.route,
       },
     });
-    if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
+    if (!response.success) return withHistory(await refundedCourseValidationFailure('response_schema'));
     try {
       validateRecommendDateResponseForRequest(serverRequest, response.data);
     } catch {
-      return withHistory(courseValidationFailure(dependencies, 'request_response_validation'));
+      return withHistory(await refundedCourseValidationFailure('request_response_validation'));
     }
     let attestedResponse = response.data;
     if (dependencies.stageAttestation) {
@@ -478,7 +500,7 @@ export async function handleRecommendDate(
           attestedResponse = parsedExisting.data;
         }
       } catch {
-        return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
+        return withHistory(await refundedCourseValidationFailure('stage_attestation'));
       }
     }
     return withHistory({ status: 200, body: attestedResponse });
@@ -611,7 +633,8 @@ export async function handleRecommendDate(
       if (dependencies.rateLimit) {
         let quota: QuotaResult;
         try {
-          quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id });
+          quota = await dependencies.rateLimit.consume({ userId: authenticatedUser.id, requestId: serverRequest.requestId });
+          quotaConsumptionId = quota.allowed ? quota.consumptionId : undefined;
         } catch {
           return withHistory(errorResult(503, 'AI_LIMIT_UNAVAILABLE'));
         }
@@ -684,11 +707,11 @@ export async function handleRecommendDate(
   } catch (error) {
     if (error instanceof CourseSelectionError) {
       if (error.code === 'COURSE_VALIDATION_FAILED') {
-        return withHistory(courseValidationFailure(dependencies, 'course_build'));
+        return withHistory(await refundedCourseValidationFailure('course_build'));
       }
       return withHistory(errorResult(422, error.code));
     }
-    return withHistory(courseValidationFailure(dependencies, 'course_build'));
+    return withHistory(await refundedCourseValidationFailure('course_build'));
   }
 
   let verifiedReplacementCandidateRank: number | undefined;
@@ -770,12 +793,12 @@ export async function handleRecommendDate(
         : {}),
     },
   });
-  if (!response.success) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
-  if (!response.data.candidatePool) return withHistory(courseValidationFailure(dependencies, 'response_schema'));
+  if (!response.success) return withHistory(await refundedCourseValidationFailure('response_schema'));
+  if (!response.data.candidatePool) return withHistory(await refundedCourseValidationFailure('response_schema'));
   try {
     validateRecommendDateResponseForRequest(serverRequest, response.data);
   } catch {
-    return withHistory(courseValidationFailure(dependencies, 'request_response_validation'));
+    return withHistory(await refundedCourseValidationFailure('request_response_validation'));
   }
   let attestedLegacyResponse = response.data;
   if (dependencies.stageAttestation) {
@@ -788,7 +811,7 @@ export async function handleRecommendDate(
         attestedLegacyResponse = parsedExisting.data;
       }
     } catch {
-      return withHistory(courseValidationFailure(dependencies, 'stage_attestation'));
+      return withHistory(await refundedCourseValidationFailure('stage_attestation'));
     }
   }
   if (dependencies.recordPlaceKnowledge) {
