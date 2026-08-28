@@ -24,18 +24,62 @@ export function providerNeutralSessionPersistenceEnabled(value: string | undefin
   return value === 'enabled';
 }
 
-/** No user free-text enters telemetry; these are bounded semantic search labels. */
+const NAVER_CATEGORY_SEARCH_TERMS: Record<string, string> = {
+  meal: '음식점',
+  restaurant: '음식점',
+  cafe: '카페',
+  drinks: '술집',
+  bar: '술집',
+  culture: '문화시설',
+  walk: '산책',
+  attraction: '산책',
+  activity: '체험',
+  ai_decide: '데이트 장소',
+};
+
+/** No user free-text enters telemetry; queries use fixed Korean category terms. */
 export function naverShadowQueries(input: {
   locationLabel: string;
   locationSource?: 'current' | 'kakao';
-  stepLabels: readonly string[];
+  stepCategories: readonly string[];
+  stepIds?: readonly string[];
+  stepIntents?: readonly {
+    stepId: string;
+    canonicalTerm: string;
+    kakaoSearchTerms?: readonly string[];
+  }[];
 }): string[] {
+  return naverStepQueries(input).map((query) => query.query);
+}
+
+export type NaverStepQuery = {
+  stepId: string;
+  query: string;
+};
+
+export function naverStepQueries(input: {
+  locationLabel: string;
+  locationSource?: 'current' | 'kakao';
+  stepCategories: readonly string[];
+  stepIds?: readonly string[];
+  stepIntents?: readonly {
+    stepId: string;
+    canonicalTerm: string;
+    kakaoSearchTerms?: readonly string[];
+  }[];
+}): NaverStepQuery[] {
   if (input.locationSource === 'current') return [];
   const location = input.locationLabel.trim();
   if (!location) return [];
-  return [...new Set(input.stepLabels
-    .map((label) => label.trim())
-    .filter(Boolean)
+  return input.stepCategories
     .slice(0, 4)
-    .map((label) => `${location} ${label}`))];
+    .map((category, index) => {
+      const stepId = input.stepIds?.[index] ?? `step-${index + 1}`;
+      const intent = stepId === undefined
+        ? undefined
+        : input.stepIntents?.find((candidate) => candidate.stepId === stepId);
+      const keyword = intent?.kakaoSearchTerms?.[0]?.trim() || intent?.canonicalTerm.trim();
+      const searchTerm = NAVER_CATEGORY_SEARCH_TERMS[category] ?? NAVER_CATEGORY_SEARCH_TERMS.ai_decide;
+      return { stepId, query: keyword ? `${location} ${keyword}` : `${location} ${searchTerm}` };
+    });
 }

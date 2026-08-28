@@ -132,17 +132,15 @@ const CATEGORY_SEARCH: Record<string, readonly CategorySearchMapping[]> = {
 
 export function buildKakaoSearchPlan(request: RecommendationRequest): KakaoSearchPlanItem[] {
   const items: Omit<KakaoSearchPlanItem, 'queryId'>[] = [];
-  const seenCategories = new Set<string>();
   for (const step of request.courseSteps) {
     const normalizedCategory = step.category === 'restaurant' ? 'meal' : step.category;
-    if (seenCategories.has(normalizedCategory)) continue;
-    seenCategories.add(normalizedCategory);
     const mappings = CATEGORY_SEARCH[normalizedCategory] ?? [{ queryText: '데이트 장소' }];
     for (const mapping of mappings) {
       items.push({
         source: mapping.categoryCode ? 'category' : 'keyword',
         phase: 'required',
         category: normalizedCategory,
+        stepId: step.id,
         ...(mapping.categoryCode ? { categoryCode: mapping.categoryCode } : {}),
         ...(mapping.queryText ? { queryText: mapping.queryText } : {}),
       });

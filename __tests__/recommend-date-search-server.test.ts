@@ -67,6 +67,7 @@ describe('recommend-date deterministic Kakao search plan', () => {
     expect(plan.map((item) => [item.source, item.category, item.categoryCode, item.queryText])).toEqual([
       ['category', 'meal', 'FD6', undefined],
       ['keyword', 'drinks', undefined, '술집'],
+      ['category', 'meal', 'FD6', undefined],
       ['keyword', undefined, undefined, '데이트 코스'],
       ['fallback', undefined, undefined, '주변 데이트 장소'],
     ]);
@@ -376,6 +377,12 @@ describe('recommend-date Kakao fetch adapter and evidence', () => {
 });
 
 describe('buildKakaoSearchPlan — step intent (Phase 1)', () => {
+  it('retains distinct step ownership for repeated categories', () => {
+    const repeated = buildKakaoSearchPlan(request(['cafe', 'cafe']));
+    expect(repeated.filter((item) => item.phase === 'required' && item.category === 'cafe').map((item) => item.stepId))
+      .toEqual(['step-0', 'step-1']);
+  });
+
   const intentRequest = (additionalRequest: string): RecommendationRequest => ({
     ...request(['meal', 'cafe']),
     additionalRequest,

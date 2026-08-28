@@ -12,12 +12,13 @@ import {
 import { createSupabaseKakaoSearchCacheStore } from '../_shared/kakao-search-cache.ts';
 import { searchAndRankRecommendation } from '../_shared/recommendation-search-pipeline.ts';
 import { normalizeKakaoPlace } from '../_shared/place-provider.ts';
-import { resolveKakaoPlaceLink, searchKakaoPlacesForLink } from '../_shared/kakao-place-link.ts';
+import { resolveKakaoPlaceLinkDetailed, searchKakaoPlacesForLinkDetailed } from '../_shared/kakao-place-link.ts';
 import { fetchNaverLocalPlaces, fetchNaverLocalPlacesWithStatus } from '../_shared/providers/naver-place-provider.ts';
 import { createNaverSearchCache } from '../_shared/naver-search-cache.ts';
 import { discoverProviderNeutralCandidates } from '../_shared/provider-neutral-discovery-pipeline.ts';
 import {
   naverShadowQueries,
+  naverStepQueries,
   providerNeutralSessionPersistenceEnabled,
   resolveRecommendationDiscoveryStrategy,
 } from '../_shared/recommendation-discovery-strategy.ts';
@@ -111,7 +112,9 @@ Deno.serve(async (request) => {
         const queries = naverShadowQueries({
           locationLabel: input.location.label,
           locationSource: input.location.source,
-          stepLabels: input.courseSteps.map((step) => step.label),
+          stepCategories: input.courseSteps.map((step) => step.category),
+          stepIds: input.courseSteps.map((step) => step.id),
+          stepIntents: (input as typeof input & { resolvedStepIntents?: { stepId: string; canonicalTerm: string; kakaoSearchTerms?: readonly string[] }[] }).resolvedStepIntents,
         });
         const shadow = Promise.all(queries.map((query) => fetchNaverLocalPlacesWithStatus({
           query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache,
@@ -162,38 +165,52 @@ Deno.serve(async (request) => {
         );
         const naverClientId = Deno.env.get('NAVER_CLIENT_ID') ?? '';
         const naverClientSecret = Deno.env.get('NAVER_CLIENT_SECRET') ?? '';
-        const semanticQueries = naverShadowQueries({
+        const semanticQueries = naverStepQueries({
           locationLabel: input.location.label,
           locationSource: input.location.source,
-          stepLabels: input.courseSteps.map((step) => step.label),
+          stepCategories: input.courseSteps.map((step) => step.category),
+          stepIds: input.courseSteps.map((step) => step.id),
+          stepIntents: (input as typeof input & { resolvedStepIntents?: { stepId: string; canonicalTerm: string; kakaoSearchTerms?: readonly string[] }[] }).resolvedStepIntents,
         });
-        const primaryAttempts = semanticQueries.map((query) => async () => (
-          fetchNaverLocalPlaces({ query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache })
-        ));
-        const fallbackAttempts = [async () => {
-          const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
-          const fallback = await searchAndRankRecommendation(input, {
-            kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
-            fetcher: fetch,
-            cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
-            cacheMetrics,
-            history,
-          });
-          console.error(JSON.stringify({
-            event: 'recommend_date_kakao_fallback',
-            strategy: discoveryStrategy,
-            ...cacheMetrics,
-          }));
-          return fallback.candidates.map(normalizeKakaoPlace);
-        }];
+        const primaryAttempts = semanticQueries.map(({ stepId, query }) => ({
+          stepId,
+          run: () => fetchNaverLocalPlaces({ query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache }),
+        }));
+        const fallbackAttempts = input.courseSteps.map((step) => ({
+          stepId: step.id,
+          run: async () => {
+            const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
+            const fallback = await searchAndRankRecommendation({
+              ...input,
+              courseSteps: [step],
+            }, {
+              kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
+              fetcher: fetch,
+              cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
+              cacheMetrics,
+              history,
+            });
+            console.error(JSON.stringify({
+              event: 'recommend_date_kakao_fallback',
+              requestId: input.requestId,
+              stepId: step.id,
+              strategy: discoveryStrategy,
+              ...cacheMetrics,
+            }));
+            return fallback.candidates.map(normalizeKakaoPlace);
+          },
+        }));
         const result = await discoverProviderNeutralCandidates({
           request: input,
-          primaryAttempts,
-          fallbackAttempts,
-          minQualifiedCandidates: Math.max(input.courseSteps.length * 2, input.courseSteps.length),
+          primaryAttempts: [],
+          fallbackAttempts: [],
+          minQualifiedCandidates: 2,
+          stepAttempts: { primary: primaryAttempts, fallback: fallbackAttempts },
+          history,
         });
         console.error(JSON.stringify({
           event: 'recommend_date_provider_discovery',
+          requestId: input.requestId,
           strategy: discoveryStrategy,
           attemptsRun: result.discovery.attemptsRun,
           fallbackUsed: result.discovery.fallbackUsed,
@@ -209,28 +226,46 @@ Deno.serve(async (request) => {
             counts[provider] = (counts[provider] ?? 0) + 1;
             return counts;
           }, {}),
+          diagnostics: result.diagnostics,
         }));
         return result;
       },
-      resolveProviderNeutralKakaoLinks: async (selected) => {
+      resolveProviderNeutralKakaoLinks: async ({ requestId, candidates: selected }) => {
         const kakaoRestApiKey = Deno.env.get('KAKAO_REST_API_KEY') ?? '';
-        const cache = new Map<string, Promise<ReturnType<typeof searchKakaoPlacesForLink>>>();
+        const cache = new Map<string, Promise<Awaited<ReturnType<typeof searchKakaoPlacesForLinkDetailed>>>>();
         const searchKakao = (query: string) => {
           const existing = cache.get(query);
           if (existing) return existing;
-          const pending = searchKakaoPlacesForLink({ query, kakaoRestApiKey, fetcher: fetch });
+          const pending = searchKakaoPlacesForLinkDetailed({ query, kakaoRestApiKey, fetcher: fetch });
           cache.set(query, pending);
           return pending;
         };
         const resolved = await Promise.all(selected.map(async (candidate) => {
-          const link = await resolveKakaoPlaceLink(candidate.place, searchKakao);
-          return link ? [candidate.candidateId, link] as const : undefined;
+          const resolution = await resolveKakaoPlaceLinkDetailed(candidate.place, searchKakao, { includeDiagnostics: true });
+          return { candidate, resolution };
         }));
-        const links = new Map(resolved.filter((entry): entry is readonly [string, { kakaoPlaceId: string; mapUrl: string }] => Boolean(entry)));
+        const links = new Map<string, { kakaoPlaceId: string; mapUrl: string }>();
+        const failureReasons = resolved.reduce<Record<string, number>>((counts, entry) => {
+          if (entry.resolution.link) {
+            links.set(entry.candidate.candidateId, entry.resolution.link);
+            return counts;
+          }
+          const reason = entry.resolution.reason ?? 'no_eligible_candidate';
+          counts[reason] = (counts[reason] ?? 0) + 1;
+          return counts;
+        }, {});
         console.error(JSON.stringify({
           event: 'recommend_date_kakao_link_resolution',
+          requestId,
           selectedNaverCount: selected.length,
           linkedCount: links.size,
+          failureReasons,
+          perCandidate: resolved.map(({ candidate, resolution }) => ({
+            candidateId: candidate.candidateId,
+            name: candidate.place.name,
+            ...(resolution.reason ? { reason: resolution.reason } : {}),
+            diagnostics: resolution.diagnostics,
+          })),
         }));
         return links;
       },
