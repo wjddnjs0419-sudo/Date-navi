@@ -3,6 +3,9 @@ import { z } from 'zod';
 import type { RecommendationRequest } from '../../../shared/recommendation/schemas.ts';
 import { recommendationCourseSchema, recommendDateCardSchema } from '../../../shared/recommendation/schemas.ts';
 import type { NormalizedPlace } from './place-provider.ts';
+import { isSamePhysicalPlace } from './place-dedup.ts';
+import { providerNeutralPlaceMatchesStep, providerNeutralPlaceMatchesStepCategory } from './provider-neutral-intent.ts';
+import { effectiveStepIntents } from './step-intent.ts';
 
 const selectionSchema = z.object({
   steps: z.array(z.object({ stepId: z.string().trim().min(1), candidateId: z.string().trim().min(1) }).strict()).min(2).max(4),
@@ -10,19 +13,31 @@ const selectionSchema = z.object({
 
 export type ProviderNeutralCandidate = {
   candidateId: string;
+  /** Required for newly discovered candidates; omitted only by legacy fixtures/snapshots. */
+  sourceStepId?: string;
   place: NormalizedPlace;
   distanceFromSearchCenterMeters: number;
   popularityBonus: number;
+  qualification?: {
+    category: 'compatible' | 'unknown' | 'incompatible';
+    intent: 'not_required' | 'matched' | 'unmatched';
+    intentEvidence: readonly { phase?: string; canonicalTerm?: string; expansionLevel?: 0 | 1 | 2 }[];
+  };
+};
+
+export type StepCandidatePool = {
+  stepId: string;
+  candidates: readonly ProviderNeutralCandidate[];
+  selectableCandidates: readonly ProviderNeutralCandidate[];
+  sufficient: boolean;
 };
 
 export class ProviderNeutralCourseSelectionError extends Error {
   constructor() { super('COURSE_VALIDATION_FAILED'); }
 }
 
-const normalizedRequestedCategory = (category: string): string => ({ restaurant: 'meal', bar: 'drinks', attraction: 'walk' }[category] ?? category);
-
 function matchesCategory(candidate: ProviderNeutralCandidate, requested: string): boolean {
-  return requested === 'ai_decide' || candidate.place.category.normalized === normalizedRequestedCategory(requested);
+  return providerNeutralPlaceMatchesStepCategory(candidate.place, requested);
 }
 
 function distanceMeters(a: NormalizedPlace, b: NormalizedPlace): number {
@@ -53,11 +68,17 @@ export function buildProviderNeutralCourse(input: {
     throw new ProviderNeutralCourseSelectionError();
   }
   const excluded = new Set(input.request.excludedPlaceIds ?? []);
+  const requiredIntents = new Map(
+    effectiveStepIntents(input.request)
+      .filter((intent) => intent.strength === 'required')
+      .map((intent) => [intent.stepId, intent]),
+  );
   const selected = parsed.data.steps.map((selection, index) => {
     const requested = input.request.courseSteps[index];
     if (!requested || selection.stepId !== requested.id) throw new ProviderNeutralCourseSelectionError();
     const candidate = input.candidates.find((entry) => entry.candidateId === selection.candidateId);
     if (!candidate || !matchesCategory(candidate, requested.category)
+      || !providerNeutralPlaceMatchesStep(candidate.place, requested, requiredIntents.get(requested.id))
       || excluded.has(candidate.place.identity.providerPlaceId)) {
       throw new ProviderNeutralCourseSelectionError();
     }
@@ -65,6 +86,11 @@ export function buildProviderNeutralCourse(input: {
   });
   if (new Set(selected.map((candidate) => `${candidate.place.identity.provider}:${candidate.place.identity.providerPlaceId}`)).size !== selected.length) {
     throw new ProviderNeutralCourseSelectionError();
+  }
+  for (let index = 1; index < selected.length; index++) {
+    if (selected.slice(0, index).some((candidate) => isSamePhysicalPlace(candidate.place, selected[index].place))) {
+      throw new ProviderNeutralCourseSelectionError();
+    }
   }
 
   const adjacentDistanceMeters = selected.slice(1).map((candidate, index) => distanceMeters(selected[index].place, candidate.place));
