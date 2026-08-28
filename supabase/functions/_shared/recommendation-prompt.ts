@@ -3,7 +3,8 @@ import type { PlaceCandidate } from './recommendation-ranking.ts';
 import { effectiveStepIntents, parseStepIntents, placeMatchesStepIntent } from './step-intent.ts';
 import { retrieveGeneratedFoodIntents } from './food-intent-dictionary.ts';
 import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
-import type { ProviderNeutralCandidate } from './provider-neutral-course-selection.ts';
+import type { ProviderNeutralCandidate, StepCandidatePool } from './provider-neutral-course-selection.ts';
+import { providerNeutralPlaceMatchesStep } from './provider-neutral-intent.ts';
 
 export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v6-step-tags';
 export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v2';
@@ -103,17 +104,23 @@ export function buildRecommendationPrompt(
 
 export function buildProviderNeutralRecommendationPrompt(
   request: RecommendationRequest,
-  candidates: readonly ProviderNeutralCandidate[],
+  candidatesOrPools: readonly ProviderNeutralCandidate[] | readonly StepCandidatePool[],
 ): string {
-  return [
-    'Select one qualified candidate for every requested date-course step.',
-    'Return only stepId and candidateId. Never invent a place or use an ID outside the supplied candidates.',
-    `Return exactly ${request.courseSteps.length} entries in request order.`,
-    'A candidate may be selected only once.',
-    'Requested steps:',
-    JSON.stringify(request.courseSteps.map((step) => ({ stepId: step.id, category: step.category, label: step.label })), null, 2),
-    'Qualified provider-neutral candidates:',
-    JSON.stringify(candidates.map((candidate) => ({
+  const pools: readonly StepCandidatePool[] = candidatesOrPools.length > 0
+    && 'selectableCandidates' in candidatesOrPools[0]
+    ? candidatesOrPools as readonly StepCandidatePool[]
+    : request.courseSteps.map((step) => ({
+      stepId: step.id,
+      candidates: candidatesOrPools as readonly ProviderNeutralCandidate[],
+      selectableCandidates: candidatesOrPools as readonly ProviderNeutralCandidate[],
+      sufficient: (candidatesOrPools as readonly ProviderNeutralCandidate[]).length >= 2,
+    }));
+  const candidates = pools.flatMap((pool) => pool.selectableCandidates);
+  const requiredIntents = effectiveStepIntents(request).filter((intent) => intent.strength === 'required');
+  const stepCandidateGroups = pools.map((pool) => ({
+    stepId: pool.stepId,
+    candidateIds: pool.selectableCandidates.map((candidate) => candidate.candidateId),
+    candidates: pool.selectableCandidates.map((candidate) => ({
       candidateId: candidate.candidateId,
       placeIdentity: candidate.place.identity,
       name: candidate.place.name,
@@ -122,7 +129,30 @@ export function buildProviderNeutralRecommendationPrompt(
       address: candidate.place.address?.display ?? null,
       distanceFromSearchCenterMeters: candidate.distanceFromSearchCenterMeters,
       popularityBonus: candidate.popularityBonus,
-    })), null, 2),
+    })),
+  }));
+  return [
+    'Select one qualified candidate for every requested date-course step.',
+    'Return only stepId and candidateId. Never invent a place or use an ID outside the supplied candidates.',
+    `Return exactly ${request.courseSteps.length} entries in request order.`,
+    'A candidate may be selected only once, and only from the candidate group for its requested stepId.',
+    'Requested steps:',
+    JSON.stringify(request.courseSteps.map((step) => ({ stepId: step.id, category: step.category, label: step.label })), null, 2),
+    'Required step keywords (authoritative):',
+    JSON.stringify(requiredIntents.map((intent) => {
+      const step = request.courseSteps.find((candidate) => candidate.id === intent.stepId);
+      return {
+        stepId: intent.stepId,
+        canonicalTerm: intent.canonicalTerm,
+        matchingCandidateIds: step
+          ? (pools.find((pool) => pool.stepId === intent.stepId)?.selectableCandidates ?? [])
+            .filter((candidate) => providerNeutralPlaceMatchesStep(candidate.place, step, intent)).map((candidate) => candidate.candidateId)
+          : [],
+      };
+    }), null, 2),
+    'For every required keyword, select only one of its matchingCandidateIds. If no valid complete selection exists, do not invent an ID.',
+    'stepCandidateGroups (the only candidates allowed for each matching stepId):',
+    JSON.stringify(stepCandidateGroups, null, 2),
     'Strict JSON: {"steps":[{"stepId":"<requested-step-id>","candidateId":"<candidate-id>"}]}.',
   ].join('\n');
 }

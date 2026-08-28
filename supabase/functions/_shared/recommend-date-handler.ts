@@ -46,6 +46,8 @@ import {
   type ProviderNeutralCandidate,
 } from './provider-neutral-course-selection.ts';
 import type { ProviderNeutralDiscoveryResult } from './provider-neutral-discovery-pipeline.ts';
+import { isSamePhysicalPlace } from './place-dedup.ts';
+import { providerNeutralPlaceMatchesStep } from './provider-neutral-intent.ts';
 
 // 입력 시점 지정 장소(핀) 스텝의 candidateId를, 후보 풀에서 kakaoPlaceId로 찾은 실재 후보로 강제한다.
 // AI가 핀 스텝에 다른 후보를 골라도 지정이 이긴다(pin wins).
@@ -81,9 +83,13 @@ export type RecommendDateDependencies = {
    * eligibility: a Kakao ID returned here is only a high-confidence map/review
    * link for an already selected Naver place.
    */
-  resolveProviderNeutralKakaoLinks?: (candidates: readonly ProviderNeutralCandidate[]) => Promise<ReadonlyMap<string, { kakaoPlaceId: string; mapUrl: string }>>;
+  resolveProviderNeutralKakaoLinks?: (input: {
+    requestId: string;
+    candidates: readonly ProviderNeutralCandidate[];
+  }) => Promise<ReadonlyMap<string, { kakaoPlaceId: string; mapUrl: string }>>;
   /** De-identified provider-neutral failure telemetry for live rollout diagnosis. */
   onProviderNeutralFailure?: (input: {
+    requestId: string;
     stage: 'candidate_count' | 'selection_unavailable';
     requestedCategories: string[];
     candidateCount: number;
@@ -305,12 +311,14 @@ export async function handleRecommendDate(
   // the editable-session RPC has completed its additive identity migration.
   // Existing Kakao pins, replacements, and persisted locks retain the proven
   // Kakao-only path below rather than being silently reinterpreted.
+  const hasStructuredStepTags = serverRequest.courseSteps.some((step) => (step.intentTags?.length ?? 0) > 0);
   const canUseProviderNeutralPath = Boolean(dependencies.searchProviderNeutralCandidates)
-    // Provider-neutral discovery currently has no per-step intent evidence contract.
-    // Route tagged/legacy keyword requests through the intent-aware Kakao pipeline
-    // instead of silently broadening them to a generic category search.
-    && resolved.stepIntents.length === 0
-    && resolved.excludedIntents.length === 0
+    // Structured tags are now represented in Naver query evidence and checked
+    // again during provider-neutral selection. Legacy free-text intents keep
+    // the established Kakao pipeline until their separate rollout contract is
+    // explicitly changed.
+    && (hasStructuredStepTags || (resolved.stepIntents.length === 0 && resolved.excludedIntents.length === 0))
+    && serverRequest.location.source !== 'current'
     && !serverRequest.sessionId
     && !serverRequest.replacement
     && !(serverRequest.lockedSteps?.length)
@@ -329,26 +337,60 @@ export async function handleRecommendDate(
         return counts;
       }, {});
       dependencies.onProviderNeutralFailure?.({
+        requestId: serverRequest.requestId,
         stage,
         requestedCategories: serverRequest.courseSteps.map((step) => step.category),
         candidateCount: providerDiscovery.candidates.length,
         candidateCategories,
       });
     };
-    if (providerDiscovery.candidates.length < serverRequest.courseSteps.length) {
+    const providerPools = providerDiscovery.pools ?? [];
+    const selectableCandidates = providerPools.length > 0
+      ? providerPools.flatMap((pool) => pool.selectableCandidates)
+      : providerDiscovery.candidates;
+    const requiredIntents = resolved.stepIntents.filter((intent) => intent.strength === 'required');
+    const unsatisfiedIntents = requiredIntents.filter((intent) => {
+      const step = serverRequest.courseSteps.find((candidate) => candidate.id === intent.stepId);
+      const pool = providerPools.find((candidatePool) => candidatePool.stepId === intent.stepId);
+      const candidatesForStep = pool?.selectableCandidates ?? selectableCandidates;
+      return !step || !candidatesForStep.some((candidate) => (
+        providerNeutralPlaceMatchesStep(candidate.place, step, intent)
+      ));
+    });
+    if (unsatisfiedIntents.length > 0) {
+      return withHistory({
+        status: 422,
+        body: {
+          error: {
+            ...createRecommendationError('STEP_INTENT_UNSATISFIED'),
+            unsatisfiedIntents: unsatisfiedIntents.map((intent) => ({
+              canonicalTerm: intent.canonicalTerm,
+              displayLabel: intent.displayLabel,
+            })),
+          },
+        },
+      });
+    }
+    if ((providerPools.length > 0 && providerPools.some((pool) => !pool.sufficient))
+      || (providerPools.length === 0 && providerDiscovery.candidates.length < serverRequest.courseSteps.length)) {
       providerNeutralFailure('candidate_count');
       return withHistory(errorResult(422, 'INSUFFICIENT_CANDIDATES'));
     }
     const deterministicSelection = (): { steps: Array<{ stepId: string; candidateId: string }> } | undefined => {
       const used = new Set<string>();
+      const selectedPlaces: ProviderNeutralCandidate[] = [];
       const steps = serverRequest.courseSteps.map((step) => {
-        const requested = step.category === 'restaurant' ? 'meal' : step.category === 'bar' ? 'drinks' : step.category;
-        const candidate = providerDiscovery.candidates.find((entry) => (
+        const intent = requiredIntents.find((candidate) => candidate.stepId === step.id);
+        const pool = providerPools.find((candidatePool) => candidatePool.stepId === step.id);
+        const candidatesForStep = pool?.selectableCandidates ?? selectableCandidates;
+        const candidate = candidatesForStep.find((entry) => (
           !used.has(entry.candidateId)
-          && (requested === 'ai_decide' || entry.place.category.normalized === requested)
+          && !selectedPlaces.some((selected) => isSamePhysicalPlace(selected.place, entry.place))
+          && providerNeutralPlaceMatchesStep(entry.place, step, intent)
         ));
         if (!candidate) return undefined;
         used.add(candidate.candidateId);
+        selectedPlaces.push(candidate);
         return { stepId: step.id, candidateId: candidate.candidateId };
       });
       return steps.every((step): step is { stepId: string; candidateId: string } => Boolean(step)) ? { steps } : undefined;
@@ -370,7 +412,7 @@ export async function handleRecommendDate(
     try {
       selection = await dependencies.generateSelection({
         authorization,
-        prompt: buildProviderNeutralRecommendationPrompt(intentAwareRequest, providerDiscovery.candidates),
+        prompt: buildProviderNeutralRecommendationPrompt(intentAwareRequest, providerPools.length > 0 ? providerPools : providerDiscovery.candidates),
         promptVersion: RECOMMEND_DATE_PROMPT_VERSION,
       });
     } catch (error) {
@@ -391,7 +433,7 @@ export async function handleRecommendDate(
     try {
       built = buildProviderNeutralCourse({
         request: intentAwareRequest,
-        candidates: providerDiscovery.candidates,
+        ...(providerPools.length > 0 ? { pools: providerPools } : { candidates: providerDiscovery.candidates }),
         selection,
         generatedAt: dependencies.now?.() ?? new Date().toISOString(),
       });
@@ -407,7 +449,7 @@ export async function handleRecommendDate(
         try {
           built = buildProviderNeutralCourse({
             request: intentAwareRequest,
-            candidates: providerDiscovery.candidates,
+            ...(providerPools.length > 0 ? { pools: providerPools } : { candidates: providerDiscovery.candidates }),
             selection: deterministic,
             generatedAt: dependencies.now?.() ?? new Date().toISOString(),
           });
@@ -424,11 +466,14 @@ export async function handleRecommendDate(
     let linkedCards = built.cards;
     if (dependencies.resolveProviderNeutralKakaoLinks) {
       try {
-        const selected = providerDiscovery.candidates.filter((candidate) => (
+        const selected = selectableCandidates.filter((candidate) => (
           candidate.place.identity.provider === 'naver'
           && built.course.steps.some((step) => step.candidateId === candidate.candidateId)
         ));
-        const links = await dependencies.resolveProviderNeutralKakaoLinks(selected);
+        const links = await dependencies.resolveProviderNeutralKakaoLinks({
+          requestId: serverRequest.requestId,
+          candidates: selected,
+        });
         if (links.size > 0) {
           linkedCourse = {
             ...built.course,
@@ -454,7 +499,7 @@ export async function handleRecommendDate(
       requestId: serverRequest.requestId,
       course: linkedCourse,
       cards: linkedCards,
-      candidatePool: providerDiscovery.candidates.map((candidate, index) => ({
+      candidatePool: selectableCandidates.map((candidate, index) => ({
         candidateId: candidate.candidateId,
         placeIdentity: candidate.place.identity,
         category: candidate.place.category.normalized,
@@ -673,7 +718,11 @@ export async function handleRecommendDate(
               ? { steps: forcePinnedCandidateIds(parsedSelection.data.steps, effectiveCourseSteps, search.candidates) }
               : parsedSelection.data;
             built = buildCandidateOnlyCourse({
-              request: { ...serverRequest, courseSteps: effectiveCourseSteps },
+              // The final AI selection must use the same server-resolved intent
+              // context as the pre-search gate and deterministic fallback.
+              // Using serverRequest here silently dropped resolvedStepIntents,
+              // allowing a category-only AI choice to bypass a selected tag.
+              request: { ...intentAwareRequest, courseSteps: effectiveCourseSteps },
               candidates: search.candidates,
               history,
               reintroducedPlaceIds: search.reintroducedPlaceIds,

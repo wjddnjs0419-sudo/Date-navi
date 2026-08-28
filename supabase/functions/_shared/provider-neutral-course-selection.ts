@@ -52,7 +52,8 @@ function distanceMeters(a: NormalizedPlace, b: NormalizedPlace): number {
 
 export function buildProviderNeutralCourse(input: {
   request: RecommendationRequest;
-  candidates: readonly ProviderNeutralCandidate[];
+  candidates?: readonly ProviderNeutralCandidate[];
+  pools?: readonly StepCandidatePool[];
   selection: unknown;
   generatedAt: string;
 }) {
@@ -60,11 +61,14 @@ export function buildProviderNeutralCourse(input: {
   if (!parsed.success || parsed.data.steps.length !== input.request.courseSteps.length) {
     throw new ProviderNeutralCourseSelectionError();
   }
-  const ids = new Set(input.candidates.map((candidate) => candidate.candidateId));
-  const identities = new Set(input.candidates.map((candidate) => (
+  const candidates = input.pools
+    ? input.pools.flatMap((pool) => pool.selectableCandidates)
+    : (input.candidates ?? []);
+  const ids = new Set(candidates.map((candidate) => candidate.candidateId));
+  const identities = new Set(candidates.map((candidate) => (
     `${candidate.place.identity.provider}:${candidate.place.identity.providerPlaceId}`
   )));
-  if (ids.size !== input.candidates.length || identities.size !== input.candidates.length) {
+  if (ids.size !== candidates.length || identities.size !== candidates.length) {
     throw new ProviderNeutralCourseSelectionError();
   }
   const excluded = new Set(input.request.excludedPlaceIds ?? []);
@@ -76,9 +80,12 @@ export function buildProviderNeutralCourse(input: {
   const selected = parsed.data.steps.map((selection, index) => {
     const requested = input.request.courseSteps[index];
     if (!requested || selection.stepId !== requested.id) throw new ProviderNeutralCourseSelectionError();
-    const candidate = input.candidates.find((entry) => entry.candidateId === selection.candidateId);
+    const owningPool = input.pools?.find((pool) => pool.stepId === requested.id);
+    const candidate = candidates.find((entry) => entry.candidateId === selection.candidateId);
     if (!candidate || !matchesCategory(candidate, requested.category)
       || !providerNeutralPlaceMatchesStep(candidate.place, requested, requiredIntents.get(requested.id))
+      || (owningPool && candidate.sourceStepId !== requested.id)
+      || (candidate.qualification?.intent === 'unmatched')
       || excluded.has(candidate.place.identity.providerPlaceId)) {
       throw new ProviderNeutralCourseSelectionError();
     }
