@@ -69,7 +69,8 @@ export const parsedPreferenceInputSchema = softPreferencesSchema
 export const lockedCourseStepInputSchema = z.object({
   stepId: boundedText(80),
   candidateId: boundedText(120),
-  kakaoPlaceId: boundedText(120),
+  kakaoPlaceId: boundedText(120).optional(),
+  placeIdentity: providerPlaceIdentitySchema.optional(),
   name: boundedText(160),
   address: z.string().max(300),
   roadAddress: z.string().max(300),
@@ -80,7 +81,15 @@ export const lockedCourseStepInputSchema = z.object({
   // Optional for backward compatibility with shipped clients that omit it (treated as true —
   // legacy pins were always genuinely locked).
   locked: z.boolean().optional(),
-}).strict();
+}).strict().superRefine((step, ctx) => {
+  if (!step.placeIdentity && !step.kakaoPlaceId) {
+    ctx.addIssue({ code: 'custom', path: ['placeIdentity'], message: 'A provider place identity is required.' });
+  }
+  if (step.placeIdentity?.provider === 'kakao' && step.kakaoPlaceId
+    && step.placeIdentity.providerPlaceId !== step.kakaoPlaceId) {
+    ctx.addIssue({ code: 'custom', path: ['placeIdentity'], message: 'Kakao provider identity must match kakaoPlaceId.' });
+  }
+});
 
 export const recommendationRequestSchema = hardConstraintsSchema
   .merge(softPreferencesSchema)
@@ -525,7 +534,12 @@ export function validateRecommendDateResponseForRequest(
     if (responseStep.locked !== (lock ? lock.locked !== false : false)) {
       fail(`course step ${index} lock flag mismatch`);
     }
-    if (lock && (responseStep.candidateId !== lock.candidateId || responseStep.kakaoPlaceId !== lock.kakaoPlaceId)) {
+    const lockIdentity = lock?.placeIdentity
+      ?? (lock?.kakaoPlaceId ? { provider: 'kakao' as const, providerPlaceId: lock.kakaoPlaceId } : undefined);
+    const responseIdentity = responseStep.placeIdentity
+      ?? (responseStep.kakaoPlaceId ? { provider: 'kakao' as const, providerPlaceId: responseStep.kakaoPlaceId } : undefined);
+    if (lock && (responseStep.candidateId !== lock.candidateId
+      || JSON.stringify(responseIdentity) !== JSON.stringify(lockIdentity))) {
       fail(`course step ${index} lock tuple mismatch`);
     }
   });

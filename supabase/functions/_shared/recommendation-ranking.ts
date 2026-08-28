@@ -101,7 +101,9 @@ function findFeasibleAssignment(
   const intentByStepId = new Map(effectiveStepIntents(request).map((intent) => [intent.stepId, intent]));
   const choices: FeasibilityPlace[][] = request.courseSteps.map((step) => {
     const lock = locks.get(step.id);
-    if (lock) return [{ kakaoPlaceId: lock.kakaoPlaceId, latitude: lock.latitude, longitude: lock.longitude }];
+    if (lock) return lock.kakaoPlaceId
+      ? [{ kakaoPlaceId: lock.kakaoPlaceId, latitude: lock.latitude, longitude: lock.longitude }]
+      : [];
     if (step.pinnedKakaoPlaceId) {
       return places.filter((place) => place.kakaoPlaceId === step.pinnedKakaoPlaceId);
     }

@@ -27,6 +27,20 @@ const courseSteps = [
 ];
 
 describe('RecommendationRequest contracts', () => {
+  it('accepts a locked Naver identity without a Kakao place ID', () => {
+    const parsed = recommendationRequestSchema.safeParse({
+      requestId: 'request-001', mode: 'course', language: 'ko', location, courseSteps,
+      lockedSteps: [{
+        stepId: 'meal', candidateId: 'naver-candidate',
+        placeIdentity: { provider: 'naver', providerPlaceId: 'naver-place' },
+        name: '네이버 식당', address: '서울', roadAddress: '서울 도로', mapUrl: '',
+        latitude: 37.55, longitude: 127.01, locked: true,
+      }],
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
   it.each(['ko', 'en'] as const)('serializes and restores a %s request without changing structured constraints', (language) => {
     const request = {
       requestId: 'request-001',

@@ -111,6 +111,120 @@ describe('recommend-date server prompt', () => {
     }), expect.anything());
   });
 
+  it('uses Naver-first discovery for a selected keyword and preserves the required match', async () => {
+    const providerSearch = jest.fn(async () => ({
+      candidates: [
+        {
+          candidateId: 'naver-generic-meal', distanceFromSearchCenterMeters: 100, popularityBonus: 0,
+          place: {
+            identity: { provider: 'naver' as const, providerPlaceId: 'naver-generic-meal' },
+            name: '서울숲 일반 식당', category: { normalized: 'meal' as const },
+            address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+            coordinates: { latitude: 37.5444, longitude: 127.0374 },
+            evidence: { provider: 'naver' as const, searchTerms: ['서울숲 식사'] },
+          },
+        },
+        {
+          candidateId: 'naver-pork-meal', distanceFromSearchCenterMeters: 110, popularityBonus: 0,
+          place: {
+            identity: { provider: 'naver' as const, providerPlaceId: 'naver-pork-meal' },
+            name: '서울숲 삼겹살 식당', category: { normalized: 'meal' as const },
+            address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+            coordinates: { latitude: 37.5445, longitude: 127.0375 },
+            evidence: { provider: 'naver' as const, searchTerms: ['서울숲 식사 삼겹살'] },
+          },
+        },
+        {
+          candidateId: 'naver-cafe', distanceFromSearchCenterMeters: 120, popularityBonus: 0,
+          place: {
+            identity: { provider: 'naver' as const, providerPlaceId: 'naver-cafe' },
+            name: '서울숲 카페', category: { normalized: 'cafe' as const },
+            address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+            coordinates: { latitude: 37.5446, longitude: 127.0376 },
+            evidence: { provider: 'naver' as const, searchTerms: ['서울숲 카페'] },
+          },
+        },
+      ],
+      discovery: { places: [], attemptsRun: 2, fallbackUsed: false, fewerResults: false },
+    }));
+    const searchCandidates = jest.fn(async () => { throw new Error('keyword request must not use Kakao search'); });
+    const taggedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'step-meal', category: 'meal', label: '식사', intentTags: ['삼겹살'] },
+        { id: 'step-cafe', category: 'cafe', label: '카페' },
+      ],
+    };
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: taggedRequest },
+      dependencies({
+        searchCandidates,
+        searchProviderNeutralCandidates: providerSearch,
+        generateSelection: jest.fn(async () => ({ steps: [
+          { stepId: 'step-meal', candidateId: 'naver-generic-meal' },
+          { stepId: 'step-cafe', candidateId: 'naver-cafe' },
+        ] })),
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: 200,
+      body: {
+        metadata: { fallbackUsed: true, selectionReason: 'ai_invalid_selection' },
+        course: { steps: [{ candidateId: 'naver-pork-meal' }, { candidateId: 'naver-cafe' }] },
+      },
+    });
+    expect(providerSearch).toHaveBeenCalledTimes(1);
+    expect(searchCandidates).not.toHaveBeenCalled();
+  });
+
+  it('returns STEP_INTENT_UNSATISFIED when Naver-first has no matching keyword candidate', async () => {
+    const providerSearch = jest.fn(async () => ({
+      candidates: [
+        {
+          candidateId: 'naver-generic-meal', distanceFromSearchCenterMeters: 100, popularityBonus: 0,
+          place: {
+            identity: { provider: 'naver' as const, providerPlaceId: 'naver-generic-meal' },
+            name: '서울숲 일반 식당', category: { normalized: 'meal' as const },
+            address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+            coordinates: { latitude: 37.5444, longitude: 127.0374 },
+            evidence: { provider: 'naver' as const, searchTerms: ['서울숲 식사'] },
+          },
+        },
+        {
+          candidateId: 'naver-cafe', distanceFromSearchCenterMeters: 120, popularityBonus: 0,
+          place: {
+            identity: { provider: 'naver' as const, providerPlaceId: 'naver-cafe' },
+            name: '서울숲 카페', category: { normalized: 'cafe' as const },
+            address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+            coordinates: { latitude: 37.5446, longitude: 127.0376 },
+            evidence: { provider: 'naver' as const, searchTerms: ['서울숲 카페'] },
+          },
+        },
+      ],
+      discovery: { places: [], attemptsRun: 2, fallbackUsed: false, fewerResults: true },
+    }));
+    const generateSelection = jest.fn(async () => ({ steps: [] }));
+    const taggedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'step-meal', category: 'meal', label: '식사', intentTags: ['삼겹살'] },
+        { id: 'step-cafe', category: 'cafe', label: '카페' },
+      ],
+    };
+
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: taggedRequest },
+      dependencies({ searchProviderNeutralCandidates: providerSearch, generateSelection }),
+    );
+
+    expect(result).toMatchObject({
+      status: 422,
+      body: { error: { code: 'STEP_INTENT_UNSATISFIED', unsatisfiedIntents: [expect.objectContaining({ canonicalTerm: '삼겹살' })] } },
+    });
+    expect(generateSelection).not.toHaveBeenCalled();
+  });
+
   it('uses the provider-neutral Naver-first result for a fresh unpinned course', async () => {
     const providerSearch = jest.fn(async () => ({
       candidates: [
@@ -144,6 +258,33 @@ describe('recommend-date server prompt', () => {
     expect(body.candidatePool?.[0]).toMatchObject({ placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/p/meal' } });
   });
 
+  it('keeps a current-location request on the established Kakao search path', async () => {
+    const providerSearch = jest.fn(async () => ({
+      candidates: [],
+      discovery: { places: [], attemptsRun: 0, fallbackUsed: true, fewerResults: true },
+    }));
+    const searchCandidates = jest.fn(async () => searchResult);
+    const currentLocationRequest: RecommendationRequest = {
+      ...request(),
+      location: {
+        source: 'current',
+        label: '내 위치 사용 중',
+        latitude: 37.5444,
+        longitude: 127.0374,
+        kind: 'current',
+      },
+    };
+
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: currentLocationRequest },
+      dependencies({ searchCandidates, searchProviderNeutralCandidates: providerSearch }),
+    );
+
+    expect(result.status).toBe(200);
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(searchCandidates).toHaveBeenCalledTimes(1);
+  });
+
   it('adds a Kakao map link only after selecting a Naver place, without changing its identity', async () => {
     const providerSearch = jest.fn(async () => ({
       candidates: [
@@ -166,7 +307,10 @@ describe('recommend-date server prompt', () => {
     );
 
     expect(result.status).toBe(200);
-    expect(resolveLinks).toHaveBeenCalledWith([expect.objectContaining({ candidateId: 'naver-meal' }), expect.objectContaining({ candidateId: 'naver-cafe' })]);
+    expect(resolveLinks).toHaveBeenCalledWith({
+      requestId: 'request-ko',
+      candidates: [expect.objectContaining({ candidateId: 'naver-meal' }), expect.objectContaining({ candidateId: 'naver-cafe' })],
+    });
     const body = result.body as { course: { steps: Array<Record<string, unknown>> }; cards: Array<{ steps: Array<Record<string, unknown>> }> };
     expect(body.course.steps[0]).toMatchObject({ placeIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-id' }, kakaoPlaceId: 'kakao-confirmed', mapUrl: 'https://place.map.kakao.com/kakao-confirmed' });
     expect(body.cards[0].steps[0]).toMatchObject({ candidateId: 'naver-meal', kakaoPlaceId: 'kakao-confirmed', map_url: 'https://place.map.kakao.com/kakao-confirmed' });
@@ -431,6 +575,15 @@ describe('recommend-date Deno source boundary', () => {
     expect(source).toContain("discoveryStrategy === 'naver_shadow'");
     expect(source).toContain("event: 'recommend_date_naver_shadow'");
     expect(source).toContain("discoveryStrategy === 'naver_primary_with_kakao_fallback' && providerPersistenceReady");
+  });
+
+  it('passes loaded history into Naver-first discovery so recent Naver places are excluded', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'supabase/functions/recommend-date/index.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('stepAttempts: { primary: primaryAttempts, fallback: fallbackAttempts },\n          history,');
   });
 
   // 세션 행이 없는 최초 생성 실패도 arm별 실패율에 잡히려면, sessionKey join이 아니라

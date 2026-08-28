@@ -957,6 +957,27 @@ $$;
 revoke all on function public.persist_recommendation_session(text) from public;
 grant execute on function public.persist_recommendation_session(text) to authenticated;
 
+-- Provider-neutral mutation identity helper. The live mutation RPC is
+-- patched by 20260829000000_provider_neutral_session_mutations.sql so legacy
+-- Kakao payloads and Naver provider tuples use the same comparison contract.
+create or replace function public.recommendation_place_identity_matches(
+  p_provider text,
+  p_provider_place_id text,
+  p_value jsonb
+)
+returns boolean
+language sql immutable set search_path = public, pg_temp
+as $$
+  select p_provider is not distinct from coalesce(
+    nullif(btrim(p_value #>> '{placeIdentity,provider}'), ''),
+    case when nullif(btrim(p_value ->> 'kakaoPlaceId'), '') is not null then 'kakao' end
+  )
+  and p_provider_place_id is not distinct from coalesce(
+    nullif(btrim(p_value #>> '{placeIdentity,providerPlaceId}'), ''),
+    nullif(btrim(p_value ->> 'kakaoPlaceId'), '')
+  );
+$$;
+
 create or replace function public.apply_recommendation_session_mutation(
   p_session_id text,
   p_action text,

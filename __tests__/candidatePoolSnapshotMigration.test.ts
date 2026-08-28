@@ -4,6 +4,7 @@ import { candidatePoolSnapshotsSchema } from '../shared/recommendation/schemas';
 
 const sql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260727160000_candidate_pool_snapshots.sql'), 'utf8');
 const contractSql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260826130000_course_pipeline_contracts.sql'), 'utf8');
+const providerNeutralMutationSql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260829000000_provider_neutral_session_mutations.sql'), 'utf8');
 
 describe('candidate pool snapshot persistence migration', () => {
   it('validates the attested full ranked pool before initial session storage', () => {
@@ -53,5 +54,13 @@ describe('candidate pool snapshot persistence migration', () => {
       { ...base, candidateId: 'meal-same', sourceStepId: 'meal' },
       { ...base, candidateId: 'cafe-same', sourceStepId: 'cafe', rank: 2 },
     ]).success).toBe(true);
+  });
+
+  it('migrates mutation identity checks away from Kakao-only tuples', () => {
+    expect(providerNeutralMutationSql).toContain('recommendation_place_identity_matches');
+    expect(providerNeutralMutationSql).toContain('current_place_provider');
+    expect(providerNeutralMutationSql).toContain('current_provider_place_id');
+    expect(providerNeutralMutationSql).toContain("candidate ->> 'candidateId'");
+    expect(providerNeutralMutationSql).toContain('placeIdentity');
   });
 });

@@ -242,10 +242,10 @@ describe('placeMatchesStepIntent', () => {
     ...overrides,
   });
 
-  it('exact step_intent 검색 evidence로 매칭한다', () => {
+  it('검색어 evidence만으로는 strict intent를 증명하지 않는다', () => {
     expect(placeMatchesStepIntent(place({
       matchedSearchEvidence: [{ queryId: 'query_002', source: 'keyword', page: 1, queryText: '삼겹살', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 0 }],
-    }), intent)).toBe(true);
+    }), intent)).toBe(false);
   });
 
   it('확장 검색 evidence만으로는 strict intent를 증명하지 않는다', () => {
@@ -307,7 +307,7 @@ describe('placeMatchesExcludedStepIntent', () => {
     expect(placeMatchesExcludedStepIntent(place({ name: '왕십리 삼겹살집' }), excludedPork)).toBe(true);
     expect(placeMatchesExcludedStepIntent(place({
       matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 0 }],
-    }), excludedPork)).toBe(true);
+    }), excludedPork)).toBe(false);
     expect(placeMatchesExcludedStepIntent(place({ categoryName: '음식점 > 한식 > 육류,고기' }), excludedPork)).toBe(false);
     expect(placeMatchesExcludedStepIntent(place({
       matchedSearchEvidence: [{ phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 2 }],
@@ -341,9 +341,9 @@ describe('placeMatchesStepIntent - venue_subtype(루프탑 카페)', () => {
     expect(placeMatchesStepIntent(cafePlace({ name: 'Rooftop Bar' }), rooftopIntent)).toBe(false);
   });
 
-  it('step_intent 검색 evidence로 매칭한다', () => {
+  it('step_intent 검색 evidence만으로는 venue subtype을 증명하지 않는다', () => {
     expect(placeMatchesStepIntent(cafePlace({
       matchedSearchEvidence: [{ queryId: 'q', source: 'keyword', page: 1, queryText: '루프탑 카페', phase: 'step_intent', canonicalTerm: '루프탑 카페', expansionLevel: 0 }],
-    }), rooftopIntent)).toBe(true);
+    }), rooftopIntent)).toBe(false);
   });
 });

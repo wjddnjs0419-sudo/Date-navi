@@ -1,5 +1,6 @@
 export type RecommendationLanguage = 'ko' | 'en';
 export type RecommendationMode = 'course' | 'single_place';
+export type ProviderPlaceIdentity = { provider: 'kakao' | 'naver'; providerPlaceId: string };
 
 export type RecommendationLocationKind =
   | 'station'
@@ -60,7 +61,8 @@ export type ParsedPreferenceInput = Omit<SoftPreferences, 'freeText'> & {
 export type LockedCourseStepInput = {
   stepId: string;
   candidateId: string;
-  kakaoPlaceId: string;
+  kakaoPlaceId?: string;
+  placeIdentity?: ProviderPlaceIdentity;
   /**
    * Place facts for this step, carried by the client so the server can pin
    * a locked step without needing it to reappear in a fresh Kakao search

@@ -66,6 +66,7 @@ function pinnedLockedFlag(lock: LockedCourseStepInput | undefined): boolean {
 // search results — the step's category was already verified when it was first created, and its
 // candidateId/kakaoPlaceId are trusted pass-through identity, not re-derived here.
 function candidateFromLock(lock: LockedCourseStepInput): PlaceCandidate {
+  if (!lock.kakaoPlaceId) throw new Error('PROVIDER_NEUTRAL_LOCK_REQUIRES_PROVIDER_PATH');
   return {
     candidateId: lock.candidateId,
     kakaoPlaceId: lock.kakaoPlaceId,
