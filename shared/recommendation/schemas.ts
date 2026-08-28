@@ -318,9 +318,19 @@ const candidateScoreBreakdownSchema = z.object({
 
 export const candidatePoolSnapshotSchema = z.object({
   candidateId: boundedText(120),
+  sourceStepId: boundedText(80).optional(),
   kakaoPlaceId: boundedText(120).optional(),
   placeIdentity: providerPlaceIdentitySchema.optional(),
   category: boundedText(300),
+  qualification: z.object({
+    category: z.enum(['compatible', 'unknown', 'incompatible']),
+    intent: z.enum(['not_required', 'matched', 'unmatched']),
+    intentEvidence: z.array(z.object({
+      phase: boundedText(80).optional(),
+      canonicalTerm: boundedText(160).optional(),
+      expansionLevel: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
+    }).strict()),
+  }).strict().optional(),
   rank: z.number().int().positive(),
   totalScore: z.number().finite(),
   scoreBreakdown: candidateScoreBreakdownSchema,
@@ -342,11 +352,17 @@ export const candidatePoolSnapshotsSchema = z.array(candidatePoolSnapshotSchema)
     if (new Set(values).size !== values.length) ctx.addIssue({ code: 'custom', path: [field], message: `${field} must be unique.` });
   };
   unique(snapshots.map((snapshot) => snapshot.candidateId), 'candidateId');
-  unique(snapshots.map((snapshot) => {
+  const identities = snapshots.map((snapshot) => {
     const identity = snapshot.placeIdentity
       ?? { provider: 'kakao', providerPlaceId: snapshot.kakaoPlaceId! };
-    return `${identity.provider}:${identity.providerPlaceId}`;
-  }), 'placeIdentity');
+    return {
+      key: `${identity.provider}:${identity.providerPlaceId}`,
+      sourceStepId: snapshot.sourceStepId,
+    };
+  });
+  const legacyIdentities = identities.filter((identity) => !identity.sourceStepId).map((identity) => identity.key);
+  unique(legacyIdentities, 'placeIdentity');
+  unique(identities.filter((identity) => identity.sourceStepId).map((identity) => `${identity.sourceStepId}:${identity.key}`), 'stepPlaceIdentity');
   unique(snapshots.map((snapshot) => String(snapshot.rank)), 'rank');
   snapshots.forEach((snapshot, index) => {
     if (snapshot.rank !== index + 1) ctx.addIssue({ code: 'custom', path: [index, 'rank'], message: 'Ranks must be consecutive and one-based.' });

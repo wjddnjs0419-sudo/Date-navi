@@ -36,4 +36,22 @@ describe('candidate pool snapshot persistence migration', () => {
     expect(candidatePoolSnapshotsSchema.safeParse(snapshots).success).toBe(true);
     expect(contractSql).toContain('jsonb_array_length(p_pool) not between 2 and 50');
   });
+
+  it('preserves step ownership and permits the same physical place in separate source pools', () => {
+    const base = {
+      placeIdentity: { provider: 'naver' as const, providerPlaceId: 'same-place' },
+      category: 'unknown',
+      rank: 1,
+      totalScore: 0,
+      scoreBreakdown: { intent: 0, distance: 0, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: 0 },
+      distanceFromSearchCenterMeters: 0,
+      priceAtRanking: { source: 'unknown' as const, minKRW: null, maxKRW: null },
+      selectedInitially: false, forced: false, pinned: false, reintroducedByHistory: false,
+      qualification: { category: 'unknown' as const, intent: 'not_required' as const, intentEvidence: [] },
+    };
+    expect(candidatePoolSnapshotsSchema.safeParse([
+      { ...base, candidateId: 'meal-same', sourceStepId: 'meal' },
+      { ...base, candidateId: 'cafe-same', sourceStepId: 'cafe', rank: 2 },
+    ]).success).toBe(true);
+  });
 });

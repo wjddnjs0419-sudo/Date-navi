@@ -501,8 +501,10 @@ export async function handleRecommendDate(
       cards: linkedCards,
       candidatePool: selectableCandidates.map((candidate, index) => ({
         candidateId: candidate.candidateId,
+        ...(candidate.sourceStepId ? { sourceStepId: candidate.sourceStepId } : {}),
         placeIdentity: candidate.place.identity,
         category: candidate.place.category.normalized,
+        ...(candidate.qualification ? { qualification: candidate.qualification } : {}),
         rank: index + 1,
         totalScore: candidate.popularityBonus,
         scoreBreakdown: { intent: 0, distance: 0, budget: 0, preference: 0, routeFit: 0, diversity: 0, behavior: 0, penalty: candidate.popularityBonus },

@@ -3,6 +3,7 @@ import type { PriceRange } from '../../../shared/recommendation/place-price.ts';
 
 export type CandidatePoolSnapshot = {
   candidateId: string;
+  sourceStepId?: string;
   kakaoPlaceId?: string;
   placeIdentity?: { provider: 'kakao' | 'naver'; providerPlaceId: string };
   category: string;
@@ -21,10 +22,15 @@ const UNKNOWN_PRICE: PriceRange = { source: 'unknown', minKRW: null, maxKRW: nul
 
 export function buildCandidatePoolSnapshots(input: {
   candidates: readonly {
-    candidateId: string; kakaoPlaceId?: string;
+    candidateId: string; sourceStepId?: string; kakaoPlaceId?: string;
     placeIdentity?: { provider: 'kakao' | 'naver'; providerPlaceId: string };
     categoryName: string; score: number;
     scoreBreakdown: CandidateScoreBreakdown; distanceFromSearchCenterMeters: number; priceAtRanking?: PriceRange;
+    qualification?: {
+      category: 'compatible' | 'unknown' | 'incompatible';
+      intent: 'not_required' | 'matched' | 'unmatched';
+      intentEvidence: readonly { phase?: string; canonicalTerm?: string; expansionLevel?: 0 | 1 | 2 }[];
+    };
   }[];
   selectedKakaoPlaceIds?: readonly string[];
   forcedKakaoPlaceId?: string;
@@ -40,9 +46,11 @@ export function buildCandidatePoolSnapshots(input: {
     const stableKey = identity ? `${identity.provider}:${identity.providerPlaceId}` : candidate.kakaoPlaceId;
     return {
     candidateId: candidate.candidateId,
+    ...(candidate.sourceStepId ? { sourceStepId: candidate.sourceStepId } : {}),
     ...(candidate.kakaoPlaceId ? { kakaoPlaceId: candidate.kakaoPlaceId } : {}),
     ...(identity ? { placeIdentity: identity } : {}),
     category: candidate.categoryName,
+    ...(candidate.qualification ? { qualification: candidate.qualification } : {}),
     rank: index + 1,
     totalScore: Object.values(candidate.scoreBreakdown).reduce<number>((sum, value) => sum + (value ?? 0), 0),
     scoreBreakdown: candidate.scoreBreakdown,
