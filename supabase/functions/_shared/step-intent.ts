@@ -211,11 +211,10 @@ function isStrictCategoryKeyword(keyword: string, intent: ParsedStepIntent): boo
 }
 
 function hasStrictIntentEvidence(place: IntentMatchablePlace, intent: ParsedStepIntent): boolean {
-  if (place.matchedSearchEvidence.some((evidence) => (
-    evidence.phase === 'step_intent'
-    && evidence.canonicalTerm === intent.canonicalTerm
-    && evidence.expansionLevel === 0
-  ))) return true;
+  // A provider returning a document for a keyword query is not proof that the
+  // place itself matches that keyword. Search evidence is useful for ranking,
+  // but strict eligibility must come from the provider metadata we actually
+  // received for this place.
   const entry = getStepIntentDictionaryEntry(intent.canonicalTerm);
   const name = normalize(place.name);
   if ([intent.canonicalTerm, ...(entry?.aliases ?? [])]

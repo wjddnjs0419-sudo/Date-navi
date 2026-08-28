@@ -6,6 +6,7 @@ import {
   type AiParseResult,
 } from '../supabase/functions/_shared/step-intent-resolve';
 import type { ParsedStepIntent } from '../supabase/functions/_shared/step-intent';
+import { providerNeutralPlaceMatchesStep } from '../supabase/functions/_shared/provider-neutral-intent';
 
 const request = (additionalRequest?: string): RecommendationRequest => ({
   requestId: 'req-resolve',
@@ -35,6 +36,25 @@ const parsedIntent = (overrides: Partial<ParsedStepIntent> = {}): ParsedStepInte
   ...overrides,
 });
 
+const providerPlace = (searchTerms: string[]) => ({
+  identity: { provider: 'naver' as const, providerPlaceId: 'n-place' },
+  name: '낙성대우리한우소곱창',
+  category: { normalized: 'meal' as const, providerRaw: '음식점 > 한식' },
+  address: { display: '서울 관악구', road: '서울 관악구 관악로' },
+  coordinates: { latitude: 37.48, longitude: 126.95 },
+  evidence: { provider: 'naver' as const, searchTerms },
+});
+
+describe('provider-neutral intent evidence', () => {
+  it('does not treat the keyword used for search as proof of a matching place', () => {
+    expect(providerNeutralPlaceMatchesStep(
+      providerPlace(['낙성대역 삼겹살']),
+      { category: 'meal' },
+      parsedIntent({ strength: 'required' }),
+    )).toBe(false);
+  });
+});
+
 describe('mergeRuleAndAiIntents', () => {
   it('규칙 exact intent의 검색 정보는 유지하고 AI의 required 강도만 승격한다', () => {
     const rulePork = parsedIntent();
@@ -53,7 +73,7 @@ describe('mergeRuleAndAiIntents', () => {
     const rulePork = parsedIntent();
     const aiCafe = parsedIntent({
       stepId: 'step-2', stepCategory: 'cafe', intentType: 'venue_subtype', canonicalTerm: '감성 카페',
-      kakaoSearchTerms: ['감성 카페'], displayLabel: { ko: '감성 카페', en: 'Atmospheric cafe' },
+      kakaoSearchTerms: ['감성 카페'], displayLabel: { ko: '감성 카페', en: 'Emotional cafe' },
     });
     const negatedPork = parsedIntent({ negated: true });
 
@@ -123,7 +143,7 @@ describe('resolveStepIntents — non-course compatibility AI gate', () => {
     const invokeAi = jest.fn(async (): Promise<AiParseResult> => ({
       stepIntents: [{
         stepId: 'step-2', stepCategory: 'cafe', intentType: 'venue_subtype', canonicalTerm: '감성 카페',
-        kakaoSearchTerms: ['감성 카페'], strength: 'preferred', displayLabel: { ko: '감성 카페', en: 'Atmospheric cafe' },
+        kakaoSearchTerms: ['감성 카페'], strength: 'preferred', displayLabel: { ko: '감성 카페', en: 'Emotional cafe' },
       }],
       unsupported: [], conflicts: [],
     }));
