@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { Heart } from '../components/iconography';
 import { HeartDoodle } from '../components/ui';
 
 const TestRenderer = require('react-test-renderer') as {

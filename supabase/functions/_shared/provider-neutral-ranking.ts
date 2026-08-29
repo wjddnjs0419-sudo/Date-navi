@@ -6,12 +6,14 @@ export type QualifiedPlaceInput = {
   quality: QualityAssessment;
   distanceFromSearchCenterMeters: number;
   popularityBonus: number;
+  intentEvidence?: number;
+  intentPreference?: number;
 };
 
 export type QualifiedPlaceCandidate = {
   place: NormalizedPlace;
   quality: QualityAssessment;
-  scoreBreakdown: { distance: number; popularity: number };
+  scoreBreakdown: { distance: number; popularity: number; intentEvidence?: number; intentPreference?: number };
   score: number;
 };
 
@@ -22,12 +24,21 @@ export function rankQualifiedPlaces(input: readonly QualifiedPlaceInput[]): Qual
       const scoreBreakdown = {
         distance: Math.max(0, 20 - Math.floor(entry.distanceFromSearchCenterMeters / 250)),
         popularity: entry.popularityBonus,
+        ...(entry.intentEvidence !== undefined && entry.intentEvidence > 0
+          ? { intentEvidence: entry.intentEvidence }
+          : {}),
+        ...(entry.intentPreference !== undefined && entry.intentPreference > 0
+          ? { intentPreference: entry.intentPreference }
+          : {}),
       };
       return {
         place: entry.place,
         quality: entry.quality,
         scoreBreakdown,
-        score: scoreBreakdown.distance + scoreBreakdown.popularity,
+        score: scoreBreakdown.distance
+          + scoreBreakdown.popularity
+          + (entry.intentEvidence ?? 0)
+          + (entry.intentPreference ?? 0),
       };
     })
     .sort((a, b) => b.score - a.score

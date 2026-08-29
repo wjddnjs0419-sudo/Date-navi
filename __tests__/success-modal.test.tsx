@@ -11,7 +11,10 @@ import { SuccessModal } from '../components/ui';
 
 const TR = require('react-test-renderer') as {
   create: (el: React.ReactElement) => {
-    root: { findAllByType: (t: unknown) => { props: any }[] };
+    root: {
+      findAllByType: (t: unknown) => { props: any }[];
+      findAllByProps: (props: Record<string, unknown>) => { props: any }[];
+    };
     unmount: () => void;
   };
   act: (cb: () => void) => void;
@@ -30,6 +33,7 @@ describe('SuccessModal 계약', () => {
     });
     const texts = tree.root.findAllByType(Text).map((n) => n.props.children);
     expect(texts).toContain('저장했어요!');
+    expect(tree.root.findAllByProps({ testID: 'modal-sheet-handle' })).toHaveLength(0);
     TR.act(() => { tree.unmount(); });
   });
 

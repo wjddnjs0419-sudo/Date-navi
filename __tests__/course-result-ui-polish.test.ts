@@ -11,9 +11,8 @@ describe('course result footer button symmetry', () => {
     const confirm = source.match(/confirmButton: \{([^}]*)\}/)?.[1] ?? '';
     expect(regenerate).toContain('flex: 1');
     expect(confirm).toContain('flex: 1');
-    const pad = (styles: string) => styles.match(/paddingHorizontal: (\d+)/)?.[1];
-    expect(pad(regenerate)).toBeDefined();
-    expect(pad(regenerate)).toBe(pad(confirm));
+    expect(regenerate).toContain('paddingHorizontal: SP.sm');
+    expect(confirm).toContain('paddingHorizontal: SP.sm');
   });
 
   it('renders the confirm button as plain text without a check icon', () => {
@@ -43,11 +42,11 @@ describe('course result replacement bottom sheet', () => {
   it('dims the area outside the sheet and closes on backdrop press', () => {
     expect(source).toMatch(/<Pressable[^>]*style=\{s\.replacementBackdrop\}[^>]*onPress=\{closeReplacementPanel\}/s);
     const backdrop = source.match(/replacementBackdrop: \{([^}]*)\}/)?.[1] ?? '';
-    expect(backdrop).toContain('rgba');
+    expect(backdrop).toContain('DS.color.overlayScrim');
   });
 
   it('keeps the existing X close button at the sheet top-right', () => {
-    expect(source).toMatch(/onPress=\{closeReplacementPanel\} style=\{s\.replacementCloseButton\}>\s*<X/);
+    expect(source).toMatch(/onPress=\{closeReplacementPanel\}[\s\S]*?style=\{s\.replacementCloseButton\}>\s*<X/);
   });
 
   it('no longer renders the inline replacement panel in the scroll content', () => {

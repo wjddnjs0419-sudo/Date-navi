@@ -11,17 +11,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Clock, Wallet, Share2, Heart } from 'lucide-react-native';
-import { C, SP, R, T } from '../../constants/theme';
+import { Clock, Wallet, Share2, Heart } from '../../components/iconography';
+import { C, DS, SP, T } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
 import type { FeelingInput } from '../../lib/ai';
-import { PlaceRow, CourseStepList, MoreMenu, BackBar, BigButton, Badge, Chip } from '../../components/ui';
+import { PlaceRow, CourseStepList, MoreMenu, BigButton, Badge, Chip, Header, HeaderActions, ScreenHeading } from '../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { readRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { ReactionType, REACTIONS, REACTION_ICONS } from '../../lib/reactions';
 import { ReactionPicker } from '../../components/ReactionPicker';
+import { openPlaceInBrowser } from '../../lib/placeBrowser';
 
 export { REACTION_ICONS };
 export type { ReactionType };
@@ -60,7 +61,7 @@ export function visibleTags(tags: string[] | null | undefined, steps: CourseStep
   return (tags ?? []).filter(tag => !stepLabels.has(norm(tag)));
 }
 
-// 목업 08의 제목 줄 하트 — 반응 그리드의 love와 같은 상태를 공유하는 단축 토글이다.
+// 카드 상세의 독립 반응 액션 — 반응 그리드의 love와 같은 상태를 공유하는 단축 토글이다.
 export function CardLoveToggle({
   active, onToggle,
 }: {
@@ -76,14 +77,14 @@ export function CardLoveToggle({
       onPress={onToggle}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       style={loveS.btn}
-      activeOpacity={0.75}
+      activeOpacity={0.88}
     >
       <Heart size={22} color={active ? C.danger : C.textLight} fill={active ? C.danger : 'none'} strokeWidth={2} />
     </TouchableOpacity>
   );
 }
 const loveS = StyleSheet.create({
-  btn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  btn: { width: DS.spacing.touch, height: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
 });
 
 // 파트너 반응 버블 + 확정 CTA. 로직은 화면 본체(router.push)를 그대로 위임받아 쓴다.
@@ -108,14 +109,14 @@ export function CandidateActionBar({
   );
 }
 const heroS = StyleSheet.create({
-  wrap: { gap: SP.md, marginBottom: SP.xl },
+  wrap: { gap: SP.md, marginBottom: SP.xxl },
   partnerBubble: {
     backgroundColor: C.pinkLight,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     paddingVertical: SP.md,
     paddingHorizontal: SP.lg,
   },
-  partnerText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep, textAlign: 'center' },
+  partnerText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.pinkDeep, textAlign: 'center' },
 });
 
 export default function CardDetailScreen() {
@@ -218,6 +219,16 @@ export default function CardDetailScreen() {
     else handleReact(type);
   }
 
+  function openCardPlace(place: { kakaoPlaceId?: string | null; mapUrl?: string | null; name?: string | null; address?: string | null }) {
+    if (!place.kakaoPlaceId && !place.mapUrl) return;
+    void openPlaceInBrowser({
+      kakaoPlaceId: place.kakaoPlaceId ?? '',
+      mapUrl: place.mapUrl,
+      name: place.name,
+      address: place.address,
+    });
+  }
+
   function confirmDelete() {
     Alert.alert(t('candidates.deleteAlertTitle'), t('candidates.deleteAlertMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -250,15 +261,16 @@ export default function CardDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <BackBar />
-        <View style={styles.headerActions}>
+      <Header
+        onBack={() => router.back()}
+        right={(
+          <HeaderActions>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={s.common.share}
             onPress={handleShare}
             style={styles.iconBtn}
-            activeOpacity={0.7}
+            activeOpacity={0.88}
           >
             <Share2 size={20} color={C.textSub} strokeWidth={2} />
           </TouchableOpacity>
@@ -267,8 +279,10 @@ export default function CardDetailScreen() {
             onEdit={() => router.push(`/card/edit/${id}` as any)}
             onDelete={confirmDelete}
           />
-        </View>
-      </View>
+          </HeaderActions>
+        )}
+      />
+      <ScreenHeading title={s.card.title} />
 
       {loading ? (
         <View style={styles.loadingWrap}>
@@ -281,7 +295,7 @@ export default function CardDetailScreen() {
       ) : (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <Badge tone="pink">{s.card.modeLabels[card.mode] ?? card.mode}</Badge>
-          <View style={styles.titleRow}>
+          <View style={styles.courseTitleActions}>
             <Text style={[T.h1, styles.title]}>{card.title}</Text>
             <CardLoveToggle
               active={myReaction === 'love'}
@@ -291,7 +305,11 @@ export default function CardDetailScreen() {
 
           {card.mode === 'make_course' ? (
             <View style={styles.stepsWrap}>
-              <CourseStepList steps={resolveDisplaySteps(card)} summary={card.summary} />
+              <CourseStepList
+                steps={resolveDisplaySteps(card)}
+                summary={card.summary}
+                onPlacePress={(step) => openCardPlace({ kakaoPlaceId: step.kakaoPlaceId, mapUrl: step.map_url, name: step.place_name, address: step.place_address })}
+              />
             </View>
           ) : (
             <Text style={styles.summary}>{card.summary}</Text>
@@ -302,6 +320,9 @@ export default function CardDetailScreen() {
               name={card.place_name}
               address={card.place_address ?? undefined}
               url={card.map_url ?? undefined}
+              onPress={card.kakaoPlaceId || card.map_url
+                ? () => openCardPlace({ kakaoPlaceId: card.kakaoPlaceId, mapUrl: card.map_url, name: card.place_name, address: card.place_address })
+                : undefined}
               style={styles.placeRow}
             />
           )}
@@ -360,7 +381,7 @@ export default function CardDetailScreen() {
             <TouchableOpacity
               style={styles.memoryBtn}
               onPress={() => router.push({ pathname: '/card/review', params: { id } })}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
             >
               <Text style={styles.memoryBtnText}>{s.card.memoryButton}</Text>
             </TouchableOpacity>
@@ -372,56 +393,48 @@ export default function CardDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.white },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SP.xl,
-    paddingTop: SP.md,
-    paddingBottom: SP.sm,
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  safe: { flex: 1, backgroundColor: C.canvasWhiteException },
+  iconBtn: { width: DS.spacing.touch, height: DS.spacing.touch, borderRadius: DS.radius.full, alignItems: 'center', justifyContent: 'center' },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   missingText: { color: C.textLight },
 
   scroll: { flex: 1 },
-  content: { padding: SP.xxl, paddingBottom: SP.xxxl * 2 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl * 2 },
 
-  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm },
-  title: { flex: 1, marginTop: SP.sm, marginBottom: SP.lg },
-  summary: { fontSize: 15, color: C.textSub, lineHeight: 22, marginBottom: SP.lg },
+  // 하트는 제목 장식이 아닌 카드 반응 액션이므로 텍스트 직후가 아니라 우측 끝에 고정한다.
+  courseTitleActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SP.sm, marginTop: SP.sm, marginBottom: SP.lg },
+  title: { flex: 1 },
+  summary: { ...DS.typography.bodyLarge, color: C.textSub, marginBottom: SP.lg },
   stepsWrap: { marginBottom: SP.lg },
   placeRow: { marginBottom: SP.lg },
 
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.lg },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  metaText: { fontSize: 14, color: C.textSub, fontWeight: '500' },
+  metaText: { ...DS.typography.body, color: C.textSub },
   metaDivider: { width: 1, height: 14, backgroundColor: C.border, marginHorizontal: SP.md },
 
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm, marginBottom: SP.lg },
 
   divider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.xxl },
 
-  reactionTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: SP.xs },
-  reactionSub: { fontSize: 13, color: C.textMuted, marginBottom: SP.lg },
+  reactionTitle: { ...DS.typography.sectionTitle, color: C.text, marginBottom: SP.xs },
+  reactionSub: { ...DS.typography.bodyCompact, color: C.textMuted, marginBottom: SP.lg },
 
   memoryBtn: {
     backgroundColor: C.ink,
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     paddingVertical: SP.lg,
     alignItems: 'center',
   },
-  memoryBtnText: { fontSize: 15, fontWeight: '700', color: C.white },
+  memoryBtnText: { ...DS.typography.button, color: C.white },
   memoryDoneBadge: {
     backgroundColor: C.mint,
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     paddingVertical: SP.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: C.mintFg,
   },
-  memoryDoneText: { fontSize: 15, fontWeight: '600', color: C.mintFg },
+  memoryDoneText: { ...DS.typography.button, fontWeight: '600', color: C.mintFg },
 });

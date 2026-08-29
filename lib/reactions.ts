@@ -1,4 +1,4 @@
-import { Flame, Smile, Meh, Clock } from 'lucide-react-native';
+import { Flame, Smile, Meh, Clock } from '../components/iconography';
 import { C } from '../constants/colors';
 
 export type ReactionType = 'love' | 'like' | 'burden' | 'next_time';

@@ -5,9 +5,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { C, DS, G } from '../../constants/theme';
+import { BigButton, Header, ProgressDots, ScreenHeading } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { useI18n } from '../../lib/i18n';
 
@@ -57,18 +56,13 @@ export default function NicknameScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={s.safe}>
+        <Header
+          onBack={() => router.replace('/(auth)' as any)}
+          center={<ProgressDots current={1} total={4} />}
+          right={<Text style={s.stepCount}>1 / 4</Text>}
+        />
+        <ScreenHeading title={t('onboarding.nickname.title')} subtitle={t('onboarding.nickname.sub')} variant="input" />
         <View style={s.container}>
-          <BackBar onPress={() => router.replace('/(auth)' as any)} />
-          <View style={s.progressRow}>
-            <ProgressDots current={1} total={4} />
-            <Text style={s.stepCount}>1 / 4</Text>
-          </View>
-
-          <View style={s.headingBlock}>
-            <Text style={s.heading}>{t('onboarding.nickname.title')}</Text>
-            <Text style={s.subText}>{t('onboarding.nickname.sub')}</Text>
-          </View>
-
           <View style={s.fieldSection}>
             <View style={s.fieldBox}>
               <Text style={s.fieldLabel}>{t('onboarding.nickname.label')}</Text>
@@ -105,25 +99,21 @@ export default function NicknameScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  stepCount: { fontSize: 11, color: C.textMuted },
-  headingBlock: { marginTop: 20 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
-  fieldSection: { marginTop: 24 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  stepCount: { ...DS.typography.caption, color: C.textMuted },
+  fieldSection: {},
   fieldBox: {
     backgroundColor: C.white,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: DS.radius.input,
+    paddingHorizontal: DS.spacing.lg,
+    paddingVertical: DS.spacing.md,
     borderWidth: 1,
     borderColor: C.border,
   },
-  fieldLabel: { fontSize: 11, color: C.textLight, marginBottom: 4 },
+  fieldLabel: { ...DS.typography.caption, color: C.textLight, marginBottom: DS.spacing.xs },
   fieldRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  fieldInput: { fontSize: 16, color: C.text, fontWeight: '500', flex: 1 },
-  charCount: { fontSize: 11, color: C.textFaint },
-  hint: { fontSize: 11, color: C.textMuted, marginTop: 8, paddingHorizontal: 4 },
+  fieldInput: { ...DS.typography.bodyLarge, color: C.text, fontWeight: '500', flex: 1 },
+  charCount: { ...DS.typography.caption, color: C.textFaint },
+  hint: { ...DS.typography.caption, color: C.textMuted, marginTop: DS.spacing.sm, paddingHorizontal: DS.spacing.xs },
   spacer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

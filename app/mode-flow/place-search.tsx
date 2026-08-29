@@ -10,14 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, MapPin, Search } from 'lucide-react-native';
-import { C, R, SP } from '../../constants/theme';
+import { MapPin, Search } from '../../components/iconography';
+import { C, DS, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { publishPickedPlace } from '../../lib/place-pick-bridge';
 import { loadRecentPlaceSearches, saveRecentPlaceSearch } from '../../lib/recentPlaceSearches';
 import { Illustration } from '../../components/illustration';
-import { Chip } from '../../components/ui';
+import { Chip, Header, ScreenHeading } from '../../components/ui';
 import { logEvent } from '../../lib/analytics';
 import { buildPlaceSelectedParams, type PlaceSelectionContext } from '../../lib/analytics-course-actions';
 
@@ -71,11 +71,38 @@ export default function PlaceSearchScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const reqId = useRef(0);
 
   useEffect(() => {
-    void loadRecentPlaceSearches().then(setRecentSearches);
+    let mounted = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUserId(session?.user.id ?? null);
+    });
+    void supabase.auth.getSession()
+      .then(({ data }) => {
+        if (mounted) setUserId(data.session?.user.id ?? null);
+      })
+      .catch(() => {
+        if (mounted) setUserId(null);
+      });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setRecentSearches([]);
+      return;
+    }
+    let mounted = true;
+    void loadRecentPlaceSearches(userId).then((searches) => {
+      if (mounted) setRecentSearches(searches);
+    });
+    return () => { mounted = false; };
+  }, [userId]);
 
   const recommendedAreas = t('modeFlow.placeSearch.recommendedAreas', { returnObjects: true }) as string[];
 
@@ -93,8 +120,8 @@ export default function PlaceSearchScreen() {
     }
     const handle = setTimeout(() => {
       const current = ++reqId.current;
-      if (q) {
-        void saveRecentPlaceSearch(q).then(setRecentSearches);
+      if (q && userId) {
+        void saveRecentPlaceSearch(userId, q).then(setRecentSearches);
       }
       setLoading(true);
       setError(false);
@@ -127,7 +154,7 @@ export default function PlaceSearchScreen() {
         });
     }, 350);
     return () => clearTimeout(handle);
-  }, [query, x, y, categoryCode]);
+  }, [query, x, y, categoryCode, userId]);
 
   const onPick = (place: Place) => {
     if (selectionContext === 'course_pin' || selectionContext === 'course_replace') {
@@ -149,17 +176,8 @@ export default function PlaceSearchScreen() {
     <View style={s.root}>
       <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
       <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('modeFlow.placeSearch.back')}
-          onPress={() => router.back()}
-          style={s.backButton}
-        >
-          <ChevronLeft size={24} color={C.text} />
-        </TouchableOpacity>
-        <Text style={s.title}>{t('modeFlow.placeSearch.title')}</Text>
-      </View>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('modeFlow.placeSearch.title')} />
 
       <View style={s.searchBar}>
         <Search size={18} color={C.textMuted} />
@@ -222,6 +240,7 @@ export default function PlaceSearchScreen() {
               accessibilityRole="button"
               accessibilityLabel={`${item.name}, ${t('modeFlow.placeSearch.pick')}`}
               onPress={() => onPick(item)}
+              activeOpacity={0.88}
               style={s.row}
             >
               <View style={s.thumb}>
@@ -249,35 +268,27 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
   // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
   bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SP.sm,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.sm,
-  },
-  backButton: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
-  title: { color: C.text, fontSize: 18, fontWeight: '800' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SP.sm,
-    marginHorizontal: SP.lg,
+    marginHorizontal: SP.screen,
+    marginTop: SP.lg,
     paddingHorizontal: SP.lg,
-    minHeight: 50,
-    borderRadius: R.xl,
+    minHeight: SP.input,
+    borderRadius: DS.radius.input,
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.white,
   },
-  input: { flex: 1, color: C.text, fontSize: 14 },
-  center: { paddingVertical: SP.xl, alignItems: 'center' },
-  status: { color: C.textMuted, fontSize: 13, textAlign: 'center', paddingVertical: SP.xl },
-  suggestions: { paddingHorizontal: SP.lg, paddingTop: SP.lg, gap: SP.xl },
+  input: { flex: 1, ...DS.typography.body, color: C.text },
+  center: { paddingVertical: SP.xxl, alignItems: 'center' },
+  status: { ...DS.typography.bodyCompact, color: C.textMuted, textAlign: 'center', paddingVertical: SP.xxl },
+  suggestions: { paddingHorizontal: SP.screen, paddingTop: SP.lg, gap: SP.xxl },
   suggestionGroup: { gap: SP.sm },
-  suggestionTitle: { color: C.textSub, fontSize: 13, fontWeight: '700' },
+  suggestionTitle: { ...DS.typography.bodyCompact, color: C.textSub, fontWeight: '700' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs },
-  list: { paddingHorizontal: SP.lg, paddingTop: SP.md, gap: SP.xs },
+  list: { paddingHorizontal: SP.screen, paddingTop: SP.md, gap: SP.xs },
   row: {
     minHeight: 72,
     flexDirection: 'row',
@@ -288,15 +299,15 @@ const s = StyleSheet.create({
   thumb: {
     width: 48,
     height: 48,
-    borderRadius: R.md,
+    borderRadius: DS.radius.compact,
     backgroundColor: C.pinkLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  copy: { flex: 1, gap: 3 },
-  name: { color: C.text, fontSize: 15, fontWeight: '700' },
+  copy: { flex: 1, gap: SP.xs },
+  name: { ...DS.typography.cardTitle, color: C.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  category: { color: C.textSub, fontSize: 12, fontWeight: '600', flexShrink: 1 },
-  distance: { color: C.pink, fontSize: 12, fontWeight: '700' },
-  address: { color: C.textMuted, fontSize: 11 },
+  category: { ...DS.typography.bodySmall, color: C.textSub, fontWeight: '600', flexShrink: 1 },
+  distance: { ...DS.typography.bodySmall, color: C.pink, fontWeight: '700' },
+  address: { ...DS.typography.caption, color: C.textMuted },
 });

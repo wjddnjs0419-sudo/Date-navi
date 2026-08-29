@@ -11,6 +11,7 @@ import {
   type RecommendDateCard,
   type RecommendationRequest,
 } from '../shared/recommendation/schemas';
+import { canonicalizeStepIntentTag } from '../shared/recommendation/step-intent-tag-catalog';
 
 const recommendationErrorCodes = new Set<RecommendationErrorCode>([
   'LOCATION_REQUIRED', 'INVALID_INPUT', 'PLACE_SEARCH_TIMEOUT', 'PLACE_SEARCH_RATE_LIMITED',
@@ -94,6 +95,30 @@ const REQUIRED_MARKER_PATTERN = /(?:무조건|반드시|꼭)|\b(?:only|must|has 
 export function relaxRequiredMarkers(additionalRequest: string | undefined): string {
   if (!additionalRequest) return '';
   return additionalRequest.replace(REQUIRED_MARKER_PATTERN, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
+/**
+ * The server reports only the unsatisfied canonical terms. Remove those exact
+ * structured tags for an explicit user-requested relaxation, while preserving
+ * every other step tag and all ordinary request conditions.
+ */
+export function relaxUnsatisfiedStepIntentTags(
+  request: RecommendationRequest,
+  unsatisfiedIntents: readonly UnsatisfiedStepIntent[],
+): RecommendationRequest {
+  const unsatisfied = new Set(unsatisfiedIntents.map((intent) => canonicalizeStepIntentTag(intent.canonicalTerm)));
+  if (unsatisfied.size === 0) return request;
+  return {
+    ...request,
+    courseSteps: request.courseSteps.map((step) => {
+      if (!step.intentTags?.length) return step;
+      const intentTags = step.intentTags.filter((tag) => !unsatisfied.has(canonicalizeStepIntentTag(tag)));
+      return intentTags.length > 0 ? { ...step, intentTags } : (() => {
+        const { intentTags: _removed, ...stepWithoutIntentTags } = step;
+        return stepWithoutIntentTags;
+      })();
+    }),
+  };
 }
 
 function isAuthenticationError(error: unknown): boolean {

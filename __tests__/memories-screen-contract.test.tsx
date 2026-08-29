@@ -149,8 +149,7 @@ describe('추억 화면 목업 계약', () => {
 
   it('베스트 탭을 누르면 want_again=true인 추억만 보여준다', async () => {
     const tree = await render();
-    const { TouchableOpacity } = require('react-native');
-    const bestTab = tree.root.findAllByType(TouchableOpacity).find((n) => n.props.testID === 'memories-tab-best');
+    const bestTab = (tree.root as any).findAll((n: any) => n.props?.testID === 'memories-tab-best' && typeof n.props?.onPress === 'function')[0];
     await TR.act(async () => { bestTab?.props.onPress(); });
     // FlatList가 예약하는 셀 렌더 갱신 타이머(기본 50ms)를 흘려보내 act 경고를 방지한다.
     await TR.act(() => new Promise((resolve) => setTimeout(resolve, 60)));
@@ -189,8 +188,7 @@ describe('추억 화면 베스트 탭 빈 상태', () => {
       },
     ]);
     const tree = await render();
-    const { TouchableOpacity } = require('react-native');
-    const bestTab = tree.root.findAllByType(TouchableOpacity).find((n) => n.props.testID === 'memories-tab-best');
+    const bestTab = (tree.root as any).findAll((n: any) => n.props?.testID === 'memories-tab-best' && typeof n.props?.onPress === 'function')[0];
     await TR.act(async () => { bestTab?.props.onPress(); });
     await TR.act(() => new Promise((resolve) => setTimeout(resolve, 60)));
     const txt = allText(tree);

@@ -94,7 +94,7 @@ describe('_layout 배선', () => {
 
   it('세션 확인(초기 부팅)과 SIGNED_IN 양쪽에서 ensureStartupPermissions를 호출한다', () => {
     // 초기 부팅: 세션이 있을 때만.
-    expect(source).toMatch(/if \(session\) void ensureStartupPermissions\(\)/);
+    expect(source).toMatch(/if \(session && !SCREENSHOT_MODE\)\s*{[\s\S]{0,160}void ensureStartupPermissions\(\)/);
     // 로그인 이벤트.
     expect(source).toMatch(/SIGNED_IN[\s\S]{0,200}void ensureStartupPermissions\(\)/);
     // 이전 버그의 원인: 권한 미결정 시 조용히 포기하는 registerPushToken 직접 호출은 제거.

@@ -2,26 +2,26 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Figma `Input/Loading`에서 확인한 디자인 규칙을 앱 전체의 토큰·공통 컴포넌트·화면에 단계적으로 적용해 화면 간 시각적 편차를 제거한다.
+**Goal:** 실제 앱에 적용된 `Loading/Input` 화면을 product baseline으로 확정하고, 그 기준의 색상·타이포그래피·여백·패딩·상태 표현을 앱 전체의 토큰·공통 컴포넌트·화면에 단계적으로 적용해 화면 간 시각적 편차를 제거한다. Figma는 보조 레퍼런스와 visual QA 기준으로만 사용한다.
 
-**Architecture:** Figma의 semantic token을 새 기준으로 고정하고, 기존 `C/SP/R/T/G` API는 호환 alias로 유지한다. 공통 프리미티브를 먼저 정규화한 뒤 Input과 Loading을 기준 세로 슬라이스로 전환하고, 온보딩·메인·카드·계정 화면을 기능군별로 순차 이행한다. 화면 전환·추천 요청·저장·인증 계약은 시각 migration과 분리한다.
+**Architecture:** 실제 앱의 `Loading/Input` 시각 규칙을 semantic token의 product 기준으로 고정하고, Figma 수치는 visual QA 시 편차를 판단하는 보조 기준으로 사용한다. 기존 `C/SP/R/T/G` API는 호환 alias로 유지한다. 공통 프리미티브를 먼저 정규화한 뒤 Input과 Loading을 기준 세로 슬라이스로 전환하고, 온보딩·메인·카드·계정 화면을 기능군별로 순차 이행한다. 화면 전환·추천 요청·저장·인증 계약은 시각 migration과 분리한다.
 
 **Tech Stack:** Expo React Native, TypeScript, React Native `StyleSheet`, `expo-router`, `react-native-svg`, `lucide-react-native`, `@react-native-community/datetimepicker`, `expo-font`, 기존 i18n(`locales/ko`, `locales/en`), Jest/React Test Renderer.
 
-**Spec:** `docs/superpowers/specs/2026-08-26-generating-loading-renewal-design.md`, Figma `Date-navi Design System`의 `Flow 4 — Quick Planning / Loading` 노드 `520:2733`, English 노드 `498:1968`.
+**Spec:** `docs/superpowers/specs/2026-08-26-generating-loading-renewal-design.md`, 실제 앱의 `QuickPlanningLoading`·Quick Planning Input 구현 및 캡처를 primary source로 삼고, Figma `Date-navi Design System`의 `Flow 4 — Quick Planning / Loading` 노드 `520:2733`, English 노드 `498:1968`를 secondary reference로 사용한다.
 
 ## Global Constraints
 
-- Figma 기준 캔버스는 `390 × 844`, Loading 화면 기본 좌우 여백은 `20px`, 배경은 `#FFF9FC`다.
+- 실제 앱의 rendered Loading/Input 화면에서 확정한 캔버스·좌우 여백·배경을 product 기준으로 기록한다. Figma의 `390 × 844`, `20px`, `#FFF9FC`는 비교 기준으로 사용한다.
 - Figma Loading에는 Back Bar 인스턴스가 보이지만, 제품 결정으로 Loading 화면 내부 뒤로가기 버튼은 렌더하지 않는다.
 - Navigation rule은 `nested screen = BackBar`, `standalone entry/auth = no BackBar`, `blocking Loading = no BackBar`, `modal/sheet = close/cancel/complete action`으로 고정한다.
 - 기존 코스 생성은 `0% → 90% 대기 → 응답 완료 후 100%` 진행 메커니즘, AbortController, stale response 방지, 오류·재시도 경로를 유지한다.
-- Figma 표준 폰트는 Inter이며, 한글은 Inter가 제공하지 않는 글리프에 대해 플랫폼 fallback을 사용한다.
+- 앱에서 실제 적용할 폰트 family와 weight를 기준 화면에서 확정하고, Figma의 Inter는 보조 비교 기준으로 사용한다. 한글은 선택한 family가 제공하지 않는 글리프에 대해 플랫폼 fallback을 사용한다.
 - 색상은 semantic token을 통해서만 사용한다. 새로운 화면 코드에 raw hex, `rgba`, 임의의 색상 이름을 추가하지 않는다.
-- 간격은 Figma scale `0, 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 60`에서 선택하고, 화면 수평 여백은 `20px`을 기본으로 한다.
+- 간격은 product baseline에서 승인한 4px 중심 scale을 사용하고, `2px`은 hairline/icon 보정, `40/48/56/60`은 큰 레이아웃 슬롯에만 허용한다. 화면 수평 여백은 baseline 값 하나로 고정한다.
 - 반경 canonical 값은 `badge 6`, `input 16`, `button 18`, `chip 20`, `card 22`, `modal 24`, `full 999`다.
 - 모든 화면 문구는 `locales/ko`와 `locales/en`을 동시에 갱신하고, 한국어·영어에서 줄바꿈과 truncation을 검증한다.
-- 이번 요청에서는 화면 코드, 토큰 코드, 에셋, 라우팅을 수정하지 않는다. 이 문서만 추가하며, 구현은 별도 승인된 실행 작업으로 진행한다.
+- 전체 migration은 아직 시작하지 않으며, 이번 구현 slice는 Refine Candidate 04/05의 시각 규칙과 그 검증에만 한정한다. 그 외 화면·라우팅·데이터 계약은 수정하지 않는다.
 - 검증 명령은 Node stack overflow를 피하기 위해 `node --stack_size=8192 ./node_modules/typescript/bin/tsc --noEmit`를 사용한다.
 
 ---
@@ -59,7 +59,20 @@ Loading의 조건 카드는 `350 × 104`, padding `16`, radius `22`, white surfa
 - 대부분의 화면은 `C`와 `SP/R`를 사용하지만, 화면별 `StyleSheet.create` 안에 타이포그래피·반경·그림자·spacing을 직접 반복한다.
 - `Design.md`는 현재 웜 핑크 시스템을 설명하지만, `docs/02-design/features/date-planner.design.md:328-380`은 이전의 흰색 캔버스·검정 텍스트·`#ff385c` 기준을 설명해 문서 source of truth가 충돌한다.
 
-### 1.3 차이와 migration priority
+### 1.3 Product baseline 추가 확정 — Refine Candidate
+
+이번에 제공된 Refine Candidate 캡처는 Figma 원본을 그대로 복사하는 기준이 아니라, 실제 앱에 적용할 interaction과 tone을 확정하는 product decision으로 기록한다.
+
+| 화면/상태 | 확정 규칙 | 구현 기준 |
+|---|---|---|
+| `Input Refine Candidate / 05` | `수정` 액션을 제외한 코스·지역·시간·분위기 정보의 텍스트와 아이콘은 `#3B2E2E`로 강화한다. | 별도 raw hex를 화면에 넣지 않고 `refineCandidate.contentStrong` semantic token으로 사용한다. `수정`은 기존 brand action color를 유지한다. 배경·border·divider는 별도 surface/border token을 따른다. |
+| `Input Refine Candidate / 04` — `잘 모르겠어요 — 추천에 맡길게요` default | 현재 선택 의미와 데이터 동작은 유지한다. | `MoodPicker`/course draft reducer의 `moods.length === 0` semantics를 변경하지 않는다. |
+| `Input Refine Candidate / 04` — pressed/selected | 후보 반응의 `Looks good`와 같은 시각 피드백을 사용한다. | `ReactionPicker`의 `like` 상태인 `background = C.cream`, `border = C.creamFg`, `icon/text = C.creamFg`, `label weight = 700`, `borderWidth = 2`를 공통 interaction token으로 추출한다. |
+| pressed와 selected 구분 | pressed는 누르는 순간의 피드백이고 selected는 값 상태다. | 모바일에서 pressed/selected 강조를 같은 시각 언어로 보여줄 수 있지만, pressed만으로 draft 값을 바꾸지 않는다. 실제 선택 시에만 기존 `onToggle`/reducer를 호출한다. |
+
+현재 `ReactionPicker`의 `Looks good` 구현은 `like` reaction의 `r.bg/r.color`, 2px selected border, 아이콘·라벨 색상 변경, bold label 조합으로 동작한다. 따라서 Refine Candidate의 “추천에 맡길게요”는 새로운 효과를 만들지 않고 이 조합을 shared `SelectionInteraction` contract로 재사용한다.
+
+### 1.4 차이와 migration priority
 
 | 우선순위 | 차이 | 근거 | migration 판단 |
 |---|---|---|---|
@@ -74,7 +87,7 @@ Loading의 조건 카드는 `350 × 104`, padding `16`, radius `22`, white surfa
 | P1 | Loading progress semantics partial | `QuickPlanningLoading:246-252`는 progressbar를 제공하지만 `GeneratingView`는 단순 layout | 모든 loading state에서 현재 단계·퍼센트·문구를 하나의 접근성 source로 만든다. |
 | P2 | 문서/실제 코드 불일치 | `Design.md`, `docs/02-design/features/date-planner.design.md` | token migration 종료 시 문서를 하나의 기준으로 정리한다. |
 
-### 1.4 현재 audit 결과
+### 1.5 현재 audit 결과
 
 디자인 시스템 정합성은 `Needs Improvement`로 판정한다.
 
@@ -95,7 +108,7 @@ Loading의 조건 카드는 `350 × 104`, padding `16`, radius `22`, white surfa
 | Auth | `app/(auth)/index.tsx` | `Illustration`, 자체 social buttons, `C/SP/R` | Button/typography/brand assets/a11y를 공통화 | P2 |
 | Onboarding input | `app/onboarding/nickname.tsx`, `photo.tsx`, `preferences.tsx`, `anniversary.tsx`, `type.tsx` | `BackBar`, `ProgressDots`, `BigButton`, `SoftCard`, `DateWheelPicker` | InputField, SelectionCard, ProgressDots, Button, field/error states | P1 |
 | Couple onboarding | `app/onboarding/couple-choice.tsx`, `couple-connect.tsx`, `connected.tsx` | `SoftCard`, `ListGroup/ListRow`, `Illustration`, inline TextInput/button | Card/List/Input/Success primitives, invite code state | P2 |
-| Quick Planning input | `app/mode-flow/course.tsx`, `components/recommendation/course-step-editor.tsx`, `course-time-selector.tsx`, `location-selector.tsx`, `step-slider.tsx`, `components/pickers.tsx` | 일부 `C/SP/R`, 자체 cards/chips/picker styles | Figma Input/Selection/Step Slider/Location Field contract | P0 |
+| Quick Planning input | `app/mode-flow/course.tsx`, `components/recommendation/course-step-editor.tsx`, `course-time-selector.tsx`, `location-selector.tsx`, `step-slider.tsx`, `components/pickers.tsx` | 일부 `C/SP/R`, 자체 cards/chips/picker styles | 실제 앱 Input baseline + Figma 보조 reference의 Input/Selection/Step Slider/Location Field contract | P0 |
 | Legacy feeling input | `app/mode-flow/feeling.tsx`, `app/mode-flow/bucketlist.tsx` | `Chip`, `OptionCardPicker`, `LocationField`, `BigButton` | same Input primitives로 legacy/new 흐름의 표면만 통일 | P1 |
 | Place search | `app/mode-flow/place-search.tsx` | `Chip`, 자체 search/list/loading | SearchField, ListRow, Empty/Loading/Error state | P1 |
 | Loading | `app/mode-flow/generating.tsx`, `components/recommendation/quick-planning-loading.tsx`, `components/ui.tsx::GeneratingView`, `app/shot.tsx` | Quick Planning은 전용, legacy는 전용, ActivityIndicator fallback | `LoadingStage`, `ProgressBar`, `LoadingState`, motion/a11y contract | P0 |
@@ -198,34 +211,29 @@ type LoadingStateProps = {
 **Interfaces:**
 - Produces: `DS.color`, `DS.spacing`, `DS.radius`, `DS.typography`, `DS.elevation`, `DS.motion`과 기존 `C/SP/R/T/G` compatibility exports.
 
-- [ ] `DS` 객체에 Figma color, spacing, radius, elevation, typography, motion 값을 추가하고 모든 값에 semantic 이름을 부여한다.
-- [ ] `C` alias를 `DS.color`에 연결하고 `C.pinkLight`의 값을 `#FFEEF0`로 고정한다.
-- [ ] `SP`에 `micro`, `hero`, `art`, `splash`, `tab`을 추가하되 기존 키의 값은 유지한다.
-- [ ] `R.md`를 즉시 삭제하지 않고 `R.input=16`, `R.button=18`, `R.chip=20`, `R.card=22`, `R.modal=24`, `R.full=999`를 추가한다.
-- [ ] `T`에 Figma type scale을 React Native `TextStyle`로 노출하고 font family는 font loader의 resolved family를 사용하도록 경계를 만든다.
-- [ ] `Design.md`를 Figma/현재 RN 기준으로 갱신하고 `docs/02-design/features/date-planner.design.md:328-380`의 이전 `#ffffff/#222222/#ff385c` 규칙을 Figma canonical 값으로 교체한다.
-- [ ] 테스트에서 `DS.color.brandPrimary === '#F26B7A'`, `DS.color.brandSubtle === '#FFEEF0'`, `DS.radius.input === 16`, `DS.radius.card === 22`, `DS.elevation.card` 값을 고정한다.
-- [ ] Run: `npx jest __tests__/design-tokens.test.ts --runInBand`와 `npm run validate`.
+- [x] `DS` 객체에 실제 Loading/Input product baseline의 color, spacing, radius, elevation, typography, motion 값을 추가하고 모든 값에 semantic 이름을 부여한다. Figma 값은 QA reference metadata로만 남긴다.
+- [x] `DS.color`에 `refineCandidate.contentStrong = '#3B2E2E'`와 `selection.like`의 `background/border/foreground` semantic을 추가한다. `C` alias는 기존 호환을 위해 유지한다.
+- [x] `SP`에 `micro`, `hero`, `art`, `splash`, `tab`을 추가하되 기존 키의 값은 유지한다.
+- [x] `R.md`를 즉시 삭제하지 않고 `R.input=16`, `R.button=18`, `R.chip=20`, `R.card=22`, `R.modal=24`, `R.full=999`를 추가한다.
+- [x] `T`에 실제 앱 기준 type scale을 React Native `TextStyle`로 노출한다. 시스템 폰트를 유지하며, Figma의 Inter는 visual QA 비교용으로만 사용한다.
+- [x] `Design.md`를 실제 Loading/Input product baseline 기준으로 갱신하고, Figma와의 차이는 QA note로 기록한다. `docs/02-design/features/date-planner.design.md:328-380`의 이전 규칙도 같은 기준으로 정리한다.
+- [x] 테스트에서 product baseline color, `DS.color.refineCandidate.contentStrong === '#3B2E2E'`, `DS.color.selection.like`, `DS.radius.input === 16`, `DS.radius.card === 22`, `DS.elevation.card` 값을 고정한다.
+- [x] Run: `npx jest __tests__/design-tokens.test.ts --runInBand`와 `npm run validate`.
 
-### Task 2: Inter font loading과 typography boundary 추가
+### Task 2: System font과 typography boundary 정규화
 
 **Files:**
-- Create: `assets/fonts/Inter-Regular.ttf`, `assets/fonts/Inter-Medium.ttf`, `assets/fonts/Inter-SemiBold.ttf`, `assets/fonts/Inter-Bold.ttf`
-- Create: `lib/font-loader.ts`
-- Modify: `package.json`, `package-lock.json`
-- Modify: `app/_layout.tsx`
 - Modify: `constants/design-tokens.ts`
-- Test: `__tests__/font-loader.test.ts`
+- Modify: `constants/theme.ts`
+- Modify: `components/recommendation/quick-planning-loading.tsx`
+- Test: `__tests__/design-tokens.test.ts`, `__tests__/quick-planning-loading.test.tsx`
 
 **Interfaces:**
-- Produces: `loadDesignFonts(): Promise<Record<string, boolean>>`, `DESIGN_FONT_FAMILY`, and root `fontsReady` gate.
+- Produces: 시스템 폰트를 유지하는 `DS.typography`/`T` 경계. 개별 화면은 임의 `fontFamily` 없이 토큰 type scale만 소비한다.
 
-- [ ] `expo-font`를 직접 dependency로 고정하고 Inter 정적 weight 400/500/600/700 파일을 앱 assets로 등록한다.
-- [ ] `loadDesignFonts()`가 성공 시 Inter family를 반환하고 실패 시 플랫폼 sans fallback으로 계속 렌더하도록 만든다.
-- [ ] `app/_layout.tsx`에서 font load를 startup gate에 연결하되, 네트워크·Supabase startup timeout과 서로 대기하지 않게 한다.
-- [ ] 한글 문구는 Inter에 없는 글리프가 플랫폼 fallback으로 자연스럽게 렌더되는지 확인하고, English는 Inter weight가 실제 적용되는지 확인한다.
-- [ ] `font-loader.test.ts`에서 성공·실패·fallback 결과를 검증한다.
-- [ ] Run: `npx jest __tests__/font-loader.test.ts --runInBand`와 `npm run validate`.
+- [x] `QuickPlanningLoading`에 남아 있는 임의 `fontFamily: 'Inter'` 선언을 제거하고 `T`/`DS.typography`를 사용한다.
+- [ ] 한국어·영어가 iOS/Android 시스템 fallback에서 line-height와 truncation을 유지하는지 visual QA로 확인한다.
+- [ ] Run: `npx jest __tests__/design-tokens.test.ts __tests__/quick-planning-loading.test.tsx --runInBand`와 `npm run validate`.
 
 ### Task 3: Iconography와 shared primitive 정규화
 
@@ -240,13 +248,13 @@ type LoadingStateProps = {
 - Produces: `AppIcon({ name, size, color, strokeWidth })`, `InputField`, `SelectionCard`, `ProgressStepper`, `ProgressBar`, `LoadingState`.
 - Consumes: `DS`, resolved font family, existing `BigButton/SoftCard/BackBar` call signatures.
 
-- [ ] `AppIcon`에 `search`, `mapPin`, `calendar`, `heart`, `route`, `chevronLeft`, `chevronRight`, `clock`, `wallet`, `walk` 이름을 등록한다.
-- [ ] `route`는 Figma `Icon / 동선 정리` path를 registry 안에 보관하고 `components/recommendation/quick-planning-loading.tsx`의 local `FigmaRouteIcon`을 `AppIcon` 소비로 교체한다.
-- [ ] `BigButton`, `SoftCard`, `Chip`, `Badge`, `BackBar`의 raw radius/shadow/font 값을 `DS` 기반으로 바꾸되 기존 public props를 보존한다.
-- [ ] generic `InputField`를 추가하고 `FieldBox`는 adapter로, `LocationField`는 leading/trailing/error를 조합하는 adapter로 유지한다.
-- [ ] `ProgressStepper`는 `44px` circle, `18px` icon, `11/16` label, active connector 규칙과 `progressbar` accessibility value를 함께 제공한다.
-- [ ] `ProgressBar`는 `0~100` clamping, `track/fill`, reduced motion, testID를 공통 계약으로 제공한다.
-- [ ] `LoadingState`는 검색·저장·업로드·조회 중의 작은 상태에 사용하고, Quick Planning의 mascot composition은 소유하지 않는다.
+- [x] `AppIcon`에 `search`, `mapPin`, `calendar`, `heart`, `route`, `chevronLeft`, `chevronRight`, `clock`, `wallet`, `walk` 이름을 등록한다.
+- [x] `route`는 product Route path를 registry 안에 보관하고 `components/recommendation/quick-planning-loading.tsx`의 local icon을 `AppIcon` 소비로 교체한다.
+- [ ] `BigButton`, `SoftCard`, `Chip`, `Badge`, `BackBar`의 raw radius/shadow/font 값을 `DS` 기반으로 바꾸되 기존 public props를 보존한다. (`BigButton`·`SoftCard` 완료, 나머지 이행 중)
+- [x] generic `InputField`를 추가하고 `FieldBox`는 adapter로, `LocationField`는 leading/trailing/error를 조합하는 adapter로 유지한다.
+- [x] `ProgressStepper`는 `44px` circle, `18px` icon, `11/16` label, active connector 규칙과 `progressbar` accessibility value를 함께 제공한다.
+- [x] `ProgressBar`는 `0~100` clamping, `track/fill`, reduced motion, testID를 공통 계약으로 제공한다.
+- [x] `LoadingState`는 검색·저장·업로드·조회 중의 작은 상태에 사용하고, Quick Planning의 mascot composition은 소유하지 않는다.
 - [ ] `BackBar`와 modal close action을 별도 계약으로 테스트하고, close action을 nested navigation back으로 재사용하지 않는다.
 - [ ] host node 기준 testID와 접근성 role을 테스트해 React Native wrapper 중복 매칭을 피한다.
 - [ ] Run: `npx jest __tests__/design-primitives.test.tsx __tests__/iconography.test.tsx --runInBand`와 `npm run validate`.
@@ -269,12 +277,15 @@ type LoadingStateProps = {
 - Consumes: `InputField`, `ProgressStepper`, `AppIcon`, `DS`.
 - Produces: all mode-flow input screens with input radius 16, button radius 18, card radius 22, canonical typography, and localized validation/error states.
 
-- [ ] `course.tsx`의 Intro, progress header, mood card, review card, title/subtitle를 `T`와 `SP/R` semantic token으로 바꾼다.
-- [ ] `CourseStepEditor`의 category/preference chips와 step cards를 selection/card contract로 매핑하고 selected state는 `brand.subtle/brand.border/brand.deep`로 통일한다.
-- [ ] `CourseTimeSelector`, `DateWheelPicker`, `TimeWheelPicker`의 field/sheet/button radius를 각각 input 16, modal 24, button 18로 맞춘다.
-- [ ] `LocationSelector`와 legacy `LocationField`의 input radius 14를 16으로 바꾸고 search/list/error/permission 상태를 공통 InputField/ListRow contract로 연결한다.
+- [x] `course.tsx`의 Intro, progress header, mood card, review card, title/subtitle를 `T`와 `SP/R` semantic token으로 바꾼다.
+- [x] `CourseStepEditor`의 category/preference chips와 step cards를 selection/card contract로 매핑하고 selected state는 `brand.subtle/brand.border/brand.deep`로 통일한다.
+- [ ] `MoodPicker`의 모든 mood 카드와 `잘 모르겠어요 — 추천에 맡길게요` 카드는 동일한 selected contract를 사용한다. 추천 위임 카드는 `ReactionPicker`의 `like/Looks good` 색상 조합을 사용하고, pressed만으로 mood 값을 변경하지 않는다.
+- [x] `CourseTimeSelector`, `DateWheelPicker`, `TimeWheelPicker`의 field/sheet/button radius를 각각 input 16, modal 24, button 18로 맞춘다.
+- [ ] `LocationSelector`와 legacy `LocationField`의 input radius 14를 16으로 바꾸고 search/list/error/permission 상태를 공통 InputField/ListRow contract로 연결한다. (`LocationSelector` 완료, legacy adapter 이행 중)
 - [ ] `StepSlider`의 24px thumb와 44px touch target은 유지하고 track, value label, accessibility adjustable semantics만 token화한다.
 - [ ] `feeling`, `bucketlist`, `place-search`의 inline TextInput, search bar, chip, empty/error/loading 상태를 같은 primitive로 전환한다.
+- [x] Refine Candidate 05의 코스/지역/시간/분위기 콘텐츠 텍스트와 아이콘을 `refineCandidate.contentStrong`로 강화하고, `수정` 액션은 brand action color로 분리한다.
+- [x] Refine Candidate 04의 추천 위임 카드는 `ReactionPicker`의 `Looks good`와 같은 default/pressed/selected 시각 contract를 사용한다. 선택 semantics와 pressed feedback은 분리한다.
 - [ ] 데이터 reducer, request payload, place bridge, validation rule, route params는 수정하지 않는다.
 - [ ] 한국어/영어의 긴 장소명·시간값·mood 조합에서 no-wrap overflow와 truncation을 확인한다.
 - [ ] Run: `npx jest __tests__/course-screen.test.tsx __tests__/course-step-editor.test.tsx __tests__/location-selector.test.tsx __tests__/step-slider.test.tsx __tests__/input-primitives.test.tsx --runInBand`와 `npm run validate`.
@@ -293,8 +304,8 @@ type LoadingStateProps = {
 - Consumes: `ProgressStepper`, `ProgressBar`, `LoadingState`, `AppIcon`, `DS.motion`, `DS.elevation`.
 - Produces: `getQuickPlanningStageIndex(progress)`, Quick Planning four-state UI, legacy `GeneratingView`, and non-blocking transient loading contract.
 
-- [ ] `QuickPlanningLoading`의 `#FFEDEF` 두 곳을 `DS.color.brandSubtle`로 교체하고 조건 카드 shadow/radius/typography를 named token으로 연결한다.
-- [ ] Figma Route icon을 `AppIcon` registry에서 소비하도록 바꾸고 Search/MapPin/Heart/Calendar도 동일한 size/stroke contract를 사용한다.
+- [x] `QuickPlanningLoading`의 `#FFEDEF` 두 곳을 `DS.color.brandSubtle`로 교체하고 조건 카드 shadow/radius/typography를 named token으로 연결한다.
+- [x] product Route icon을 `AppIcon` registry에서 소비하도록 바꾸고 Search/MapPin/Heart/Calendar도 동일한 size/stroke contract를 사용한다.
 - [ ] stage checkpoint를 `0~24`, `25~52`, `53~76`, `77~100`으로 유지하고 character, bubble copy, status copy, percent가 동일한 animated progress를 읽도록 한다.
 - [ ] progress number와 fill은 `0%`부터 연속 easing하며, 요청 응답 전 90%에서 기다리고 응답 완료 후 100%로 마무리하는 `generating.tsx` 동작을 보존한다.
 - [ ] mascot은 장식 이미지로 유지하고 progressbar 하나에 단계명·현재 퍼센트·상태 문구를 합쳐 VoiceOver/TalkBack 중복 낭독을 막는다.
@@ -354,6 +365,7 @@ type LoadingStateProps = {
 - [ ] result/course-result/card detail의 timeline, place row, result card, replacement sheet, title sheet를 card/input/modal radius와 elevation에 매핑한다.
 - [ ] card edit/confirm와 memory new/edit의 title/free text/date/time/rating/photo inputs를 `InputField`, `StepSlider`, `PickerSheet`, `StarRating` contract로 맞춘다.
 - [ ] share/reaction/send의 success, loading, empty, error, reaction picker surfaces를 공통 feedback contract로 바꾼다.
+- [ ] `ReactionPicker`의 `Looks good` 시각 상태를 `SelectionInteraction` 공통 contract의 기준 구현으로 고정하고, Refine Candidate 추천 위임 카드와의 색상·border·icon/text weight 회귀를 검증한다.
 - [ ] settings/account/legal처럼 nested route인 화면은 BackBar를 사용하고 destructive action은 `danger` semantic token과 confirmation modal을 사용한다. modal 자체에는 BackBar를 넣지 않는다.
 - [ ] Home의 gradient/illustration과 category pin 색상처럼 명시된 brand exception은 유지하되, 새 raw color는 추가하지 않는다.
 - [ ] Run: 해당 화면의 targeted Jest, `npm run validate`, `npx expo export --platform web`.
@@ -389,7 +401,7 @@ type LoadingStateProps = {
 1. TypeScript와 해당 task의 targeted tests가 통과한다.
 2. 기존 route params, request payload, Supabase 호출, navigation, persistence 동작이 변하지 않는다.
 3. 한국어·영어에서 text clipping과 layout jump가 없다.
-4. 390×844 기준 Figma reference와 색·반경·spacing·typography·icon source를 비교한다.
+4. 실제 앱 Loading/Input baseline 캡처와 색·반경·spacing·typography·icon source를 비교하고, 390×844 Figma reference는 보조 QA로 사용한다.
 5. reduce motion과 VoiceOver/TalkBack 상태가 통과한다.
 6. dirty worktree에 이미 존재하는 사용자 변경을 분리한 뒤 task 단위로 커밋한다. 현재 분석 turn에서는 commit이나 화면 수정이 없다.
 
@@ -399,13 +411,24 @@ type LoadingStateProps = {
 - standalone login/auth와 blocking Loading 내부 BackBar가 없고, 일반 nested 입력/상세 화면의 BackBar는 유지된다.
 - modal/sheet는 BackBar 없이 X/취소/완료로 닫히며, modal close와 route back의 접근성 label이 분리된다.
 - Input radius variance가 canonical `16`으로 정리되고 card/button/modal radius가 `22/18/24`로 구분된다.
+- Refine Candidate 05의 비액션 콘텐츠가 `#3B2E2E` semantic token으로 통일되고, `수정` 액션 색상은 독립적으로 유지된다.
+- Refine Candidate 04의 추천 위임 카드가 후보 반응의 `Looks good`와 동일한 pressed/selected 피드백을 제공한다.
 - 화면 코드는 semantic token과 shared primitive를 사용하며, raw color/shadow/radius는 문서화된 exception만 남는다.
 - `QuickPlanningLoading`의 단계 이미지, bubble, status text, percent, progress fill이 같은 timeline으로 자연스럽게 전환된다.
 - 전체 화면의 KR/EN copy와 accessibility semantics가 동일한 component contract를 따른다.
 - `npm run validate`, 전체 Jest, Expo export, iOS/Android visual QA가 모두 통과한다.
 
-## 6. 이번 turn의 변경 범위
+## 6. 이번 implementation slice의 변경 범위
 
-- 추가한 파일: 이 계획 문서 하나.
-- 화면 코드·토큰 코드·에셋·라우팅·데이터 계약은 수정하지 않았다.
+- `constants/design-tokens.ts`: 실제 Loading/Input 기준의 semantic color, spacing, radius, typography, elevation, motion contract를 추가했다.
+- `constants/colors.ts`, `constants/theme.ts`: 새 `DS`를 source of truth로 연결하고 기존 `C/SP/R/T/G` API는 호환 alias로 유지했다.
+- `Design.md`, `docs/02-design/features/date-planner.design.md`: 실제 앱 기준과 Figma 보조 QA 원칙, 토큰 스케일을 문서화했다.
+- `__tests__/design-tokens.test.ts`: baseline, Refine Candidate, selection.like, radius, elevation, legacy alias를 고정했다.
+- `constants/colors.ts`: Refine Candidate 콘텐츠 강화색 `#3B2E2E`와 추천 위임 기본 border token을 추가했다.
+- `app/mode-flow/course.tsx`: Refine Candidate 05의 코스/지역/시간/분위기 텍스트·아이콘을 강화하고, 04의 추천 위임 카드를 `Looks good` 계열 pressed/selected 스타일로 적용했다.
+- `components/ui.tsx`: 기존 `ProgressDots`에 `current-only` variant와 1-based progress accessibility value를 추가했다. 기존 4단계 온보딩의 done-dot 동작은 유지한다.
+- `app/mode-flow/course.tsx`: inline 5-dot 구현을 제거하고 공통 `ProgressDots current={flowStep} total={5} variant="current-only"`를 사용한다.
+- `__tests__/course-screen.test.tsx`: 추천 위임 카드의 selected/pressed 상태와 Refine Candidate 05 색상 예외를 검증한다.
+- `docs/screenshots/course-ui-refine.html`: 04/05 모바일 프리뷰의 아이콘, selected treatment, 5-dot current-only 헤더를 실제 앱 기준으로 동기화했다.
+- 라우팅·데이터 reducer·추천 요청 계약·다른 화면은 수정하지 않았다.
 - 기존 worktree의 다른 변경은 이 계획의 결과로 정리하거나 되돌리지 않는다.

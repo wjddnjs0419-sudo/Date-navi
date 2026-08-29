@@ -7,12 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../lib/supabase';
-import { Bell, ChevronRight, Settings } from 'lucide-react-native';
-import { C, SP, R, G } from '../../constants/theme';
+import { Bell, ChevronRight, Settings } from '../../components/iconography';
+import { C, DS, SP, R, G } from '../../constants/theme';
 import { Wordmark } from '../../components/brand';
 import { Illustration } from '../../components/illustration';
 import { CourseMapPreview } from '../../components/course-map';
-import { Badge, BigButton, MetaChipRow, PlanListRow } from '../../components/ui';
+import { Badge, BigButton, Header, HeaderActions, MetaChipRow, PlanListRow } from '../../components/ui';
 import { formatDateLabel } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
 import { useRevalidatingLoad } from '../../lib/useRevalidatingLoad';
@@ -127,10 +127,10 @@ export default function HomeScreen() {
           contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* 헤더: 워드마크 + 알림 + 설정 */}
-          <View style={s.headerRow}>
-            <Wordmark size="sm" />
-            <View style={s.headerActions}>
+          <Header
+            left={<Wordmark size="sm" />}
+            right={(
+              <HeaderActions>
               <TouchableOpacity
                 style={s.bellBtn}
                 onPress={() => router.push('/account/notifications' as any)}
@@ -141,13 +141,14 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={s.bellBtn}
-                onPress={() => router.push('/settings' as any)}
+                onPress={() => router.navigate('/(tabs)/account' as any)}
                 accessibilityLabel={t('home.accessibility.settings')}
               >
                 <Settings size={18} color={C.textSub} />
               </TouchableOpacity>
-            </View>
-          </View>
+              </HeaderActions>
+            )}
+          />
 
           {/* 히어로: 날짜 + 인사 + 일러스트 */}
           <View style={s.hero}>
@@ -185,7 +186,7 @@ export default function HomeScreen() {
               <>
                 <View style={s.sectionRow}>
                   <Text style={s.sectionTitle}>{t('home.upcomingTitle')}</Text>
-                  <TouchableOpacity onPress={() => router.push('/plans' as any)}>
+                  <TouchableOpacity onPress={() => router.push('/plans' as any)} activeOpacity={0.88}>
                     <Text style={s.sectionLink}>{t('common.seeAll')}</Text>
                   </TouchableOpacity>
                 </View>
@@ -215,7 +216,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={s.prefBanner}
               onPress={() => router.push('/onboarding/preferences' as any)}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
             >
               <Illustration name="mascot-heart-couple" width={40} />
               <View style={s.prefText}>
@@ -237,77 +238,63 @@ const s = StyleSheet.create({
   centerContent: { alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingBottom: SP.xxxl },
 
-  headerRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SP.xl, paddingTop: SP.md, paddingBottom: SP.xs,
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
   bellBtn: {
-    width: 44, height: 44, borderRadius: 22,
+    width: DS.spacing.touch, height: DS.spacing.touch, borderRadius: DS.radius.full,
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: C.border,
   },
   notifDot: {
     position: 'absolute', top: 10, right: 10,
-    width: 8, height: 8, borderRadius: 4, backgroundColor: C.pink,
+    width: 8, height: 8, borderRadius: DS.radius.full, backgroundColor: C.pink,
   },
 
   hero: {
     flexDirection: 'row', alignItems: 'flex-start',
-    paddingHorizontal: SP.xl, paddingTop: SP.sm,
+    paddingHorizontal: SP.screen, paddingTop: SP.sm,
   },
   heroText: { flex: 1, paddingTop: SP.sm },
   heroArt: { marginTop: SP.xs },
-  dateText: { fontSize: 12, fontWeight: '600', color: C.pinkDeep },
-  greetLine1: { fontSize: 26, fontWeight: '700', color: C.text, marginTop: SP.sm, lineHeight: 33 },
-  greetLine2: { fontSize: 26, fontWeight: '700', color: C.pink, lineHeight: 33 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.md },
+  dateText: { ...DS.typography.bodySmall, fontWeight: '600', color: C.pinkDeep },
+  greetLine1: { ...DS.typography.heroGreeting, color: C.text, marginTop: SP.sm },
+  greetLine2: { ...DS.typography.heroGreeting, color: C.pink },
+  subText: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.md },
 
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.xl },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl },
 
   courseCard: {
     backgroundColor: C.white,
-    borderRadius: R.card,
-    padding: SP.xl,
+    borderRadius: DS.radius.card,
+    padding: SP.lg,
     borderWidth: 1,
     borderColor: C.borderLight,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 7,
-    elevation: 3,
   },
   courseTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SP.sm },
-  courseTitle: { flex: 1, fontSize: 19, fontWeight: '700', color: C.text },
-  courseDesc: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
-  coursePreviewWrap: { marginTop: SP.xl, marginBottom: SP.lg },
-  courseCta: { marginTop: SP.xl },
+  courseTitle: { flex: 1, ...DS.typography.sectionTitle, color: C.text },
+  courseDesc: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.sm },
+  coursePreviewWrap: { marginTop: SP.xxl, marginBottom: SP.lg },
+  courseCta: { marginTop: SP.lg },
 
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: SP.xxl, marginBottom: SP.sm },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-  sectionLink: { fontSize: 12, color: C.textSub },
+  sectionTitle: { ...DS.typography.cardTitle, color: C.text },
+  sectionLink: { ...DS.typography.bodySmall, color: C.textSub },
   upcomingCard: {
     backgroundColor: C.white,
-    borderRadius: R.card,
+    borderRadius: DS.radius.card,
     paddingHorizontal: SP.lg,
     borderWidth: 1,
     borderColor: C.borderLight,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
-    shadowRadius: 7,
-    elevation: 2,
+    ...DS.elevation.raised,
   },
   rowDivider: { height: 1, backgroundColor: C.borderLight },
 
   prefBanner: {
     flexDirection: 'row', alignItems: 'center', gap: SP.md,
     backgroundColor: C.pinkLight,
-    borderRadius: R.card,
+    borderRadius: DS.radius.card,
     paddingHorizontal: SP.lg, paddingVertical: SP.lg,
     marginTop: SP.xxl,
   },
   prefText: { flex: 1 },
-  prefTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  prefSub: { fontSize: 12, color: C.textSub, marginTop: 2 },
+  prefTitle: { ...DS.typography.body, color: C.text, fontWeight: '700' },
+  prefSub: { ...DS.typography.bodySmall, color: C.textSub, marginTop: DS.spacing.micro },
 });

@@ -38,14 +38,12 @@ const COURSE_PREFERENCE_OPTIONS: Record<string, readonly CoursePreferenceOption[
     { value: '양식', ko: '양식', en: 'Western' }, { value: '가볍게', ko: '가볍게', en: 'Light meal' },
   ],
   cafe: [
-    { ko: '아무거나', en: 'Anything' }, { value: '조용한', ko: '조용한', en: 'Quiet' },
-    { value: '감성적인', ko: '감성적인', en: 'Atmospheric' }, { value: '디저트', ko: '디저트', en: 'Dessert' },
-    { value: '뷰 좋은', ko: '뷰 좋은', en: 'Good view' }, { value: '대화하기 좋은', ko: '대화하기 좋은', en: 'Good for conversation' },
+    { ko: '아무거나', en: 'Anything' }, { value: '루프탑 카페', ko: '루프탑 카페', en: 'Rooftop cafe' },
+    { value: '디저트', ko: '디저트', en: 'Dessert' }, { value: '북카페', ko: '북카페', en: 'Book cafe' },
   ],
   walk: [
-    { ko: '아무거나', en: 'Anything' }, { value: '공원 산책', ko: '공원', en: 'Park' },
-    { value: '한강 산책', ko: '강변', en: 'Riverside' }, { value: '골목 산책', ko: '골목', en: 'Alley' },
-    { value: '야경 산책', ko: '야경', en: 'Night view' }, { value: '자연 산책', ko: '자연', en: 'Nature' },
+    { ko: '아무거나', en: 'Anything' }, { value: '한강 산책', ko: '한강 산책', en: 'Han River walk' },
+    { value: '공원 산책', ko: '공원 산책', en: 'Park walk' },
   ],
 };
 

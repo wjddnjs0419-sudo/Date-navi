@@ -6,7 +6,12 @@ import { evaluateHardEligibility, evaluateQualityGate, type DateQualityContext, 
 import type { ProviderNeutralCandidate, StepCandidatePool } from './provider-neutral-course-selection.ts';
 import { rankQualifiedPlaces } from './provider-neutral-ranking.ts';
 import { effectiveStepIntents } from './step-intent.ts';
-import { providerNeutralPlaceMatchesStep, providerNeutralPlaceMatchesStepCategory } from './provider-neutral-intent.ts';
+import {
+  providerNeutralStepIntentEvidenceSource,
+  providerNeutralPlaceMatchesStep,
+  providerNeutralPlaceMatchesStepCategory,
+  providerNeutralStepIntentPreferenceScore,
+} from './provider-neutral-intent.ts';
 import {
   recommendationPlaceIdentityKey,
   type RecommendationHistoryContext,
@@ -64,18 +69,62 @@ export type ProviderNeutralDiscoveryDiagnostics = {
   }>;
   steps?: Array<{
     stepId: string;
+    intentKeywords: string[];
     primaryAttemptsRun: number;
     fallbackAttemptsRun: number;
     candidateCount: number;
     selectableCount: number;
     sufficient: boolean;
+    attempts: Array<{
+      phase: 'primary' | 'fallback';
+      attemptIndex: number;
+      provider?: 'naver' | 'kakao';
+      querySource?: 'intent' | 'category';
+      returnedCount: number;
+      returnedByCategory: CategoryCounts;
+      discoveredCount: number;
+      dedupedCount: number;
+      dedupedByCategory: CategoryCounts;
+      qualifiedCount: number;
+      qualifiedByCategory: CategoryCounts;
+      rejectedByReason: Record<string, number>;
+      categoryMatchedCount: number;
+      metadataIntentMatchedCount: number;
+      providerSearchIntentMatchedCount: number;
+      requiredIntentMatchedCount: number;
+      notSelectableByReason: Record<string, number>;
+      selectableCount: number;
+      sufficient: boolean;
+    }>;
   }>;
 };
 
 export type StepDiscoveryAttempt = {
   stepId: string;
+  provider?: 'naver' | 'kakao';
+  querySource?: 'intent' | 'category';
   run: () => Promise<NormalizedPlace[]>;
 };
+
+function lockedStepPlace(
+  lock: NonNullable<RecommendationRequest['lockedSteps']>[number],
+): NormalizedPlace {
+  const identity = lock.placeIdentity
+    ?? (lock.kakaoPlaceId
+      ? { provider: 'kakao' as const, providerPlaceId: lock.kakaoPlaceId }
+      : undefined);
+  if (!identity) throw new Error('A locked step provider identity is required.');
+  return {
+    identity,
+    name: lock.name,
+    category: { normalized: 'unknown', providerRaw: 'locked step fact' },
+    address: { display: lock.address, ...(lock.roadAddress ? { road: lock.roadAddress } : {}) },
+    coordinates: { latitude: lock.latitude, longitude: lock.longitude },
+    ...(lock.mapUrl ? { mapUrl: lock.mapUrl } : {}),
+    evidence: { provider: identity.provider, searchTerms: [] },
+    ...(identity.provider === 'kakao' ? { legacy: { kakaoPlaceId: identity.providerPlaceId } } : {}),
+  };
+}
 
 function categoryCounts(places: readonly NormalizedPlace[]): CategoryCounts {
   return places.reduce<CategoryCounts>((counts, place) => {
@@ -99,7 +148,7 @@ function canAssignEveryStep(
     for (const place of places) {
       const identity = recommendationPlaceIdentityKey(place.identity);
       if (assigned.has(identity)
-        || !providerNeutralPlaceMatchesStep(place, step, requiredIntentByStepId.get(step.id))) continue;
+        || !providerNeutralPlaceMatchesStep(place, step, requiredIntentByStepId.get(step.id), { allowProviderSearchEvidence: true })) continue;
       assigned.add(identity);
       if (assign(stepIndex + 1)) return true;
       assigned.delete(identity);
@@ -152,6 +201,9 @@ export async function discoverProviderNeutralCandidates(input: {
     const makePool = (stepId: string, places: readonly NormalizedPlace[]): StepCandidatePool => {
       const step = input.request.courseSteps.find((candidate) => candidate.id === stepId);
       const requiredIntent = requiredIntents.find((intent) => intent.stepId === stepId);
+      const preferredIntents = effectiveStepIntents(input.request)
+        .filter((intent) => intent.stepId === stepId && intent.strength === 'preferred');
+      const isExplicitReplacement = input.request.replacement?.stepId === stepId;
       const qualified = places.filter((place) => assess(place).passed);
       const ranked = rankQualifiedPlaces(qualified.map((place) => ({
         place,
@@ -161,10 +213,21 @@ export async function discoverProviderNeutralCandidates(input: {
         }),
         distanceFromSearchCenterMeters: distanceFromLocation(place, input.request),
         popularityBonus: popularityEligibility(place) === 'sufficient' ? 1 : 0,
+        intentEvidence: requiredIntent
+          ? providerNeutralStepIntentEvidenceSource(place, requiredIntent, { allowProviderSearchEvidence: true }) === 'provider_metadata'
+            ? 8
+            : providerNeutralStepIntentEvidenceSource(place, requiredIntent, { allowProviderSearchEvidence: true }) === 'provider_search'
+              ? 4
+              : undefined
+          : undefined,
+        intentPreference: providerNeutralStepIntentPreferenceScore(place, preferredIntents),
       })));
       const candidates = ranked.map((entry, index): ProviderNeutralCandidate => {
         const categoryMatches = Boolean(step && providerNeutralPlaceMatchesStepCategory(entry.place, step.category));
-        const intentMatches = Boolean(step && requiredIntent && providerNeutralPlaceMatchesStep(entry.place, step, requiredIntent));
+        const intentEvidenceSource = step && requiredIntent
+          ? providerNeutralStepIntentEvidenceSource(entry.place, requiredIntent, { allowProviderSearchEvidence: true })
+          : undefined;
+        const intentMatches = Boolean(intentEvidenceSource);
         return {
           candidateId: `provider_candidate_${stepId}_${String(index + 1).padStart(3, '0')}`,
           sourceStepId: stepId,
@@ -175,9 +238,9 @@ export async function discoverProviderNeutralCandidates(input: {
             category: categoryMatches
               ? (entry.place.category.normalized === 'unknown' ? 'unknown' : 'compatible')
               : 'incompatible',
-            intent: !requiredIntent ? 'not_required' : intentMatches ? 'matched' : 'unmatched',
-            intentEvidence: intentMatches && requiredIntent
-              ? [{ phase: 'provider_metadata', canonicalTerm: requiredIntent.canonicalTerm, expansionLevel: 0 }]
+            intent: !requiredIntent || isExplicitReplacement ? 'not_required' : intentMatches ? 'matched' : 'unmatched',
+            intentEvidence: intentMatches && requiredIntent && intentEvidenceSource
+              ? [{ phase: intentEvidenceSource, canonicalTerm: requiredIntent.canonicalTerm, expansionLevel: 0 }]
               : [],
           },
         };
@@ -190,38 +253,140 @@ export async function discoverProviderNeutralCandidates(input: {
     };
 
     for (const step of input.request.courseSteps) {
+      const stepIntents = effectiveStepIntents(input.request).filter((intent) => intent.stepId === step.id);
+      const preserved = input.request.lockedSteps?.find((candidate) => candidate.stepId === step.id);
+      if (preserved) {
+        const place = lockedStepPlace(preserved);
+        const candidate: ProviderNeutralCandidate = {
+          candidateId: preserved.candidateId,
+          sourceStepId: step.id,
+          place,
+          distanceFromSearchCenterMeters: distanceFromLocation(place, input.request),
+          popularityBonus: 0,
+          qualification: { category: 'unknown', intent: 'not_required', intentEvidence: [] },
+        };
+        pools.push({
+          stepId: step.id,
+          candidates: [candidate],
+          selectableCandidates: [candidate],
+          // A preserved lock is already a verified choice; it does not need
+          // two replacement alternatives to keep the rest of the course stable.
+          sufficient: true,
+        });
+        stepDiagnostics.push({
+          stepId: step.id,
+          intentKeywords: stepIntents.map((intent) => intent.canonicalTerm),
+          primaryAttemptsRun: 0,
+          fallbackAttemptsRun: 0,
+          candidateCount: 1,
+          selectableCount: 1,
+          sufficient: true,
+          attempts: [],
+        });
+        continue;
+      }
       const primary = input.stepAttempts.primary.filter((attempt) => attempt.stepId === step.id);
       const fallback = input.stepAttempts.fallback.filter((attempt) => attempt.stepId === step.id);
       const discovered: NormalizedPlace[] = [];
+      const requiredIntentForStep = requiredIntents.find((intent) => intent.stepId === step.id);
+      const stepAttemptDiagnostics: NonNullable<ProviderNeutralDiscoveryDiagnostics['steps']>[number]['attempts'] = [];
       let pool = makePool(step.id, discovered);
       let primaryAttemptsRun = 0;
       let fallbackAttemptsRun = 0;
-      for (const attempt of primary) {
+      const recordAttempt = (
+        phase: 'primary' | 'fallback',
+        attempt: StepDiscoveryAttempt,
+        attemptIndex: number,
+        returned: readonly NormalizedPlace[],
+        deduped: readonly NormalizedPlace[],
+        currentPool: StepCandidatePool,
+      ) => {
+        const qualified = deduped.filter((place) => assess(place).passed);
+        const categoryMatched = qualified.filter((place) => Boolean(
+          step && providerNeutralPlaceMatchesStepCategory(place, step.category),
+        ));
+        const intentMatched = qualified.filter((place) => Boolean(
+          requiredIntentForStep && providerNeutralPlaceMatchesStep(place, step, requiredIntentForStep, { allowProviderSearchEvidence: true }),
+        ));
+        const metadataIntentMatchedCount = qualified.filter((place) => Boolean(
+          requiredIntentForStep
+          && providerNeutralStepIntentEvidenceSource(place, requiredIntentForStep) === 'provider_metadata',
+        )).length;
+        const providerSearchIntentMatchedCount = qualified.filter((place) => Boolean(
+          requiredIntentForStep
+          && providerNeutralStepIntentEvidenceSource(place, requiredIntentForStep, { allowProviderSearchEvidence: true }) === 'provider_search',
+        )).length;
+        const notSelectableByReason = currentPool.candidates.reduce<Record<string, number>>((counts, candidate) => {
+          if (candidate.qualification?.category === 'incompatible') {
+            counts.category_incompatible = (counts.category_incompatible ?? 0) + 1;
+          }
+          if (candidate.qualification?.intent === 'unmatched') {
+            counts.intent_unmatched = (counts.intent_unmatched ?? 0) + 1;
+          }
+          return counts;
+        }, {});
+        const rejectedByReason = deduped.reduce<Record<string, number>>((counts, place) => {
+          if (!qualified.includes(place)) {
+            for (const reason of assess(place).reasons) counts[reason] = (counts[reason] ?? 0) + 1;
+          }
+          return counts;
+        }, {});
+        stepAttemptDiagnostics.push({
+          phase,
+          attemptIndex,
+          ...(attempt.provider ? { provider: attempt.provider } : {}),
+          ...(attempt.querySource ? { querySource: attempt.querySource } : {}),
+          returnedCount: returned.length,
+          returnedByCategory: categoryCounts(returned),
+          discoveredCount: discovered.length,
+          dedupedCount: deduped.length,
+          dedupedByCategory: categoryCounts(deduped),
+          qualifiedCount: qualified.length,
+          qualifiedByCategory: categoryCounts(qualified),
+          rejectedByReason,
+          categoryMatchedCount: categoryMatched.length,
+          metadataIntentMatchedCount,
+          providerSearchIntentMatchedCount,
+          requiredIntentMatchedCount: requiredIntentForStep ? intentMatched.length : qualified.length,
+          notSelectableByReason,
+          selectableCount: currentPool.selectableCandidates.length,
+          sufficient: currentPool.sufficient,
+        });
+      };
+      for (const [attemptIndex, attempt] of primary.entries()) {
         if (pool.sufficient) break;
-        discovered.push(...await attempt.run());
+        const returned = await attempt.run();
+        discovered.push(...returned);
         primaryAttemptsRun += 1;
         attemptsRun += 1;
-        pool = makePool(step.id, dedupeNormalizedPlaces(discovered).places);
+        const deduped = dedupeNormalizedPlaces(discovered).places;
+        pool = makePool(step.id, deduped);
+        recordAttempt('primary', attempt, attemptIndex, returned, deduped, pool);
       }
       if (!pool.sufficient) {
-        for (const attempt of fallback) {
+        for (const [attemptIndex, attempt] of fallback.entries()) {
           if (pool.sufficient) break;
-          discovered.push(...await attempt.run());
+          const returned = await attempt.run();
+          discovered.push(...returned);
           fallbackAttemptsRun += 1;
           attemptsRun += 1;
           fallbackUsed = true;
-          pool = makePool(step.id, dedupeNormalizedPlaces(discovered).places);
+          const deduped = dedupeNormalizedPlaces(discovered).places;
+          pool = makePool(step.id, deduped);
+          recordAttempt('fallback', attempt, attemptIndex, returned, deduped, pool);
         }
       }
       if (!pool.sufficient) fewerResults = true;
       pools.push(pool);
       stepDiagnostics.push({
         stepId: step.id,
+        intentKeywords: stepIntents.map((intent) => intent.canonicalTerm),
         primaryAttemptsRun,
         fallbackAttemptsRun,
         candidateCount: pool.candidates.length,
         selectableCount: pool.selectableCandidates.length,
         sufficient: pool.sufficient,
+        attempts: stepAttemptDiagnostics,
       });
     }
     return {

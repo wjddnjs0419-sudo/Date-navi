@@ -74,8 +74,6 @@
       "titlePlaceholder": "제목",
       "descLabel": "설명",
       "descPlaceholder": "어떤 데이트인지 적어주세요",
-      "timeLabel": "예상 시간",
-      "budgetLabel": "1인 예산",
       "stepsReferenceLabel": "코스 순서 (참고용)",
       "saveCta": "저장하기",
       "saveError": "수정 중 문제가 발생했어요."

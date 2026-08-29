@@ -9,6 +9,7 @@ import {
   buildRecommendationRequest,
   RecommendationRequestError,
   relaxRequiredMarkers,
+  relaxUnsatisfiedStepIntentTags,
   requestRecommendationCards,
   requestRecommendationResponse,
 } from '../lib/recommend-date';
@@ -217,6 +218,23 @@ describe('structured recommend-date client', () => {
         unsatisfiedIntents: [{ canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' } }],
       }),
     );
+  });
+
+  it('removes only the explicitly unsatisfied structured tag during relaxation', () => {
+    const requestBody = buildRecommendationRequest({
+      ...courseDraft,
+      courseSteps: [
+        { id: 'step-meal', category: 'meal', label: '식사', intentTags: ['Pork belly'] },
+        { id: 'step-cafe', category: 'cafe', label: '카페', intentTags: ['디저트'] },
+      ],
+    }, 'req-client-relax-001', 'ko');
+
+    const relaxed = relaxUnsatisfiedStepIntentTags(requestBody, [{
+      canonicalTerm: '삼겹살', displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' },
+    }]);
+
+    expect(relaxed.courseSteps[0]).not.toHaveProperty('intentTags');
+    expect(relaxed.courseSteps[1]).toMatchObject({ intentTags: ['디저트'] });
   });
 
   it('returns the complete validated Phase 7 response for DB session persistence', async () => {

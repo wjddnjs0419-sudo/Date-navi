@@ -1,14 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Heart, Mail, BellOff, ChevronRight, X } from 'lucide-react-native';
+import { Heart, Mail, BellOff, ChevronRight } from '../../components/iconography';
 import { C } from '../../constants/colors';
-import { SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
+import { DS, SP } from '../../constants/theme';
+import { BigButton, Header, ListGroup, ListRow, ModalSurface, ScreenHeading, SectionLabel } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { supabase } from '../../lib/supabase';
 import { buildPushNavigationTarget, type PushNotificationType } from '../../lib/push';
@@ -128,21 +127,16 @@ export default function NotificationsScreen() {
     <View style={s.root}>
       <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
       <SafeAreaView style={s.safe}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <View style={s.headerRow}>
-          <BackBar />
-          <TouchableOpacity onPress={clearAll} disabled={unreadCount === 0}>
-            <Text style={[s.clearBtn, unreadCount === 0 && s.clearBtnDisabled]}>{t.clearAll}</Text>
+      <Header
+        onBack={() => router.back()}
+        right={(
+          <TouchableOpacity onPress={clearAll} disabled={unreadCount === 0} activeOpacity={0.88} style={s.clearBtn}>
+            <Text style={[s.clearBtnText, unreadCount === 0 && s.clearBtnDisabled]}>{t.clearAll}</Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={s.titleWrap}>
-          <Text style={T.h1}>{t.title}</Text>
-          {unreadCount > 0
-            ? <Text style={s.count}>{`${unreadCount}${t.unreadSuffix}`}</Text>
-            : <Text style={s.count}>{t.allRead}</Text>}
-        </View>
-
+        )}
+      />
+      <ScreenHeading title={t.title} subtitle={unreadCount > 0 ? `${unreadCount}${t.unreadSuffix}` : t.allRead} />
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={s.centerBox}>
             <ActivityIndicator size="large" color={C.pink} />
@@ -195,40 +189,29 @@ export default function NotificationsScreen() {
         <View style={s.bottomSpacer} />
       </ScrollView>
 
-      <Modal
+      <ModalSurface
         visible={selected !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={closeModal}
+        onClose={closeModal}
+        title={t.proposalModalTitle}
       >
-        <View style={s.modalBackdrop}>
-          <View style={s.modalCard}>
-            <View style={s.modalHeaderRow}>
-              <Text style={s.modalTitle}>{t.proposalModalTitle}</Text>
-              <TouchableOpacity onPress={closeModal} hitSlop={8}>
-                <X size={20} color={C.textSub} />
-              </TouchableOpacity>
+        {!!selected?.payload?.card_title && (
+          <View style={s.modalCardChip}>
+            <View style={s.modalCardIcon}>
+              <Heart size={16} strokeWidth={1.8} color={C.pinkDeep} />
             </View>
-            {!!selected?.payload?.card_title && (
-              <View style={s.modalCardChip}>
-                <View style={s.modalCardIcon}>
-                  <Heart size={16} strokeWidth={1.8} color={C.pinkDeep} />
-                </View>
-                <Text style={s.modalCardTitle} numberOfLines={2}>{selected.payload.card_title}</Text>
-              </View>
-            )}
-            {!!selected?.payload?.message && (
-              <Text style={s.modalMessage}>“{selected.payload.message}”</Text>
-            )}
-            <BigButton onPress={goToProposal} variant="primary" style={s.modalCopyBtn}>
-              {t.proposalCta}
-            </BigButton>
-            <TouchableOpacity onPress={closeModal} style={s.modalCloseBtn}>
-              <Text style={s.modalCloseText}>{t.modalCloseButton}</Text>
-            </TouchableOpacity>
+            <Text style={s.modalCardTitle} numberOfLines={2}>{selected.payload.card_title}</Text>
           </View>
-        </View>
-      </Modal>
+        )}
+        {!!selected?.payload?.message && (
+          <Text style={s.modalMessage}>“{selected.payload.message}”</Text>
+        )}
+        <BigButton onPress={goToProposal} variant="primary" style={s.modalCopyBtn}>
+          {t.proposalCta}
+        </BigButton>
+        <TouchableOpacity onPress={closeModal} activeOpacity={0.88} style={s.modalCloseBtn}>
+          <Text style={s.modalCloseText}>{t.modalCloseButton}</Text>
+        </TouchableOpacity>
+      </ModalSurface>
       </SafeAreaView>
     </View>
   );
@@ -240,52 +223,40 @@ const s = StyleSheet.create({
   // connected.tsx / couple-connect.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로
   // 그려야 하단이 진짜 화면 끝까지 붙는다.
   bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  clearBtn: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
+  clearBtn: { minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
+  clearBtnText: { ...DS.typography.bodySmall, color: C.textSub },
   clearBtnDisabled: { color: C.textLight },
-  titleWrap: { marginTop: SP.md },
-  count: { fontSize: 12, color: C.textMuted, marginTop: 2 },
   groupSection: { marginTop: SP.xxl },
   itemTextWrap: { flex: 1, paddingRight: SP.sm },
   bottomSpacer: { height: 40 },
-  centerBox: { paddingTop: 80, alignItems: 'center' },
-  emptyBox: { paddingTop: 72, alignItems: 'center', paddingHorizontal: SP.xxl },
+  centerBox: { paddingTop: SP.art, alignItems: 'center' },
+  emptyBox: { paddingTop: SP.art, alignItems: 'center', paddingHorizontal: SP.xxl },
   emptyIcon: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: C.white,
+    width: 64, height: 64, borderRadius: DS.radius.full, backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center', marginBottom: SP.lg,
     borderWidth: 1, borderColor: C.border,
   },
-  emptyTitle: { fontSize: 15, fontWeight: '700', color: C.text },
-  emptyBody: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: SP.xs + 2, textAlign: 'center' },
+  emptyTitle: { ...DS.typography.cardTitle, color: C.text },
+  emptyBody: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.sm, textAlign: 'center' },
   iconBox: {
-    width: 36, height: 36, borderRadius: R.sm,
+    width: 36, height: 36, borderRadius: DS.radius.small,
     alignItems: 'center', justifyContent: 'center',
   },
-  itemTitle: { fontSize: 13, fontWeight: '600', color: C.text },
-  itemBody: { fontSize: 12, color: C.textSub, lineHeight: 17, marginTop: 2 },
-  itemTime: { fontSize: 10, color: C.textLight, marginTop: SP.xs },
-  modalBackdrop: {
-    flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: SP.xxl,
-  },
-  modalCard: {
-    width: '100%', maxWidth: 360, backgroundColor: C.white,
-    borderRadius: R.hero, padding: SP.xl,
-  },
-  modalHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  modalTitle: { fontSize: 15, fontWeight: '700', color: C.text },
+  itemTitle: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
+  itemBody: { ...DS.typography.bodySmall, color: C.textSub, marginTop: DS.spacing.micro },
+  itemTime: { ...DS.typography.micro, color: C.textLight, marginTop: SP.xs },
   modalCardChip: {
-    flexDirection: 'row', alignItems: 'center', gap: SP.sm + 2,
-    backgroundColor: C.bg, borderRadius: R.md, padding: SP.md, marginTop: SP.lg,
+    flexDirection: 'row', alignItems: 'center', gap: SP.md,
+    backgroundColor: C.bg, borderRadius: DS.radius.compact, padding: SP.md, marginTop: SP.lg,
   },
   modalCardIcon: {
-    width: 32, height: 32, borderRadius: 9, backgroundColor: C.pinkLight,
+    width: 32, height: 32, borderRadius: DS.radius.badge, backgroundColor: C.pinkLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  modalCardTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: C.text },
-  modalMessage: { fontSize: 15, color: C.text, lineHeight: 24, marginTop: SP.md + 2, fontStyle: 'italic' },
-  modalCopyBtn: { marginTop: SP.xl },
-  modalCloseBtn: { alignItems: 'center', paddingVertical: SP.sm + 2, marginTop: SP.xs },
-  modalCloseText: { fontSize: 13, color: C.textSub, fontWeight: '600' },
+  modalCardTitle: { flex: 1, ...DS.typography.body, fontWeight: '700', color: C.text },
+  modalMessage: { ...DS.typography.cardTitle, color: C.text, marginTop: SP.md, fontStyle: 'italic' },
+  modalCopyBtn: { marginTop: SP.xxl },
+  modalCloseBtn: { alignItems: 'center', paddingVertical: SP.md, marginTop: SP.xs },
+  modalCloseText: { ...DS.typography.bodyCompact, color: C.textSub, fontWeight: '600' },
 });

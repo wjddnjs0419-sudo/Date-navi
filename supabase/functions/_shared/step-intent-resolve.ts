@@ -179,7 +179,20 @@ export function mergeRuleAndAiIntents(
   excludedIntents: ParsedStepIntent[],
 ): ParsedStepIntent[] {
   const excludedTerms = new Set(excludedIntents.map((intent) => normalize(intent.canonicalTerm)));
-  return dedupeIntents([...ruleIntents, ...aiIntents])
+  const ruleIntentsByStep = new Map<string, ParsedStepIntent[]>();
+  for (const intent of ruleIntents) {
+    const existing = ruleIntentsByStep.get(intent.stepId) ?? [];
+    existing.push(intent);
+    ruleIntentsByStep.set(intent.stepId, existing);
+  }
+  const supplementalAiIntents = aiIntents.filter((intent) => {
+    const sameStepRuleIntents = ruleIntentsByStep.get(intent.stepId) ?? [];
+    // Rule parsing wins for a step. AI may still strengthen the same canonical
+    // intent, but must not add a second preference to that one-tag step.
+    return sameStepRuleIntents.length === 0
+      || sameStepRuleIntents.some((ruleIntent) => normalize(ruleIntent.canonicalTerm) === normalize(intent.canonicalTerm));
+  });
+  return dedupeIntents([...ruleIntents, ...supplementalAiIntents])
     .filter((intent) => !excludedTerms.has(normalize(intent.canonicalTerm)));
 }
 
@@ -207,10 +220,9 @@ export async function resolveStepIntents(
         kakaoSearchTerms: dictionaryEntry
           ? stableUnique([dictionaryEntry.canonicalTerm, ...dictionaryEntry.searchExpansions]).slice(0, 3)
           : [tag],
-        // 코스 편집기에서 사용자가 명시적으로 선택·입력한 키워드는 해당 스텝의 필수 조건이다.
-        // 후보가 부족할 때 일반 카테고리 장소로 무음 완화하지 않고, 기존 required 게이트가
-        // STEP_INTENT_UNSATISFIED로 조건 수정을 안내한다.
-        strength: 'required' as StepIntentStrength,
+        // 구체적인 음식·주종·활동 태그는 필수 조건으로 유지한다. 조용함·감성·뷰처럼
+        // provider metadata로 사실 검증할 수 없는 설명형 태그는 검색·랭킹 선호로만 사용한다.
+        strength: dictionaryEntry?.constraint === 'soft' ? 'preferred' : 'required' as StepIntentStrength,
         displayLabel: dictionaryEntry?.displayLabel ?? { ko: tag, en: tag },
       } satisfies ParsedStepIntent];
     });

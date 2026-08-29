@@ -4,6 +4,7 @@ import { Wordmark } from '../components/brand';
 import { Illustration } from '../components/illustration';
 import { CourseMapPreview } from '../components/course-map';
 import { BigButton, MetaChipRow, PlanListRow } from '../components/ui';
+import { Settings } from '../components/iconography';
 
 jest.mock('expo-router', () => {
   const ReactLocal = require('react');
@@ -124,7 +125,7 @@ describe('홈 화면 목업 계약', () => {
   });
 
   it('설정 진입 버튼은 아바타가 아니라 톱니(Settings) 아이콘이다', async () => {
-    const { Image, TouchableOpacity, View } = require('react-native') as typeof import('react-native');
+    const { Image, TouchableOpacity } = require('react-native') as typeof import('react-native');
     const tree = await render();
 
     type Subtree = { props: any; findAllByType: (t: unknown) => Subtree[] };
@@ -133,8 +134,7 @@ describe('홈 화면 목업 계약', () => {
     expect(settingsBtn.length).toBe(1);
 
     // 버튼 안에는 톱니 아이콘만 있고, 아바타 사진/이니셜은 없다.
-    const icons = settingsBtn[0].findAllByType(View).filter((n) => n.props.testID === 'lucide-Settings');
-    expect(icons.length).toBe(1);
+    expect(settingsBtn[0].findAllByType(Settings).length).toBe(1);
     expect(settingsBtn[0].findAllByType(Image).length).toBe(0);
     expect(settingsBtn[0].findAllByType(Text).length).toBe(0);
   });

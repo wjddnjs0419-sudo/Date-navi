@@ -112,6 +112,7 @@ describe('replacement candidates handler', () => {
     };
     const exact = {
       ...candidate('exact-pork', 'FD6'),
+      categoryName: 'Restaurant > 삼겹살',
       matchedSearchEvidence: [{ queryId: 'q2', source: 'keyword' as const, page: 1, queryText: '삼겹살', phase: 'step_intent', canonicalTerm: '삼겹살', expansionLevel: 0 as const }],
     };
     const result = await handleReplacementCandidates({
@@ -130,6 +131,7 @@ describe('replacement candidates handler', () => {
     const genericMeal = candidate('generic-meal', 'FD6');
     const exactRamen = {
       ...candidate('exact-ramen', 'FD6'),
+      categoryName: 'Restaurant > 라멘',
       matchedSearchEvidence: [{
         queryId: 'ramen-query',
         source: 'keyword' as const,

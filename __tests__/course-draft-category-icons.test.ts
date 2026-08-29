@@ -1,4 +1,4 @@
-import { Coffee, Sparkles, Utensils } from 'lucide-react-native';
+import { Coffee, Sparkles, Utensils } from '../components/iconography';
 import { CATEGORY_ICONS, getCourseCategoryIcon } from '../lib/course-draft';
 
 describe('course category icon mapping', () => {

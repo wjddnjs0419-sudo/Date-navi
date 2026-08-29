@@ -5,9 +5,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Camera, Heart, Calendar, ChevronRight } from 'lucide-react-native';
-import { C, SP, R, G } from '../../constants/theme';
-import { Badge, Chip, BigButton, SwipeableCard } from '../../components/ui';
+import { Camera, Heart, Calendar, ChevronRight } from '../../components/iconography';
+import { C, DS, SP, R, G } from '../../constants/theme';
+import { Badge, Chip, BigButton, Header, ScreenHeading, SegmentedControl, SwipeableCard } from '../../components/ui';
 import { StarRating } from '../../components/StarRating';
 import { Illustration } from '../../components/illustration';
 import { getCardStyle } from '../../lib/tagStyle';
@@ -164,21 +164,21 @@ export default function MemoriesScreen() {
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
-        {/* 헤더 */}
-        <View style={s.header}>
-          <View style={s.flex1}>
-            <Text style={s.pageTitle}>{t('memories.pageTitle')}</Text>
-            <Text style={s.subtitle}>{t('memories.subtitle')}</Text>
-          </View>
-          <TouchableOpacity
-            style={s.iconBtn}
-            onPress={() => router.push('/card/memory/new')}
-            activeOpacity={0.8}
-            accessibilityLabel={t('memories.recordCta')}
-          >
-            <Camera size={18} color={C.textSub} />
-          </TouchableOpacity>
-        </View>
+        <Header
+          onBack={() => router.back()}
+          right={(
+            <TouchableOpacity
+              style={s.iconBtn}
+              onPress={() => router.push('/card/memory/new')}
+              activeOpacity={0.88}
+              accessibilityRole="button"
+              accessibilityLabel={t('memories.recordCta')}
+            >
+              <Camera size={18} color={C.textSub} />
+            </TouchableOpacity>
+          )}
+        />
+        <ScreenHeading title={t('memories.pageTitle')} subtitle={t('memories.subtitle')} />
 
         {loading ? (
           <View style={G.center}>
@@ -216,21 +216,16 @@ export default function MemoriesScreen() {
                     ))}
                   </View>
                 </View>
-                <View style={s.tabBar}>
-                  {(['all', 'best'] as const).map((tab) => (
-                    <TouchableOpacity
-                      key={tab}
-                      testID={`memories-tab-${tab}`}
-                      onPress={() => setActiveFilter(tab)}
-                      style={[s.tabBtn, activeFilter === tab && s.tabBtnActive]}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={[s.tabBtnText, activeFilter === tab && s.tabBtnTextActive]}>
-                        {t(tab === 'all' ? 'memories.filterAll' : 'memories.filterBest')}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <SegmentedControl
+                  testID="memories-filter"
+                  itemTestID={(filter) => `memories-tab-${filter}`}
+                  options={[
+                    { value: 'all' as const, label: t('memories.filterAll') },
+                    { value: 'best' as const, label: t('memories.filterBest') },
+                  ]}
+                  value={activeFilter}
+                  onChange={setActiveFilter}
+                />
               </>
             }
             ListEmptyComponent={
@@ -243,7 +238,7 @@ export default function MemoriesScreen() {
               <TouchableOpacity
                 style={s.banner}
                 onPress={() => router.push('/card/memory/new')}
-                activeOpacity={0.9}
+                activeOpacity={0.88}
               >
                 <View style={s.bannerText}>
                   <Text style={s.bannerTitle}>{t('memories.bannerTitle')}</Text>
@@ -319,37 +314,26 @@ export default function MemoriesScreen() {
 const s = StyleSheet.create({
   flex1: { flex: 1 },
   bgLavender: { backgroundColor: C.lavender },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: SP.xl,
-    paddingTop: SP.lg,
-    paddingBottom: SP.sm,
-    gap: SP.md,
-  },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: C.text },
-  subtitle: { fontSize: 13, color: C.textSub, marginTop: SP.xs },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 22,
+    width: DS.spacing.touch, height: DS.spacing.touch, borderRadius: DS.radius.full,
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: C.border,
   },
 
-  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: SP.xxl },
+  emptyWrap: { alignItems: 'center', marginTop: DS.component.emptyStateTop, paddingHorizontal: SP.xxl },
   emptyIcon: {
-    width: 120, height: 120, borderRadius: 60,
+    width: 120, height: 120, borderRadius: DS.radius.full,
     alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: SP.md },
+  emptyTitle: { ...DS.typography.headingLegacy, color: C.text, textAlign: 'center' },
+  emptySub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: SP.md },
   emptyCta: { marginTop: SP.xxl },
 
   // 필터 탭(베스트) 결과가 0건일 때 리스트 본문에 보여주는 인라인 빈 상태.
   filterEmptyWrap: { alignItems: 'center', paddingVertical: SP.xxl },
-  filterEmptyText: { fontSize: 13, color: C.textSub, marginTop: SP.md },
+  filterEmptyText: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.md },
 
-  list: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: 40, gap: SP.md },
+  list: { paddingHorizontal: SP.screen, paddingTop: SP.lg, paddingBottom: SP.hero, gap: SP.md },
 
   statsCard: {
     flexDirection: 'row',
@@ -367,17 +351,9 @@ const s = StyleSheet.create({
   },
   statsCols: { flex: 1, flexDirection: 'row' },
   statBox: { flex: 1 },
-  statValue: { fontSize: 20, fontWeight: '800', color: C.text },
-  statLabel: { fontSize: 10, color: C.textSub, marginTop: 2 },
+  statValue: { ...DS.typography.metric, color: C.text },
+  statLabel: { ...DS.typography.micro, color: C.textSub, marginTop: DS.spacing.micro },
 
-  tabBar: { flexDirection: 'row', gap: SP.sm, marginBottom: SP.lg },
-  tabBtn: {
-    flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center',
-    borderRadius: R.btn, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
-  },
-  tabBtnActive: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  tabBtnText: { fontSize: 13, fontWeight: '600', color: C.textSub },
-  tabBtnTextActive: { color: C.pinkDeep, fontWeight: '700' },
 
   card: {
     flexDirection: 'row',
@@ -388,21 +364,16 @@ const s = StyleSheet.create({
     padding: SP.md,
     borderWidth: 1,
     borderColor: C.borderLight,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 7,
-    elevation: 3,
   },
   thumb: { width: 92, height: 92, borderRadius: R.sm },
   thumbTile: { alignItems: 'center', justifyContent: 'center' },
   cardBody: { flex: 1, minWidth: 0 },
   todayBadgeRow: { flexDirection: 'row', marginBottom: SP.xs },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginTop: SP.xs },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text },
+  cardTitle: { ...DS.typography.cardTitle, color: C.text },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: SP.xs },
-  dateText: { fontSize: 12, color: C.textSub },
-  reviewText: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: SP.sm },
+  dateText: { ...DS.typography.bodySmall, color: C.textSub },
+  reviewText: { ...DS.typography.bodySmall, color: C.grayFg, marginTop: SP.sm },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
   heartWrap: { alignSelf: 'flex-start', paddingTop: SP.xs },
 
@@ -417,13 +388,13 @@ const s = StyleSheet.create({
     marginTop: SP.xs,
   },
   bannerText: { flex: 1 },
-  bannerTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
-  bannerSub: { fontSize: 12, color: C.textSub, marginTop: 2 },
+  bannerTitle: { ...DS.typography.body, fontWeight: '700', color: C.pinkDeep },
+  bannerSub: { ...DS.typography.bodySmall, color: C.textSub, marginTop: DS.spacing.micro },
   bannerCta: {
     backgroundColor: C.pink,
     borderRadius: R.btn,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
   },
-  bannerCtaText: { fontSize: 13, fontWeight: '700', color: C.white },
+  bannerCtaText: { ...DS.typography.buttonCompact, color: C.white },
 });

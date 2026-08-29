@@ -1,6 +1,6 @@
 import {
   Home, Trees, Heart, Wallet, Moon, PartyPopper, Camera, Coffee, ShieldCheck, MapPin, Sparkles,
-} from 'lucide-react-native';
+} from '../components/iconography';
 import { C } from '../constants/colors';
 
 export type CardStyle = { Icon: typeof Sparkles; bg: string; fg: string };

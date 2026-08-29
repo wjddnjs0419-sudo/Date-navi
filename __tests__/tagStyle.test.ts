@@ -1,4 +1,4 @@
-import { Home, Trees, Heart, Wallet, Moon, PartyPopper, Camera, Coffee, ShieldCheck, MapPin, Sparkles } from 'lucide-react-native';
+import { Home, Trees, Heart, Wallet, Moon, PartyPopper, Camera, Coffee, ShieldCheck, MapPin, Sparkles } from '../components/iconography';
 import { getCardStyle } from '../lib/tagStyle';
 import { C } from '../constants/colors';
 

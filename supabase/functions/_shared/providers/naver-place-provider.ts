@@ -1,5 +1,6 @@
 import type { NormalizedPlace, NormalizedPlaceCategory } from '../place-provider.ts';
 import type { NaverSearchCache } from '../naver-search-cache.ts';
+import { resolveNaverMapUrl } from '../../../../shared/recommendation/naver-map-link.ts';
 
 type NaverLocalItem = {
   title?: string;
@@ -92,6 +93,11 @@ export async function fetchNaverLocalPlacesWithStatus(input: NaverLocalSearchInp
     const longitude = coordinate(item.mapx);
     const road = item.roadAddress?.trim();
     const address = item.address?.trim();
+    const mapUrl = resolveNaverMapUrl({
+      link: item.link,
+      name,
+      address: road || address,
+    });
     const providerPlaceId = await naverSearchResultIdentity({ name, address, roadAddress: road, latitude, longitude });
     return [{
       identity: { provider: 'naver' as const, providerPlaceId },
@@ -103,6 +109,7 @@ export async function fetchNaverLocalPlacesWithStatus(input: NaverLocalSearchInp
       },
       ...(address || road ? { address: { display: address || road!, ...(road ? { road } : {}) } } : {}),
       ...(latitude !== undefined && longitude !== undefined ? { coordinates: { latitude, longitude } } : {}),
+      ...(mapUrl ? { mapUrl } : {}),
       evidence: { provider: 'naver' as const, searchTerms: [input.query] },
     } satisfies NormalizedPlace];
   }))).flat();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocateFixed, MapPin, Navigation } from 'lucide-react-native';
+import { LocateFixed, MapPin, Navigation } from '../components/iconography';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
 
 type TestNode = { props: Record<string, any> };
@@ -16,9 +16,28 @@ jest.mock('../lib/i18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
+const mockGetSession = jest.fn().mockResolvedValue({
+  data: { session: { user: { id: '11111111-1111-4111-8111-111111111111' } } },
+});
+
+jest.mock('../lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
+  },
+}));
+
 jest.mock('../lib/recentLocations', () => ({
   loadRecentLocations: jest.fn(),
   saveRecentLocation: jest.fn(),
+  isSameRecommendationLocation: (left: any, right: any) => (
+    !!left && !!right && left.source === right.source
+      && (left.kakaoPlaceId && right.kakaoPlaceId
+        ? left.kakaoPlaceId === right.kakaoPlaceId
+        : left.latitude === right.latitude && left.longitude === right.longitude)
+  ),
 }));
 
 const { loadRecentLocations } = require('../lib/recentLocations') as {
@@ -52,10 +71,12 @@ describe('LocationSelector location controls', () => {
       await Promise.resolve();
     });
 
+    expect(loadRecentLocations).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111');
+
     expect(renderer.root.findAllByType(Navigation)).toHaveLength(1);
     const currentButton = renderer.root.findByProps({ testID: 'location-current-button' });
     expect(currentButton.props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ backgroundColor: '#ffffff' }),
+      expect.objectContaining({ backgroundColor: '#FFFFFF' }),
     ]));
     expect(currentButton.props.children[0].props.color).toBe('#8A8075');
     expect(currentButton.props.children[1].props.style).toEqual(expect.arrayContaining([

@@ -6,9 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Plus, Heart, Plane, Check, Sparkles } from 'lucide-react-native';
-import { C, SP, R, G } from '../../constants/theme';
-import { SoftCard, Chip, Badge, SwipeableCard, MetaChipRow, SortDropdown } from '../../components/ui';
+import { Plus, Heart, Plane, Check, Sparkles } from '../../components/iconography';
+import { C, DS, SP, G } from '../../constants/theme';
+import { SoftCard, Chip, Badge, Header, ScreenHeading, SwipeableCard, MetaChipRow, SortDropdown } from '../../components/ui';
 import { generateDateCards, getUserPreferences } from '../../lib/ai';
 import type { FeelingInput } from '../../lib/ai';
 import { useI18n } from '../../lib/i18n';
@@ -322,22 +322,22 @@ export default function CandidatesScreen() {
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-          {/* 헤더 */}
-          <View style={s.headerRow}>
-            <View style={s.flex1}>
-              <Text style={s.pageTitle}>{t('candidates.pageTitle')}</Text>
-              <Text style={s.countText}>{t('candidates.countText', { count: cards.length })}</Text>
-            </View>
+        <Header
+          onBack={() => router.back()}
+          right={(
             <TouchableOpacity
               style={s.addPill}
               onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
+              accessibilityRole="button"
             >
               <Plus size={16} color={C.pinkDeep} strokeWidth={2.4} />
               <Text style={s.addPillText}>{t('candidates.fabAddCourse')}</Text>
             </TouchableOpacity>
-          </View>
+          )}
+        />
+        <ScreenHeading title={t('candidates.pageTitle')} subtitle={t('candidates.countText', { count: cards.length })} />
+        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
           {/* 필터 */}
           <ScrollView
@@ -376,7 +376,7 @@ export default function CandidatesScreen() {
           {activeFilter !== 'bucket' && pendingProposals.length > 0 && (
             <TouchableOpacity
               style={s.proposalBanner}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
               onPress={() => router.push({
                 pathname: '/share/reaction',
                 params: { cardId: pendingProposals[0].cardId },
@@ -491,7 +491,7 @@ export default function CandidatesScreen() {
             <TouchableOpacity
               style={s.confirmBannerCta}
               onPress={() => router.push('/share/mutual' as any)}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
             >
               <Text style={s.confirmBannerCtaText}>{t('candidates.confirmBannerCta')}</Text>
             </TouchableOpacity>
@@ -523,7 +523,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
         </View>
         <Text style={s.emptyTitle}>{t('candidates.bucketEmptyTitle')}</Text>
         <Text style={s.emptySub}>{t('candidates.bucketEmptySub')}</Text>
-        <TouchableOpacity style={s.addBucketBtn} onPress={onAdd} activeOpacity={0.8}>
+        <TouchableOpacity style={s.addBucketBtn} onPress={onAdd} activeOpacity={0.88}>
           <Plus size={14} color={C.white} />
           <Text style={s.addBucketBtnText}>{t('candidates.bucketAddIdea')}</Text>
         </TouchableOpacity>
@@ -535,7 +535,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
     <View style={s.bucketWrap}>
       <View style={s.bucketHeader}>
         <Text style={s.bucketHeaderText}>{t('candidates.bucketHeaderCount', { count: items.length })}</Text>
-        <TouchableOpacity onPress={onAdd} activeOpacity={0.8} style={s.bucketAddSmall}>
+        <TouchableOpacity onPress={onAdd} activeOpacity={0.88} style={s.bucketAddSmall}>
           <Plus size={12} color={C.lavenderFg} />
           <Text style={s.bucketAddSmallText}>{t('candidates.bucketAddSmall')}</Text>
         </TouchableOpacity>
@@ -561,7 +561,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                   <TouchableOpacity
                     style={[s.bucketRxBtn, item.myReaction === 'love' && s.bucketRxBtnActive]}
                     onPress={() => onReact(item.id, 'love')}
-                    activeOpacity={0.8}
+                    activeOpacity={0.88}
                   >
                     <Text style={[s.bucketRxBtnText, item.myReaction === 'love' && s.bucketRxBtnTextActive]}>
                       {t('candidates.bucketRxLove')}
@@ -570,7 +570,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                   <TouchableOpacity
                     style={[s.bucketRxBtn, item.myReaction === 'next_time' && s.bucketRxBtnNext]}
                     onPress={() => onReact(item.id, 'next_time')}
-                    activeOpacity={0.8}
+                    activeOpacity={0.88}
                   >
                     <Text style={[s.bucketRxBtnText, item.myReaction === 'next_time' && s.bucketRxBtnTextNext]}>
                       {t('candidates.bucketRxNext')}
@@ -595,7 +595,7 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
                 <TouchableOpacity
                   style={[s.confirmBtn, confirming && s.confirmBtnBusy]}
                   onPress={() => onConfirm(item)}
-                  activeOpacity={0.85}
+                  activeOpacity={0.88}
                   disabled={confirming}
                 >
                   {confirming ? (
@@ -620,113 +620,108 @@ function BucketSection({ loading, items, confirmingId, onReact, onConfirm, onAdd
 
 const s = StyleSheet.create({
   flex1: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  filterScroll: { marginTop: 16 },
-  filterContent: { gap: 8, paddingRight: 4 },
-  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
-  loader: { marginTop: 60 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.lg, paddingBottom: SP.xxxl },
+  filterScroll: { marginTop: SP.lg },
+  filterContent: { gap: SP.sm, paddingRight: SP.xs },
+  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: DS.component.sortRowTop },
+  loader: { marginTop: DS.component.emptyStateTop },
   bgLavender: { backgroundColor: C.lavender },
-  bottomSpacer: { height: 100 },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: C.text },
-  countText: { fontSize: 12, color: C.textMuted, marginTop: 2 },
-  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
+  bottomSpacer: { height: DS.component.bottomOverlaySpacer },
+  emptyWrap: { alignItems: 'center', marginTop: DS.component.emptyStateTop, paddingHorizontal: SP.xxl },
   emptyIcon: {
-    width: 120, height: 120, borderRadius: 60,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+    width: 120, height: 120, borderRadius: DS.radius.full,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
+  emptyTitle: { ...DS.typography.headingLegacy, color: C.text, textAlign: 'center' },
+  emptySub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: SP.md },
   addBucketBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: 20, backgroundColor: C.lavenderFg,
-    paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    marginTop: SP.xxl, backgroundColor: C.lavenderFg,
+    paddingHorizontal: SP.screen, paddingVertical: SP.md, borderRadius: DS.radius.chip,
   },
-  addBucketBtnText: { color: C.white, fontSize: 14, fontWeight: '600' },
-  cardList: { marginTop: 16, gap: 12 },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  cardIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, flex: 1, lineHeight: 20 },
+  addBucketBtnText: { ...DS.typography.body, color: C.white, fontWeight: '600' },
+  cardList: { marginTop: SP.lg, gap: SP.md },
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.md },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: SP.sm },
+  cardIcon: { width: 56, height: 56, borderRadius: DS.radius.input, alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { ...DS.typography.cardTitle, color: C.text, flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
-  cardSummary: { fontSize: 13, color: C.textSub, lineHeight: 19, marginTop: SP.md },
+  cardSummary: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.md },
   metaWrap: { marginTop: SP.md },
   cardDivider: { height: 1, backgroundColor: C.borderLight, marginVertical: SP.md },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  statusText: { fontSize: 13, fontWeight: '600', flex: 1 },
+  statusText: { ...DS.typography.bodyCompact, fontWeight: '600', flex: 1 },
   addPill: {
-    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    minHeight: DS.spacing.touch, flexDirection: 'row', alignItems: 'center', gap: SP.xs,
     paddingLeft: SP.md, paddingRight: SP.lg, paddingVertical: SP.sm,
-    borderRadius: R.xl, backgroundColor: C.pinkLight,
+    borderRadius: DS.radius.chip, backgroundColor: C.pinkLight,
     borderWidth: 1, borderColor: C.pinkBorder,
   },
-  addPillText: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
+  addPillText: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.pinkDeep },
   confirmBanner: {
-    position: 'absolute', left: SP.xl, right: SP.xl, bottom: SP.xl,
+    position: 'absolute', left: SP.screen, right: SP.screen, bottom: SP.screen,
     flexDirection: 'row', alignItems: 'center', gap: SP.md,
     paddingVertical: SP.md, paddingHorizontal: SP.md,
-    borderRadius: R.card, backgroundColor: C.pinkLight,
+    borderRadius: DS.radius.card, backgroundColor: C.pinkLight,
     borderWidth: 1, borderColor: C.pinkBorder,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14, shadowRadius: 10, elevation: 4,
   },
   confirmBannerIcon: {
-    width: 40, height: 40, borderRadius: R.md,
+    width: 40, height: 40, borderRadius: DS.radius.compact,
     backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  confirmBannerTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
-  confirmBannerSub: { fontSize: 11, color: C.textSub, marginTop: 2 },
+  confirmBannerTitle: { ...DS.typography.body, fontWeight: '700', color: C.pinkDeep },
+  confirmBannerSub: { ...DS.typography.caption, color: C.textSub, marginTop: SP.micro },
   confirmBannerCta: {
-    backgroundColor: C.pink, borderRadius: R.btn,
+    backgroundColor: C.pink, borderRadius: DS.radius.button,
     paddingHorizontal: SP.md, paddingVertical: SP.sm, flexShrink: 0,
   },
-  confirmBannerCtaText: { fontSize: 13, fontWeight: '700', color: C.white },
+  confirmBannerCtaText: { ...DS.typography.buttonCompact, color: C.white },
   proposalBanner: {
     flexDirection: 'row', alignItems: 'center',
-    marginTop: 16, padding: 14, borderRadius: 16,
+    marginTop: SP.lg, padding: SP.lg, borderRadius: DS.radius.input,
     backgroundColor: C.pinkLight, borderWidth: 1, borderColor: C.pinkBorder,
   },
-  proposalTitle: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
-  proposalSub: { fontSize: 12, color: C.textSub, marginTop: 3 },
+  proposalTitle: { ...DS.typography.body, fontWeight: '700', color: C.pinkDeep },
+  proposalSub: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.micro },
   // Bucket
-  bucketWrap: { marginTop: 16 },
-  bucketList: { gap: 12 },
-  bucketRxBtns: { flexDirection: 'row', gap: 8 },
+  bucketWrap: { marginTop: SP.lg },
+  bucketList: { gap: SP.md },
+  bucketRxBtns: { flexDirection: 'row', gap: SP.sm },
   bucketHeader: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 12,
+    justifyContent: 'space-between', marginBottom: SP.md,
   },
-  bucketHeaderText: { fontSize: 13, fontWeight: '600', color: C.lavenderFg },
+  bucketHeaderText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.lavenderFg },
   bucketAddSmall: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: C.lavender, paddingHorizontal: 10,
-    paddingVertical: 5, borderRadius: 14,
+    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    backgroundColor: C.lavender, paddingHorizontal: SP.sm,
+    paddingVertical: SP.xs, borderRadius: DS.radius.input,
   },
-  bucketAddSmallText: { fontSize: 12, fontWeight: '600', color: C.lavenderFg },
-  bucketItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
-  bucketIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  bucketItemText: { fontSize: 14, fontWeight: '600', color: C.text, flex: 1, lineHeight: 21, paddingTop: 10 },
-  bucketRxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  bucketRxLabel: { fontSize: 12, color: C.textMuted, fontWeight: '500' },
+  bucketAddSmallText: { ...DS.typography.bodySmall, fontWeight: '600', color: C.lavenderFg },
+  bucketItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.md, marginBottom: SP.md },
+  bucketIcon: { width: 40, height: 40, borderRadius: DS.radius.small, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  bucketItemText: { ...DS.typography.body, fontWeight: '600', color: C.text, flex: 1, paddingTop: SP.sm },
+  bucketRxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SP.sm },
+  bucketRxLabel: { ...DS.typography.bodySmall, color: C.textMuted },
   bucketRxBtn: {
-    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+    paddingHorizontal: SP.lg, paddingVertical: SP.sm, borderRadius: DS.radius.chip,
     backgroundColor: C.gray, borderWidth: 1, borderColor: 'transparent',
   },
   bucketRxBtnActive: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
   bucketRxBtnNext: { backgroundColor: C.cream, borderColor: C.creamFg + '40' },
-  bucketRxBtnText: { fontSize: 12, fontWeight: '600', color: C.textSub },
+  bucketRxBtnText: { ...DS.typography.bodySmall, fontWeight: '600', color: C.textSub },
   bucketRxBtnTextActive: { color: C.pinkDeep },
   bucketRxBtnTextNext: { color: C.creamFg },
   partnerRxRow: {
-    backgroundColor: C.lavender, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10,
+    backgroundColor: C.lavender, borderRadius: DS.radius.small,
+    paddingHorizontal: SP.md, paddingVertical: SP.sm, marginBottom: SP.sm,
   },
-  partnerRxText: { fontSize: 12, color: C.lavenderFg, fontWeight: '500' },
+  partnerRxText: { ...DS.typography.bodySmall, color: C.lavenderFg },
   confirmBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    marginTop: 4, backgroundColor: C.lavenderFg,
-    borderRadius: 14, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs,
+    marginTop: SP.xs, backgroundColor: C.lavenderFg,
+    borderRadius: DS.radius.input, paddingVertical: SP.md,
   },
   confirmBtnBusy: { opacity: 0.6 },
-  confirmBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
+  confirmBtnText: { ...DS.typography.buttonCompact, color: C.white },
 });

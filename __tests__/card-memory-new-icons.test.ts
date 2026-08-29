@@ -17,8 +17,7 @@ describe('card memory new screen icons', () => {
   });
 
   it('imports the shared star icon, camera icon, and rating feedback module', () => {
-    expect(source).toMatch(/import \{[^}]*Star[^}]*\} from 'lucide-react-native'/);
-    expect(source).toMatch(/import \{[^}]*Camera[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*Star[^}]*Camera[^}]*\} from '\.\.\/\.\.\/\.\.\/components\/iconography'/);
     expect(source).toMatch(/from '\.\.\/\.\.\/\.\.\/lib\/ratingFeedback'/);
   });
 

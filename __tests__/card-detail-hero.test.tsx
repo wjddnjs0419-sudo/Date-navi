@@ -100,13 +100,22 @@ describe('card detail layout order', () => {
     expect(body).toMatch(/<PlaceRow[\s\S]{0,200}card\.place_name/);
   });
 
-  it('puts the love toggle on the title row, above the course block', () => {
-    const titleRow = body.indexOf('styles.titleRow');
+  it('opens candidate map links in the same in-app browser as course results', () => {
+    expect(source).toContain("import { openPlaceInBrowser } from '../../lib/placeBrowser';");
+    expect(body).toMatch(/onPlacePress=\{\(step\) => openCardPlace/);
+    expect(body).toMatch(/onPress=\{card\.kakaoPlaceId \|\| card\.map_url/);
+    expect(source).toMatch(/void openPlaceInBrowser\(\{[\s\S]{0,180}mapUrl: place\.mapUrl/);
+  });
+
+  it('keeps the love toggle as a trailing card action, not a title accessory', () => {
+    const titleRow = body.indexOf('styles.courseTitleActions');
     const heart = body.indexOf('<CardLoveToggle');
     const course = body.indexOf('<CourseStepList');
     expect(titleRow).toBeGreaterThan(-1);
     expect(heart).toBeGreaterThan(titleRow);
     expect(heart).toBeLessThan(course);
+    expect(source).toMatch(/courseTitleActions:[\s\S]{0,220}justifyContent: 'space-between'/);
+    expect(source).not.toMatch(/<ScreenHeading[\s\S]{0,160}accessory={[^}]*Heart/);
   });
 });
 
@@ -195,13 +204,13 @@ describe('burden condition flow removal', () => {
 describe('reaction grid icons', () => {
   const source = readFileSync(join(process.cwd(), 'app/card/[id].tsx'), 'utf8');
   const { REACTION_ICONS } = require('../app/card/[id]') as typeof import('../app/card/[id]');
-  const lucide = require('lucide-react-native');
+  const { Flame, Smile, Meh, Clock } = require('../components/iconography') as typeof import('../components/iconography');
 
   it('gives every reaction a lucide icon instead of an emoji glyph', () => {
-    expect(REACTION_ICONS.love).toBe(lucide.Flame);
-    expect(REACTION_ICONS.like).toBe(lucide.Smile);
-    expect(REACTION_ICONS.burden).toBe(lucide.Meh);
-    expect(REACTION_ICONS.next_time).toBe(lucide.Clock);
+    expect(REACTION_ICONS.love).toBe(Flame);
+    expect(REACTION_ICONS.like).toBe(Smile);
+    expect(REACTION_ICONS.burden).toBe(Meh);
+    expect(REACTION_ICONS.next_time).toBe(Clock);
   });
 
   it('no longer renders the emoji text node in the grid', () => {

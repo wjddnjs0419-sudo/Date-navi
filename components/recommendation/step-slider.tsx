@@ -3,7 +3,7 @@ import {
   Animated, PanResponder, StyleSheet, Text, View,
   type LayoutChangeEvent,
 } from 'react-native';
-import { C, R, SP } from '../../constants/theme';
+import { C, DS, SP } from '../../constants/theme';
 import { fractionToValue, isHorizontalDrag, snapToStep, valueToFraction } from '../../lib/slider-math';
 
 const THUMB_SIZE = 24;
@@ -158,16 +158,16 @@ export function StepSlider({
 
 const styles = StyleSheet.create({
   wrap: { gap: SP.xs },
-  valueLabel: { fontSize: 14, fontWeight: '700', color: C.pinkDeep },
+  valueLabel: { ...DS.typography.body, fontWeight: '700', color: C.pinkDeep },
   track: {
     minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: SP.xs,
-    borderRadius: R.md,
+    borderRadius: DS.radius.compact,
   },
   trackFill: {
     height: 4,
-    borderRadius: 2,
+    borderRadius: DS.radius.badge,
     backgroundColor: C.border,
   },
   thumb: {
@@ -179,12 +179,8 @@ const styles = StyleSheet.create({
     backgroundColor: C.white,
     borderWidth: 2,
     borderColor: C.pink,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    ...DS.elevation.sliderThumb,
   },
   tickRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  tickLabel: { fontSize: 11, color: C.textMuted },
+  tickLabel: { ...DS.typography.caption, color: C.textMuted },
 });

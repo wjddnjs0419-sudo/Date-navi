@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native';
 import { PlanListRow } from '../components/ui';
 
 jest.mock('expo-router', () => {
@@ -122,8 +122,7 @@ describe('데이트 계획 화면 목업 계약', () => {
 
   it('조율 중 탭을 누르면 상대 응답 대기 문구를 보여준다', async () => {
     const tree = await render();
-    const tabs = tree.root.findAllByType(TouchableOpacity);
-    const coordinatingTab = tabs.find((n) => n.props.testID === 'plans-tab-coordinating');
+    const coordinatingTab = (tree.root as any).findAll((n: any) => n.props?.testID === 'plans-tab-coordinating' && typeof n.props?.onPress === 'function')[0];
     await TR.act(async () => { coordinatingTab?.props.onPress(); });
     expect(allText(tree)).toContain('plans.coordinatingStatus');
   });

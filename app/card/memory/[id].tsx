@@ -6,11 +6,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
-import { Heart, RotateCcw } from 'lucide-react-native';
-import { C, SP, R, G } from '../../../constants/theme';
-import { BackBar, Badge, MoreMenu } from '../../../components/ui';
+import { Heart, RotateCcw } from '../../../components/iconography';
+import { C, DS, SP, G } from '../../../constants/theme';
+import { Badge, Header, MoreMenu, ScreenHeading } from '../../../components/ui';
 import { StarRating } from '../../../components/StarRating';
 import { useI18n } from '../../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../../lib/use-optional-safe-area-insets';
 import { removeStorageObjectByUrl } from '../../../lib/storageCleanup';
 
 type CardInfo = { title: string; summary: string };
@@ -64,6 +65,7 @@ export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [card, setCard] = useState<CardInfo | null>(null);
   const [memory, setMemory] = useState<Memory | null>(null);
@@ -177,9 +179,10 @@ export default function MemoryDetailScreen() {
 
   if (!memory) {
     return (
-      <SafeAreaView style={G.screen}>
+      <SafeAreaView style={G.screen} edges={['top']}>
+        <Header onBack={() => router.back()} />
+        <ScreenHeading title={t('card.memory.badge')} />
         <ScrollView contentContainerStyle={s.content}>
-          <BackBar />
           <Text style={s.empty}>{t('card.memory.detailNotFound')}</Text>
         </ScrollView>
       </SafeAreaView>
@@ -187,18 +190,20 @@ export default function MemoryDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={s.topRow}>
-            <BackBar />
+        <Header
+          onBack={() => router.back()}
+          right={(
             <MoreMenu
               testID="memory-more-menu"
               onEdit={() => router.push({ pathname: '/card/memory/edit/[id]', params: { id } } as any)}
               onDelete={confirmDeleteMemory}
             />
-          </View>
-
+          )}
+        />
+        <ScreenHeading title={t('card.memory.badge')} />
+        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {memory.photo_url ? (
             <View style={[s.bannerWrap, { aspectRatio: photoAspect }]}>
               <Image
@@ -256,7 +261,7 @@ export default function MemoryDetailScreen() {
           <View style={s.bottomSpacer} />
         </ScrollView>
 
-        <View style={s.inputBar}>
+        <View style={[s.inputBar, { paddingBottom: SP.screen + insets.bottom }]}>
           <TextInput
             style={s.input}
             value={newComment}
@@ -269,7 +274,7 @@ export default function MemoryDetailScreen() {
             style={[s.sendBtn, (!newComment.trim() || posting) && s.sendBtnDisabled]}
             onPress={handleAddComment}
             disabled={!newComment.trim() || posting}
-            activeOpacity={0.85}
+            activeOpacity={0.88}
           >
             <Text style={s.sendBtnText}>{posting ? t('card.memory.commentPosting') : t('card.memory.commentSubmit')}</Text>
           </TouchableOpacity>
@@ -284,53 +289,53 @@ const s = StyleSheet.create({
   flex1: { flex: 1 },
   bottomSpacer: { height: SP.xxl },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxl },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxl },
   banner: {
-    width: '100%', aspectRatio: 4 / 3, borderRadius: R.card, marginBottom: SP.lg, overflow: 'hidden',
+    width: '100%', aspectRatio: 4 / 3, borderRadius: DS.radius.card, marginBottom: SP.lg, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center', backgroundColor: C.pinkMid,
   },
   bannerWrap: {
-    width: '100%', borderRadius: R.card, marginBottom: SP.lg, overflow: 'hidden',
+    width: '100%', borderRadius: DS.radius.card, marginBottom: SP.lg, overflow: 'hidden',
   },
   bannerPhoto: { width: '100%', height: '100%' },
   iconWrap: {
-    width: 56, height: 56, borderRadius: R.lg,
+    width: 56, height: 56, borderRadius: DS.radius.input,
     backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: SP.sm + 2, lineHeight: 29 },
+  title: { ...DS.typography.headingLegacy, color: C.text, marginTop: SP.sm },
   ratingRow: { marginTop: SP.sm },
-  summary: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.xs + 2 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: C.text, marginTop: SP.xxl, marginBottom: SP.xs },
-  empty: { fontSize: 13, color: C.textSub },
+  summary: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.sm },
+  sectionLabel: { ...DS.typography.body, fontWeight: '700', color: C.text, marginTop: SP.xxl, marginBottom: SP.xs },
+  empty: { ...DS.typography.bodyCompact, color: C.textSub },
 
   commentRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm + 2,
+    flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm,
     paddingVertical: SP.md, borderBottomWidth: 1, borderBottomColor: C.borderLight,
   },
-  avatar: { width: 32, height: 32, borderRadius: 16 },
+  avatar: { width: 32, height: 32, borderRadius: DS.radius.full },
   avatarFallback: { backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
-  avatarInitial: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
-  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.xs + 2, flexWrap: 'wrap' },
-  commentName: { fontSize: 12, fontWeight: '700', color: C.text },
-  commentDate: { fontSize: 11, color: C.textMuted },
+  avatarInitial: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.pinkDeep },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, flexWrap: 'wrap' },
+  commentName: { ...DS.typography.bodySmall, fontWeight: '700', color: C.text },
+  commentDate: { ...DS.typography.caption, color: C.textMuted },
   againTag: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: C.pinkLight, borderRadius: R.sm, paddingHorizontal: SP.xs + 3, paddingVertical: 2,
+    flexDirection: 'row', alignItems: 'center', gap: SP.micro,
+    backgroundColor: C.pinkLight, borderRadius: DS.radius.small, paddingHorizontal: SP.sm, paddingVertical: SP.micro,
   },
-  againText: { fontSize: 10, fontWeight: '600', color: C.pinkDeep },
-  commentText: { fontSize: 13, color: C.text, lineHeight: 19, marginTop: 3 },
+  againText: { ...DS.typography.micro, fontWeight: '600', color: C.pinkDeep },
+  commentText: { ...DS.typography.bodyCompact, color: C.text, marginTop: SP.xs },
 
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: SP.sm,
-    paddingHorizontal: SP.lg, paddingTop: SP.md - 2, paddingBottom: Platform.OS === 'ios' ? SP.xxl : SP.md,
+    paddingHorizontal: SP.lg, paddingTop: SP.md, paddingBottom: SP.screen,
     borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white,
   },
   input: {
-    flex: 1, maxHeight: 90, fontSize: 13, color: C.text,
-    backgroundColor: C.bg, borderRadius: R.md, borderWidth: 1, borderColor: C.border,
-    paddingHorizontal: SP.md + 2, paddingVertical: SP.sm + 2,
+    flex: 1, minHeight: DS.spacing.touch, maxHeight: 90, ...DS.typography.bodyCompact, color: C.text,
+    backgroundColor: C.bg, borderRadius: DS.radius.compact, borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: SP.md, paddingVertical: SP.sm,
   },
-  sendBtn: { backgroundColor: C.pink, borderRadius: R.md, paddingHorizontal: SP.lg, paddingVertical: SP.sm + 3 },
+  sendBtn: { minHeight: DS.spacing.touch, backgroundColor: C.pink, borderRadius: DS.radius.compact, paddingHorizontal: SP.lg, paddingVertical: SP.sm, justifyContent: 'center' },
   sendBtnDisabled: { backgroundColor: C.disabledBg },
-  sendBtnText: { color: C.white, fontSize: 13, fontWeight: '700' },
+  sendBtnText: { ...DS.typography.buttonCompact, color: C.white },
 });

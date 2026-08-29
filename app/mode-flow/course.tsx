@@ -1,13 +1,14 @@
 import { useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Clock3, Gift, Heart, Moon, Smile, Sparkles, Star, MapPin } from 'lucide-react-native';
-import { BackBar, BigButton } from '../../components/ui';
+import { ChevronRight, Clock3, Gift, Heart, Moon, Smile, Sparkles, Star, MapPin } from '../../components/iconography';
+import { BigButton, Header, ProgressDots, ScreenHeading } from '../../components/ui';
 import { CourseStepEditor } from '../../components/recommendation/course-step-editor';
+import { usePersonalStepTagCatalog } from '../../components/recommendation/use-personal-step-tag-catalog';
 import { CourseTimeSelector, formatMeetingTime } from '../../components/recommendation/course-time-selector';
 import { LocationSelector } from '../../components/recommendation/location-selector';
-import { C, R, SP } from '../../constants/theme';
+import { C, DS, R, SP } from '../../constants/theme';
 import {
   COURSE_CATEGORIES,
   COURSE_MOODS,
@@ -39,23 +40,26 @@ function issueMessage(issue: CourseDraftIssue, t: Translate) {
 
 function ProgressHeader({ step, onBack, t }: { step: FlowStep; onBack: () => void; t: Translate }) {
   return (
-    <View style={styles.progressHeader}>
-      <BackBar onPress={onBack} />
-      <View style={styles.progressDots} accessibilityLabel={t('course.accessibility.progress', { step, total: 5 })}>
-        {Array.from({ length: 5 }, (_, index) => (
-          <View key={index} style={[styles.progressDot, index + 1 === step && styles.progressDotActive]} />
-        ))}
-      </View>
-      <Text style={styles.progressCount}>{step} / 5</Text>
-    </View>
+    <Header
+      onBack={onBack}
+      center={<ProgressDots
+        current={step}
+        total={5}
+        variant="current-only"
+        accessibilityLabel={t('course.accessibility.progress', { step, total: 5 })}
+      />}
+      right={<Text style={styles.progressCount}>{step} / 5</Text>}
+    />
   );
 }
 
 function Intro({ title, subtitle, helper }: { title: string; subtitle: string; helper?: string }) {
-  return <View style={styles.intro}><Text style={styles.title}>{title}</Text><Text style={styles.subtitle}>{subtitle}</Text>{helper && <Text style={styles.introHelper}>{helper}</Text>}</View>;
+  return <ScreenHeading title={title} subtitle={subtitle} helper={helper} variant="input" style={styles.intro} />;
 }
 
 function MoodPicker({ moods, onToggle, t }: { moods: readonly CourseMood[]; onToggle: (mood: CourseMood) => void; t: Translate }) {
+  const unsureSelected = moods.length === 0;
+
   return (
     <View style={styles.moodContent}>
       <View style={styles.moodGrid}>
@@ -70,6 +74,7 @@ function MoodPicker({ moods, onToggle, t }: { moods: readonly CourseMood[]; onTo
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   onPress={() => onToggle(mood)}
+                  activeOpacity={0.88}
                   style={[styles.moodCard, selected && styles.moodCardSelected]}
                   testID={`course-mood-${mood}`}
                 >
@@ -81,15 +86,23 @@ function MoodPicker({ moods, onToggle, t }: { moods: readonly CourseMood[]; onTo
           </View>
         ))}
       </View>
-      <TouchableOpacity
+      <Pressable
         accessibilityRole="button"
+        accessibilityState={{ selected: unsureSelected }}
         onPress={() => moods.forEach((mood) => onToggle(mood))}
-        style={[styles.unsure, moods.length === 0 && styles.unsureSelected]}
+        style={({ pressed }) => [styles.unsure, (pressed || unsureSelected) && styles.unsureHighlighted]}
         testID="course-mood-unsure"
       >
-        <Smile size={17} color={C.textMuted} strokeWidth={1.8} />
-        <Text style={styles.unsureText}>{t('course.moods.unsure')}</Text>
-      </TouchableOpacity>
+        {({ pressed }) => {
+          const highlighted = pressed || unsureSelected;
+          return (
+            <>
+              <Smile size={17} color={highlighted ? C.creamFg : C.textMuted} strokeWidth={1.8} />
+              <Text style={[styles.unsureText, highlighted && styles.unsureTextHighlighted]}>{t('course.moods.unsure')}</Text>
+            </>
+          );
+        }}
+      </Pressable>
     </View>
   );
 }
@@ -109,17 +122,17 @@ function Review({ draft, categoryLabels, language, t, onEdit }: {
           <View key={step.id} style={styles.reviewCourseItem}>
             {(() => {
               const Icon = getCourseCategoryIcon(step.category);
-              return <Icon size={18} color={C.textSub} strokeWidth={1.8} />;
+              return <Icon size={18} color={C.refineCandidateStrong} strokeWidth={1.8} />;
             })()}
             <Text style={styles.reviewCourseText}>{categoryLabels[step.category]}</Text>
-            {index < draft.steps.length - 1 && <ChevronRight size={18} color={C.textSub} strokeWidth={1.8} />}
+            {index < draft.steps.length - 1 && <ChevronRight size={18} color={C.refineCandidateStrong} strokeWidth={1.8} />}
           </View>
         ))}
       </View>
       <View style={styles.reviewDivider} />
-      <ReviewRow icon={<MapPin size={18} color={C.textSub} />} label={t('course.review.locationLabel')} value={draft.location?.label ?? t('course.unselected')} onPress={() => onEdit(2)} t={t} />
-      <ReviewRow icon={<Clock3 size={18} color={C.textSub} />} label={t('course.review.timeLabel')} value={formatMeetingTime(draft.meetingTime, language, t)} onPress={() => onEdit(3)} t={t} />
-      <ReviewRow icon={<Heart size={18} color={C.textSub} />} label={t('course.review.moodLabel')} value={draft.moods.length > 0 ? draft.moods.map((mood) => t(`course.moods.options.${mood}`)).join(' · ') : t('course.moods.unsureShort')} onPress={() => onEdit(4)} t={t} />
+      <ReviewRow icon={<MapPin size={18} color={C.refineCandidateStrong} />} label={t('course.review.locationLabel')} value={draft.location?.label ?? t('course.unselected')} onPress={() => onEdit(2)} t={t} />
+      <ReviewRow icon={<Clock3 size={18} color={C.refineCandidateStrong} />} label={t('course.review.timeLabel')} value={formatMeetingTime(draft.meetingTime, language, t)} onPress={() => onEdit(3)} t={t} />
+      <ReviewRow icon={<Heart size={18} color={C.refineCandidateStrong} />} label={t('course.review.moodLabel')} value={draft.moods.length > 0 ? draft.moods.map((mood) => t(`course.moods.options.${mood}`)).join(' · ') : t('course.moods.unsureShort')} onPress={() => onEdit(4)} t={t} />
     </View>
   );
 }
@@ -128,7 +141,7 @@ function ReviewRow({ icon, label, value, onPress, t }: { icon: ReactNode; label:
   return (
     <View style={styles.reviewRow}>
       <View style={styles.reviewRowCopy}><Text style={styles.reviewRowLabel}>{label}</Text><View style={styles.reviewValueRow}>{icon}<Text style={styles.reviewValue}>{value}</Text></View></View>
-      <TouchableOpacity accessibilityRole="button" onPress={onPress}><Text style={styles.editText}>{t('course.review.edit')}</Text></TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" onPress={onPress} activeOpacity={0.88}><Text style={styles.editText}>{t('course.review.edit')}</Text></TouchableOpacity>
     </View>
   );
 }
@@ -147,6 +160,7 @@ export default function CourseScreen() {
   const router = useRouter();
   const { language, t } = useI18n();
   const { prepareRecommendationRequest } = useRecommendationSessionStore();
+  const { suggestionsFor, personalCountFor, addSuggestion, removeSuggestion } = usePersonalStepTagCatalog();
   const idSequence = useRef(0);
   const [draft, dispatch] = useReducer(courseDraftReducer, undefined, () => createInitialCourseDraft(() => `course-step-${++idSequence.current}`));
   const [flowStep, setFlowStep] = useState<FlowStep>(1);
@@ -155,6 +169,7 @@ export default function CourseScreen() {
     COURSE_CATEGORIES.map((category) => [category, t(`course.steps.categories.${category}`)]),
   ) as Record<CourseCategory, string>, [t]);
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
+  const expandedStep = draft.steps.find((step) => step.id === expandedStepId);
 
   function toggleCategory(category: Exclude<CourseCategory, 'ai_decide'>) {
     const selected = draft.steps.find((step) => step.category === category);
@@ -211,9 +226,8 @@ export default function CourseScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <ProgressHeader step={flowStep} onBack={goBack} t={t} />
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <ProgressHeader step={flowStep} onBack={goBack} t={t} />
-
         {flowStep === 1 && (
           <View testID="course-flow-step-1">
             <Intro title={t('course.flow.steps.title')} subtitle={t('course.flow.steps.subtitle')} helper={t('course.steps.selectionHint')} />
@@ -223,6 +237,15 @@ export default function CourseScreen() {
               expandedStepId={expandedStepId}
               onToggleCategory={toggleCategory}
               onSelectPreference={selectPreference}
+              onClearPreference={(stepId) => dispatch({ type: 'setStepPreference', stepId })}
+              suggestions={expandedStep ? suggestionsFor(expandedStep.category) : []}
+              personalTagCount={expandedStep ? (personalCountFor?.(expandedStep.category) ?? 0) : 0}
+              onAddSuggestedTag={(tag) => {
+                if (expandedStep) void addSuggestion(expandedStep.category, tag).catch(() => undefined);
+              }}
+              onRemoveSuggestedTag={(tag) => {
+                if (expandedStep) void removeSuggestion(expandedStep.category, tag).catch(() => undefined);
+              }}
               onToggleStep={(stepId) => setExpandedStepId((current) => current === stepId ? null : stepId)}
               language={language}
               t={t}
@@ -277,43 +300,37 @@ export default function CourseScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
-  content: { flexGrow: 1, paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xl, gap: SP.lg },
-  progressHeader: { height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  progressDots: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },
-  progressDotActive: { backgroundColor: C.pink },
-  progressCount: { width: 28, color: C.textMuted, fontSize: 11, textAlign: 'right' },
-  intro: { gap: SP.xs, marginBottom: SP.xxxl },
-  title: { color: C.text, fontSize: 26, lineHeight: 44, fontWeight: '800' },
-  subtitle: { color: C.locationMuted, fontSize: 13, lineHeight: 24 },
-  introHelper: { color: C.pinkDeep, fontSize: 11, lineHeight: 16, fontWeight: '600' },
+  content: { flexGrow: 1, paddingHorizontal: DS.spacing.screen, paddingBottom: DS.spacing.screen, gap: DS.spacing.lg },
+  progressCount: { minWidth: DS.spacing.touch, ...DS.typography.caption, color: C.textMuted, textAlign: 'right' },
+  intro: { paddingHorizontal: 0, marginBottom: SP.xxxl },
   nextButton: { marginTop: 'auto' },
   generateButton: { marginTop: 'auto' },
   moodContent: { gap: SP.lg },
   moodGrid: { gap: SP.md },
   moodRow: { flexDirection: 'row', gap: SP.sm },
-  moodCard: { flex: 1, minHeight: 104, borderRadius: R.btn, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', gap: SP.sm },
+  moodCard: { flex: 1, minHeight: 104, borderRadius: DS.radius.button, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', gap: SP.sm },
   moodCardSelected: { backgroundColor: C.pinkLight, borderColor: C.pink },
-  moodText: { color: C.text, fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  moodText: { ...DS.typography.bodySmall, color: C.text, fontWeight: '600', textAlign: 'center' },
   moodTextSelected: { color: C.pinkDeep },
-  unsure: { minHeight: 56, borderRadius: R.btn, backgroundColor: C.cream, borderWidth: 1, borderColor: '#f4e2ce', flexDirection: 'row', alignItems: 'center', gap: SP.sm, paddingHorizontal: SP.lg },
-  unsureSelected: { borderColor: C.pinkBorder },
-  unsureText: { color: C.textMuted, fontSize: 12, fontWeight: '600' },
-  reviewCard: { height: 310, borderRadius: R.btn, borderWidth: 1, borderColor: '#F2BDC2', backgroundColor: C.white, paddingHorizontal: SP.lg, paddingTop: 14, paddingBottom: SP.lg, overflow: 'hidden' },
-  reviewCourseLabel: { color: C.locationMuted, fontSize: 11, lineHeight: 13, fontWeight: '700' },
-  reviewCourseRow: { height: 24, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 0, marginTop: SP.sm, overflow: 'hidden' },
-  reviewCourseItem: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, height: 24 },
-  reviewCourseText: { color: C.textSub, fontSize: 12, lineHeight: 24, fontWeight: '700' },
-  reviewDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#F5E5E8', marginTop: SP.md, marginBottom: 9 },
-  reviewRow: { height: 48, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SP.md },
+  unsure: { minHeight: 56, borderRadius: DS.radius.button, backgroundColor: DS.color.selection.like.background, borderWidth: 1, borderColor: C.creamBorder, flexDirection: 'row', alignItems: 'center', gap: SP.sm, paddingHorizontal: SP.lg },
+  unsureHighlighted: { backgroundColor: DS.color.selection.like.background, borderColor: DS.color.selection.like.border, borderWidth: DS.color.selection.like.borderWidth },
+  unsureText: { ...DS.typography.bodySmall, color: C.textMuted, fontWeight: '600' },
+  unsureTextHighlighted: { color: DS.color.selection.like.foreground, fontWeight: '700' },
+  reviewCard: { height: 310, borderRadius: DS.radius.card, borderWidth: 1, borderColor: C.reviewBorder, backgroundColor: C.white, paddingHorizontal: SP.lg, paddingTop: SP.md, paddingBottom: SP.lg, overflow: 'hidden' },
+  reviewCourseLabel: { ...DS.typography.caption, color: C.refineCandidateStrong, fontWeight: '700' },
+  reviewCourseRow: { height: SP.xxl, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: SP.micro, marginTop: SP.sm, overflow: 'hidden' },
+  reviewCourseItem: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, height: SP.xxl },
+  reviewCourseText: { ...DS.typography.bodySmall, color: C.refineCandidateStrong, fontWeight: '700' },
+  reviewDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.reviewDivider, marginTop: SP.md, marginBottom: SP.sm },
+  reviewRow: { height: SP.xxl * 2, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SP.md },
   reviewRowCopy: { flex: 1 },
-  reviewRowLabel: { color: C.locationMuted, fontSize: 11, lineHeight: 16, fontWeight: '700' },
-  reviewValueRow: { height: 24, flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginTop: SP.sm, overflow: 'hidden' },
-  reviewValue: { color: C.textSub, fontSize: 13, lineHeight: 24, fontWeight: '700' },
-  editText: { color: C.pinkDeep, fontSize: 11, lineHeight: 24, fontWeight: '700' },
+  reviewRowLabel: { ...DS.typography.caption, color: C.refineCandidateStrong, fontWeight: '700' },
+  reviewValueRow: { height: SP.xxl, flexDirection: 'row', alignItems: 'center', gap: SP.sm, marginTop: SP.sm, overflow: 'hidden' },
+  reviewValue: { ...DS.typography.bodyCompact, color: C.refineCandidateStrong, fontWeight: '700' },
+  editText: { ...DS.typography.caption, color: C.pinkDeep, fontWeight: '700' },
   reviewTip: { height: 65, borderRadius: R.btn, borderWidth: 1, borderColor: C.pink, backgroundColor: C.pinkLight, padding: SP.lg, gap: SP.xs, marginTop: SP.md, overflow: 'hidden' },
-  reviewTipLead: { color: C.locationMuted, fontSize: 11, lineHeight: 13 },
-  reviewTipBody: { color: C.pinkDeep, fontSize: 13, lineHeight: 16, fontWeight: '700' },
+  reviewTipLead: { ...DS.typography.caption, color: C.locationMuted },
+  reviewTipBody: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '700' },
   validation: { gap: SP.xs },
-  validationText: { color: C.danger, fontSize: 12, lineHeight: 18 },
+  validationText: { ...DS.typography.bodySmall, color: C.danger },
 });

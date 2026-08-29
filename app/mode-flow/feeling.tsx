@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { buildFeelingInput } from '../../lib/modeForm';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, Chip, LocationField, OptionCardPicker } from '../../components/ui';
+import { DS, G, SP } from '../../constants/theme';
+import { BigButton, Chip, Header, InputField, LocationField, OptionCardPicker, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 const MOODS = [
   { v: 'comfortable', labelKey: 'modeFlow.option.mood.comfortable' },
@@ -25,6 +26,7 @@ const DURATIONS = [
 export default function FeelingScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const [freeText, setFreeText] = useState('');
   const [mood, setMood] = useState('comfortable');
   const [duration, setDuration] = useState<string | undefined>(undefined);
@@ -46,25 +48,18 @@ export default function FeelingScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('modeFlow.feeling.heading')} subtitle={t('modeFlow.feeling.sub')} variant="input" />
       <View style={s.body}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <BackBar />
-          <View style={s.headerWrap}>
-            <Text style={s.heading}>{t('modeFlow.feeling.heading')}</Text>
-            <Text style={s.subText}>{t('modeFlow.feeling.sub')}</Text>
-          </View>
-
-          <View style={s.freeInputWrap}>
-            <TextInput
-              style={s.freeInput}
-              placeholder={t('modeFlow.feeling.placeholder')}
-              placeholderTextColor={C.textFaint}
-              value={freeText}
-              onChangeText={setFreeText}
-              multiline
-            />
-          </View>
+          <InputField
+            value={freeText}
+            onChangeText={setFreeText}
+            placeholder={t('modeFlow.feeling.placeholder')}
+            multiline
+            inputStyle={s.freeInput}
+          />
           <Text style={s.hint}>{t('modeFlow.feeling.freeTextHint')}</Text>
 
           <Text style={s.sectionLabel}>{t('modeFlow.feeling.mood')}</Text>
@@ -87,7 +82,7 @@ export default function FeelingScreen() {
 
           <View style={s.footerSpacer} />
         </ScrollView>
-        <View style={s.footer}>
+        <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
           <BigButton onPress={handleGenerate}>{t('modeFlow.feeling.generate')}</BigButton>
         </View>
       </View>
@@ -97,15 +92,11 @@ export default function FeelingScreen() {
 
 const s = StyleSheet.create({
   body: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  headerWrap: { marginTop: 16 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  freeInputWrap: { backgroundColor: C.white, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.border, minHeight: 90, marginTop: 20 },
-  freeInput: { fontSize: 13, color: C.text, lineHeight: 22 },
-  hint: { fontSize: 12, color: C.textMuted, marginTop: 8 },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.hero },
+  freeInput: { ...DS.typography.bodyCompact, color: C.text },
+  hint: { ...DS.typography.bodySmall, color: C.textMuted, marginTop: SP.sm },
+  sectionLabel: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text, marginTop: SP.xxl, marginBottom: SP.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
   footerSpacer: { height: 120 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16, backgroundColor: C.bg },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: SP.screen, paddingBottom: SP.screen, paddingTop: SP.lg, backgroundColor: C.bg },
 });

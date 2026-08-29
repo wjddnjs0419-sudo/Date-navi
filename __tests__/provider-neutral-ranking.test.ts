@@ -28,4 +28,40 @@ describe('rankQualifiedPlaces', () => {
     expect(result.map((candidate) => candidate.place.identity.providerPlaceId)).toEqual(['near', 'far']);
     expect(result[0].scoreBreakdown).toEqual({ distance: 19, popularity: 0 });
   });
+
+  it('uses a soft step-intent search signal as a ranking preference without making it a gate', () => {
+    const result = rankQualifiedPlaces([
+      {
+        place: place('near-unmatched', 400),
+        quality: qualityPass,
+        distanceFromSearchCenterMeters: 400,
+        popularityBonus: 0,
+      },
+      {
+        place: place('far-matched', 3000),
+        quality: qualityPass,
+        distanceFromSearchCenterMeters: 3000,
+        popularityBonus: 0,
+        intentPreference: 20,
+      },
+    ]);
+
+    expect(result.map((candidate) => candidate.place.identity.providerPlaceId)).toEqual(['far-matched', 'near-unmatched']);
+    expect(result[0].scoreBreakdown).toEqual({ distance: 8, popularity: 0, intentPreference: 20 });
+  });
+
+  it('ranks verified metadata intent evidence above provider-search evidence at equal distance', () => {
+    const result = rankQualifiedPlaces([
+      {
+        place: place('search-evidence', 400), quality: qualityPass,
+        distanceFromSearchCenterMeters: 400, popularityBonus: 0, intentEvidence: 4,
+      },
+      {
+        place: place('metadata-evidence', 400), quality: qualityPass,
+        distanceFromSearchCenterMeters: 400, popularityBonus: 0, intentEvidence: 8,
+      },
+    ]);
+
+    expect(result.map((candidate) => candidate.place.identity.providerPlaceId)).toEqual(['metadata-evidence', 'search-evidence']);
+  });
 });

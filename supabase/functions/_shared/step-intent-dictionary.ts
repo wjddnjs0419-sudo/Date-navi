@@ -14,6 +14,8 @@ export type StepIntentDictionaryEntry = {
   /** 카카오 상세 categoryName 호환 서브타입 allowlist(스펙 §12.2). */
   categoryNameKeywords: readonly string[];
   displayLabel: { ko: string; en: string };
+  /** Descriptive attributes guide retrieval/ranking but are not hard eligibility gates. */
+  constraint?: 'soft';
   /** Low-signal preference terms still resolve when explicitly tagged, but remain residual context for legacy free-text AI gating. */
   stripFromResidual?: boolean;
 };
@@ -66,26 +68,26 @@ export const STEP_INTENT_DICTIONARY: readonly StepIntentDictionaryEntry[] = [
   {
     canonicalTerm: '가볍게', intentType: 'cuisine', domain: 'food', targetCategory: 'meal',
     searchExpansions: ['브런치', '샌드위치'], aliases: ['light', 'light meal', 'light food'],
-    categoryNameKeywords: ['브런치', '샌드위치', '샐러드'], displayLabel: { ko: '가볍게', en: 'Light meal' },
+    categoryNameKeywords: ['브런치', '샌드위치', '샐러드'], displayLabel: { ko: '가볍게', en: 'Light meal' }, constraint: 'soft',
   },
   {
     canonicalTerm: '조용한', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
-    searchExpansions: ['조용한 카페'], aliases: ['quiet', 'quiet cafe'], categoryNameKeywords: [],
+    searchExpansions: ['조용한 카페'], aliases: ['조용한 카페', 'quiet', 'quiet cafe'], categoryNameKeywords: [], constraint: 'soft',
     displayLabel: { ko: '조용한', en: 'Quiet' }, stripFromResidual: false,
   },
   {
     canonicalTerm: '감성적인', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
-    searchExpansions: ['감성 카페'], aliases: ['atmospheric', 'aesthetic cafe'], categoryNameKeywords: [],
-    displayLabel: { ko: '감성적인', en: 'Atmospheric' }, stripFromResidual: false,
+    searchExpansions: ['감성 카페'], aliases: ['감성 카페', 'atmospheric', 'aesthetic cafe'], categoryNameKeywords: [], constraint: 'soft',
+    displayLabel: { ko: '감성적인', en: 'Emotional' }, stripFromResidual: false,
   },
   {
     canonicalTerm: '뷰 좋은', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
-    searchExpansions: ['뷰 좋은 카페'], aliases: ['good view', 'cafe with a view'], categoryNameKeywords: [],
+    searchExpansions: ['뷰 좋은 카페'], aliases: ['뷰 좋은 카페', 'good view', 'cafe with a view'], categoryNameKeywords: [], constraint: 'soft',
     displayLabel: { ko: '뷰 좋은', en: 'Good view' }, stripFromResidual: false,
   },
   {
     canonicalTerm: '대화하기 좋은', intentType: 'venue_subtype', domain: 'cafe', targetCategory: 'cafe',
-    searchExpansions: ['대화하기 좋은 카페'], aliases: ['good for conversation', 'conversation cafe'], categoryNameKeywords: [],
+    searchExpansions: ['대화하기 좋은 카페'], aliases: ['대화하기 좋은 카페', 'good for conversation', 'conversation cafe'], categoryNameKeywords: [], constraint: 'soft',
     displayLabel: { ko: '대화하기 좋은', en: 'Good for conversation' }, stripFromResidual: false,
   },
   {
@@ -160,7 +162,7 @@ export const STEP_INTENT_DICTIONARY: readonly StepIntentDictionaryEntry[] = [
     searchExpansions: ['루프탑', '옥상 카페'],
     aliases: ['루프탑카페', '루프탑', 'rooftop cafe', 'rooftop coffee', 'rooftop'],
     // 카카오 상세 카테고리는 루프탑 여부를 구분하지 못하고(모든 CE7이 '카페' 포함) evidence·이름으로만 판정한다.
-    categoryNameKeywords: [],
+    categoryNameKeywords: [], constraint: 'soft',
     displayLabel: { ko: '루프탑 카페', en: 'Rooftop cafe' },
   },
   {
@@ -259,7 +261,7 @@ export const STEP_INTENT_DICTIONARY: readonly StepIntentDictionaryEntry[] = [
   {
     canonicalTerm: '루프탑바', intentType: 'drink_type', domain: 'alcohol', targetCategory: 'drinks',
     searchExpansions: ['루프탑 바'], aliases: ['루프탑 바', 'rooftop bar'],
-    categoryNameKeywords: [], displayLabel: { ko: '루프탑바', en: 'Rooftop bar' },
+    categoryNameKeywords: [], constraint: 'soft', displayLabel: { ko: '루프탑바', en: 'Rooftop bar' },
   },
   {
     canonicalTerm: '재즈바', intentType: 'drink_type', domain: 'alcohol', targetCategory: 'drinks',

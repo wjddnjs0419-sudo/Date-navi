@@ -39,11 +39,11 @@ describe('Phase 4 shared UI scope', () => {
     // 31d63b6: BackBar is a fixed 44×44 box (HIG minimum tap target, aligned with the
     // 44×44 share/⋮ header actions), so 44×44 is now its shared default — not an opt-in.
     expect(back).toEqual(expect.objectContaining({
-      width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10,
+      width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
     }));
     // OptionCardPicker and BigButton keep minimal defaults; enlargements stay opt-in.
     expect(option.minHeight).toBeUndefined();
-    expect(big.minHeight).toBeUndefined();
+    expect(big.minHeight).toBe(52);
   });
 
   it('provides additive touch-target opt-ins for OptionCardPicker and BigButton', () => {
@@ -69,11 +69,14 @@ describe('Phase 4 shared UI scope', () => {
   it('keeps the redesigned five-step flow and its course-only controls in the course screen', () => {
     const source = readFileSync(join(__dirname, '../app/mode-flow/course.tsx'), 'utf8');
 
-    expect(source).toContain('<BackBar onPress={onBack} />');
+    expect(source).toContain('<Header');
+    expect(source).toContain('center={<ProgressDots');
+    expect(source).toContain('<ScreenHeading');
     expect(source).toContain('testID="course-flow-step-5"');
     expect(source).toContain('automaticallyAdjustKeyboardInsets');
     expect(source).toContain('<CourseTimeSelector');
-    expect(source).toContain('generateButton: { marginTop: SP.lg }');
+    // 5단계 review CTA는 긴 내용에서도 화면 하단에 남아야 한다.
+    expect(source).toContain("generateButton: { marginTop: 'auto' }");
   });
 });
 

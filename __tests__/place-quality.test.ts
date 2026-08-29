@@ -33,6 +33,12 @@ describe('evaluateQualityGate', () => {
 });
 
 describe('evaluateHardEligibility', () => {
+  it('keeps an unknown provider category eligible when no other hard exclusion applies', () => {
+    const unknown = cafe({ category: { normalized: 'unknown' } });
+
+    expect(evaluateHardEligibility(unknown, {}).passed).toBe(true);
+  });
+
   it('rejects unsuitable venue types and explicit exclusions before quality ranking', () => {
     const hospital = { ...cafe({ name: '병원 카페' }), category: { normalized: 'cafe' as const, providerRaw: '병원' } };
     expect(evaluateHardEligibility(hospital, {}).rejectionReasons).toContain('unsuitable_venue');

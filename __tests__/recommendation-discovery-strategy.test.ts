@@ -12,8 +12,8 @@ describe('recommendation discovery strategy', () => {
       stepCategories: ['meal', 'cafe'],
       stepIds: ['meal-step', 'cafe-step'],
     })).toEqual([
-      { stepId: 'meal-step', query: '성수역 음식점' },
-      { stepId: 'cafe-step', query: '성수역 카페' },
+      { stepId: 'meal-step', query: '성수역 음식점', querySource: 'category' },
+      { stepId: 'cafe-step', query: '성수역 카페', querySource: 'category' },
     ]);
   });
 
@@ -57,6 +57,16 @@ describe('recommendation discovery strategy', () => {
       stepIntents: [{ stepId: 'meal', canonicalTerm: '삼겹살' }],
       stepIds: ['meal', 'cafe'],
     })).toEqual(['성수역 삼겹살', '성수역 카페']);
+  });
+
+  it('preserves cafe in descriptive cafe intent search phrases', () => {
+    expect(naverShadowQueries({
+      locationLabel: '홍대입구',
+      locationSource: 'kakao',
+      stepCategories: ['cafe'],
+      stepIds: ['cafe'],
+      stepIntents: [{ stepId: 'cafe', canonicalTerm: '조용한', kakaoSearchTerms: ['조용한', '조용한 카페'] }],
+    })).toEqual(['홍대입구 조용한 카페']);
   });
 
   it('maps every course category to a Korean Naver search term', () => {

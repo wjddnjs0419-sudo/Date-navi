@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../components/iconography';
 
 // 온보딩 UI 전면 교체(ui/onboarding) — 목업 1:1 대조에서 나온 실제 델타를 고정한다.
 // type: 옵션마다 선두 아이콘 원 + 우측 chevron. anniversary: 일수 노트에 마스코트 일러스트.

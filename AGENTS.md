@@ -127,9 +127,19 @@ handleGenerateAiOptions()
 
 ## 디자인 시스템
 
-**철학:** Tinder iOS 온보딩 스타일 — 그라디언트 브랜드 컬러, 블랙 필 CTA, 깔끔한 화이트 배경.
+### UI 변경 필수 규칙
 
-### CSS 변수 (`:root` in `globals.css`)
+UI를 수정하기 전에 반드시 [`docs/design-system/README.md`](docs/design-system/README.md)를 읽는다. 상세한 합의 원본은 [`docs/superpowers/specs/2026-08-27-date-navi-design-system-decisions.md`](docs/superpowers/specs/2026-08-27-date-navi-design-system-decisions.md)에서 확인한다.
+
+실제 스타일은 `constants/design-tokens.ts`의 `C / DS / SP / T / G` 토큰과 공통 UI 컴포넌트를 통해서만 사용한다. 화면별 raw 색상·spacing·radius·font 값과 직접 Lucide 아이콘 사용을 새로 추가하지 않는다. UI 변경 후에는 타입검사와 390×844 한·영 시각 확인을 수행한다.
+
+**모바일 우선 기준:** 아래에 남아 있는 CSS/웹 메모보다 `docs/design-system/README.md`의 Expo React Native 규칙이 우선한다. 아래 내용은 이전 웹 프로토타입의 legacy 참고값이며, 모바일 UI 변경에는 적용하지 않는다.
+
+### Legacy web notes — 모바일 UI에는 적용하지 않음
+
+다음 CSS 변수·브레이크포인트·버튼 메모는 이전 웹 프로토타입의 기록이다. 현재 Expo React Native 앱의 기준은 `docs/design-system/README.md`와 `constants/design-tokens.ts`다.
+
+#### CSS 변수 (`:root` in `globals.css`)
 
 | 변수 | 값 | 용도 |
 |------|-----|------|

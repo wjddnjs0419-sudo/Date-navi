@@ -4,11 +4,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Calendar, Users, Signpost, MessageCircle, RotateCw, ChevronRight } from 'lucide-react-native';
+import { Calendar, Users, Signpost, MessageCircle, RotateCw, ChevronRight } from '../../components/iconography';
 import { supabase } from '../../lib/supabase';
-import { C } from '../../constants/colors';
-import { G, R, SP } from '../../constants/theme';
-import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { C, DS, G, R, SP } from '../../constants/theme';
+import { BigButton, Header, ProgressDots, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 const OPTIONS = [
@@ -47,20 +46,13 @@ export default function TypeScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header
+        onBack={() => router.back()}
+        center={<ProgressDots current={4} total={4} />}
+        right={<Text style={s.stepCount}>4 / 4</Text>}
+      />
+      <ScreenHeading title={t('onboarding.type.title')} subtitle={t('onboarding.type.sub')} variant="input" />
       <View style={s.container}>
-        <BackBar />
-        <View style={s.progressRow}>
-          <ProgressDots current={4} total={4} />
-          <Text style={s.stepCount}>4 / 4</Text>
-        </View>
-
-        <View style={s.headingBlock}>
-          <Text style={s.heading}>{t('onboarding.type.title')}</Text>
-          <Text style={s.subText}>
-            {t('onboarding.type.sub')}
-          </Text>
-        </View>
-
         <View style={s.optionList}>
           {OPTIONS.map((o) => {
             const sel = selected === o.id;
@@ -68,7 +60,7 @@ export default function TypeScreen() {
               <TouchableOpacity
                 key={o.id}
                 onPress={() => setSelected(o.id)}
-                activeOpacity={0.7}
+                activeOpacity={0.88}
                 style={[s.option, sel && s.optionSel]}
               >
                 <View style={[s.iconCircle, sel && s.iconCircleSel]}>
@@ -94,15 +86,11 @@ export default function TypeScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  stepCount: { fontSize: 11, color: C.textMuted },
-  headingBlock: { marginTop: 20 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, marginTop: 8, lineHeight: 20 },
-  optionList: { marginTop: 24, gap: 12 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  stepCount: { ...DS.typography.caption, color: C.textMuted },
+  optionList: { gap: DS.spacing.md },
   option: {
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
     flexDirection: 'row',
@@ -111,24 +99,20 @@ const s = StyleSheet.create({
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 1,
+    ...DS.elevation.raised,
   },
   optionSel: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
   iconCircle: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: DS.radius.full,
     backgroundColor: C.pinkLight,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   iconCircleSel: { backgroundColor: C.pink },
-  optionText: { flex: 1, fontSize: 14, color: C.inkSoft, fontWeight: '500' },
+  optionText: { flex: 1, ...DS.typography.body, color: C.inkSoft },
   optionTextSel: { color: C.pinkDeep, fontWeight: '600' },
   spacer: { flex: 1 },
 });

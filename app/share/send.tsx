@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, TextInput, Share,
+  ActivityIndicator, Alert, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Share2 } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, Chip, CourseStepList, MetaChipRow, SectionLabel, SoftCard, SuccessModal } from '../../components/ui';
+import { Share2 } from '../../components/iconography';
+import { C, DS, G, SP, R } from '../../constants/theme';
+import { BigButton, Chip, CourseStepList, Header, InputField, MetaChipRow, ScreenHeading, SectionLabel, SoftCard, SuccessModal } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { logEvent } from '../../lib/analytics';
 import { buildProposalSentParams, shouldTrackProposalSent } from '../../lib/analytics-course-save';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 type CardInfo = {
   id: string;
@@ -30,6 +30,7 @@ export default function SendScreen() {
   const { cardId, sourceScreen } = useLocalSearchParams<{ cardId: string; sourceScreen?: string }>();
   const router = useRouter();
   const { t, language } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
 
   const [card, setCard] = useState<CardInfo | null>(null);
   const [message, setMessage] = useState(t('share.send.defaultMessage'));
@@ -97,18 +98,15 @@ export default function SendScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
       <SuccessModal
         visible={successVisible}
         message={t('share.send.sentMessage')}
         onHide={() => { setSuccessVisible(false); router.replace('/(tabs)/' as any); }}
       />
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('share.send.heading')} subtitle={t('share.send.subText')} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-        <View style={s.introWrap}>
-          <Text style={T.h1}>{t('share.send.heading')}</Text>
-          <Text style={[T.sub, s.subTextSpacing]}>{t('share.send.subText')}</Text>
-        </View>
 
         {loading ? (
           <ActivityIndicator color={C.pink} style={s.loadingSpinner} />
@@ -145,6 +143,7 @@ export default function SendScreen() {
           <TouchableOpacity
             style={s.nativeShareBtn}
             onPress={handleNativeShare}
+            activeOpacity={0.88}
             testID="send-native-share"
           >
             <Share2 size={16} color={C.text} strokeWidth={2} />
@@ -154,26 +153,22 @@ export default function SendScreen() {
 
         <View style={s.sectionBlock}>
           <SectionLabel>{t('share.send.sectionLabel')}</SectionLabel>
-          <View style={s.messageBox}>
-            <TextInput
-              style={s.messageInput}
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              placeholder={t('share.send.messagePlaceholder')}
-              placeholderTextColor={C.textFaint}
-            />
-          </View>
+          <InputField
+            value={message}
+            onChangeText={setMessage}
+            multiline
+            placeholder={t('share.send.messagePlaceholder')}
+          />
         </View>
 
         <View style={s.bottomSpacer} />
       </ScrollView>
 
-      <View style={s.footer}>
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton onPress={handleSend} variant={sending ? 'disabled' : 'primary'}>
           {t('share.send.sendCta')}
         </BigButton>
-        <TouchableOpacity style={s.textBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={s.textBtn} onPress={() => router.back()} activeOpacity={0.88}>
           <Text style={s.textBtnText}>{t('share.send.editCta')}</Text>
         </TouchableOpacity>
       </View>
@@ -182,18 +177,16 @@ export default function SendScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
-  introWrap: { marginTop: SP.lg },
-  subTextSpacing: { marginTop: SP.sm },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.lg },
   loadingSpinner: { marginTop: SP.xxxl + SP.sm },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm - 2, marginTop: SP.md },
-  sectionBlock: { marginTop: SP.xl },
-  bottomSpacer: { height: 120 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.md },
+  sectionBlock: { marginTop: SP.xxl },
+  bottomSpacer: { height: SP.hero + SP.section + SP.lg },
   cardBox: {
-    marginTop: SP.xl,
+    marginTop: SP.xxl,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  cardDesc: { fontSize: 12, color: C.textSub, marginTop: SP.xs },
+  cardTitle: { ...DS.typography.body, fontWeight: '700', color: C.text },
+  cardDesc: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.xs },
   stepsWrap: { marginTop: SP.md },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
   nativeShareBtn: {
@@ -201,31 +194,23 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SP.sm,
+    minHeight: DS.spacing.touch,
     borderRadius: R.btn,
     paddingVertical: SP.md,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
   },
-  nativeShareBtnText: { fontSize: 13, fontWeight: '600', color: C.text },
-  messageBox: {
-    backgroundColor: C.white,
-    borderRadius: R.btn,
-    padding: SP.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    minHeight: 80,
-  },
-  messageInput: { fontSize: 13, color: C.text, lineHeight: 22 },
+  nativeShareBtnText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.bg,
     gap: SP.xs,
   },
-  textBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
-  textBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
+  textBtn: { alignItems: 'center', paddingVertical: SP.sm },
+  textBtnText: { ...DS.typography.bodyCompact, color: C.textSub },
 });

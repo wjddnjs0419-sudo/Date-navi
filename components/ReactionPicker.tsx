@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { C, SP, R } from '../constants/theme';
+import { C, DS, SP } from '../constants/theme';
 import { REACTIONS, REACTION_ICONS, ReactionType } from '../lib/reactions';
 
 export function ReactionPicker({
@@ -27,7 +27,7 @@ export function ReactionPicker({
               isSel && { borderColor: r.color },
             ]}
             onPress={() => onSelect(r.type)}
-            activeOpacity={0.75}
+            activeOpacity={0.88}
           >
             <Icon size={26} color={isSel ? r.color : C.textSub} strokeWidth={2} />
             <Text style={[s.label, isSel && s.labelSelected, isSel && { color: r.color }]}>
@@ -45,11 +45,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SP.sm,
-    marginBottom: SP.xl,
+    marginBottom: SP.xxl,
   },
   btn: {
     width: '47%',
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     paddingVertical: SP.lg,
     alignItems: 'center',
     gap: SP.xs,
@@ -57,6 +57,6 @@ const s = StyleSheet.create({
     borderColor: 'transparent',
   },
   btnSelected: { borderWidth: 2 },
-  label: { fontSize: 14, color: C.textSub, fontWeight: '500' },
+  label: { ...DS.typography.body, color: C.textSub },
   labelSelected: { fontWeight: '700' },
 });

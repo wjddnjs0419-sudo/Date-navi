@@ -33,6 +33,11 @@ begin
   select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure)
     into v_definition;
   v_before := v_definition;
+  if position('recommendation_place_identity_matches' in lower(v_definition)) > 0
+    and position('current_place_provider = nullif' in lower(v_definition)) > 0
+    and position('placeidentity' in lower(v_definition)) > 0 then
+    return;
+  end if;
 
   v_definition := replace(v_definition,
     $$and current_step.current_kakao_place_id = requested_lock ->> 'kakaoPlaceId'$$,

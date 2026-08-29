@@ -31,6 +31,7 @@ function idFactory(...ids: string[]) {
 
 function validDraft(): CourseDraft {
   let draft = createInitialCourseDraft(idFactory('step-a', 'step-b', 'step-c'));
+  draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'meal', stepId: 'step-a' });
   draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'cafe', stepId: 'step-b' });
   return {
     ...draft,
@@ -40,17 +41,18 @@ function validDraft(): CourseDraft {
 }
 
 describe('redesigned structured course draft', () => {
-  it('starts with one meal step so the two-category CTA begins disabled', () => {
+  it('starts with no selected categories so the first screen is neutral', () => {
     expect(COURSE_CATEGORIES).toEqual(['meal', 'cafe', 'drinks', 'activity', 'culture', 'walk', 'ai_decide']);
     expect(COURSE_MOODS).toEqual(['emotional', 'quiet', 'lively', 'romantic', 'comfortable', 'novel']);
     expect(createInitialCourseDraft(idFactory('step-a'))).toMatchObject({
-      steps: [{ id: 'step-a', category: 'meal' }],
+      steps: [],
       meetingTime: undefined,
     });
   });
 
   it('toggles categories in selection order and enforces the four-step maximum', () => {
     let draft = createInitialCourseDraft(idFactory('meal', 'cafe', 'walk', 'culture', 'activity'));
+    draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'meal', stepId: 'meal' });
     draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'cafe', stepId: 'cafe' });
     draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'walk', stepId: 'walk' });
     draft = courseDraftReducer(draft, { type: 'toggleCategory', category: 'culture', stepId: 'culture' });

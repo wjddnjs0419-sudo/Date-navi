@@ -3,11 +3,29 @@ import type { RecommendationLocation } from '../shared/recommendation/contracts'
 import { recommendationLocationSchema } from '../shared/recommendation/schemas';
 
 export const RECENT_LOCATIONS_KEY = 'datenavi.recentLocations';
+export const RECENT_LOCATIONS_KEY_PREFIX = `${RECENT_LOCATIONS_KEY}:`;
 export const RECENT_LOCATIONS_LIMIT = 5;
 
-export async function loadRecentLocations(): Promise<RecommendationLocation[]> {
+export function recentLocationsKey(userId: string): string {
+  return `${RECENT_LOCATIONS_KEY_PREFIX}${userId.trim()}`;
+}
+
+export function isSameRecommendationLocation(
+  left: RecommendationLocation | null,
+  right: RecommendationLocation | null,
+): boolean {
+  if (!left || !right || left.source !== right.source) return false;
+  if (left.kakaoPlaceId && right.kakaoPlaceId) {
+    return left.kakaoPlaceId === right.kakaoPlaceId;
+  }
+  return left.latitude === right.latitude && left.longitude === right.longitude;
+}
+
+export async function loadRecentLocations(userId: string | null): Promise<RecommendationLocation[]> {
+  const normalizedUserId = userId?.trim();
+  if (!normalizedUserId) return [];
   try {
-    const stored = await AsyncStorage.getItem(RECENT_LOCATIONS_KEY);
+    const stored = await AsyncStorage.getItem(recentLocationsKey(normalizedUserId));
     if (!stored) return [];
     const parsed: unknown = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
@@ -25,18 +43,21 @@ export async function loadRecentLocations(): Promise<RecommendationLocation[]> {
 }
 
 export async function saveRecentLocation(
+  userId: string | null,
   location: RecommendationLocation,
 ): Promise<RecommendationLocation[]> {
+  const normalizedUserId = userId?.trim();
+  if (!normalizedUserId) return [];
   const valid = recommendationLocationSchema.parse(location);
   // "내 위치"는 저장하지 않는다(위 loadRecentLocations 주석 참조). 현재 목록만 돌려준다.
   if (valid.source === 'current') {
-    return loadRecentLocations();
+    return loadRecentLocations(normalizedUserId);
   }
-  const recent = await loadRecentLocations();
+  const recent = await loadRecentLocations(normalizedUserId);
   const key = locationKey(valid);
   const next = [valid, ...recent.filter((item) => locationKey(item) !== key)]
     .slice(0, RECENT_LOCATIONS_LIMIT);
-  await AsyncStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(next));
+  await AsyncStorage.setItem(recentLocationsKey(normalizedUserId), JSON.stringify(next));
   return next;
 }
 

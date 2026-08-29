@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, Image,
+  View, Text, StyleSheet, ScrollView, Image,
   ActivityIndicator, Alert, TouchableOpacity, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,9 +9,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
-import { Star, Camera } from 'lucide-react-native';
-import { C, SP, R } from '../../constants/theme';
-import { BackBar, BigButton } from '../../components/ui';
+import { Star, Camera } from '../../components/iconography';
+import { C, DS, SP } from '../../constants/theme';
+import { BigButton, Header, InputField, ScreenHeading } from '../../components/ui';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../lib/ratingFeedback';
 import { partnerHasReviewed } from '../../lib/reviewFlow';
 import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
@@ -167,14 +167,9 @@ export default function ReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={c.heading} subtitle={c.sub} />
       <ScrollView style={styles.flex1} contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
-          <BackBar />
-
-          <View style={styles.headingBlock}>
-            <Text style={styles.heading}>{c.heading}</Text>
-            <Text style={styles.sub}>{c.sub}</Text>
-          </View>
-
           <Text style={styles.sectionLabel}>{c.starRatingLabel}</Text>
           <View style={styles.starRow}>
             {[1, 2, 3, 4, 5].map((n) => (
@@ -185,7 +180,7 @@ export default function ReviewScreen() {
                 accessibilityLabel={`${n}점`}
                 onPress={() => handleRating(n)}
                 style={styles.starBtn}
-                activeOpacity={1}
+                activeOpacity={0.88}
               >
                 <Star
                   size={28}
@@ -213,22 +208,21 @@ export default function ReviewScreen() {
             onPrice={tapPrice}
           />
 
-          <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>{c.reviewLabel}</Text>
-          <TextInput
-            style={styles.reviewInput}
+          <InputField
+            label={c.reviewLabel}
             value={reviewText}
             onChangeText={setReviewText}
             placeholder={c.reviewPlaceholder}
-            placeholderTextColor={C.textFaint}
             multiline
             maxLength={100}
             returnKeyType="done"
+            style={styles.reviewInput}
           />
 
           <TouchableOpacity
             style={styles.photoPlaceholder}
             onPress={handlePickPhoto}
-            activeOpacity={0.8}
+                activeOpacity={0.88}
             disabled={uploadingPhoto}
           >
             {uploadingPhoto ? (
@@ -255,49 +249,33 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxl },
 
-  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
-
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.md },
-  sectionLabelSpaced: { marginTop: SP.xl },
+  sectionLabel: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '600', marginBottom: SP.md },
 
   starRow: { flexDirection: 'row', gap: SP.sm },
-  starBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  starBtn: { minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
 
   feedbackCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SP.sm,
     marginTop: SP.md,
-    marginBottom: SP.xl,
+    marginBottom: SP.xxl,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
   },
-  feedbackLabel: { fontSize: 13, fontWeight: '600' },
+  feedbackLabel: { ...DS.typography.bodyCompact, fontWeight: '600' },
 
 
-  reviewInput: {
-    backgroundColor: C.white,
-    borderRadius: R.btn,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md + 2,
-    fontSize: 14,
-    color: C.text,
-    minHeight: 70,
-    textAlignVertical: 'top',
-  },
+  reviewInput: { marginTop: SP.lg },
 
   photoPlaceholder: {
-    marginTop: SP.md + 2,
+    marginTop: SP.md,
     height: 140,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: C.pinkBorder,
@@ -307,6 +285,6 @@ const styles = StyleSheet.create({
   },
   photoPreview: { width: '100%', height: '100%' },
   photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
-  saveBtn: { marginTop: SP.xxl },
+  photoText: { ...DS.typography.buttonCompact, color: C.pinkDeep, fontWeight: '600' },
+  saveBtn: { marginTop: SP.lg },
 });

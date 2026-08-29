@@ -6,15 +6,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Check, TriangleAlert } from 'lucide-react-native';
+import { Check, TriangleAlert } from '../../components/iconography';
 import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
+import { DS, G, SP } from '../../constants/theme';
+import { BigButton, Header, ListGroup, ListRow, ScreenHeading, SectionLabel } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const REASONS = [
     t('account.deleteAccount.reasons.notUsing'),
     t('account.deleteAccount.reasons.lackingFeatures'),
@@ -43,11 +45,10 @@ export default function DeleteAccountScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('account.deleteAccount.heading')} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-        <Text style={[T.h1, s.headingSpacing]}>{t('account.deleteAccount.heading')}</Text>
-
         <View style={s.cautionBox}>
           <TriangleAlert size={18} strokeWidth={2} color={C.pinkDeep} />
           <Text style={s.cautionText}>{t('account.deleteAccount.subText')}</Text>
@@ -94,7 +95,7 @@ export default function DeleteAccountScreen() {
           testID="delete-agree-row"
           style={s.agreeRow}
           onPress={() => setAgreed(v => !v)}
-          activeOpacity={0.7}
+          activeOpacity={0.88}
         >
           <View style={[s.checkbox, agreed && s.checkboxOn]}>
             {agreed && <Check size={11} color={C.white} strokeWidth={3} />}
@@ -107,14 +108,14 @@ export default function DeleteAccountScreen() {
         <View style={s.bottomSpacer} />
       </ScrollView>
 
-      <View style={s.footer}>
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton
           onPress={handleDelete}
           variant={deleting ? 'disabled' : agreed ? 'primary' : 'disabled'}
         >
           {deleting ? <ActivityIndicator color={C.white} size="small" /> : agreed ? t('account.deleteAccount.deleteCta') : t('account.deleteAccount.needAgreeCta')}
         </BigButton>
-        <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()} activeOpacity={0.88}>
           <Text style={s.cancelBtnText}>{t('account.deleteAccount.browseMoreCta')}</Text>
         </TouchableOpacity>
       </View>
@@ -123,40 +124,39 @@ export default function DeleteAccountScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
-  headingSpacing: { marginTop: SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
   reasonSection: { marginTop: SP.xxl },
-  reasonText: { fontSize: 14 },
-  bottomSpacer: { height: 120 },
+  reasonText: { ...DS.typography.body },
+  bottomSpacer: { height: SP.hero + SP.section + SP.lg },
   cautionBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: SP.sm,
     marginTop: SP.lg,
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     padding: SP.lg,
     backgroundColor: C.pinkLight,
     borderWidth: 1,
     borderColor: C.pinkBorder,
   },
-  cautionText: { flex: 1, fontSize: 13, color: C.pinkDeep, fontWeight: '600', lineHeight: 19 },
+  cautionText: { flex: 1, ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '600' },
   warningBox: {
     marginTop: SP.md,
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     padding: SP.lg,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
   },
-  warningTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: SP.sm },
-  warningItem: { fontSize: 12, color: C.grayFg, lineHeight: 22 },
+  warningTitle: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.text, marginBottom: SP.sm },
+  warningItem: { ...DS.typography.bodySmall, color: C.grayFg },
   checkCircle: {
-    width: 20, height: 20, borderRadius: 10,
+    width: 20, height: 20, borderRadius: DS.radius.full,
     backgroundColor: C.pink,
     alignItems: 'center', justifyContent: 'center',
   },
   emptyCircle: {
-    width: 20, height: 20, borderRadius: 10,
+    width: 20, height: 20, borderRadius: DS.radius.full,
     borderWidth: 1.5, borderColor: C.border,
   },
   agreeRow: {
@@ -167,23 +167,23 @@ const s = StyleSheet.create({
     paddingHorizontal: SP.xs,
   },
   checkbox: {
-    width: 20, height: 20, borderRadius: 6,
+    width: 20, height: 20, borderRadius: DS.radius.badge,
     borderWidth: 1.5, borderColor: C.border,
     backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center',
-    marginTop: 1,
+    marginTop: DS.spacing.micro,
   },
   checkboxOn: { backgroundColor: C.pink, borderColor: C.pink },
-  agreeText: { flex: 1, fontSize: 12, color: C.grayFg, lineHeight: 19 },
+  agreeText: { flex: 1, ...DS.typography.bodySmall, color: C.grayFg },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.bg,
     gap: SP.xs,
   },
-  cancelBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
-  cancelBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
+  cancelBtn: { alignItems: 'center', paddingVertical: SP.md },
+  cancelBtnText: { ...DS.typography.bodyCompact, color: C.textSub },
 });

@@ -5,12 +5,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { CalendarHeart } from 'lucide-react-native';
-import { C, SP, R, G } from '../../constants/theme';
-import { BackBar, SoftCard, PlanListRow, BigButton, SectionLabel } from '../../components/ui';
+import { CalendarHeart } from '../../components/iconography';
+import { C, DS, SP, G } from '../../constants/theme';
+import { Header, ScreenHeading, SegmentedControl, SoftCard, PlanListRow, BigButton, SectionLabel } from '../../components/ui';
 import { formatDateLabel } from '../../components/pickers';
 import { DATE_MODE_ROUTES } from '../../lib/dateModes';
 import { useI18n } from '../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 import { daysUntilIso } from '../../lib/time';
 
 type PlanCard = {
@@ -79,6 +80,7 @@ function groupByMonth(plans: PlanCard[]): { key: string; year: number; month: nu
 export default function PlansScreen() {
   const router = useRouter();
   const { t, language } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const [plans, setPlans] = useState<PlanCard[]>([]);
   const [coordinatingIds, setCoordinatingIds] = useState<Set<string>>(new Set());
   const [myReviewedIds, setMyReviewedIds] = useState<Set<string>>(new Set());
@@ -159,30 +161,20 @@ export default function PlansScreen() {
   const groups = useMemo(() => groupByMonth(byTab[activeTab]), [byTab, activeTab]);
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('plans.heading')} subtitle={t('plans.subtitle')} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-
-        <View style={s.headingBlock}>
-          <Text style={s.heading}>{t('plans.heading')}</Text>
-          <Text style={s.sub}>{t('plans.subtitle')}</Text>
-        </View>
-
-        <View style={s.tabBar}>
-          {(['upcoming', 'coordinating', 'done'] as PlanTab[]).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              testID={`plans-tab-${tab}`}
-              onPress={() => setActiveTab(tab)}
-              style={[s.tabBtn, activeTab === tab && s.tabBtnActive]}
-              activeOpacity={0.85}
-            >
-              <Text style={[s.tabBtnText, activeTab === tab && s.tabBtnTextActive]}>
-                {t(`plans.tab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`)} {byTab[tab].length}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <SegmentedControl
+          testID="plans-filter"
+          itemTestID={(tab) => `plans-tab-${tab}`}
+          options={(['upcoming', 'coordinating', 'done'] as PlanTab[]).map((tab) => ({
+            value: tab,
+            label: `${t(`plans.tab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`)} ${byTab[tab].length}`,
+          }))}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
 
         {loading ? (
           <ActivityIndicator color={C.pink} style={s.loader} />
@@ -246,7 +238,7 @@ export default function PlansScreen() {
         )}
       </ScrollView>
 
-      <View style={s.footer}>
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton onPress={() => router.push(DATE_MODE_ROUTES.make_course as any)}>
           {t('plans.makeCta')}
         </BigButton>
@@ -256,39 +248,28 @@ export default function PlansScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl },
-  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: SP.sm, fontSize: 13, color: C.textSub, lineHeight: 19 },
-  loader: { marginTop: 60 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.lg, paddingBottom: SP.xxxl },
+  loader: { marginTop: DS.component.emptyStateTop },
 
-  tabBar: { flexDirection: 'row', gap: SP.sm, marginBottom: SP.lg },
-  tabBtn: {
-    flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center',
-    borderRadius: R.btn, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
-  },
-  tabBtnActive: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  tabBtnText: { fontSize: 13, fontWeight: '600', color: C.textSub },
-  tabBtnTextActive: { color: C.pinkDeep, fontWeight: '700' },
+  timeline: { gap: SP.xxl },
   coordinatingList: { gap: SP.sm },
 
-  timeline: { gap: SP.xl },
   group: { gap: SP.sm },
   groupCard: { paddingVertical: SP.xs, paddingHorizontal: SP.lg },
   rowDivider: { height: 1, backgroundColor: C.borderLight },
 
-  emptyWrap: { alignItems: 'center', marginTop: 60, paddingHorizontal: SP.xxl },
+  emptyWrap: { alignItems: 'center', marginTop: DS.component.emptyStateTop, paddingHorizontal: SP.xxl },
   emptyIcon: {
-    width: 120, height: 120, borderRadius: 60, backgroundColor: C.pinkLight,
+    width: 120, height: 120, borderRadius: DS.radius.full, backgroundColor: C.pinkLight,
     alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  emptySub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: SP.md },
+  emptyTitle: { ...DS.typography.headingLegacy, color: C.text, textAlign: 'center' },
+  emptySub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: SP.md },
 
   footer: {
-    paddingHorizontal: SP.xl,
+    paddingHorizontal: SP.screen,
     paddingTop: SP.md,
-    paddingBottom: SP.md,
+    paddingBottom: SP.screen,
     borderTopWidth: 1,
     borderTopColor: C.borderLight,
     backgroundColor: C.bg,

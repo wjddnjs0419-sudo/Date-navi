@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Calendar, Check, Clock3, Zap } from 'lucide-react-native';
+import { Calendar, Check, Clock3, Zap } from '../iconography';
 import {
   Modal,
   Pressable,
@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { C, R, SP } from '../../constants/theme';
+import { C, DS, R, SP } from '../../constants/theme';
 import {
   getQuickMeetingTime,
   type CourseMeetingTime,
@@ -191,6 +191,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
           accessibilityRole="button"
           accessibilityState={{ selected: value?.kind === 'now' }}
           onPress={() => onChange({ kind: 'now' })}
+          activeOpacity={0.88}
           style={[styles.choice, value?.kind === 'now' && styles.choiceSelected]}
           testID="course-meeting-time-now"
         >
@@ -201,6 +202,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
           accessibilityRole="button"
           accessibilityState={{ selected: value?.kind === 'tonight' }}
           onPress={() => onChange({ kind: 'tonight' })}
+          activeOpacity={0.88}
           style={[styles.choice, value?.kind === 'tonight' && styles.choiceSelected]}
           testID="course-meeting-time-tonight"
         >
@@ -211,6 +213,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
           accessibilityRole="button"
           accessibilityState={{ selected: customSelected }}
           onPress={openCustomSheet}
+          activeOpacity={0.88}
           style={[styles.choice, customSelected && styles.choiceSelected]}
           testID="course-meeting-time-custom"
         >
@@ -233,6 +236,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
             key={option.key}
             accessibilityRole="button"
             onPress={() => onChange(getQuickMeetingTime(option.key))}
+            activeOpacity={0.88}
             style={styles.quickChip}
             testID={option.testID}
           >
@@ -291,6 +295,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
                       accessibilityRole="button"
                       accessibilityState={{ selected }}
                       onPress={() => selectTime(minutes)}
+                      activeOpacity={0.88}
                       style={[styles.timeChip, selected && styles.timeChipSelected]}
                       testID={`course-time-chip-${formatTimeChip(minutes).replace(':', '-')}`}
                     >
@@ -300,7 +305,7 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
                 })}
               </ScrollView>
             </View>
-            <TouchableOpacity style={styles.applyButton} onPress={applyCustom} testID="course-time-apply">
+            <TouchableOpacity style={styles.applyButton} onPress={applyCustom} activeOpacity={0.88} testID="course-time-apply">
               <Text style={styles.applyText}>{t('course.time.custom.apply')}</Text>
             </TouchableOpacity>
           </View>
@@ -313,33 +318,33 @@ export function CourseTimeSelector({ value, onChange, language, t }: Props) {
 const styles = StyleSheet.create({
   container: { gap: SP.md },
   choiceList: { gap: SP.sm },
-  choice: { minHeight: 78, borderRadius: R.btn, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, padding: SP.lg, gap: SP.xs },
+  choice: { minHeight: DS.component.courseChoiceHeight, borderRadius: DS.radius.button, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, padding: SP.lg, gap: SP.xs },
   choiceSelected: { backgroundColor: C.pinkLight, borderColor: C.pink },
   choiceTitle: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  choiceTitleText: { color: C.text, fontSize: 15, fontWeight: '700' },
-  choiceDescription: { color: C.textSub, fontSize: 12 },
-  customValue: { gap: 2 },
-  choiceDescriptionStrong: { color: C.text, fontSize: 13, fontWeight: '700' },
-  choiceDescriptionAccent: { color: C.pinkDeep, fontSize: 12, fontWeight: '600' },
+  choiceTitleText: { ...DS.typography.cardTitle, color: C.text },
+  choiceDescription: { ...DS.typography.bodySmall, color: C.textSub },
+  customValue: { gap: SP.micro },
+  choiceDescriptionStrong: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '700' },
+  choiceDescriptionAccent: { ...DS.typography.bodySmall, color: C.pinkDeep, fontWeight: '600' },
   choiceCheck: { position: 'absolute', right: SP.lg, top: 32 },
-  quickTitle: { color: C.text, fontSize: 12, fontWeight: '700', marginTop: SP.lg },
+  quickTitle: { ...DS.typography.bodySmall, color: C.text, fontWeight: '700', marginTop: SP.lg },
   quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
-  quickChip: { minHeight: 34, borderRadius: 17, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, justifyContent: 'center', paddingHorizontal: SP.md },
-  quickText: { color: C.text, fontSize: 12, fontWeight: '600' },
+  quickChip: { minHeight: DS.component.compactControlHeight, borderRadius: DS.radius.chip, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, justifyContent: 'center', paddingHorizontal: SP.md },
+  quickText: { ...DS.typography.bodySmall, color: C.text, fontWeight: '600' },
   modalWrap: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 31, 36, 0.28)' },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: R.hero, borderTopRightRadius: R.hero, paddingHorizontal: SP.xl, paddingTop: SP.sm, paddingBottom: SP.lg },
-  handle: { width: 44, height: 4, borderRadius: 2, backgroundColor: C.border, alignSelf: 'center', marginBottom: SP.md },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: DS.color.overlayScrim },
+  sheet: { backgroundColor: C.white, borderTopLeftRadius: DS.radius.modal, borderTopRightRadius: DS.radius.modal, paddingHorizontal: SP.screen, paddingTop: SP.sm, paddingBottom: SP.lg },
+  handle: { width: DS.component.sheetHandleWidth, height: DS.component.sheetHandleHeight, borderRadius: DS.spacing.micro, backgroundColor: C.border, alignSelf: 'center', marginBottom: SP.md },
   sheetHeader: { minHeight: 32, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SP.md },
-  sheetTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
+  sheetTitle: { ...DS.typography.cardTitle, color: C.text },
   picker: { width: '100%' },
   timeSection: { gap: SP.sm, marginTop: SP.lg },
-  timeLabel: { color: C.text, fontSize: 12, lineHeight: 15, fontWeight: '700' },
+  timeLabel: { ...DS.typography.bodySmall, color: C.text, fontWeight: '700' },
   timeChipContent: { gap: TIME_CHIP_GAP, paddingRight: SP.sm },
-  timeChip: { width: TIME_CHIP_WIDTH, minWidth: TIME_CHIP_WIDTH, flexShrink: 0, height: 30, borderRadius: 20, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0 },
-  timeChipSelected: { backgroundColor: C.pink, borderRadius: R.xl },
-  timeChipText: { width: '100%', color: C.text, fontSize: 12, lineHeight: 18, fontWeight: '500', textAlign: 'center', fontVariant: ['tabular-nums'] },
+  timeChip: { width: TIME_CHIP_WIDTH, minWidth: TIME_CHIP_WIDTH, flexShrink: 0, height: DS.component.timeChipHeight, borderRadius: DS.radius.chip, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0 },
+  timeChipSelected: { backgroundColor: C.pink, borderRadius: DS.radius.chip },
+  timeChipText: { width: '100%', ...DS.typography.bodySmall, color: C.text, fontVariant: ['tabular-nums'], textAlign: 'center' },
   timeChipTextSelected: { color: C.white },
-  applyButton: { minHeight: 52, borderRadius: R.btn, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', marginTop: SP.lg },
-  applyText: { color: C.white, fontSize: 15, fontWeight: '700' },
+  applyButton: { minHeight: SP.input, borderRadius: DS.radius.button, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', marginTop: SP.lg },
+  applyText: { ...DS.typography.button, color: C.white },
 });

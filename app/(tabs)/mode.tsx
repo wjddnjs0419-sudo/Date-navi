@@ -4,10 +4,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { MessageCircle, Map, Plane, Check } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BigButton } from '../../components/ui';
+import { MessageCircle, Map, Plane, Check } from '../../components/iconography';
+import { C, DS, G } from '../../constants/theme';
+import { BigButton, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { ENABLED_DATE_MODE_IDS, DATE_MODE_ROUTES, type DateModeId } from '../../lib/dateModes';
 
@@ -37,13 +36,11 @@ export default function ModeScreen() {
   return (
     <SafeAreaView style={G.screen}>
       <View style={s.flex1}>
+        <ScreenHeading title={t('mode.tabHeading')} subtitle={t('mode.tabSubtitle')} placement="root" />
         <ScrollView
           contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={s.heading}>{t('mode.tabHeading')}</Text>
-          <Text style={s.subText}>{t('mode.tabSubtitle')}</Text>
-
           <View style={s.modeList}>
             {MODES.map((m, i) => {
               const sel = i === selIdx;
@@ -51,7 +48,7 @@ export default function ModeScreen() {
                 <TouchableOpacity
                   key={m.id}
                   onPress={() => setSelIdx(i)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.88}
                   style={[s.modeCard, sel && s.modeCardOn]}
                 >
                   <View style={s.modeCardLeft}>
@@ -80,13 +77,12 @@ export default function ModeScreen() {
 
 const s = StyleSheet.create({
   flex1: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 36 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 20 },
-  modeList: { gap: 10 },
+  content: { paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  modeList: { gap: DS.spacing.md },
   modeCard: {
-    borderRadius: 22,
-    padding: 16,
+    minHeight: DS.spacing.touch,
+    borderRadius: DS.radius.card,
+    padding: DS.spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -95,17 +91,17 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   modeCardOn: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
-  modeCardLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, flex: 1 },
+  modeCardLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: DS.spacing.md, flex: 1 },
   iconBox: {
-    width: 44, height: 44, borderRadius: 14,
+    width: 44, height: 44, borderRadius: DS.radius.input,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   iconBoxOn: { backgroundColor: C.white },
   iconBoxOff: { backgroundColor: C.cream },
-  modeTitle: { fontSize: 14, fontWeight: '700', color: C.text },
+  modeTitle: { ...DS.typography.body, fontWeight: '700', color: C.text },
   modeTitleOn: { color: C.pinkDeep },
-  modeDesc: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: 4 },
+  modeDesc: { ...DS.typography.bodySmall, color: C.textSub, marginTop: DS.spacing.xs },
   footer: {
-    marginTop: 24,
+    marginTop: DS.spacing.lg,
   },
 });

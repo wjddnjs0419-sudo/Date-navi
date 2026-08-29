@@ -36,13 +36,13 @@ const parsedIntent = (overrides: Partial<ParsedStepIntent> = {}): ParsedStepInte
   ...overrides,
 });
 
-const providerPlace = (searchTerms: string[]) => ({
-  identity: { provider: 'naver' as const, providerPlaceId: 'n-place' },
+const providerPlace = (searchTerms: string[], provider: 'naver' | 'kakao' = 'naver') => ({
+  identity: { provider, providerPlaceId: `${provider}-place` },
   name: '낙성대우리한우소곱창',
   category: { normalized: 'meal' as const, providerRaw: '음식점 > 한식' },
   address: { display: '서울 관악구', road: '서울 관악구 관악로' },
   coordinates: { latitude: 37.48, longitude: 126.95 },
-  evidence: { provider: 'naver' as const, searchTerms },
+  evidence: { provider, searchTerms },
 });
 
 describe('provider-neutral intent evidence', () => {
@@ -51,6 +51,26 @@ describe('provider-neutral intent evidence', () => {
       providerPlace(['낙성대역 삼겹살']),
       { category: 'meal' },
       parsedIntent({ strength: 'required' }),
+    )).toBe(false);
+  });
+
+  it('accepts canonical explicit search evidence only when the provider-neutral policy is enabled', () => {
+    for (const provider of ['naver', 'kakao'] as const) {
+      expect(providerNeutralPlaceMatchesStep(
+        providerPlace(['낙성대역 삼겹살'], provider),
+        { category: 'meal' },
+        parsedIntent({ strength: 'required' }),
+        { allowProviderSearchEvidence: true },
+      )).toBe(true);
+    }
+  });
+
+  it('does not treat a category-only query as required keyword evidence', () => {
+    expect(providerNeutralPlaceMatchesStep(
+      providerPlace(['낙성대역 음식점']),
+      { category: 'meal' },
+      parsedIntent({ strength: 'required' }),
+      { allowProviderSearchEvidence: true },
     )).toBe(false);
   });
 });
@@ -154,7 +174,7 @@ describe('resolveStepIntents — non-course compatibility AI gate', () => {
     );
 
     expect(resolved.source).toBe('ai');
-    expect(resolved.stepIntents.map((intent) => intent.canonicalTerm)).toEqual(['삼겹살', '감성 카페']);
+    expect(resolved.stepIntents.map((intent) => intent.canonicalTerm)).toEqual(['삼겹살', '감성적인']);
   });
 
   it('미등재 라틴 토큰이 남으면 AI 호출', async () => {

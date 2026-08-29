@@ -4,7 +4,7 @@ import { effectiveStepIntents, parseStepIntents, placeMatchesStepIntent } from '
 import { retrieveGeneratedFoodIntents } from './food-intent-dictionary.ts';
 import { STEP_INTENT_DICTIONARY } from './step-intent-dictionary.ts';
 import type { ProviderNeutralCandidate, StepCandidatePool } from './provider-neutral-course-selection.ts';
-import { providerNeutralPlaceMatchesStep } from './provider-neutral-intent.ts';
+import { providerNeutralPlaceMatchesStep, providerNeutralStepIntentSearchLevel } from './provider-neutral-intent.ts';
 
 export const RECOMMEND_DATE_PROMPT_VERSION = 'recommend-date-v6-step-tags';
 export const PARSE_STEP_INTENTS_PROMPT_VERSION = 'parse-step-intents-v2';
@@ -116,7 +116,9 @@ export function buildProviderNeutralRecommendationPrompt(
       sufficient: (candidatesOrPools as readonly ProviderNeutralCandidate[]).length >= 2,
     }));
   const candidates = pools.flatMap((pool) => pool.selectableCandidates);
-  const requiredIntents = effectiveStepIntents(request).filter((intent) => intent.strength === 'required');
+  const stepIntents = effectiveStepIntents(request);
+  const requiredIntents = stepIntents.filter((intent) => intent.strength === 'required');
+  const preferredIntents = stepIntents.filter((intent) => intent.strength === 'preferred');
   const stepCandidateGroups = pools.map((pool) => ({
     stepId: pool.stepId,
     candidateIds: pool.selectableCandidates.map((candidate) => candidate.candidateId),
@@ -136,6 +138,7 @@ export function buildProviderNeutralRecommendationPrompt(
     'Return only stepId and candidateId. Never invent a place or use an ID outside the supplied candidates.',
     `Return exactly ${request.courseSteps.length} entries in request order.`,
     'A candidate may be selected only once, and only from the candidate group for its requested stepId.',
+    ...(request.replacement ? [`The explicit replacement for step ${request.replacement.stepId} is fixed to Kakao place ${request.replacement.kakaoPlaceId}; select its verified candidate for that step.`] : []),
     'Requested steps:',
     JSON.stringify(request.courseSteps.map((step) => ({ stepId: step.id, category: step.category, label: step.label })), null, 2),
     'Required step keywords (authoritative):',
@@ -146,11 +149,24 @@ export function buildProviderNeutralRecommendationPrompt(
         canonicalTerm: intent.canonicalTerm,
         matchingCandidateIds: step
           ? (pools.find((pool) => pool.stepId === intent.stepId)?.selectableCandidates ?? [])
-            .filter((candidate) => providerNeutralPlaceMatchesStep(candidate.place, step, intent)).map((candidate) => candidate.candidateId)
+            .filter((candidate) => providerNeutralPlaceMatchesStep(candidate.place, step, intent, { allowProviderSearchEvidence: true })).map((candidate) => candidate.candidateId)
           : [],
       };
     }), null, 2),
     'For every required keyword, select only one of its matchingCandidateIds. If no valid complete selection exists, do not invent an ID.',
+    'A required keyword may be matched by explicit provider search evidence even when the place name or provider category does not contain the keyword. This is search relevance evidence, not proof of an unverified place attribute.',
+    'Preferred step attributes are ranking hints only: prefer their matchingCandidateIds when available, but any category-compatible candidate remains valid when provider metadata cannot verify the attribute.',
+    'Preferred step attributes (ranking hints):',
+    JSON.stringify(preferredIntents.map((intent) => {
+      const pool = pools.find((candidatePool) => candidatePool.stepId === intent.stepId);
+      return {
+        stepId: intent.stepId,
+        canonicalTerm: intent.canonicalTerm,
+        matchingCandidateIds: (pool?.selectableCandidates ?? [])
+          .filter((candidate) => providerNeutralStepIntentSearchLevel(candidate.place, intent) !== undefined)
+          .map((candidate) => candidate.candidateId),
+      };
+    }), null, 2),
     'stepCandidateGroups (the only candidates allowed for each matching stepId):',
     JSON.stringify(stepCandidateGroups, null, 2),
     'Strict JSON: {"steps":[{"stepId":"<requested-step-id>","candidateId":"<candidate-id>"}]}.',

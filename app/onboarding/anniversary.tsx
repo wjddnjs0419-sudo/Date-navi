@@ -4,11 +4,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Heart } from 'lucide-react-native';
+import { Heart } from '../../components/iconography';
 import { supabase } from '../../lib/supabase';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, ProgressDots, SoftCard } from '../../components/ui';
+import { C, DS, G } from '../../constants/theme';
+import { BigButton, Header, ProgressDots, ScreenHeading, SoftCard } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { DateWheelPicker, parseIsoDate } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
@@ -55,18 +54,13 @@ export default function AnniversaryScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header
+        onBack={() => router.back()}
+        center={<ProgressDots current={3} total={4} />}
+        right={<Text style={s.stepCount}>3 / 4</Text>}
+      />
+      <ScreenHeading title={t('onboarding.anniversary.heading')} subtitle={t('onboarding.anniversary.subtitle')} variant="input" />
       <View style={s.container}>
-        <BackBar />
-        <View style={s.progressRow}>
-          <ProgressDots current={3} total={4} />
-          <Text style={s.stepCount}>3 / 4</Text>
-        </View>
-
-        <View style={s.headingBlock}>
-          <Text style={s.heading}>{t('onboarding.anniversary.heading')}</Text>
-          <Text style={s.subText}>{t('onboarding.anniversary.subtitle')}</Text>
-        </View>
-
         <View style={s.dateRow}>
           <DateWheelPicker
             value={dateStr}
@@ -98,7 +92,7 @@ export default function AnniversaryScreen() {
         <View style={s.spacer} />
 
         <View style={s.footer}>
-          <TouchableOpacity style={s.skipBtn} onPress={handleSkip}>
+          <TouchableOpacity style={s.skipBtn} onPress={handleSkip} activeOpacity={0.88}>
             <Text style={s.skipText}>{t('onboarding.anniversary.skipCta')}</Text>
           </TouchableOpacity>
           <BigButton onPress={handleNext} variant={loading ? 'disabled' : 'primary'}>
@@ -111,28 +105,24 @@ export default function AnniversaryScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  stepCount: { fontSize: 11, color: C.textMuted },
-  headingBlock: { marginTop: 20 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
-  dateRow: { marginTop: 24 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  stepCount: { ...DS.typography.caption, color: C.textMuted },
+  dateRow: {},
   daysCard: {
-    marginTop: 24,
+    marginTop: DS.spacing.xxl,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: DS.spacing.md,
     backgroundColor: C.cream,
-    borderColor: '#F2DDB0',
+    borderColor: C.anniversaryBorder,
   },
   daysMascot: { flexShrink: 0 },
   daysBody: { flex: 1 },
-  daysRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  daysText: { fontSize: 13, color: C.creamFg, fontWeight: '700' },
-  daysHint: { fontSize: 12, color: C.grayFg, lineHeight: 18, marginTop: 6 },
-  footer: { gap: 12 },
-  skipBtn: { alignItems: 'center', paddingVertical: 8 },
-  skipText: { fontSize: 12, color: C.textMuted },
+  daysRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  daysText: { ...DS.typography.bodyCompact, color: C.creamFg, fontWeight: '700' },
+  daysHint: { ...DS.typography.bodySmall, color: C.grayFg, marginTop: DS.spacing.sm },
+  footer: { gap: DS.spacing.md },
+  skipBtn: { alignItems: 'center', paddingVertical: DS.spacing.sm },
+  skipText: { ...DS.typography.bodySmall, color: C.textMuted },
   spacer: { flex: 1, minHeight: 16 },
 });

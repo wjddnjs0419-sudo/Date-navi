@@ -13,10 +13,9 @@ import { registerPushToken, unregisterPushToken } from '../lib/push';
 import {
   User, Users, Bell, Globe, Shield, Info,
   HelpCircle, FileText, Trash2, ChevronRight, MapPin,
-} from 'lucide-react-native';
-import { C } from '../constants/colors';
-import { G, SP, R, T } from '../constants/theme';
-import { BackBar, BigButton, ListGroup, ListRow, SectionLabel, SoftCard } from '../components/ui';
+} from '../components/iconography';
+import { C, DS, G, SP, R } from '../constants/theme';
+import { BigButton, Header, ListGroup, ListRow, ScreenHeading, SectionLabel, SoftCard } from '../components/ui';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../components/pickers';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 import { useRevalidatingLoad } from '../lib/useRevalidatingLoad';
@@ -264,10 +263,9 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t.heading} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar largeTouchTarget />
-
-        <Text style={[T.h1, s.pageTitle]}>{t.heading}</Text>
 
         {/* 프로필 헤더 */}
         <SoftCard style={s.profileCard} onPress={() => router.push('/account/edit-profile' as any)}>
@@ -281,7 +279,7 @@ export default function SettingsScreen() {
           <View style={s.profileTextWrap}>
             <Text style={s.profileName}>{displayName || t.nameEmpty}</Text>
             {dayLabel && (
-              <TouchableOpacity onPress={openRelationshipPicker} hitSlop={8}>
+              <TouchableOpacity onPress={openRelationshipPicker} hitSlop={8} activeOpacity={0.88}>
                 <Text style={s.profileSubtitle}>{dayLabel}</Text>
               </TouchableOpacity>
             )}
@@ -384,7 +382,7 @@ export default function SettingsScreen() {
 
         <View style={s.section}>
           <BigButton onPress={handleLogout}>{t.logout}</BigButton>
-          <TouchableOpacity style={s.deleteLink} onPress={() => router.push('/account/delete-account' as any)}>
+          <TouchableOpacity style={s.deleteLink} onPress={() => router.push('/account/delete-account' as any)} activeOpacity={0.88}>
             <Trash2 size={13} strokeWidth={1.8} color={C.textFaint} />
             <Text style={s.deleteLinkText}>{t.deleteTitle}</Text>
           </TouchableOpacity>
@@ -411,38 +409,37 @@ export default function SettingsScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
-  pageTitle: { marginBottom: SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
   profileCard: { flexDirection: 'row', alignItems: 'center', gap: SP.md },
   profileAvatar: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 48, height: 48, borderRadius: DS.radius.full,
     backgroundColor: C.pinkMid,
     alignItems: 'center', justifyContent: 'center',
   },
-  profileAvatarImage: { width: 48, height: 48, borderRadius: 24 },
-  profileAvatarText: { fontSize: 17, fontWeight: '800', color: C.white },
+  profileAvatarImage: { width: 48, height: 48, borderRadius: DS.radius.full },
+  profileAvatarText: { ...DS.typography.bodyLarge, fontWeight: '800', color: C.white },
   profileTextWrap: { flex: 1 },
-  profileName: { fontSize: 15, fontWeight: '700', color: C.text },
-  profileSubtitle: { fontSize: 12, color: C.textSub, marginTop: 2 },
+  profileName: { ...DS.typography.cardTitle, color: C.text },
+  profileSubtitle: { ...DS.typography.bodySmall, color: C.textSub, marginTop: DS.spacing.micro },
   statsRow: {
     flexDirection: 'row',
     marginTop: SP.xxl,
     backgroundColor: C.white,
-    borderRadius: R.xl,
+    borderRadius: DS.radius.chip,
     borderWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
   },
   statBox: { flex: 1, padding: SP.lg, alignItems: 'center' },
   statBoxDivider: { borderLeftWidth: 1, borderLeftColor: C.border },
-  statValue: { fontSize: 18, fontWeight: '800', color: C.pinkDeep },
-  statLabel: { fontSize: 11, color: C.textSub, marginTop: 2 },
-  sectionFirst: { marginTop: SP.xxl + SP.xs },
-  section: { marginTop: SP.xl },
+  statValue: { ...DS.typography.sectionTitle, fontWeight: '800', color: C.pinkDeep },
+  statLabel: { ...DS.typography.caption, color: C.textSub, marginTop: DS.spacing.micro },
+  sectionFirst: { marginTop: SP.section },
+  section: { marginTop: SP.xxl },
   deleteLink: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs,
     marginTop: SP.md, paddingVertical: SP.sm,
   },
-  deleteLinkText: { fontSize: 12, color: C.textFaint, fontWeight: '500' },
-  bottomSpacer: { height: 40 },
+  deleteLinkText: { ...DS.typography.bodySmall, color: C.textFaint },
+  bottomSpacer: { height: SP.hero },
 });

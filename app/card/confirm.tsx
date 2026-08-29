@@ -9,9 +9,9 @@ import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
 import { resolveConfirmTitle } from '../../lib/confirm-title';
 import { localizeCardContent, overrideCardTitle } from '../../lib/card-i18n';
-import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from 'lucide-react-native';
-import { C, SP, R } from '../../constants/theme';
-import { BackBar, BigButton, Chip, HeartDoodle, SoftCard, SuccessModal } from '../../components/ui';
+import { Check, Calendar, Clock, MapPin, ShoppingBag, Wallet, ChevronRight } from '../../components/iconography';
+import { C, DS, SP } from '../../constants/theme';
+import { BigButton, Chip, Header, HeartDoodle, ScreenHeading, SoftCard, SuccessModal } from '../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../components/illustration';
 import {
   DateWheelPicker,
@@ -203,14 +203,9 @@ export default function ConfirmScreen() {
           message={successMessage}
           onHide={() => { setSuccessVisible(false); router.replace('/(tabs)/' as any); }}
         />
+        <Header onBack={() => router.back()} />
+        <ScreenHeading title={c.upcomingTitle} subtitle={dateLine} />
         <ScrollView style={styles.flex1} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <BackBar />
-
-          <View style={styles.headingBlock}>
-            <Text style={styles.heading}>{c.upcomingTitle}</Text>
-            <Text style={styles.sub}>{dateLine}</Text>
-          </View>
-
           {card && (
             <SoftCard style={styles.cardPreview}>
               <Text style={styles.cardTitle}>{card.title}</Text>
@@ -240,7 +235,7 @@ export default function ConfirmScreen() {
               <TouchableOpacity
                 style={styles.doneBtn}
                 onPress={() => router.push({ pathname: '/card/review', params: { id } })}
-                activeOpacity={0.85}
+                activeOpacity={0.88}
               >
                 <Check size={14} color={C.white} strokeWidth={2.5} />
                 <Text style={styles.doneBtnText}>{c.reviewDone}</Text>
@@ -252,7 +247,7 @@ export default function ConfirmScreen() {
               </View>
             )}
             <BigButton variant="secondary" onPress={() => setEditing(true)}>{c.editPlan}</BigButton>
-            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelPlan} activeOpacity={0.88}>
               <Text style={styles.cancelBtnText}>{c.cancelPlan}</Text>
             </TouchableOpacity>
           </View>
@@ -264,15 +259,10 @@ export default function ConfirmScreen() {
   // ── 입력/수정 모드 ──────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={c.heading} accessory={<HeartDoodle />} />
       <ScrollView style={styles.flex1} contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
-          <BackBar />
-
           <View style={styles.headingBlock}>
-            <View style={styles.headingRow}>
-              <Text style={styles.heading}>{c.heading}</Text>
-              <HeartDoodle style={styles.headingHeart} />
-            </View>
-            <Text style={styles.sub}>{c.sub}</Text>
             <Illustration name="mini-skyline-route" width={MINI_ILLUSTRATION_WIDTH} style={styles.headingIllustration} />
           </View>
 
@@ -298,7 +288,7 @@ export default function ConfirmScreen() {
           )}
 
           <View style={styles.rowList}>
-            <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openDatePicker}>
+            <TouchableOpacity style={styles.row} activeOpacity={0.88} onPress={openDatePicker}>
               <View style={styles.rowIconWrap}>
                 <Calendar size={16} color={C.pinkDeep} strokeWidth={2} />
               </View>
@@ -311,7 +301,7 @@ export default function ConfirmScreen() {
               <ChevronRight size={18} color={C.textLight} strokeWidth={2} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.row} activeOpacity={0.8} onPress={openTimePicker}>
+            <TouchableOpacity style={styles.row} activeOpacity={0.88} onPress={openTimePicker}>
               <View style={styles.rowIconWrap}>
                 <Clock size={16} color={C.pinkDeep} strokeWidth={2} />
               </View>
@@ -377,40 +367,38 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.lg },
 
-  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
+  headingBlock: { marginTop: SP.lg, marginBottom: SP.xxl },
   headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  headingHeart: { marginTop: 2, marginLeft: 4 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
-  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
+  heading: { ...DS.typography.heading, color: C.text },
+  sub: { marginTop: DS.component.tightGap, ...DS.typography.bodyCompact, color: C.textSub },
+  headingIllustration: { alignSelf: 'flex-end' },
 
-  cardPreview: { marginBottom: SP.xl, backgroundColor: C.white },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: SP.sm },
-  titleEditLabel: { fontSize: 11, fontWeight: '600', color: C.textMuted, marginBottom: SP.xs },
+  cardPreview: { marginBottom: SP.xxl, backgroundColor: C.white },
+  cardTitle: { ...DS.typography.cardTitle, color: C.text, marginBottom: SP.sm },
+  titleEditLabel: { ...DS.typography.caption, color: C.textMuted, fontWeight: '600', marginBottom: SP.xs },
   cardTitleInput: {
-    fontSize: 15,
-    fontWeight: '700',
+    ...DS.typography.cardTitle,
     color: C.text,
     marginBottom: SP.sm,
-    paddingVertical: 4,
+    paddingVertical: SP.xs,
     paddingHorizontal: 0,
     borderBottomWidth: 1.5,
     borderBottomColor: C.pinkBorder,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SP.sm },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  metaText: { fontSize: 12, color: C.grayFg },
+  metaText: { ...DS.typography.bodySmall, color: C.grayFg },
   metaSep: { marginHorizontal: SP.sm, color: C.textFaint },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
 
-  rowList: { gap: SP.sm, marginBottom: SP.xxl + SP.xs },
+  rowList: { gap: SP.sm, marginBottom: SP.xxl },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: C.white,
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.lg,
     borderWidth: 1,
@@ -420,35 +408,35 @@ const styles = StyleSheet.create({
   rowIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: R.sm,
+    borderRadius: DS.radius.small,
     backgroundColor: C.pinkLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: DS.spacing.micro,
   },
-  rowLabel: { fontSize: 12, color: C.textMuted, fontWeight: '600', marginBottom: SP.xs },
-  rowInput: { fontSize: 14, color: C.text, paddingVertical: 0 },
-  pickerValue: { fontSize: 14, color: C.text, paddingVertical: 2, fontWeight: '600' },
+  rowLabel: { ...DS.typography.bodySmall, color: C.textMuted, fontWeight: '600', marginBottom: SP.xs },
+  rowInput: { ...DS.typography.body, color: C.text, paddingVertical: 0 },
+  pickerValue: { ...DS.typography.body, color: C.text, paddingVertical: DS.spacing.micro, fontWeight: '600' },
   pickerValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
   detailRows: { marginTop: SP.lg, gap: SP.md, borderTopWidth: 1, borderTopColor: C.borderLight, paddingTop: SP.lg },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  detailIcon: { width: SP.xl },
-  detailLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', width: 72 },
-  detailValue: { fontSize: 14, color: C.text, fontWeight: '600', flex: 1 },
+  detailIcon: { width: SP.xxl },
+  detailLabel: { ...DS.typography.bodyCompact, color: C.textMuted, fontWeight: '600', width: 72 },
+  detailValue: { ...DS.typography.body, color: C.text, fontWeight: '600', flex: 1 },
   detailValueEmpty: { color: C.textFaint, fontWeight: '500' },
 
-  actions: { gap: SP.xs + 2 },
+  actions: { gap: SP.xs },
   doneBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs + 2,
-    backgroundColor: C.pink, borderRadius: R.btn, paddingVertical: SP.lg,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs,
+    backgroundColor: C.pink, borderRadius: DS.radius.button, paddingVertical: SP.lg,
   },
-  doneBtnText: { color: C.white, fontSize: 14, fontWeight: '700' },
+  doneBtnText: { ...DS.typography.button, color: C.white },
   reviewedBadge: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs + 2,
-    backgroundColor: C.mint, borderRadius: R.btn, paddingVertical: SP.lg,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs,
+    backgroundColor: C.mint, borderRadius: DS.radius.button, paddingVertical: SP.lg,
   },
-  reviewedText: { color: C.mintFg, fontSize: 14, fontWeight: '700' },
-  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
-  cancelBtnText: { fontSize: 14, color: C.danger, fontWeight: '600' },
+  reviewedText: { ...DS.typography.button, color: C.mintFg },
+  cancelBtn: { alignItems: 'center', paddingVertical: SP.md },
+  cancelBtnText: { ...DS.typography.body, color: C.danger, fontWeight: '600' },
 });

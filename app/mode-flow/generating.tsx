@@ -8,8 +8,9 @@ import { attachRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { logEvent } from '../../lib/analytics';
 import { normalizeRecommendationRequestError } from '../../lib/analytics-course';
 import { useI18n } from '../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 import { C } from '../../constants/colors';
-import { SP } from '../../constants/theme';
+import { DS, SP } from '../../constants/theme';
 import { BigButton, GeneratingView } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { QuickPlanningLoading, type QuickPlanningLoadingConditions } from '../../components/recommendation/quick-planning-loading';
@@ -22,6 +23,7 @@ import {
   RecommendationRequestError,
   isPreparedRequestExpiredError,
   relaxRequiredMarkers,
+  relaxUnsatisfiedStepIntentTags,
   requestRecommendationResponse,
 } from '../../lib/recommend-date';
 import {
@@ -303,7 +305,7 @@ export default function GeneratingScreen() {
     const original = getPreparedRecommendationRequest(requestId);
     const relaxedText = relaxRequiredMarkers(original.additionalRequest);
     const relaxed = prepareRecommendationRequest({
-      ...original,
+      ...relaxUnsatisfiedStepIntentTags(original, unsatisfiedIntents),
       requestId: `${original.requestId}-relaxed-${retryKey + 1}`,
       additionalRequest: relaxedText.length > 0 ? relaxedText : undefined,
     });
@@ -410,14 +412,15 @@ export function GeneratingFallback({
   secondaryLabel?: string;
   onSecondary?: () => void;
 }) {
+  const insets = useOptionalSafeAreaInsets();
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <Illustration name="mascot-heart-single" width={132} />
       <Text style={s.heading}>{heading}</Text>
       <Text style={s.errSub}>{message}</Text>
       <BigButton onPress={onPrimary} style={s.retryBtn}>{primaryLabel}</BigButton>
       {secondaryLabel != null && onSecondary != null && (
-        <TouchableOpacity accessibilityRole="button" onPress={onSecondary} style={s.editButton}>
+        <TouchableOpacity accessibilityRole="button" onPress={onSecondary} activeOpacity={0.88} style={s.editButton}>
           <Text style={s.editButtonText}>{secondaryLabel}</Text>
         </TouchableOpacity>
       )}
@@ -433,13 +436,13 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: SP.xxxl,
   },
-  retryBtn: { marginTop: SP.xl },
-  editButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: SP.xl, marginTop: SP.sm },
-  editButtonText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
+  retryBtn: { marginTop: SP.xxl },
+  editButton: { minHeight: DS.spacing.touch, justifyContent: 'center', paddingHorizontal: SP.screen, marginTop: SP.sm },
+  editButtonText: { ...DS.typography.body, color: C.textSub, fontWeight: '600' },
   heading: {
-    fontSize: 22, fontWeight: '700', color: C.text,
-    textAlign: 'center', lineHeight: 29,
-    marginTop: SP.xl, marginBottom: SP.md,
+    ...DS.typography.headingLegacy, color: C.text,
+    textAlign: 'center',
+    marginTop: SP.xxl, marginBottom: SP.md,
   },
-  errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20 },
+  errSub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center' },
 });

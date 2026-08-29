@@ -9,6 +9,6 @@ describe('course screen generate button spacing', () => {
 
   it('gives the generate button breathing room above it', () => {
     const generateButton = source.match(/generateButton: \{([^}]*)\}/)?.[1] ?? '';
-    expect(generateButton).toMatch(/marginTop: SP\.\w+/);
+    expect(generateButton).toMatch(/marginTop: 'auto'/);
   });
 });

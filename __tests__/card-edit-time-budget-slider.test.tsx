@@ -62,40 +62,36 @@ async function render() {
   return tree;
 }
 
-function sliders(tree: ReturnType<typeof TR.create>) {
-  return tree.root.findAllByType(StepSlider);
-}
-
 beforeEach(() => {
   mockUpdate.mockClear();
   mockBack.mockClear();
 });
 
-describe('후보 수정 화면 — 시간·예산 슬라이더', () => {
-  it('예상 시간·예산을 StepSlider 두 개로 렌더한다', async () => {
+describe('후보 수정 화면 — 시간·예산 제거', () => {
+  it('예상 시간·예산 슬라이더를 렌더하지 않는다', async () => {
     const tree = await render();
-    expect(sliders(tree).length).toBe(2);
+    expect(tree.root.findAllByType(StepSlider)).toHaveLength(0);
   });
 
-  it('기존 텍스트값(2~3시간 / 30,000원)을 슬라이더 값으로 파싱해 불러온다', async () => {
+  it('기존 시간·예산 값을 수정 화면에 표시하지 않는다', async () => {
     const tree = await render();
-    const [time, budget] = sliders(tree);
-    expect(time.props.value).toBe(2);
-    expect(budget.props.value).toBe(30000);
+    const text = tree.root.findAllByType(require('react-native').Text)
+      .map((node: any) => node.props.children)
+      .flat(Infinity)
+      .join(' ');
+    expect(text).not.toContain('예상 시간');
+    expect(text).not.toContain('1인 예산');
+    expect(text).not.toContain('2~3시간');
+    expect(text).not.toContain('30,000원');
   });
 
-  it('슬라이더를 조정해 저장하면 1인 기준 포맷 텍스트로 업데이트한다', async () => {
+  it('저장 시 시간·예산 컬럼을 갱신하지 않는다', async () => {
     const tree = await render();
-    const [time, budget] = sliders(tree);
-    await TR.act(async () => { time.props.onChange(4); });
-    await TR.act(async () => { budget.props.onChange(50000); });
-
     const saveBtn = tree.root.findAllByType(BigButton)[0];
     await TR.act(async () => { saveBtn.props.onPress(); });
 
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      estimated_time: '4시간',
-      estimated_budget: '50,000원',
-    }));
+    const payload = (mockUpdate.mock.calls as unknown[][])[0][0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('estimated_time');
+    expect(payload).not.toHaveProperty('estimated_budget');
   });
 });

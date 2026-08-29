@@ -13,8 +13,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { X } from 'lucide-react-native';
-import { C, SP, R } from '../constants/theme';
+import { X } from './iconography';
+import { C, DS, SP, R } from '../constants/theme';
 import { BigButton } from './ui';
 import { useI18n, type AppLanguage } from '../lib/i18n';
 import { ko, en } from '../locales';
@@ -349,7 +349,7 @@ const pickerS = StyleSheet.create({
     left: 0,
     right: 0,
     height: ITEM_H,
-    borderRadius: R.md,
+    borderRadius: DS.radius.input,
     backgroundColor: C.pinkLight,
   },
   item: {
@@ -359,16 +359,15 @@ const pickerS = StyleSheet.create({
     paddingHorizontal: SP.sm,
   },
   itemText: {
-    fontSize: 16,
-    lineHeight: 22,
+    ...DS.typography.bodyLarge,
     color: C.textMuted,
     fontWeight: '500',
   },
   itemTextSelected: {
+    ...DS.typography.metric,
     color: C.text,
     fontWeight: '700',
-    fontSize: 20,
-    lineHeight: 28,
+    lineHeight: DS.component.pickerSelectedLineHeight,
   },
   dateRow: {
     flexDirection: 'row',
@@ -386,29 +385,29 @@ const sheetS = StyleSheet.create({
   wrapCentered: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: DS.spacing.xxl,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(31, 31, 36, 0.28)',
+    backgroundColor: DS.color.overlayScrim,
   },
   panel: {
     backgroundColor: C.bg,
-    borderTopLeftRadius: R.hero,
-    borderTopRightRadius: R.hero,
-    paddingHorizontal: SP.xl,
+    borderTopLeftRadius: DS.radius.modal,
+    borderTopRightRadius: DS.radius.modal,
+    paddingHorizontal: SP.screen,
     paddingTop: SP.sm,
     paddingBottom: SP.xxl,
   },
   panelCentered: {
-    borderRadius: R.hero,
+    borderRadius: DS.radius.modal,
     width: '100%',
     paddingTop: SP.xxl,
   },
   handle: {
-    width: 40,
+    width: DS.component.sheetHandleWidth,
     height: 4,
-    borderRadius: 2,
+    borderRadius: DS.spacing.micro,
     backgroundColor: C.border,
     alignSelf: 'center',
     marginBottom: SP.md,
@@ -420,7 +419,7 @@ const sheetS = StyleSheet.create({
     marginBottom: SP.lg,
   },
   title: {
-    fontSize: 17,
+    ...DS.typography.cardTitle,
     fontWeight: '700',
     color: C.text,
   },
@@ -434,6 +433,6 @@ const sheetS = StyleSheet.create({
     justifyContent: 'center',
   },
   doneBtn: {
-    marginTop: SP.xl,
+    marginTop: SP.xxl,
   },
 });

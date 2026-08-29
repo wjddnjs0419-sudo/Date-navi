@@ -13,7 +13,7 @@ export type QualityAssessment = {
 
 export type HardEligibilityAssessment = {
   passed: boolean;
-  rejectionReasons: Array<'missing_coordinates' | 'unknown_category' | 'excluded_place' | 'excluded_category' | 'unsuitable_venue'>;
+  rejectionReasons: Array<'missing_coordinates' | 'excluded_place' | 'excluded_category' | 'unsuitable_venue'>;
 };
 
 const UNSUITABLE_VENUE_KEYWORDS = ['병원', '의원', '약국', '모텔', '무인텔', '주차장', '은행', '부동산', '편의점'];
@@ -26,7 +26,6 @@ export function evaluateHardEligibility(place: NormalizedPlace, input: {
   const excludedPlaceIds = new Set(input.excludedPlaceIds ?? []);
   const excludedCategories = input.excludedCategories ?? [];
   if (!place.coordinates) rejected.push('missing_coordinates');
-  if (place.category.normalized === 'unknown') rejected.push('unknown_category');
   if (excludedPlaceIds.has(place.identity.providerPlaceId) || (place.legacy?.kakaoPlaceId && excludedPlaceIds.has(place.legacy.kakaoPlaceId))) {
     rejected.push('excluded_place');
   }

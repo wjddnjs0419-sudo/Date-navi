@@ -172,12 +172,42 @@ Deno.serve(async (request) => {
           stepIds: input.courseSteps.map((step) => step.id),
           stepIntents: (input as typeof input & { resolvedStepIntents?: { stepId: string; canonicalTerm: string; kakaoSearchTerms?: readonly string[] }[] }).resolvedStepIntents,
         });
-        const primaryAttempts = semanticQueries.map(({ stepId, query }) => ({
+        const primaryAttempts = semanticQueries.map(({ stepId, query, querySource }) => ({
           stepId,
+          provider: 'naver' as const,
+          querySource,
           run: () => fetchNaverLocalPlaces({ query, clientId: naverClientId, clientSecret: naverClientSecret, fetcher: fetch, cache: naverSearchCache }),
         }));
+        if (input.replacement) {
+          const replacementStep = input.courseSteps.find((step) => step.id === input.replacement?.stepId);
+          if (replacementStep) {
+            // A manually picked Kakao place is an explicit, server-verified
+            // replacement. Put it in the target step's pool before Naver
+            // recall so the provider-neutral selector cannot lose the pick.
+            primaryAttempts.unshift({
+              stepId: replacementStep.id,
+              provider: 'kakao' as const,
+              run: async () => {
+                const replacement = await searchAndRankRecommendation({
+                  ...input,
+                  courseSteps: [replacementStep],
+                }, {
+                  kakaoRestApiKey: Deno.env.get('KAKAO_REST_API_KEY') ?? '',
+                  fetcher: fetch,
+                  cacheStore: createSupabaseKakaoSearchCacheStore(serviceClient),
+                  cacheMetrics: { hits: 0, misses: 0, kakaoCalls: 0 },
+                  history,
+                });
+                return replacement.candidates
+                  .filter((candidate) => candidate.kakaoPlaceId === input.replacement?.kakaoPlaceId)
+                  .map(normalizeKakaoPlace);
+              },
+            });
+          }
+        }
         const fallbackAttempts = input.courseSteps.map((step) => ({
           stepId: step.id,
+          provider: 'kakao' as const,
           run: async () => {
             const cacheMetrics = { hits: 0, misses: 0, kakaoCalls: 0 };
             const fallback = await searchAndRankRecommendation({
@@ -226,6 +256,11 @@ Deno.serve(async (request) => {
             counts[provider] = (counts[provider] ?? 0) + 1;
             return counts;
           }, {}),
+          steps: result.diagnostics?.steps?.map((step) => ({
+            ...step,
+            minimumSelectableCandidates: 2,
+            fallbackProvider: step.fallbackAttemptsRun > 0 ? 'kakao' : null,
+          })),
           diagnostics: result.diagnostics,
         }));
         return result;

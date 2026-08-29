@@ -1,7 +1,7 @@
 // 코스 장소별 등급 입력(B안): 만족도는 떨어진 칩 2개, 가격은 이어붙인 세그먼트 3칸.
 // 두 줄의 성격(택1 의견 / 순서 있는 척도)이 라벨을 읽기 전에 형태로 구분되게 한다.
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { C, SP, R } from '../constants/theme';
+import { C, DS, SP } from '../constants/theme';
 import { SoftCard } from './ui';
 import { PRICE_LEVEL, type PriceLevel } from '../shared/recommendation/place-price';
 import type { PlaceSatisfaction } from '../lib/placeReview';
@@ -60,7 +60,7 @@ export function PlaceFeedbackSection({
                   accessibilityHint={strings.toggleHint}
                   onPress={() => onSatisfaction(place.step_id, kind)}
                   style={[styles.chip, selected && styles.chipOn]}
-                  activeOpacity={0.8}
+                  activeOpacity={0.88}
                 >
                   <Text style={[styles.chipText, selected && styles.chipTextOn]}>{strings[kind]}</Text>
                 </TouchableOpacity>
@@ -86,7 +86,7 @@ export function PlaceFeedbackSection({
                     index > 0 && styles.segmentDivider,
                     selected && styles.segmentCellOn,
                   ]}
-                  activeOpacity={0.8}
+                  activeOpacity={0.88}
                 >
                   <Text style={[styles.chipText, selected && styles.chipTextOn]}>
                     {strings[step.labelKey]}
@@ -102,33 +102,33 @@ export function PlaceFeedbackSection({
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: SP.xl },
-  title: { fontSize: 13, fontWeight: '600', color: C.text },
-  sub: { marginTop: SP.xs, marginBottom: SP.md, fontSize: 12, color: C.textSub, lineHeight: 18 },
+  section: { marginTop: SP.xxl },
+  title: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
+  sub: { marginTop: SP.xs, marginBottom: SP.md, ...DS.typography.bodySmall, color: C.textSub },
   card: { marginBottom: SP.sm, gap: SP.xs },
-  placeName: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: SP.xs },
-  rowLabel: { fontSize: 12, fontWeight: '600', color: C.textSub, marginTop: SP.xs },
+  placeName: { ...DS.typography.body, fontWeight: '600', color: C.text, marginBottom: SP.xs },
+  rowLabel: { ...DS.typography.bodySmall, fontWeight: '600', color: C.textSub, marginTop: SP.xs },
 
   chipRow: { flexDirection: 'row', gap: SP.sm },
   chip: {
     minHeight: 44,
     paddingHorizontal: SP.lg,
     justifyContent: 'center',
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     borderWidth: 1,
     borderColor: C.borderLight,
     backgroundColor: C.bg,
   },
   chipOn: { backgroundColor: C.pinkMid, borderColor: C.pinkBorder },
-  // 라벨은 항상 본문색 — 액센트 핑크(#C24B57)를 파스텔 칩 위에 얹으면 대비가 4.2:1로
+  // 라벨은 항상 본문색 — brand deep를 파스텔 칩 위에 얹으면 대비가 낮아진다.
   // 4.5:1 바닥을 못 넘는다. 선택은 배경·보더·굵기로 표시한다.
-  chipText: { fontSize: 13, color: C.text, fontWeight: '500' },
+  chipText: { ...DS.typography.bodyCompact, color: C.text },
   chipTextOn: { fontWeight: '700' },
 
   // 가격은 저렴↔비쌈 순서가 있는 척도다. 칸을 붙여 "한 줄에서 하나 고르는 눈금"으로 읽히게 한다.
   segment: {
     flexDirection: 'row',
-    borderRadius: R.btn,
+    borderRadius: DS.radius.button,
     borderWidth: 1,
     borderColor: C.borderLight,
     backgroundColor: C.bg,

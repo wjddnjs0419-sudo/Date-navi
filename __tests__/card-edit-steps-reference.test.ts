@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 // 목업(05_card_edit_confirm)은 스텝별 시간 편집기지만, CourseStep엔 시간/카테고리 필드가 없어
 // 그 기능은 만들지 않는다(사용자 확인). 대신 make_course 카드면 기존 CourseStepList로
-// 현재 스텝을 참고용(읽기 전용)으로 보여준다 — 편집 대상은 title/summary/time/budget 그대로.
+// 현재 스텝을 참고용(읽기 전용)으로 보여준다 — 편집 대상은 title/summary다.
 function read(rel: string): string {
   return readFileSync(join(process.cwd(), rel), 'utf8');
 }
@@ -25,12 +25,12 @@ describe('card edit screen steps reference', () => {
     expect(stepsBlock).not.toMatch(/onChange/);
   });
 
-  it('preserves the save payload (title/summary/estimated_time/estimated_budget only)', () => {
+  it('preserves only the title/summary save payload', () => {
     const payload = source.match(/\.update\(\{([\s\S]*?)\}\)\s*\.eq\(/)?.[1] ?? '';
     expect(payload).toContain('title: title.trim()');
     expect(payload).toContain('summary: summary.trim()');
-    expect(payload).toContain('estimated_time:');
-    expect(payload).toContain('estimated_budget:');
+    expect(payload).not.toContain('estimated_time:');
+    expect(payload).not.toContain('estimated_budget:');
     expect(payload).not.toContain('steps:');
     expect(payload).not.toContain('mode:');
   });

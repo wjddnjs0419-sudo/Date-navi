@@ -332,59 +332,56 @@ declined
 
 ### 8.0 디자인 시스템 적용 기준
 
-이 프로젝트는 루트의 `Design.md`를 공식 디자인 시스템 기준으로 사용한다. Date Planner는 커플 플래너 앱이지만, 시각 언어는 `Design.md`의 Airbnb 스타일 시스템을 따른다. 즉, 과한 파스텔 배경을 쓰기보다 흰 캔버스, 사진 중심 카드, Rausch 포인트 컬러, 부드러운 둥근 UI, 제한된 그림자 사용을 기본값으로 삼는다.
+이 프로젝트는 루트의 `Design.md`와 `constants/design-tokens.ts`를 공식 디자인 시스템 기준으로 사용한다. 실제 앱에 구현된 Quick Planning Input/Loading이 제품 기준이고, Figma는 시각 QA를 위한 보조 레퍼런스다. Date Planner도 같은 웜 핑크 모바일 시각 언어, 공용 간격/반경/type scale, 제한된 웜 그림자를 사용한다.
 
 #### 핵심 토큰
 
 | 영역 | 적용 값 | Date Planner 적용 방식 |
 |------|---------|------------------------|
-| 기본 배경 | `#ffffff` | 모든 주요 화면의 기본 캔버스 |
-| 기본 텍스트 | `#222222` | 제목, 본문, 주요 라벨 |
-| 보조 텍스트 | `#6a6a6a` | 설명, 날짜 보조 정보, 빈 상태 문구 |
-| 포인트 컬러 | `#ff385c` | 주요 CTA, 수락 버튼, 선택 상태, AI 추천 실행 버튼 |
-| 활성 포인트 | `#e00b41` | 버튼 누름 상태 |
-| 비활성 포인트 | `#ffd1da` | 비활성 CTA |
-| 경계선 | `#dddddd` | 입력창, 카드 구분선, 검색/필터 세그먼트 |
-| 부드러운 표면 | `#f7f7f7` | 필터 배경, 비활성 입력, 보조 영역 |
-| 오류 텍스트 | `#c13515` | 입력 검증 오류 |
+| 기본 배경 | `canvas` `#FFF9FC` | 모든 주요 화면의 기본 캔버스 |
+| 기본 텍스트 | `textPrimary` `#3A2E2E` | 제목, 본문, 주요 라벨 |
+| 보조 텍스트 | `textSecondary` `#8A7F76` | 설명, 날짜 보조 정보, 빈 상태 문구 |
+| 포인트 컬러 | `brandPrimary` `#F26B7A` | 주요 CTA, 수락 버튼, 선택 상태, AI 추천 실행 버튼 |
+| 강한 액션 | `brandStrong` `#C24B57` | primary 위 전경, text action |
+| 선택 보조 표면 | `brandSubtle` `#FFEEF0` | secondary 선택/보조 표면 |
+| 경계선 | `borderDefault` `#F2E0DC` | 입력창, 카드 구분선, 세그먼트 |
+| 부드러운 표면 | `surface` `#FFFFFF` | 카드·입력 표면 |
+| 오류 텍스트 | `danger` `#FF4F6D` | 입력 검증 오류 |
 
 #### 타이포그래피
 
-- 기본 폰트는 `Airbnb Cereal VF, Circular, Inter, -apple-system, system-ui, Roboto, "Helvetica Neue", sans-serif` 순서로 사용한다.
-- 앱 구현 시 실제 Airbnb Cereal을 사용할 수 없으면 `Inter`를 기본 대체 폰트로 사용한다.
-- 화면 제목은 22-28px 범위에서 사용하고, 큰 마케팅 히어로 타입은 사용하지 않는다.
-- 카드 본문, 일정 메타, 댓글은 14-16px 범위로 유지한다.
-- 버튼 라벨은 14-16px, weight 500을 기준으로 한다.
+- 현재는 플랫폼 시스템 폰트를 사용한다. 커스텀 font loader를 추가하기 전에는 화면에서 임의 `fontFamily`를 선언하지 않는다.
+- 화면 제목은 `heading` 22/30/700, Input 타이틀은 `inputTitle` 26/44/800을 사용한다.
+- 카드 본문·일정 메타·댓글은 body 14/22/500 또는 bodyLarge 16/24/400을 사용한다.
+- 버튼 라벨은 `button` 15/20/700을 기준으로 한다.
 
 #### 형태와 간격
 
-- 기본 버튼 반경은 8px로 한다.
-- 데이트 옵션 카드와 일정 카드는 14px 안팎의 부드러운 둥근 모서리를 사용한다.
-- 검색/필터 바, 커플 코드 입력 보조 영역은 pill 형태를 사용할 수 있다.
-- 기본 간격은 4px 단위 토큰을 사용하고, 주요 카드 간격은 16px, 카드 내부 여백은 16-24px를 사용한다.
-- 화면 전체 섹션은 64px보다 과하게 벌리지 않는다. 모바일 앱이므로 정보 밀도를 유지한다.
+- input은 16px, 버튼은 18px, chip은 20px, 카드는 22px, modal은 24px 반경을 사용한다.
+- 화면의 좌우 padding은 20px, 카드 내부 padding은 대체로 16px, 주요 section gap은 32px를 사용한다.
+- 일반 레이아웃은 4/8/12/16/20/24/32 간격 토큰을 사용하고 2px은 보정용으로만 쓴다.
 
 #### 그림자
 
 - 그림자는 `Design.md`의 단일 shadow tier만 사용한다.
 - 기본 화면과 섹션에는 그림자를 사용하지 않는다.
-- 옵션 카드 hover, 드롭다운, 모달, 검색/필터 표면에만 제한적으로 사용한다.
+- 모바일 press feedback, 드롭다운, 모달, 검색/필터 표면에만 제한적으로 사용한다.
 
 #### Date Planner 전용 컴포넌트 매핑
 
 | Date Planner 컴포넌트 | 디자인 시스템 기준 |
 |----------------------|-------------------|
-| `ProposalCard` | 사진 우선 `property-card` 구조를 응용한다. 장소 이미지가 없으면 부드러운 표면과 메타 정보 중심으로 표시한다. |
-| `DateOptionCard` | 사진 영역, 장소명, 설명, 비용, 선호도, 댓글 요약을 가진 카드로 구성한다. |
-| `ProposalFilterTabs` | pill형 카테고리 스트립을 응용한다. 선택된 탭은 ink 또는 Rausch로 강조한다. |
-| `AiSuggestionPanel` | 검색 바 pill 패턴을 응용해 추천 조건 입력과 실행 버튼을 결합한다. |
-| `DecisionBar` | 모바일에서는 하단 sticky bar로 배치하고, 수락 CTA에 Rausch를 사용한다. |
-| `CalendarAgenda` | 카드형 목록을 사용하되 과한 배경색 없이 흰 캔버스 위 경계선과 여백으로 구분한다. |
-| `OptionCommentThread` | 완전한 채팅 UI보다 리뷰/댓글 카드처럼 조용한 텍스트 스택으로 구성한다. |
+| `ProposalCard` | `surface`, card radius 22, warm card elevation과 메타 정보 중심 구조를 사용한다. |
+| `DateOptionCard` | 장소 이미지가 있을 때만 미디어를 사용하고, card/body/token으로 정보 위계를 구성한다. |
+| `ProposalFilterTabs` | chip radius 20을 사용하고, 선택 상태는 brand 토큰으로 강조한다. |
+| `AiSuggestionPanel` | InputField와 BigButton의 공통 표면·상태 계약을 사용한다. |
+| `DecisionBar` | 모바일 하단 sticky bar로 배치하고, 수락 CTA에 `brandPrimary`를 사용한다. |
+| `CalendarAgenda` | warm canvas 위 surface/경계선/여백으로 구분한다. |
+| `OptionCommentThread` | 완전한 채팅 UI보다 조용한 텍스트 스택과 body scale을 사용한다. |
 
 #### 사용하지 않을 것
 
-- 보라색, 베이지색, 과한 파스텔 배경을 주 색상으로 사용하지 않는다.
+- token에 없는 임의 색상, raw hex, raw shadow 값을 화면 코드에 추가하지 않는다.
 - 여러 단계의 그림자나 떠 있는 중첩 카드를 만들지 않는다.
 - 랜딩 페이지식 대형 히어로 영역을 만들지 않는다.
 - 데이트 앱이라는 이유만으로 하트, 그라데이션, 장식형 일러스트를 과하게 사용하지 않는다.

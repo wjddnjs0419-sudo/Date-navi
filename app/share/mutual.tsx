@@ -6,13 +6,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Sparkles, Clock, Wallet } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, Chip, CourseStepList, SoftCard } from '../../components/ui';
+import { Sparkles, Clock, Wallet } from '../../components/iconography';
+import { C, DS, G, SP, R } from '../../constants/theme';
+import { BigButton, Chip, CourseStepList, Header, ScreenHeading, SoftCard } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { localizeCardContent } from '../../lib/card-i18n';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 type MutualCard = {
   id: string;
@@ -38,6 +38,7 @@ const REACTION_SECTION_MAP: Record<string, MutualCard['section']> = {
 export default function MutualScreen() {
   const router = useRouter();
   const { t, language } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const SECTION_STYLES = {
     mutual:      { fg: C.pinkDeep,    bg: C.pinkLight,   label: t('share.mutual.sectionLabels.mutual') },
     conditional: { fg: C.lavenderFg,  bg: C.lavender,    label: t('share.mutual.sectionLabels.conditional') },
@@ -151,13 +152,10 @@ export default function MutualScreen() {
   useEffect(() => { setSelectedId(firstMutualId); }, [firstMutualId]);
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('share.mutual.heading')} subtitle={t('share.mutual.subText')} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-        <View style={s.introWrap}>
-          <Text style={T.h1}>{t('share.mutual.heading')}</Text>
-          <Text style={[T.sub, s.subTextSpacing]}>{t('share.mutual.subText')}</Text>
-        </View>
 
         {loading ? (
           <View style={s.loadingWrap}>
@@ -262,7 +260,7 @@ export default function MutualScreen() {
         <View style={s.bottomSpacer} />
       </ScrollView>
 
-      <View style={s.footer}>
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton
           testID="mutual-confirm-cta"
           onPress={() => {
@@ -275,7 +273,7 @@ export default function MutualScreen() {
         >
           {t('share.mutual.confirmCta')}
         </BigButton>
-        <TouchableOpacity style={s.textBtn} onPress={() => router.replace('/(tabs)/' as any)}>
+        <TouchableOpacity style={s.textBtn} onPress={() => router.replace('/(tabs)/' as any)} activeOpacity={0.88}>
           <Text style={s.textBtnText}>{t('share.mutual.seeMoreCta')}</Text>
         </TouchableOpacity>
       </View>
@@ -284,58 +282,56 @@ export default function MutualScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
-  introWrap: { marginTop: SP.lg },
-  subTextSpacing: { marginTop: SP.sm },
-  loadingWrap: { alignItems: 'center', marginTop: 60 },
-  sectionWrap: { marginTop: SP.xl + SP.xs },
-  cardGap: { marginTop: SP.sm + 2 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.lg },
+  loadingWrap: { alignItems: 'center', marginTop: SP.art },
+  sectionWrap: { marginTop: SP.xxl },
+  cardGap: { marginTop: SP.md },
   cardRelative: { position: 'relative' },
-  radio: { position: 'absolute', top: 12, right: 12, zIndex: 2 },
+  radio: { position: 'absolute', top: SP.md, right: SP.md, zIndex: 2 },
   radioOuter: {
-    width: 22, height: 22, borderRadius: 11, borderWidth: 2,
+    width: 22, height: 22, borderRadius: DS.radius.full, borderWidth: 2,
     borderColor: C.border, alignItems: 'center', justifyContent: 'center',
     backgroundColor: C.white,
   },
   radioOuterOn: { borderColor: C.pink },
-  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.pink },
-  bottomSpacer: { height: 120 },
+  radioInner: { width: 12, height: 12, borderRadius: DS.radius.full, backgroundColor: C.pink },
+  bottomSpacer: { height: SP.hero + SP.section + SP.lg },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
-  sectionDot: { width: 4, height: 16, borderRadius: 2 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: C.text },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text, paddingRight: 30 },
-  cardSummary: { fontSize: 12, color: C.textSub, lineHeight: 18, marginTop: SP.xs },
+  sectionDot: { width: 4, height: 16, borderRadius: DS.spacing.micro },
+  sectionLabel: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.text },
+  cardTitle: { ...DS.typography.body, fontWeight: '700', color: C.text, paddingRight: SP.section },
+  cardSummary: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.xs },
   stepsWrap: { marginTop: SP.md },
   metaRow: { flexDirection: 'row', gap: SP.md, marginTop: SP.sm },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  metaText: { fontSize: 11, fontWeight: '600' },
+  metaText: { ...DS.typography.caption, fontWeight: '600' },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.sm },
   reactionRow: { flexDirection: 'row', gap: SP.sm, marginTop: SP.md },
   reactionBox: {
-    flex: 1, borderRadius: R.md, padding: SP.sm + 2,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    flex: 1, borderRadius: R.md, padding: SP.sm,
+    backgroundColor: DS.color.surfaceOverlay,
   },
-  reactionBoxLabel: { fontSize: 10, color: C.textMuted },
-  reactionBoxValue: { fontSize: 12, fontWeight: '600', color: C.text, marginTop: 2 },
+  reactionBoxLabel: { ...DS.typography.micro, color: C.textMuted },
+  reactionBoxValue: { ...DS.typography.bodySmall, fontWeight: '600', color: C.text, marginTop: DS.spacing.micro },
   noteBox: {
     flexDirection: 'row', gap: SP.sm, marginTop: SP.md,
     borderRadius: R.md, padding: SP.md,
     backgroundColor: C.white,
     alignItems: 'flex-start',
   },
-  noteIcon: { marginTop: 1 },
-  noteText: { fontSize: 12, color: C.grayFg, lineHeight: 18, flex: 1 },
-  emptyWrap: { alignItems: 'center', marginTop: 80, gap: SP.lg },
-  emptyText: { fontSize: 14, color: C.textSub },
+  noteIcon: { marginTop: DS.component.iconOpticalOffset },
+  noteText: { ...DS.typography.bodySmall, color: C.grayFg, flex: 1 },
+  emptyWrap: { alignItems: 'center', marginTop: SP.hero + SP.lg, gap: SP.lg },
+  emptyText: { ...DS.typography.body, color: C.textSub },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.bg,
     gap: SP.xs,
   },
-  textBtn: { alignItems: 'center', paddingVertical: SP.sm + 2 },
-  textBtnText: { fontSize: 13, color: C.textSub, fontWeight: '500' },
+  textBtn: { alignItems: 'center', paddingVertical: SP.sm },
+  textBtnText: { ...DS.typography.bodyCompact, color: C.textSub },
 });

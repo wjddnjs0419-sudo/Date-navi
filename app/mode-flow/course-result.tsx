@@ -5,11 +5,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { SP, R } from '../../constants/theme';
+import { Send, Bookmark, ChevronUp, ChevronDown, X, Lock } from '../../components/iconography';
+import { C, DS, SP, R } from '../../constants/theme';
 import { getCourseCategoryIcon } from '../../lib/course-draft';
-import { BackBar, BigButton, Badge, MetaChipRow, SuccessModal } from '../../components/ui';
+import { BigButton, Badge, Header, MetaChipRow, ScreenHeading, SuccessModal } from '../../components/ui';
 import { PickerSheet } from '../../components/pickers';
 import { resolveConfirmTitle } from '../../lib/confirm-title';
 import { localizeCardContent, overrideCardTitle } from '../../lib/card-i18n';
@@ -36,6 +35,7 @@ import type { RecommendationSessionSnapshot } from '../../lib/recommendation-ses
 import { logEvent } from '../../lib/analytics';
 import { buildCourseRegenerateRequestedParams } from '../../lib/analytics-course-actions';
 import { buildCourseSavedParams } from '../../lib/analytics-course-save';
+import { canonicalizeStepIntentTag, localizeStepIntentTag } from '../../shared/recommendation/step-intent-tag-catalog';
 
 type ReplacementCandidateGroups = {
   top: Array<ReplacementCandidate | ProviderReplacementCandidate>;
@@ -66,6 +66,46 @@ const KAKAO_CATEGORY_CODE: Record<string, string> = {
   attraction: 'AT4',
 };
 
+type DisplayStepIntents = {
+  resolved: NonNullable<RecommendationSessionSnapshot['response']['metadata']['stepIntent']>['resolved'];
+  unsupported: NonNullable<RecommendationSessionSnapshot['response']['metadata']['stepIntent']>['unsupported'];
+};
+
+function getCurrentPlaceIdentity(step: RecommendationSessionSnapshot['steps'][number]) {
+  return step.currentPlaceIdentity
+    ?? (step.currentKakaoPlaceId
+      ? { provider: 'kakao' as const, providerPlaceId: step.currentKakaoPlaceId }
+      : undefined);
+}
+
+function getDisplayStepIntents(
+  snapshot: RecommendationSessionSnapshot,
+): DisplayStepIntents | undefined {
+  const serverStepIntent = snapshot.response.metadata.stepIntent;
+  if (serverStepIntent) {
+    return { resolved: serverStepIntent.resolved, unsupported: serverStepIntent.unsupported };
+  }
+
+  // Provider-neutral responses currently omit stepIntent metadata. The request still
+  // carries the user's structured tags, so use them only as a display fallback.
+  const resolved = snapshot.request.courseSteps.flatMap((step) => (
+    (step.intentTags ?? []).map((tag) => {
+      const canonicalTerm = canonicalizeStepIntentTag(tag);
+      return {
+        canonicalTerm,
+        displayLabel: {
+          ko: localizeStepIntentTag(canonicalTerm, 'ko'),
+          en: localizeStepIntentTag(canonicalTerm, 'en'),
+        },
+        strength: 'required' as const,
+        negated: false,
+        stepId: step.id,
+      };
+    })
+  ));
+  return resolved.length > 0 ? { resolved, unsupported: [] } : undefined;
+}
+
 export default function CourseResultScreen() {
   const rawParams = useLocalSearchParams();
   const router = useRouter();
@@ -73,6 +113,7 @@ export default function CourseResultScreen() {
   const {
     getRecommendationSession,
     loadRecommendationSession,
+    reloadRecommendationSession,
     mutateRecommendationSession,
   } = useRecommendationSessionStore();
   const routeParamKey = JSON.stringify(rawParams);
@@ -175,11 +216,15 @@ export default function CourseResultScreen() {
   }
 
   function toLockedStep(step: RecommendationSessionSnapshot['steps'][number]) {
-    if (!step.currentKakaoPlaceId) throw new Error('Provider-neutral session editing is not available yet.');
+    const placeIdentity = getCurrentPlaceIdentity(step);
+    if (!placeIdentity) {
+      throw new Error('A provider place identity is required.');
+    }
     return {
       stepId: step.stepId,
       candidateId: step.currentCandidateId,
-      kakaoPlaceId: step.currentKakaoPlaceId,
+      ...(step.currentKakaoPlaceId ? { kakaoPlaceId: step.currentKakaoPlaceId } : {}),
+      placeIdentity,
       name: step.placeName,
       address: step.address,
       roadAddress: step.roadAddress,
@@ -191,7 +236,7 @@ export default function CourseResultScreen() {
   }
 
   async function regenerateUnlocked(targetStepId?: string) {
-    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
+    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.some((step) => !getCurrentPlaceIdentity(step))) return;
     void logEvent('course_regenerate_requested', buildCourseRegenerateRequestedParams(snapshot.steps));
     setEditing(true);
     setEditError('');
@@ -207,7 +252,10 @@ export default function CourseResultScreen() {
         lockedSteps: lockedSteps.length > 0 ? lockedSteps : undefined,
         excludedPlaceIds: [...new Set([
           ...(snapshot.request.excludedPlaceIds ?? []),
-          ...snapshot.steps.filter((step) => targetStepId ? step.stepId === targetStepId : !step.locked).flatMap((step) => step.currentKakaoPlaceId ? [step.currentKakaoPlaceId] : []),
+          ...snapshot.steps.filter((step) => targetStepId ? step.stepId === targetStepId : !step.locked).flatMap((step) => {
+            const identity = getCurrentPlaceIdentity(step);
+            return identity ? [identity.providerPlaceId] : [];
+          }),
         ])],
       };
       await requestRecommendationResponse(request);
@@ -229,7 +277,8 @@ export default function CourseResultScreen() {
     setEditError('');
     try {
       const target = snapshot.steps.find((step) => step.stepId === targetStepId);
-      if (target?.currentPlaceIdentity?.provider === 'naver') {
+      const targetIdentity = target ? getCurrentPlaceIdentity(target) : undefined;
+      if (targetIdentity?.provider === 'naver') {
         const { data, error } = await supabase.functions.invoke('provider-neutral-replacements', {
           body: { action: 'list', sessionId: snapshot.sessionId, targetStepId },
         });
@@ -241,7 +290,7 @@ export default function CourseResultScreen() {
         setReplacementCandidateListAttestationId(null);
         return;
       }
-      if (snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
+      if (snapshot.steps.some((step) => !getCurrentPlaceIdentity(step))) return;
       const { data, error } = await supabase.functions.invoke('replacement-candidates', {
         body: { sessionId: snapshot.sessionId, targetStepId },
       });
@@ -270,14 +319,14 @@ export default function CourseResultScreen() {
         body: { action: 'apply', sessionId: snapshot.sessionId, targetStepId, attestationId: providerReplacementAttestationId, providerPlaceId: candidate.providerPlaceId },
       });
       if (error) throw error;
-      const next = await loadRecommendationSession(snapshot.sessionId, snapshot.requestId);
+      const next = await reloadRecommendationSession(snapshot.sessionId);
       setSnapshot(next);
       setReplacementTargetId(null); setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS); setProviderReplacementAttestationId(null);
     } catch { setEditError(t('modeFlow.courseResult.editError')); } finally { setEditing(false); }
   }
 
   async function replaceWithCandidate(targetStepId: string, kakaoPlaceId: string, pickedName?: string) {
-    if (!snapshot || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
+    if (!snapshot || snapshot.steps.some((step) => !getCurrentPlaceIdentity(step))) return;
     setEditing(true);
     setEditError('');
     try {
@@ -295,7 +344,10 @@ export default function CourseResultScreen() {
             : {}),
         },
         lockedSteps: snapshot.steps.filter((step) => step.stepId !== targetStepId).map(toLockedStep),
-        excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.flatMap((step) => step.currentKakaoPlaceId ? [step.currentKakaoPlaceId] : [])])],
+        excludedPlaceIds: [...new Set([...(snapshot.request.excludedPlaceIds ?? []), ...snapshot.steps.flatMap((step) => {
+          const identity = getCurrentPlaceIdentity(step);
+          return identity ? [identity.providerPlaceId] : [];
+        })])],
       };
       const response = await requestRecommendationResponse(request);
       const replaced = response.course.steps.find((step) => step.stepId === targetStepId && step.kakaoPlaceId === kakaoPlaceId);
@@ -315,7 +367,7 @@ export default function CourseResultScreen() {
   }
 
   async function addVerifiedStep() {
-    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.length >= 4 || snapshot.steps.some((step) => !step.currentKakaoPlaceId)) return;
+    if (!snapshot || snapshot.status === 'confirmed' || snapshot.steps.length >= 4 || snapshot.steps.some((step) => !getCurrentPlaceIdentity(step))) return;
     setEditing(true);
     setEditError('');
     try {
@@ -486,7 +538,7 @@ export default function CourseResultScreen() {
             {t('modeFlow.courseResult.retry')}
           </BigButton>
         )}
-        <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.88} style={s.backButton}>
           <Text style={s.backButtonText}>{t('modeFlow.courseResult.back')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -494,17 +546,17 @@ export default function CourseResultScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <SafeAreaView style={s.safe}>
       <SuccessModal
         visible={savedModalVisible}
         message={t('modeFlow.courseResult.savedMessage')}
         onHide={() => { setSavedModalVisible(false); router.replace('/(tabs)/' as any); }}
       />
-      <BackBar />
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('modeFlow.courseResult.heading')} />
       <ScrollView contentContainerStyle={s.scrollContent}>
         <View style={s.headerArea}>
           <Badge tone="pink">{t('modeFlow.courseResult.badge')}</Badge>
-          <Text style={s.heading}>{t('modeFlow.courseResult.heading')}</Text>
           <Text style={s.sub}>{t('modeFlow.courseResult.sub')}</Text>
           <MetaChipRow
             items={[
@@ -515,7 +567,7 @@ export default function CourseResultScreen() {
             ]}
           />
           {(() => {
-            const stepIntent = snapshot.response.metadata.stepIntent;
+            const stepIntent = getDisplayStepIntents(snapshot);
             if (!stepIntent) return null;
             const hasChips = stepIntent.resolved.length > 0 || stepIntent.unsupported.length > 0;
             if (!hasChips) return null;
@@ -550,6 +602,7 @@ export default function CourseResultScreen() {
             accessibilityRole="button"
             accessibilityState={{ expanded: conditionsExpanded }}
             onPress={() => setConditionsExpanded((value) => !value)}
+            activeOpacity={0.88}
             style={s.conditionsToggle}
           >
             <Text style={s.conditionsToggleText}>{t('modeFlow.courseResult.conditions')}</Text>
@@ -580,6 +633,7 @@ export default function CourseResultScreen() {
                   accessibilityRole="button"
                   disabled={editing || snapshot.status === 'confirmed'}
                   onPress={() => setActionSheetStepId(step.stepId)}
+                  activeOpacity={0.88}
                   testID={`course-step-card-${step.stepId}`}
                   style={s.timelineCard}
                 >
@@ -590,10 +644,10 @@ export default function CourseResultScreen() {
                     <CategoryIcon size={16} color={categoryColor(step.category)} />
                     {step.locked && <Lock size={13} color={C.textMuted} style={s.timelineLockIcon} />}
                     <View style={s.stepActions}>
-                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === 0} onPress={() => moveStep(step.stepId, 'up')} style={s.stepAction}>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === 0} onPress={() => moveStep(step.stepId, 'up')} activeOpacity={0.88} style={s.stepAction}>
                         <ChevronUp size={16} color={C.textSub} />
                       </TouchableOpacity>
-                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === snapshot.steps.length - 1} onPress={() => moveStep(step.stepId, 'down')} style={s.stepAction}>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || snapshot.status === 'confirmed' || index === snapshot.steps.length - 1} onPress={() => moveStep(step.stepId, 'down')} activeOpacity={0.88} style={s.stepAction}>
                         <ChevronDown size={16} color={C.textSub} />
                       </TouchableOpacity>
                     </View>
@@ -602,11 +656,11 @@ export default function CourseResultScreen() {
                   {step.reason ? <Text numberOfLines={2} style={s.timelineReason}>{step.reason}</Text> : null}
                   <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
                   <View style={s.cardActions}>
-                    {(step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId) && <TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId!, mapUrl: step.mapUrl })} style={s.cardActionBtn}>
+                    {(step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId ?? step.mapUrl) && <TouchableOpacity testID={`course-step-map-${step.stepId}`} accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId, mapUrl: step.mapUrl, name: step.placeName, address: step.roadAddress || step.address })} activeOpacity={0.88} style={s.cardActionBtn}>
                       <Text style={s.cardActionText}>{t('modeFlow.courseResult.placeReviews')}</Text>
                     </TouchableOpacity>}
                     {snapshot.status !== 'confirmed' && (
-                      <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')} onPress={() => void loadReplacementCandidates(step.stepId)} style={[s.cardActionBtn, (step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')) && s.cardActionBtnDisabled]}>
+                      <TouchableOpacity accessibilityRole="button" disabled={editing || step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')} onPress={() => void loadReplacementCandidates(step.stepId)} activeOpacity={0.88} style={[s.cardActionBtn, (step.locked || (!step.currentKakaoPlaceId && step.currentPlaceIdentity?.provider !== 'naver')) && s.cardActionBtnDisabled]}>
                         <Text style={s.cardActionText}>{t('modeFlow.courseResult.otherPlaceBtn')}</Text>
                       </TouchableOpacity>
                     )}
@@ -635,7 +689,7 @@ export default function CourseResultScreen() {
             <View style={s.replacementHandle} />
             <View style={s.replacementHeader}>
               <Text style={s.replacementTitle}>{t('modeFlow.courseResult.replacementTitle')}</Text>
-              <TouchableOpacity accessibilityRole="button" onPress={closeReplacementPanel} style={s.replacementCloseButton}>
+              <TouchableOpacity accessibilityRole="button" onPress={closeReplacementPanel} activeOpacity={0.88} style={s.replacementCloseButton}>
                 <X size={16} color={C.textSub} />
               </TouchableOpacity>
             </View>
@@ -646,6 +700,7 @@ export default function CourseResultScreen() {
                 accessibilityState={{ selected: replacementTab === 'recommend' }}
                 testID="course-replacement-tab-recommend"
                 onPress={() => setReplacementTab('recommend')}
+                activeOpacity={0.88}
                 style={[s.tabBtn, replacementTab === 'recommend' && s.tabBtnOn]}
               >
                 <Text style={[s.tabText, replacementTab === 'recommend' && s.tabTextOn]}>{t('modeFlow.courseResult.recommendTab')}</Text>
@@ -655,6 +710,7 @@ export default function CourseResultScreen() {
                 accessibilityState={{ selected: replacementTab === 'search' }}
                 testID="course-replacement-tab-search"
                 onPress={() => setReplacementTab('search')}
+                activeOpacity={0.88}
                 style={[s.tabBtn, replacementTab === 'search' && s.tabBtnOn]}
               >
                 <Text style={[s.tabText, replacementTab === 'search' && s.tabTextOn]}>{t('modeFlow.courseResult.searchTab')}</Text>
@@ -674,9 +730,9 @@ export default function CourseResultScreen() {
                             <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                          {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>
                       ))}
                     </View>
@@ -686,9 +742,9 @@ export default function CourseResultScreen() {
                           <View style={s.replacementCopy}>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>
                       ))}
                     </View>
@@ -715,6 +771,7 @@ export default function CourseResultScreen() {
                     } } as any);
                   }}
                   style={s.searchCta}
+                  activeOpacity={0.88}
                 >
                   <Text style={s.searchCtaText}>{t('modeFlow.courseResult.searchCta')}</Text>
                 </TouchableOpacity>
@@ -726,11 +783,11 @@ export default function CourseResultScreen() {
 
       {snapshot.status === 'confirmed' && (
         <View style={s.confirmedActions}>
-          <TouchableOpacity testID="confirmed-send" style={s.sendBtn} onPress={handleSendToPartner} disabled={sending}>
+          <TouchableOpacity testID="confirmed-send" style={s.sendBtn} onPress={handleSendToPartner} disabled={sending} activeOpacity={0.88}>
             {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}<Text style={s.sendText}>{t('modeFlow.courseResult.send')}</Text>
           </TouchableOpacity>
           {!saved && (
-            <TouchableOpacity testID="confirmed-save" style={s.saveBtn} onPress={handleSave} disabled={saving}>
+            <TouchableOpacity testID="confirmed-save" style={s.saveBtn} onPress={handleSave} disabled={saving} activeOpacity={0.88}>
               {saving ? <ActivityIndicator size="small" color={C.pinkDeep} />
                 : <><Bookmark size={14} color={C.pinkDeep} /><Text style={s.saveText}>{t('modeFlow.courseResult.save')}</Text></>}
             </TouchableOpacity>
@@ -741,13 +798,13 @@ export default function CourseResultScreen() {
 
       {snapshot.status !== 'confirmed' && (
         <View style={s.footerActions}>
-          <TouchableOpacity accessibilityRole="button" disabled={editing} onPress={() => void regenerateUnlocked()} style={s.regenerateButton}>
+          <TouchableOpacity accessibilityRole="button" disabled={editing} onPress={() => void regenerateUnlocked()} activeOpacity={0.88} style={s.regenerateButton}>
             <Text style={s.regenerateText}>{t('modeFlow.courseResult.regenerate')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" testID="course-add-step" disabled={editing || snapshot.steps.length >= 4} onPress={() => void addVerifiedStep()} style={s.regenerateButton}>
+          <TouchableOpacity accessibilityRole="button" testID="course-add-step" disabled={editing || snapshot.steps.length >= 4} onPress={() => void addVerifiedStep()} activeOpacity={0.88} style={s.regenerateButton}>
             <Text style={s.regenerateText}>{t('modeFlow.courseResult.add')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" testID="course-confirm" disabled={editing} onPress={() => void applyMutation('confirm', {})} style={s.confirmButton}>
+          <TouchableOpacity accessibilityRole="button" testID="course-confirm" disabled={editing} onPress={() => void applyMutation('confirm', {})} activeOpacity={0.88} style={s.confirmButton}>
             {editing ? <ActivityIndicator size="small" color={C.white} /> : <Text style={s.confirmText}>{t('modeFlow.courseResult.confirm')}</Text>}
           </TouchableOpacity>
         </View>
@@ -806,96 +863,95 @@ export default function CourseResultScreen() {
 }
 
 const s = StyleSheet.create({
-  titleFieldLabel: { fontSize: 13, color: C.textMuted, fontWeight: '600', marginBottom: SP.sm },
-  titleInputWrap: { borderWidth: 1.5, borderColor: C.pinkBorder, backgroundColor: C.white, borderRadius: R.md, paddingHorizontal: SP.lg, paddingVertical: SP.md + 1 },
+  titleFieldLabel: { ...DS.typography.bodyCompact, color: C.textMuted, fontWeight: '600', marginBottom: SP.sm },
+  titleInputWrap: { borderWidth: 1.5, borderColor: C.pinkBorder, backgroundColor: C.white, borderRadius: DS.radius.input, paddingHorizontal: SP.lg, paddingVertical: DS.component.titleInputPaddingVertical },
   titleInputWrapActive: { borderColor: C.pink },
-  titleInput: { fontSize: 15, color: C.text, fontWeight: '600', paddingVertical: 0 },
-  titleHelper: { fontSize: 12, color: C.textSub, marginTop: SP.sm, lineHeight: 18 },
+  titleInput: { ...DS.typography.cardTitle, fontWeight: '600', color: C.text, paddingVertical: 0 },
+  titleHelper: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.sm },
   safe: { flex: 1, backgroundColor: C.bg },
-  center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  loadingText: { fontSize: 14, color: C.textSub, marginTop: 16, textAlign: 'center' },
-  errTitle: { fontSize: 20, fontWeight: '700', color: C.text, textAlign: 'center' },
-  errRetryBtn: { marginTop: 24 },
-  backButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, marginTop: 8 },
-  backButtonText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
-  inlineError: { color: C.pinkDeep, fontSize: 12, marginTop: 10 },
-  placeRowGap: { marginTop: 12 },
-  headerArea: { paddingHorizontal: SP.xl, gap: SP.sm, marginBottom: SP.sm },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, marginTop: SP.xs },
-  sub: { fontSize: 13, color: C.textSub },
-  conditionsToggle: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
-  conditionsToggleText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
-  conditionsPanel: { backgroundColor: C.white, borderRadius: 12, padding: 12, gap: 3 },
-  conditionText: { fontSize: 12, color: C.textSub },
-  relaxedText: { fontSize: 12, color: C.pinkDeep },
-  intentSection: { gap: 8, marginTop: 4 },
-  intentTitle: { fontSize: 12, fontWeight: '700', color: C.textSub },
-  intentChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  intentUnsupported: { fontSize: 12, color: C.textMuted, lineHeight: 18 },
-  scrollContent: { paddingBottom: 12 },
-  timeline: { paddingHorizontal: SP.xl, gap: SP.xs },
-  timelineCard: { backgroundColor: C.white, borderRadius: R.xl, padding: SP.lg, borderWidth: 1, borderColor: C.border },
-  timelineTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timelineBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  timelineBadgeNum: { fontSize: 12, fontWeight: '800', color: C.white, lineHeight: 14 },
-  timelineLockIcon: { marginLeft: -2 },
-  timelineName: { color: C.text, fontSize: 15, fontWeight: '700', marginTop: SP.sm },
-  timelineReason: { color: C.pinkDeep, fontSize: 13, lineHeight: 19, marginTop: SP.xs },
-  timelineAddress: { color: C.textMuted, fontSize: 12, marginTop: SP.xs },
+  center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: SP.section },
+  loadingText: { ...DS.typography.body, color: C.textSub, marginTop: SP.lg, textAlign: 'center' },
+  errTitle: { ...DS.typography.metric, fontWeight: '700', color: C.text, textAlign: 'center' },
+  errRetryBtn: { marginTop: SP.xxl },
+  backButton: { minHeight: DS.spacing.touch, justifyContent: 'center', paddingHorizontal: SP.screen, marginTop: SP.sm },
+  backButtonText: { ...DS.typography.body, fontWeight: '600', color: C.textSub },
+  inlineError: { ...DS.typography.bodySmall, color: C.pinkDeep, marginTop: SP.sm },
+  placeRowGap: { marginTop: SP.md },
+  headerArea: { paddingHorizontal: SP.screen, gap: SP.sm, marginBottom: SP.sm },
+  sub: { ...DS.typography.bodyCompact, color: C.textSub },
+  conditionsToggle: { minHeight: DS.spacing.touch, justifyContent: 'center', alignSelf: 'flex-start' },
+  conditionsToggleText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '700' },
+  conditionsPanel: { backgroundColor: C.white, borderRadius: DS.radius.input, padding: SP.md, gap: SP.micro },
+  conditionText: { ...DS.typography.bodySmall, color: C.textSub },
+  relaxedText: { ...DS.typography.bodySmall, color: C.pinkDeep },
+  intentSection: { gap: SP.sm, marginTop: SP.xs },
+  intentTitle: { ...DS.typography.bodySmall, fontWeight: '700', color: C.textSub },
+  intentChips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.sm },
+  intentUnsupported: { ...DS.typography.bodySmall, color: C.textMuted },
+  scrollContent: { paddingBottom: SP.md },
+  timeline: { paddingHorizontal: SP.screen, gap: SP.xs },
+  timelineCard: { backgroundColor: C.white, borderRadius: DS.radius.card, padding: SP.lg, borderWidth: 1, borderColor: C.border },
+  timelineTopRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
+  timelineBadge: { width: 24, height: 24, borderRadius: DS.radius.full, alignItems: 'center', justifyContent: 'center' },
+  timelineBadgeNum: { ...DS.typography.bodySmall, fontWeight: '800', color: C.white },
+  timelineLockIcon: { marginLeft: -DS.spacing.micro },
+  timelineName: { ...DS.typography.cardTitle, color: C.text, marginTop: SP.sm },
+  timelineReason: { ...DS.typography.bodyCompact, color: C.pinkDeep, marginTop: SP.xs },
+  timelineAddress: { ...DS.typography.bodySmall, color: C.textMuted, marginTop: SP.xs },
   timelineConnector: { alignItems: 'center', height: 26, justifyContent: 'center' },
   timelineConnectorLine: { width: 1.5, height: 7, backgroundColor: C.border },
-  timelineConnectorDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
+  timelineConnectorDot: { width: 20, height: 20, borderRadius: DS.radius.full, backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center' },
   cardActions: { flexDirection: 'row', gap: SP.sm, marginTop: SP.md },
-  cardActionBtn: { flex: 1, minHeight: 40, borderRadius: R.md, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  cardActionBtn: { flex: 1, minHeight: DS.spacing.touch, borderRadius: DS.radius.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   cardActionBtnDisabled: { opacity: 0.4 },
-  cardActionText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700' },
-  stepActions: { flexDirection: 'row', marginLeft: 'auto', gap: 4 },
-  stepAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  editError: { color: C.pinkDeep, fontSize: 12, textAlign: 'center', marginBottom: 4 },
+  cardActionText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '700' },
+  stepActions: { flexDirection: 'row', marginLeft: 'auto', gap: SP.xs },
+  stepAction: { width: DS.spacing.touch, height: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
+  editError: { ...DS.typography.bodySmall, color: C.pinkDeep, textAlign: 'center', marginBottom: SP.xs },
   replacementModalWrap: { flex: 1, justifyContent: 'flex-end' },
-  replacementBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 31, 36, 0.28)' },
+  replacementBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: DS.color.overlayScrim },
   replacementSheet: {
     maxHeight: '75%',
-    backgroundColor: C.bg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 28,
-    gap: 8,
+    backgroundColor: C.white,
+    borderTopLeftRadius: DS.radius.modal,
+    borderTopRightRadius: DS.radius.modal,
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.sm,
+    paddingBottom: SP.xxl,
+    gap: SP.sm,
   },
-  replacementHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, alignSelf: 'center', marginBottom: 6 },
+  replacementHandle: { width: DS.component.sheetHandleWidth, height: DS.component.sheetHandleHeight, borderRadius: DS.radius.full, backgroundColor: C.border, alignSelf: 'center', marginBottom: SP.sm },
   replacementList: { flexGrow: 0 },
   replacementHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  replacementCloseButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  replacementTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
-  replacementNotice: { color: C.textMuted, fontSize: 11 },
-  tabRow: { flexDirection: 'row', backgroundColor: C.gray, borderRadius: 12, padding: 3, gap: 3 },
-  tabBtn: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
+  replacementCloseButton: { width: DS.spacing.touch, height: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
+  replacementTitle: { ...DS.typography.cardTitle, color: C.text, fontWeight: '800' },
+  replacementNotice: { ...DS.typography.caption, color: C.textMuted },
+  tabRow: { flexDirection: 'row', backgroundColor: C.gray, borderRadius: DS.radius.compact, padding: SP.xs, gap: SP.xs },
+  tabBtn: { flex: 1, minHeight: DS.spacing.touch, alignItems: 'center', justifyContent: 'center', borderRadius: DS.radius.small },
   tabBtnOn: { backgroundColor: C.white },
-  tabText: { fontSize: 12, fontWeight: '800', color: C.textSub },
+  tabText: { ...DS.typography.bodySmall, fontWeight: '800', color: C.textSub },
   tabTextOn: { color: C.pinkDeep },
-  searchCta: { minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-  searchCtaText: { color: C.pinkDeep, fontSize: 13, fontWeight: '800' },
-  searchHint: { color: C.textMuted, fontSize: 12, textAlign: 'center', marginTop: 8 },
-  replacementEmpty: { color: C.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 12 },
-  replacementRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 },
-  replacementCopy: { flex: 1, gap: 2 },
-  topLabel: { color: C.pinkDeep, fontSize: 10, fontWeight: '800' },
-  replacementName: { color: C.text, fontSize: 13, fontWeight: '700' },
-  replacementAddress: { color: C.textMuted, fontSize: 11 },
-  externalActions: { flexDirection: 'row', gap: 10, marginTop: 3 },
-  externalLink: { color: C.pinkDeep, fontSize: 11, fontWeight: '700', minHeight: 28, textAlignVertical: 'center' },
-  pickButton: { minHeight: 44, borderRadius: 12, backgroundColor: C.pink, paddingHorizontal: 12, justifyContent: 'center' },
-  pickButtonText: { color: C.white, fontSize: 12, fontWeight: '800' },
-  confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 14 },
-  sendBtn: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 8, backgroundColor: C.pink },
-  sendText: { fontSize: 15, fontWeight: '800', color: C.white },
-  saveBtn: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingHorizontal: 16, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
-  saveText: { fontSize: 15, fontWeight: '700', color: C.pinkDeep },
-  footerActions: { flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 14 },
-  regenerateButton: { minHeight: 52, flex: 1, paddingHorizontal: 8, borderRadius: 14, borderWidth: 1, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center' },
-  regenerateText: { color: C.pinkDeep, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  confirmButton: { minHeight: 52, flex: 1, paddingHorizontal: 8, borderRadius: 14, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  confirmText: { color: C.white, fontSize: 15, fontWeight: '800', textAlign: 'center', flexShrink: 1 },
+  searchCta: { minHeight: 48, borderRadius: DS.radius.compact, borderWidth: 1.5, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center', marginTop: SP.sm },
+  searchCtaText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '800' },
+  searchHint: { ...DS.typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: SP.sm },
+  replacementEmpty: { ...DS.typography.bodySmall, color: C.textMuted, textAlign: 'center', paddingVertical: SP.md },
+  replacementRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: SP.sm, borderTopWidth: 1, borderTopColor: C.border, paddingTop: SP.sm },
+  replacementCopy: { flex: 1, gap: SP.micro },
+  topLabel: { ...DS.typography.micro, color: C.pinkDeep, fontWeight: '800' },
+  replacementName: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '700' },
+  replacementAddress: { ...DS.typography.caption, color: C.textMuted },
+  externalActions: { flexDirection: 'row', gap: SP.sm, marginTop: SP.xs },
+  externalLink: { ...DS.typography.caption, color: C.pinkDeep, fontWeight: '700', minHeight: DS.spacing.touch, textAlignVertical: 'center' },
+  pickButton: { minHeight: 44, borderRadius: DS.radius.input, backgroundColor: C.pink, paddingHorizontal: SP.md, justifyContent: 'center' },
+  pickButtonText: { ...DS.typography.bodySmall, color: C.white, fontWeight: '800' },
+  confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: SP.sm, marginHorizontal: SP.screen, marginBottom: SP.lg },
+  sendBtn: { flex: 1, minHeight: SP.input, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs, borderRadius: DS.radius.button, paddingHorizontal: SP.sm, backgroundColor: C.pink },
+  sendText: { ...DS.typography.button, fontWeight: '800', color: C.white },
+  saveBtn: { minHeight: SP.input, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs, borderRadius: DS.radius.button, paddingHorizontal: SP.lg, backgroundColor: C.white, borderWidth: 1.5, borderColor: C.pinkBorder },
+  saveText: { ...DS.typography.button, color: C.pinkDeep },
+  footerActions: { flexDirection: 'row', gap: SP.sm, marginHorizontal: SP.screen, marginBottom: SP.lg },
+  regenerateButton: { minHeight: 52, flex: 1, paddingHorizontal: SP.sm, borderRadius: DS.radius.button, borderWidth: 1, borderColor: C.pinkBorder, alignItems: 'center', justifyContent: 'center' },
+  regenerateText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '700', textAlign: 'center' },
+  confirmButton: { minHeight: SP.input, flex: 1, paddingHorizontal: SP.sm, borderRadius: DS.radius.button, backgroundColor: C.pink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs },
+  confirmText: { ...DS.typography.button, fontWeight: '800', color: C.white, textAlign: 'center', flexShrink: 1 },
 });

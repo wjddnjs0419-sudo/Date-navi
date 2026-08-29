@@ -11,8 +11,7 @@ describe('card memory edit screen icons', () => {
   const feedback = read('lib/ratingFeedback.ts');
 
   it('imports the shared star icon and rating feedback module (no more Heart toggle)', () => {
-    expect(source).toMatch(/import \{[^}]*Camera[^}]*\} from 'lucide-react-native'/);
-    expect(source).toMatch(/import \{[^}]*Star[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*Camera[^}]*Star[^}]*\} from '\.\.\/\.\.\/\.\.\/\.\.\/components\/iconography'/);
     expect(source).toMatch(/from '\.\.\/\.\.\/\.\.\/\.\.\/lib\/ratingFeedback'/);
   });
 
@@ -25,7 +24,8 @@ describe('card memory edit screen icons', () => {
   });
 
   it('renders the heading heart doodle and trees mini illustration (목업 09 반복 누락 패턴)', () => {
-    expect(source).toMatch(/headingBlock[\s\S]*?<HeartDoodle/);
+    // The heart is a ScreenHeading accessory; the illustration remains below the heading block.
+    expect(source).toMatch(/<ScreenHeading[\s\S]*?accessory=\{<HeartDoodle \/>\}/);
     expect(source).toMatch(/<Illustration name="mini-trees-heart" width=\{MINI_ILLUSTRATION_WIDTH\}/);
   });
 

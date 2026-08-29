@@ -12,10 +12,9 @@ import {
   Smile, Laugh, Moon, Sparkles, Camera, Gift,
   Car, Wallet, Users, Footprints, CalendarClock, MoonStar,
   Check,
-} from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, ProgressDots, InfoNote } from '../../components/ui';
+} from '../../components/iconography';
+import { C, DS, G } from '../../constants/theme';
+import { BigButton, Header, ProgressDots, InfoNote, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 
 type Step = 1 | 2 | 3 | 4;
@@ -109,16 +108,13 @@ export default function PreferencesScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header
+        onBack={step > 1 ? () => setStep((st) => (st - 1) as Step) : undefined}
+        center={<ProgressDots current={step} total={4} />}
+        right={<Text style={s.stepCount}>{step}/4</Text>}
+      />
+      <ScreenHeading title={STEP_TITLES[step]} variant="input" />
       <View style={s.container}>
-        {/* 헤더 */}
-        <View style={s.headerRow}>
-          <BackBar onPress={step > 1 ? () => setStep((st) => (st - 1) as Step) : undefined} />
-          <ProgressDots current={step} total={4} />
-          <Text style={s.stepCount}>{step}/4</Text>
-        </View>
-
-        <Text style={s.heading}>{STEP_TITLES[step]}</Text>
-
         <ScrollView
           style={s.scroll}
           contentContainerStyle={s.scrollContent}
@@ -168,7 +164,7 @@ export default function PreferencesScreen() {
                   <TouchableOpacity
                     key={o.id}
                     onPress={() => setLongDistance(o.id)}
-                    activeOpacity={0.7}
+                    activeOpacity={0.88}
                     style={[s.singleBtn, sel && s.singleBtnOn]}
                   >
                     <View style={[s.radio, sel && s.radioOn]}>
@@ -189,7 +185,7 @@ export default function PreferencesScreen() {
               ? <ActivityIndicator color={C.white} size="small" />
               : step === 4 ? t('onboarding.preferences.finishCta') : t('common.next')}
           </BigButton>
-          <TouchableOpacity onPress={() => handleSave(true)} style={s.skipBtn}>
+          <TouchableOpacity onPress={() => handleSave(true)} activeOpacity={0.88} style={s.skipBtn}>
             <Text style={s.skipText}>{t('common.skip')}</Text>
           </TouchableOpacity>
         </View>
@@ -211,7 +207,7 @@ function OptionGrid({ options, selected, onToggle }: {
           <TouchableOpacity
             key={o.id}
             onPress={() => onToggle(o.id)}
-            activeOpacity={0.75}
+            activeOpacity={0.88}
             style={[grid.card, isSel && grid.cardOn]}
           >
             <View style={[grid.iconBox, { backgroundColor: isSel ? C.white : C.cream, }]}>
@@ -229,13 +225,13 @@ const grid = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: DS.spacing.md,
   },
   card: {
     width: '47%',
-    borderRadius: 20,
-    padding: 16,
-    gap: 12,
+    borderRadius: DS.radius.chip,
+    padding: DS.spacing.lg,
+    gap: DS.spacing.md,
     backgroundColor: C.white,
     borderWidth: 1.5,
     borderColor: C.border,
@@ -244,28 +240,26 @@ const grid = StyleSheet.create({
   iconBox: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: DS.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 13, fontWeight: '500', color: C.inkSoft },
+  label: { ...DS.typography.bodyCompact, color: C.inkSoft },
   labelOn: { color: C.pinkDeep, fontWeight: '600' },
 });
 
 const s = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stepCount: { fontSize: 12, color: C.textLight },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, marginTop: 24 },
-  scroll: { flex: 1, marginTop: 24 },
-  scrollContent: { paddingBottom: 20 },
-  hint: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 16 },
-  infoNote: { marginTop: 24 },
-  singleList: { gap: 8 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  stepCount: { ...DS.typography.bodySmall, color: C.textLight },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: DS.spacing.screen },
+  hint: { ...DS.typography.caption, color: C.textMuted, textAlign: 'center', marginTop: DS.spacing.lg },
+  infoNote: { marginTop: DS.spacing.xxl },
+  singleList: { gap: DS.spacing.sm },
   singleBtn: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: DS.radius.input,
+    paddingHorizontal: DS.spacing.lg,
+    paddingVertical: DS.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -274,17 +268,17 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   singleBtnOn: { backgroundColor: C.pinkLight, borderWidth: 1.5, borderColor: C.pinkBorder },
-  singleText: { fontSize: 13, color: C.inkSoft, fontWeight: '500', flex: 1 },
+  singleText: { ...DS.typography.bodyCompact, color: C.inkSoft, flex: 1 },
   singleTextOn: { color: C.pinkDeep, fontWeight: '600' },
   radio: {
-    width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: '#E0D5CB',
+    width: 24, height: 24, borderRadius: DS.radius.full,
+    borderWidth: 2, borderColor: C.onboardingCheckBorder,
     backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center',
-    marginRight: 12,
+    marginRight: DS.spacing.md,
   },
   radioOn: { borderColor: C.pink, backgroundColor: C.pink },
-  footer: { gap: 4 },
-  skipBtn: { alignItems: 'center', paddingVertical: 8 },
-  skipText: { fontSize: 12, color: C.textMuted },
+  footer: { gap: DS.spacing.xs },
+  skipBtn: { alignItems: 'center', paddingVertical: DS.spacing.sm },
+  skipText: { ...DS.typography.bodySmall, color: C.textMuted },
 });

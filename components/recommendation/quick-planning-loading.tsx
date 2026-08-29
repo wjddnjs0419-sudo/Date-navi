@@ -8,10 +8,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Calendar, Heart, MapPin, Search } from 'lucide-react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
-import { C } from '../../constants/colors';
+import { C, DS } from '../../constants/theme';
+import { ProgressStepper } from '../ui';
+import { AppIcon, type AppIconName } from '../iconography';
 import { Illustration, type IllustrationName } from '../illustration';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 const STAGE_ASSETS: readonly IllustrationName[] = [
   'mascot-heart-loading-preference',
@@ -20,35 +21,7 @@ const STAGE_ASSETS: readonly IllustrationName[] = [
   'mascot-heart-loading-finish',
 ];
 
-function FigmaRouteIcon({ size = 18, color = C.textSub }: { size?: number; color?: string; strokeWidth?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
-      <Path
-        d="M4.5 16.5C5.74264 16.5 6.75 15.4926 6.75 14.25C6.75 13.0074 5.74264 12 4.5 12C3.25736 12 2.25 13.0074 2.25 14.25C2.25 15.4926 3.25736 16.5 4.5 16.5Z"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M6.75 14.25H13.125C13.8212 14.25 14.4889 13.9734 14.9812 13.4812C15.4734 12.9889 15.75 12.3212 15.75 11.625C15.75 10.9288 15.4734 10.2611 14.9812 9.76884C14.4889 9.27656 13.8212 9 13.125 9H4.875C4.17881 9 3.51113 8.72344 3.01884 8.23116C2.52656 7.73887 2.25 7.07119 2.25 6.375C2.25 5.67881 2.52656 5.01113 3.01884 4.51884C3.51113 4.02656 4.17881 3.75 4.875 3.75H11.25"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M13.5 6C14.7426 6 15.75 4.99264 15.75 3.75C15.75 2.50736 14.7426 1.5 13.5 1.5C12.2574 1.5 11.25 2.50736 11.25 3.75C11.25 4.99264 12.2574 6 13.5 6Z"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
-const STAGE_ICONS = [Search, MapPin, FigmaRouteIcon, Heart] as const;
+const STAGE_ICONS: readonly AppIconName[] = ['search', 'mapPin', 'route', 'heart'];
 const STAGE_MASCOT_SLOTS = [
   { left: 97, top: 25, width: 155, height: 130 },
   { left: 79, top: 23, width: 192, height: 132 },
@@ -59,7 +32,7 @@ const BUBBLE_WIDTHS = {
   ko: [118, 148, 105, 131],
   en: [150, 148, 125, 131],
 } as const;
-const STAGE_TRANSITION_DURATION = 360;
+const STAGE_TRANSITION_DURATION = DS.motion.stage;
 
 export type QuickPlanningLoadingConditions = {
   location: string;
@@ -103,6 +76,7 @@ export function QuickPlanningLoading({
   conditionsLabel: string;
   language: QuickPlanningLoadingLanguage;
 }) {
+  const insets = useOptionalSafeAreaInsets();
   const progress = clampProgress(progressPercent);
   const [displayedProgress, setDisplayedProgress] = useState(progress);
   const stageIndex = getQuickPlanningStageIndex(displayedProgress);
@@ -188,7 +162,7 @@ export function QuickPlanningLoading({
     }
     Animated.timing(animatedProgress, {
       toValue: progress,
-      duration: 400,
+      duration: DS.motion.progress,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -202,7 +176,7 @@ export function QuickPlanningLoading({
   });
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -250,39 +224,28 @@ export function QuickPlanningLoading({
           accessibilityLabel={heading.replace('\n', ' ')}
           accessibilityValue={{ min: 0, max: 100, now: displayedProgress, text: `${labels[stageIndex] ?? ''} ${displayedProgress}%` }}
         >
-          <View style={styles.stepper} testID="quick-planning-stepper">
-            {labels.map((label, index) => {
-              const Icon = STAGE_ICONS[index];
-              const active = index === stageIndex;
-              const reached = index < stageIndex;
-              return (
-                <View key={`${label}-${index}`} style={styles.stepItem}>
-                  {index < labels.length - 1 && (
-                    <View style={[styles.connector, index < stageIndex ? styles.connectorActive : styles.connectorInactive]} />
-                  )}
-                  <View style={[styles.stepCircle, (active || reached) && styles.stepCircleActive]}>
-                    <Icon size={18} color={active || reached ? C.pinkDeep : C.textSub} strokeWidth={1.5} />
-                  </View>
-                  <Text style={[styles.stepLabel, active && styles.stepLabelActive]} numberOfLines={1}>{label}</Text>
-                </View>
-              );
-            })}
-          </View>
+          <ProgressStepper
+            testID="quick-planning-stepper"
+            steps={labels.map((label, index) => ({ label, icon: STAGE_ICONS[index] }))}
+            current={stageIndex + 1}
+            accessibilityLabel={heading.replace('\n', ' ')}
+            accessible={false}
+          />
 
           <View style={styles.conditionsCard} testID="quick-planning-conditions">
             <Text style={styles.conditionsTitle}>{conditionsLabel}</Text>
             <View style={styles.conditionMetaRow} testID="quick-planning-condition-meta">
               <View style={styles.conditionGroup}>
-                <MapPin size={18} color={C.textSub} strokeWidth={1.5} />
+                <AppIcon name="mapPin" size={18} color={C.textSub} strokeWidth={1.5} />
                 <Text style={styles.conditionValue} numberOfLines={1}>{conditions.location}</Text>
               </View>
               <View style={[styles.conditionGroup, styles.conditionTimeGroup]}>
-                <Calendar size={18} color={C.textSub} strokeWidth={1.5} />
+                <AppIcon name="calendar" size={18} color={C.textSub} strokeWidth={1.5} />
                 <Text style={styles.conditionValue} numberOfLines={1}>{conditions.time}</Text>
               </View>
             </View>
             <View style={styles.conditionGroup}>
-              <Heart size={18} color={C.textSub} strokeWidth={1.5} />
+              <AppIcon name="heart" size={18} color={C.textSub} strokeWidth={1.5} />
               <Text style={styles.conditionValue} numberOfLines={1}>{conditions.mood}</Text>
             </View>
           </View>
@@ -314,108 +277,66 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 72,
-    paddingBottom: 32,
+    paddingHorizontal: DS.spacing.screen,
+    paddingTop: DS.exception.quickPlanningLoading.compositionTop,
+    paddingBottom: DS.exception.quickPlanningLoading.compositionBottom,
   },
   heading: {
     width: '100%',
-    fontFamily: 'Inter',
+    ...DS.typography.heading,
     color: C.text,
-    fontSize: 22,
-    fontWeight: '700',
-    lineHeight: 30,
     textAlign: 'center',
   },
   subtitle: {
-    marginTop: 6,
-    fontFamily: 'Inter',
+    marginTop: DS.exception.quickPlanningLoading.subtitleTop,
+    ...DS.typography.bodyCompact,
     color: C.textSub,
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 20,
     textAlign: 'center',
   },
-  mascotStage: { width: '100%', height: 155, marginTop: 7, position: 'relative' },
+  mascotStage: { width: '100%', height: 155, marginTop: DS.exception.quickPlanningLoading.mascotTop, position: 'relative' },
   mascot: { position: 'absolute' },
   bubble: {
     height: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    borderRadius: 16,
+    marginTop: DS.exception.quickPlanningLoading.bubbleTop,
+    borderRadius: DS.radius.input,
     borderWidth: 1,
     borderColor: C.pinkBorder,
-    backgroundColor: '#FFEDEF',
-    paddingHorizontal: 10,
+    backgroundColor: C.pinkLight,
+    paddingHorizontal: DS.exception.quickPlanningLoading.bubblePaddingHorizontal,
   },
   bubbleText: {
-    fontFamily: 'Inter',
+    ...DS.typography.body,
     color: C.pinkDeep,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 22,
     textAlign: 'center',
   },
   bubbleTextStack: { ...StyleSheet.absoluteFillObject, justifyContent: 'center' },
-  bubbleTextLayer: { position: 'absolute', left: 10, right: 10 },
-  progressSemantics: { width: '100%', marginTop: 24 },
-  stepper: { width: '100%', height: 76, flexDirection: 'row' },
-  stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
-  connector: { position: 'absolute', top: 21, left: '50%', width: '100%', height: 2 },
-  connectorActive: { backgroundColor: C.pink },
-  connectorInactive: { backgroundColor: C.borderLight },
-  stepCircle: {
-    zIndex: 1,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: C.borderLight,
-    backgroundColor: C.white,
-  },
-  stepCircleActive: { borderColor: C.pink, backgroundColor: '#FFEDEF' },
-  stepLabel: {
-    maxWidth: 82,
-    marginTop: 6,
-    fontFamily: 'Inter',
-    color: C.textSub,
-    fontSize: 11,
-    fontWeight: '500',
-    lineHeight: 16,
-    textAlign: 'center',
-  },
-  stepLabelActive: { color: C.pinkDeep },
+  bubbleTextLayer: { position: 'absolute', left: DS.exception.quickPlanningLoading.bubblePaddingHorizontal, right: DS.exception.quickPlanningLoading.bubblePaddingHorizontal },
+  progressSemantics: { width: '100%', marginTop: DS.exception.quickPlanningLoading.progressTop },
   conditionsCard: {
     height: 104,
     width: '100%',
     justifyContent: 'flex-start',
-    marginTop: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 8,
-    borderRadius: 22,
+    marginTop: DS.exception.quickPlanningLoading.conditionsTop,
+    paddingHorizontal: DS.spacing.lg,
+    paddingVertical: DS.spacing.lg,
+    gap: DS.exception.quickPlanningLoading.conditionsGap,
+    borderRadius: DS.radius.card,
     borderWidth: 1,
     borderColor: C.borderLight,
     backgroundColor: C.white,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 7,
-    elevation: 3,
   },
-  conditionsTitle: { fontFamily: 'Inter', color: C.text, fontSize: 15, fontWeight: '700', lineHeight: 20 },
-  conditionMetaRow: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16 },
-  conditionGroup: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  conditionsTitle: { ...DS.typography.cardTitle, color: C.text },
+  conditionMetaRow: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: DS.exception.quickPlanningLoading.conditionMetaGap },
+  conditionGroup: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: DS.exception.quickPlanningLoading.conditionGroupGap },
   conditionTimeGroup: { flex: 1 },
-  conditionValue: { flexShrink: 1, fontFamily: 'Inter', color: C.textSub, fontSize: 12, fontWeight: '500', lineHeight: 18 },
-  statusRow: { height: 20, width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24 },
-  statusTextStack: { flex: 1, height: 20, position: 'relative' },
-  statusText: { fontFamily: 'Inter', color: C.pink, fontSize: 13, fontWeight: '500', lineHeight: 20 },
+  conditionValue: { flexShrink: 1, ...DS.typography.bodySmall, color: C.textSub },
+  statusRow: { height: DS.exception.quickPlanningLoading.statusHeight, width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: DS.exception.quickPlanningLoading.statusTop },
+  statusTextStack: { flex: 1, height: DS.exception.quickPlanningLoading.statusHeight, position: 'relative' },
+  statusText: { ...DS.typography.bodyCompact, color: C.pink },
   statusTextLayer: { position: 'absolute', left: 0, top: 0 },
-  percentText: { fontFamily: 'Inter', color: C.pink, fontSize: 16, fontWeight: '600', lineHeight: 24 },
-  track: { width: '100%', height: 8, overflow: 'hidden', marginTop: 12, borderRadius: 999, backgroundColor: '#FFEDEF' },
-  fill: { height: '100%', borderRadius: 999, backgroundColor: C.pink },
+  percentText: { ...DS.typography.bodyLarge, color: C.pink, fontWeight: '600' },
+  track: { width: '100%', height: 8, overflow: 'hidden', marginTop: DS.spacing.md, borderRadius: DS.radius.full, backgroundColor: C.pinkLight },
+  fill: { height: '100%', borderRadius: DS.radius.full, backgroundColor: C.pink },
 });

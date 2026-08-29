@@ -2,6 +2,9 @@ import React from 'react';
 import { loadRecentPlaceSearches } from '../lib/recentPlaceSearches';
 
 const mockInvoke = jest.fn();
+const mockGetSession = jest.fn().mockResolvedValue({
+  data: { session: { user: { id: '11111111-1111-4111-8111-111111111111' } } },
+});
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ x: '127.05', y: '37.54', categoryCode: 'CE7' }),
@@ -32,6 +35,10 @@ jest.mock('lucide-react-native', () => {
 
 jest.mock('../lib/supabase', () => ({
   supabase: {
+    auth: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
     functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
   },
 }));
@@ -87,6 +94,6 @@ describe('장소 검색 화면 — 최근 검색 저장', () => {
     await act(async () => { input.props.onChangeText('성수 맛집'); });
     await act(async () => { jest.advanceTimersByTime(400); });
 
-    expect(await loadRecentPlaceSearches()).toContain('성수 맛집');
+    expect(await loadRecentPlaceSearches('11111111-1111-4111-8111-111111111111')).toContain('성수 맛집');
   });
 });

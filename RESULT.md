@@ -1,5 +1,16 @@
 # RESULT.md
 
+## 2026-08-28 — 마지막 2개 실서비스 로그 분석 및 다음 세션 인수인계
+
+- 요청 `req_d79fd269-aa16-4192-afcb-0fece1f0e629`(KST 02:02:37)은 키워드 `삼겹살`·`vegan cafe`, 요청 `req_bd5a6b3d-1c89-499e-a795-00700c4b9619`(KST 02:01:16)은 무키워드였다. 두 요청 모두 일반 장소 `홍대입구역 2호선`을 선택했고 현재 위치 요청은 아니었다.
+- 원격 `recommend-date` v73의 `recommend_date_provider_discovery`는 두 요청 모두 `strategy=naver_primary_with_kakao_fallback`, `fallbackUsed=false`, 후보 provider Naver only였다. Naver-first 분기는 정상이다.
+- 두 요청 모두 `recommend_date_kakao_link_resolution`에서 `selectedNaverCount=2`, `linkedCount=0`, `failureReasons.no_eligible_candidate=2`였다. Kakao 검색 10회는 모두 `success`여서 key·네트워크·HTTP 문제가 아니라 link eligibility 매칭에서 탈락한 것이다.
+- 실제 attestation의 선택 step에도 `kakaoPlaceId`가 없고 `mapUrl`이 빈 문자열이었다. 따라서 UI·세션 저장 이전에 link가 소실됐다는 사실이 확인됐다.
+- 키워드 요청도 같은 실패를 보여 무키워드 전용 분기가 아니다. 두 요청의 provider fallback은 실행되지 않았으므로, 마지막 두 결과만으로 Naver→Kakao fallback 중복은 확인되지 않는다. Naver 내부 중복 또는 다른 요청/클라이언트 재사용 경로를 별도 계측해야 한다.
+- 직전 주소 양식 보정·양쪽 주소 비교·Kakao `place_url` fallback 수정은 로컬 테스트에서는 통과했지만 실서비스 v73에서 `linkedCount=0`이 계속되어 충분하지 않음이 확인됐다. 앞서 “해결됐다”고 판단한 결론은 폐기한다.
+- 전체 Jest `255 suites / 1762 tests`, `npm run validate`, `git diff --check`는 통과했다.
+- 다음 작업 문서: `docs/superpowers/plans/2026-08-28-naver-kakao-live-link-followup.md`. 첫 작업은 요청 ID를 포함한 후보별 `addressMismatch`·`distanceExceeded`·`nameMismatch`·`missingKakaoId` 진단 telemetry 추가이며, 원인 필드가 관측되기 전 추가 완화를 하지 않는다.
+
 ## 2026-08-26 — 코스 생성 경로·피드백 후속 점검
 
 - 생성 요청의 인증 오류가 동의 RPC 또는 추천 결과 저장 RPC에서 발생해도 `AUTH_EXPIRED`로 일관되게 안내하도록 정규화했다. 시간값은 Edge 요청 스키마를 변경하지 않고 localized `additionalRequest` 문맥으로 전달하는 회귀 테스트를 추가했다.
@@ -939,6 +950,28 @@
 - 대상 회귀 테스트 6 suites / 182 tests 통과.
 - `npm run validate`, `git diff --check` 통과.
 
+## 2026-08-29 — provider-neutral 세션 mutation 회귀 수정
+
+- 원인: `apply_recommendation_session_mutation`가 lock/unlock/reorder/delete 같은 비-attested 작업에서도 `latest_request.lockedSteps`를 다시 생성하고, attestation 응답이 없는 작업에서 `current_place_provider`·`current_provider_place_id`를 null로 덮어쓰고 있었다. 이 공통 RPC 상태 오염 때문에 Naver-first뿐 아니라 Kakao 세션에서도 결과 수화와 후속 순서 변경·장소 변경·잠금·재생성이 함께 실패할 수 있었다.
+- `20260829010000_fix_provider_neutral_mutation_state.sql`을 추가해 비-attested 작업은 provider identity를 보존하고, `latest_request`에서 `lockedSteps`를 제거하도록 RPC를 보강했다. 이미 오염된 세션의 축약 필드도 정리했다.
+- 원격 함수 정의를 직접 확인한 뒤 linked Supabase에 마이그레이션을 적용했다. 원격 함수에서 수정 marker와 legacy 분기 제거를 확인했고, 적용된 migration 목록에도 `20260829010000`이 기록됐다.
+- 앱/Edge 코드는 이번 공통 RPC 수정에 포함되지 않아 별도 Edge 재배포나 iOS 빌드는 필요하지 않다.
+
+### 검증
+
+- 신규 mutation migration 회귀 테스트 통과.
+- `npm run validate`, 전체 Jest 255 suites / 1815 tests, `git diff --check` 통과.
+
+## 2026-08-29 — 네이버 대안 선택 후 화면 캐시 갱신 수정
+
+- 원인: `provider-neutral-replacements`가 DB를 직접 갱신한 뒤 기존 캐시를 조회하는 `loadRecommendationSession()`을 호출해, 서버에서 대체 장소가 반영돼도 화면에는 이전 스냅샷이 남았다.
+- `reloadRecommendationSession()`을 추가해 해당 경로는 캐시를 거치지 않고 DB에서 새 스냅샷을 hydrate하도록 변경했다.
+- 회귀 테스트에서 네이버 대안 적용 후 새 장소가 화면 스냅샷에 반영되는지 확인하도록 보강했다.
+
+### 검증
+
+- `npm run validate`, 전체 Jest 255 suites / 1815 tests, `git diff --check` 통과.
+
 ## 2026-08-26 — 코스 추천 intent·중복·Naver/Kakao 링크 회귀 수정
 
 - 원인: 코스 핸들러가 `additionalRequest`를 prompt-only로 취급해 1.0.1의 자유 키워드(예: 삼겹살)를 검색 intent로 전달하지 않고 있었다. 레거시 자연어는 `preferred` intent로 복원하고, 새 UI의 `intentTags`만 `required` 계약을 유지했다. 따라서 1.0.1 요청은 키워드 검색을 되찾으면서 새 hard-required 제약을 강제로 받지 않는다.
@@ -964,4 +997,21 @@
 ### 검증
 
 - 신규 provider-neutral pair-stat 회귀 테스트와 기존 pair-stat/learning migration 테스트: 4 tests 통과.
+- `npm run validate`, `git diff --check` 통과.
+
+## 2026-08-28 — Naver-first Kakao live link 후속 보강
+
+- Kakao 링크 resolver에 opt-in 진단 정보(query/result/eligible/named-match 수와 탈락 원인)를 추가하고, `recommend-date`가 requestId별 구조화 로그를 남기도록 연결했다. 기본 resolver 응답 계약은 유지했다.
+- Naver·Kakao 주소의 행정구역 표기 차이와 건물명·층 suffix를 흡수하는 canonical address key를 도입했다. 운영 fixture인 빌라 더 다이닝 홍대본점과 베이글랜드 홍대점의 주소 차이를 회귀 테스트로 고정했다.
+- provider-local ID가 달라도 이름·canonical 주소·100m 거리 조건이 모두 맞으면 같은 물리 장소로 중복 제거하도록 보강했다. 서로 다른 지점은 유지한다.
+- Naver-first는 명시 지역 경로에서만 사용하고 현재 위치는 기존 Kakao 경로를 유지하도록 회귀 테스트를 추가했다. 링크가 없는 Naver 후보도 정상 응답·저장되며, 링크가 있으면 Kakao place ID/map URL이 함께 보존된다.
+- linked Supabase에 `recommend-date` v74와 `provider-neutral-replacements` v7을 CLI로 배포하고, 다운로드한 배포본의 핵심 소스를 로컬과 대조했다.
+- 실기기 시뮬레이터에서 신규 요청 2건을 생성했다. `req_3fcceb69-d3b5-4164-a385-fb808120f955`는 베이글랜드 홍대점, `req_6c691a50-f4d1-4c49-90b8-b4a14eb45da2`는 쟁반집8292 홍대점에 Kakao 링크가 붙었다. 두 요청 모두 Naver identity를 유지했고 최종 장소 중복은 없었다.
+- 같은 requestId의 Edge 로그와 DB attestation을 대조했다. 미연결 후보는 빌라 더 다이닝 홍대본점 `no_eligible_candidate`(검색 결과 0), 마뽀즈 비건케이크 `ambiguous_candidate`(eligible 3, named match 0)로 관측되어 추가 완화하지 않았다.
+- 앱/native 변경이 없는 서버·공유 로직 수정이므로 새 iOS build/TestFlight 배포는 필요하지 않다.
+
+### 검증
+
+- 전체 Jest: 255 suites / 1769 tests 통과.
+- 대상 회귀: 7 suites / 103 tests 통과.
 - `npm run validate`, `git diff --check` 통과.

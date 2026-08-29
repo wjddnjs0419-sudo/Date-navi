@@ -17,7 +17,7 @@ describe('card review screen icons', () => {
   });
 
   it('imports the shared star icon and rating feedback module', () => {
-    expect(source).toMatch(/import \{[^}]*Star[^}]*\} from 'lucide-react-native'/);
+    expect(source).toMatch(/import \{[^}]*Star[^}]*\} from '\.\.\/\.\.\/components\/iconography'/);
     expect(source).toMatch(/from '\.\.\/\.\.\/lib\/ratingFeedback'/);
   });
 

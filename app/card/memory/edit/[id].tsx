@@ -1,7 +1,7 @@
 // app/card/memory/edit/[id].tsx
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, Image,
+  View, Text, StyleSheet, ScrollView, Image,
   ActivityIndicator, Alert, TouchableOpacity, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,9 +9,9 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../../lib/supabase';
-import { Camera, Star } from 'lucide-react-native';
-import { C, SP, R, G } from '../../../../constants/theme';
-import { BackBar, BigButton, HeartDoodle } from '../../../../components/ui';
+import { Camera, Star } from '../../../../components/iconography';
+import { C, DS, SP, G } from '../../../../constants/theme';
+import { BigButton, Header, HeartDoodle, InputField, ScreenHeading } from '../../../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../../components/illustration';
 import { useI18n } from '../../../../lib/i18n';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../../lib/ratingFeedback';
@@ -164,26 +164,25 @@ export default function EditMemoryScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading
+        title={strings.card.memory.editHeading}
+        subtitle={strings.card.memory.editSub}
+        accessory={<HeartDoodle />}
+      />
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <BackBar onPress={() => router.back()} />
-
         <View style={s.headingBlock}>
-          <View style={s.headingRow}>
-            <Text style={[s.heading, s.headingTop]}>{strings.card.memory.editHeading}</Text>
-            <HeartDoodle style={s.headingHeart} />
-          </View>
-          <Text style={s.subText}>{strings.card.memory.editSub}</Text>
           <Illustration name="mini-trees-heart" width={MINI_ILLUSTRATION_WIDTH} style={s.headingIllustration} />
         </View>
 
         <TouchableOpacity
           style={s.photoPlaceholder}
           onPress={handlePickPhoto}
-          activeOpacity={0.8}
+          activeOpacity={0.88}
           disabled={uploadingPhoto}
         >
           {uploadingPhoto ? (
@@ -200,32 +199,26 @@ export default function EditMemoryScreen() {
 
         {isFreeform && (
           <>
-            <Text style={s.label}>{strings.card.memory.titleLabel}</Text>
-            <View style={s.inputWrap}>
-              <TextInput
-                style={s.input}
-                value={title}
-                onChangeText={setTitle}
-                placeholder={strings.card.memory.titlePlaceholder}
-                placeholderTextColor={C.textFaint}
-                maxLength={40}
-              />
-            </View>
+            <InputField
+              label={strings.card.memory.titleLabel}
+              value={title}
+              onChangeText={setTitle}
+              placeholder={strings.card.memory.titlePlaceholder}
+              maxLength={40}
+              style={s.field}
+            />
           </>
         )}
 
-        <Text style={s.label}>{strings.card.memory.reviewLabel}</Text>
-        <View style={s.inputWrap}>
-          <TextInput
-            style={[s.input, s.inputMultiline]}
-            value={reviewText}
-            onChangeText={setReviewText}
-            placeholder={strings.card.memory.reviewPlaceholder}
-            placeholderTextColor={C.textFaint}
-            multiline
-            maxLength={100}
-          />
-        </View>
+        <InputField
+          label={strings.card.memory.reviewLabel}
+          value={reviewText}
+          onChangeText={setReviewText}
+          placeholder={strings.card.memory.reviewPlaceholder}
+          multiline
+          maxLength={100}
+          style={s.field}
+        />
 
         <Text style={s.label}>{c.starRatingLabel}</Text>
         <View style={s.starRow}>
@@ -237,7 +230,7 @@ export default function EditMemoryScreen() {
               accessibilityLabel={`${n}점`}
               onPress={() => setRating(n)}
               style={s.starBtn}
-              activeOpacity={1}
+              activeOpacity={0.88}
             >
               <Star
                 size={28}
@@ -265,46 +258,26 @@ export default function EditMemoryScreen() {
           onPrice={tapPrice}
         />
 
-        <View style={s.footerSpacer} />
-      </ScrollView>
-
-      <View style={s.footer}>
-        <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
+        <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={s.saveBtn}>
           {saving ? <ActivityIndicator color={C.white} size="small" /> : strings.common.save}
         </BigButton>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xxxl + SP.sm },
-  headingBlock: { marginBottom: SP.md },
-  headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  headingHeart: { marginTop: SP.lg + 4, marginLeft: 4 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingTop: { marginTop: SP.lg },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
-  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: SP.xl, marginBottom: SP.sm },
-  inputWrap: {
-    backgroundColor: C.white,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
-  },
-  // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. lineHeight는 multiline 전용.
-  input: { fontSize: 14, color: C.text, paddingVertical: 0 },
-  inputMultiline: { minHeight: 70, lineHeight: 22, textAlignVertical: 'top' },
-  footerSpacer: { height: 120 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxl },
+  headingBlock: { marginBottom: SP.lg },
+  label: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '600', marginTop: SP.lg, marginBottom: SP.sm },
+  headingIllustration: { alignSelf: 'flex-end' },
+  field: { marginTop: SP.lg },
 
   photoPlaceholder: {
-    marginTop: SP.md + 2,
+    marginTop: SP.md,
     height: 160,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: C.pinkBorder,
@@ -314,10 +287,10 @@ const s = StyleSheet.create({
   },
   photoPreview: { width: '100%', height: '100%' },
   photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
+  photoText: { ...DS.typography.buttonCompact, color: C.pinkDeep, fontWeight: '600' },
 
   starRow: { flexDirection: 'row', gap: SP.sm },
-  starBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  starBtn: { minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
 
   feedbackCard: {
     flexDirection: 'row',
@@ -326,17 +299,10 @@ const s = StyleSheet.create({
     marginTop: SP.md,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
   },
-  feedbackLabel: { fontSize: 13, fontWeight: '600' },
+  feedbackLabel: { ...DS.typography.bodyCompact, fontWeight: '600' },
 
-  footer: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
-    backgroundColor: C.bg,
-  },
+  saveBtn: { marginTop: SP.lg },
 });

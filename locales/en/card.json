@@ -74,8 +74,6 @@
       "titlePlaceholder": "Title",
       "descLabel": "Description",
       "descPlaceholder": "Describe what kind of date this is",
-      "timeLabel": "Estimated time",
-      "budgetLabel": "Budget per person",
       "stepsReferenceLabel": "Course steps (reference)",
       "saveCta": "Save",
       "saveError": "Something went wrong updating it."

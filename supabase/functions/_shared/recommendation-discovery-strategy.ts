@@ -55,7 +55,24 @@ export function naverShadowQueries(input: {
 export type NaverStepQuery = {
   stepId: string;
   query: string;
+  querySource: 'intent' | 'category';
 };
+
+function naverIntentKeyword(
+  category: string,
+  intent: { canonicalTerm: string; kakaoSearchTerms?: readonly string[] } | undefined,
+): string {
+  const terms = (intent?.kakaoSearchTerms ?? [intent?.canonicalTerm ?? ''])
+    .map((term) => term.trim())
+    .filter(Boolean);
+  if (category === 'cafe') {
+    // Cafe attributes such as "조용한 카페" are meaningful search phrases.
+    // Preserve the category word for Naver instead of reducing the query to
+    // the canonical adjective ("조용한").
+    return terms.find((term) => /카페|cafe/i.test(term)) ?? terms[0] ?? '';
+  }
+  return terms[0] ?? '';
+}
 
 export function naverStepQueries(input: {
   locationLabel: string;
@@ -78,8 +95,12 @@ export function naverStepQueries(input: {
       const intent = stepId === undefined
         ? undefined
         : input.stepIntents?.find((candidate) => candidate.stepId === stepId);
-      const keyword = intent?.kakaoSearchTerms?.[0]?.trim() || intent?.canonicalTerm.trim();
+      const keyword = naverIntentKeyword(category, intent);
       const searchTerm = NAVER_CATEGORY_SEARCH_TERMS[category] ?? NAVER_CATEGORY_SEARCH_TERMS.ai_decide;
-      return { stepId, query: keyword ? `${location} ${keyword}` : `${location} ${searchTerm}` };
+      return {
+        stepId,
+        query: keyword ? `${location} ${keyword}` : `${location} ${searchTerm}`,
+        querySource: keyword ? 'intent' : 'category',
+      };
     });
 }

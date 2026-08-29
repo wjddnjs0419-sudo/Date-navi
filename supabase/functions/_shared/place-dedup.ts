@@ -11,9 +11,54 @@ export type DedupedPlaces = {
   suppressed: SuppressedPlace[];
 };
 
-const normalizeName = (name: string) => name.normalize('NFKC').toLocaleLowerCase()
+const normalizePlaceText = (value: string) => value.normalize('NFKC').toLocaleLowerCase()
+  .replace(/[()[\]{}.,·]/g, '')
   .replace(/\s+/g, '')
-  .replace(/점$/, '');
+  .trim();
+
+const normalizeName = (name: string) => normalizePlaceText(name)
+  .replace(/(?:직영|본|지)?점$/u, '');
+
+function canonicalAdministrativeToken(token: string): string {
+  const aliases: Record<string, string> = {
+    서울특별시: '서울', 서울시: '서울',
+    부산광역시: '부산', 부산시: '부산',
+    대구광역시: '대구', 대구시: '대구',
+    인천광역시: '인천', 인천시: '인천',
+    광주광역시: '광주', 광주시: '광주',
+    대전광역시: '대전', 대전시: '대전',
+    울산광역시: '울산', 울산시: '울산',
+    세종특별자치시: '세종', 세종시: '세종',
+  };
+  return aliases[token] ?? token;
+}
+
+function addressKeys(value: string | undefined): string[] {
+  if (!value?.trim()) return [];
+  const tokens = value.normalize('NFKC').toLocaleLowerCase()
+    .replace(/[()[\]{}.,·]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(canonicalAdministrativeToken);
+  const keys = [`full:${tokens.join('')}`];
+  const numberedAddressKey = (kind: 'road' | 'parcel', locationPattern: RegExp) => {
+    const locationIndex = tokens.findIndex((token) => locationPattern.test(token));
+    if (locationIndex < 0) return;
+    const numberIndex = tokens.findIndex((token, index) => index > locationIndex && /^[0-9]+(?:-[0-9]+)?$/u.test(token));
+    if (numberIndex < 0) return;
+    keys.push(`${kind}:${tokens.slice(0, numberIndex + 1).join('|')}`);
+  };
+  numberedAddressKey('road', /(?:대로|로|길)/u);
+  numberedAddressKey('parcel', /(?:동|읍|면|리|가)$/u);
+  return [...new Set(keys)];
+}
+
+function addressMatchKeys(place: NormalizedPlace): string[] {
+  return [...new Set([
+    ...addressKeys(place.address?.road),
+    ...addressKeys(place.address?.display),
+  ])];
+}
 
 const radians = (value: number) => value * Math.PI / 180;
 
@@ -25,13 +70,13 @@ function distanceMeters(a: NonNullable<NormalizedPlace['coordinates']>, b: NonNu
   return 2 * 6_371_000 * Math.asin(Math.sqrt(haversine));
 }
 
-function isCrossProviderDuplicate(a: NormalizedPlace, b: NormalizedPlace): boolean {
-  if (a.identity.provider === b.identity.provider) return false;
+export function isSamePhysicalPlace(a: NormalizedPlace, b: NormalizedPlace): boolean {
+  if (a.identity.provider === b.identity.provider
+    && a.identity.providerPlaceId === b.identity.providerPlaceId) return true;
   if (!a.coordinates || !b.coordinates || distanceMeters(a.coordinates, b.coordinates) > 100) return false;
-  const aRoad = a.address?.road ?? a.address?.display;
-  const bRoad = b.address?.road ?? b.address?.display;
-  return Boolean(aRoad && bRoad && aRoad.normalize('NFKC') === bRoad.normalize('NFKC')
-    && normalizeName(a.name) === normalizeName(b.name));
+  const bAddresses = new Set(addressMatchKeys(b));
+  return addressMatchKeys(a).some((address) => bAddresses.has(address))
+    && normalizeName(a.name) === normalizeName(b.name);
 }
 
 export function dedupeNormalizedPlaces(input: readonly NormalizedPlace[]): DedupedPlaces {
@@ -39,9 +84,8 @@ export function dedupeNormalizedPlaces(input: readonly NormalizedPlace[]): Dedup
   const suppressed: SuppressedPlace[] = [];
   for (const place of input) {
     const representative = places.find((existing) => (
-      existing.identity.provider === place.identity.provider
-      && existing.identity.providerPlaceId === place.identity.providerPlaceId
-    ) || isCrossProviderDuplicate(existing, place));
+      isSamePhysicalPlace(existing, place)
+    ));
     if (!representative) {
       places.push(place);
       continue;

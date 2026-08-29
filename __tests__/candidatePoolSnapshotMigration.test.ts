@@ -1,10 +1,16 @@
 import { readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { candidatePoolSnapshotsSchema } from '../shared/recommendation/schemas';
 
 const sql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260727160000_candidate_pool_snapshots.sql'), 'utf8');
 const contractSql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260826130000_course_pipeline_contracts.sql'), 'utf8');
 const providerNeutralMutationSql = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260829000000_provider_neutral_session_mutations.sql'), 'utf8');
+const providerNeutralMutationFollowupSql = readdirSync(resolve(process.cwd(), 'supabase/migrations'))
+  .filter((name) => /^20260829[0-9]+_.*provider_neutral.*mutation.*\.sql$/.test(name) && name !== '20260829000000_provider_neutral_session_mutations.sql')
+  .sort()
+  .map((name) => readFileSync(resolve(process.cwd(), 'supabase/migrations', name), 'utf8'))
+  .join('\n');
 
 describe('candidate pool snapshot persistence migration', () => {
   it('validates the attested full ranked pool before initial session storage', () => {
@@ -62,5 +68,11 @@ describe('candidate pool snapshot persistence migration', () => {
     expect(providerNeutralMutationSql).toContain('current_provider_place_id');
     expect(providerNeutralMutationSql).toContain("candidate ->> 'candidateId'");
     expect(providerNeutralMutationSql).toContain('placeIdentity');
+  });
+
+  it('keeps non-attested edits valid and never reintroduces abbreviated lockedSteps', () => {
+    expect(providerNeutralMutationFollowupSql).toContain("latest_request = jsonb_set(coalesce(v_request, latest_request, original_request), '{courseSteps}', v_request_steps) - 'lockedSteps' - 'replacement'");
+    expect(providerNeutralMutationFollowupSql).toContain('case when v_uses_attestation then');
+    expect(providerNeutralMutationFollowupSql).toContain("latest_request = latest_request - 'lockedSteps'");
   });
 });

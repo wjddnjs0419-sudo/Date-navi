@@ -6,14 +6,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { Wallet } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, CourseStepList, MetaChipRow, SectionLabel, SoftCard } from '../../components/ui';
+import { Wallet } from '../../components/iconography';
+import { C, DS, G, SP, R } from '../../constants/theme';
+import { BigButton, CourseStepList, Header, MetaChipRow, ScreenHeading, SectionLabel, SoftCard } from '../../components/ui';
 import { ReactionPicker } from '../../components/ReactionPicker';
 import { ReactionType } from '../../lib/reactions';
 import { useI18n } from '../../lib/i18n';
 import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 type ReactionCard = {
   title: string;
@@ -27,6 +27,7 @@ export default function ReactionScreen() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
   const router = useRouter();
   const { t, strings: s } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
 
   const [selected, setSelected] = useState<ReactionType | null>(null);
   const [saving, setSaving] = useState(false);
@@ -104,10 +105,10 @@ export default function ReactionScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('share.reaction.heading')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-
         <View style={styles.senderRow}>
           <View style={styles.senderAvatar}>
             <Text style={styles.senderAvatarText}>{partnerName.slice(0, 1)}</Text>
@@ -117,8 +118,6 @@ export default function ReactionScreen() {
             <Text style={styles.senderTime}>{t('share.reaction.justNow')}</Text>
           </View>
         </View>
-
-        <Text style={[T.h1, styles.headingSpacing]}>{t('share.reaction.heading')}</Text>
 
         <SoftCard style={styles.cardBox}>
           <Text style={styles.cardTitle}>{card?.title ?? t('share.cardTitleFallback')}</Text>
@@ -161,7 +160,7 @@ export default function ReactionScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton
           onPress={selected ? handleSubmit : undefined}
           variant={saving || !selected ? 'disabled' : 'primary'}
@@ -174,41 +173,40 @@ export default function ReactionScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.lg },
   senderRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
   senderAvatar: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 40, height: 40, borderRadius: DS.radius.full,
     backgroundColor: C.pinkLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  senderAvatarText: { fontSize: 13, fontWeight: '700', color: C.pinkDeep },
-  senderName: { fontSize: 13, fontWeight: '600', color: C.text },
-  senderTime: { fontSize: 11, color: C.textLight, marginTop: 1 },
-  headingSpacing: { marginTop: SP.lg },
-  sectionBlock: { marginTop: SP.xl },
-  bottomSpacer: { height: 120 },
+  senderAvatarText: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.pinkDeep },
+  senderName: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
+  senderTime: { ...DS.typography.caption, color: C.textLight, marginTop: DS.spacing.micro },
+  sectionBlock: { marginTop: SP.xxl },
+  bottomSpacer: { height: SP.hero + SP.section + SP.lg },
   cardBox: {
     marginTop: SP.lg,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  cardDesc: { fontSize: 12, color: C.textSub, marginTop: SP.xs },
+  cardTitle: { ...DS.typography.body, fontWeight: '700', color: C.text },
+  cardDesc: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.xs },
   stepsWrap: { marginTop: SP.md },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md, marginTop: SP.md },
   budgetChip: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  budgetChipText: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  budgetChipText: { ...DS.typography.bodySmall, color: C.textSub },
   noteBubble: {
     marginTop: SP.md,
     borderRadius: R.btn,
     padding: SP.md,
     backgroundColor: C.pinkLight,
   },
-  noteBubbleText: { fontSize: 12, color: C.pinkDeep, lineHeight: 18 },
+  noteBubbleText: { ...DS.typography.bodySmall, color: C.pinkDeep },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.bg,
   },
 });

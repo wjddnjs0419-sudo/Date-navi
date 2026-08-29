@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
-import { Star } from 'lucide-react-native';
-import { C } from '../constants/theme';
+import { Star } from './iconography';
+import { C, DS } from '../constants/theme';
 
 // 표시 전용 별점(1~5). 리뷰 화면의 편집용 별점과 동일한 핑크 톤을 쓴다.
 export function StarRating({
@@ -33,5 +33,5 @@ export function StarRating({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 2 },
+  row: { flexDirection: 'row', gap: DS.component.ratingGap },
 });

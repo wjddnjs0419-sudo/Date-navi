@@ -65,10 +65,13 @@ export function buildProviderNeutralCourse(input: {
     ? input.pools.flatMap((pool) => pool.selectableCandidates)
     : (input.candidates ?? []);
   const ids = new Set(candidates.map((candidate) => candidate.candidateId));
-  const identities = new Set(candidates.map((candidate) => (
-    `${candidate.place.identity.provider}:${candidate.place.identity.providerPlaceId}`
-  )));
-  if (ids.size !== candidates.length || identities.size !== candidates.length) {
+  const duplicateIdentityWithinPool = input.pools?.some((pool) => {
+    const identities = new Set(pool.selectableCandidates.map((candidate) => (
+      `${candidate.place.identity.provider}:${candidate.place.identity.providerPlaceId}`
+    )));
+    return identities.size !== pool.selectableCandidates.length;
+  });
+  if (ids.size !== candidates.length || duplicateIdentityWithinPool) {
     throw new ProviderNeutralCourseSelectionError();
   }
   const excluded = new Set(input.request.excludedPlaceIds ?? []);
@@ -77,15 +80,23 @@ export function buildProviderNeutralCourse(input: {
       .filter((intent) => intent.strength === 'required')
       .map((intent) => [intent.stepId, intent]),
   );
+  const lockedSteps = new Map((input.request.lockedSteps ?? []).map((lock) => [lock.stepId, lock]));
   const selected = parsed.data.steps.map((selection, index) => {
     const requested = input.request.courseSteps[index];
     if (!requested || selection.stepId !== requested.id) throw new ProviderNeutralCourseSelectionError();
     const owningPool = input.pools?.find((pool) => pool.stepId === requested.id);
     const candidate = candidates.find((entry) => entry.candidateId === selection.candidateId);
-    if (!candidate || !matchesCategory(candidate, requested.category)
-      || !providerNeutralPlaceMatchesStep(candidate.place, requested, requiredIntents.get(requested.id))
+    const isPreservedStep = lockedSteps.has(requested.id);
+    const isExplicitReplacement = input.request.replacement?.stepId === requested.id;
+    const replacementMatches = !isExplicitReplacement || (
+      candidate?.place.identity.provider === 'kakao'
+      && candidate.place.identity.providerPlaceId === input.request.replacement?.kakaoPlaceId
+    );
+    if (!candidate || (!isPreservedStep && !matchesCategory(candidate, requested.category))
+      || (!isPreservedStep && !isExplicitReplacement && !providerNeutralPlaceMatchesStep(candidate.place, requested, requiredIntents.get(requested.id), { allowProviderSearchEvidence: true }))
       || (owningPool && candidate.sourceStepId !== requested.id)
-      || (candidate.qualification?.intent === 'unmatched')
+      || (!isExplicitReplacement && candidate.qualification?.intent === 'unmatched')
+      || !replacementMatches
       || excluded.has(candidate.place.identity.providerPlaceId)) {
       throw new ProviderNeutralCourseSelectionError();
     }
@@ -125,7 +136,8 @@ export function buildProviderNeutralCourse(input: {
       latitude: candidate.place.coordinates?.latitude ?? input.request.location.latitude,
       longitude: candidate.place.coordinates?.longitude ?? input.request.location.longitude,
       reason: input.request.language === 'ko' ? '품질 기준을 통과한 검색 후보예요.' : 'A search candidate that passed the quality gate.',
-      locked: false,
+      locked: lockedSteps.get(input.request.courseSteps[index].id)?.locked !== false
+        && lockedSteps.has(input.request.courseSteps[index].id),
     })),
     relaxedConstraints: walkingLimitAssessment === 'provisional_exceeded'
       ? [{

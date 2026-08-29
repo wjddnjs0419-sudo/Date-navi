@@ -36,6 +36,30 @@ describe('provider-neutral discovery pipeline', () => {
     expect(result.pools?.every((pool: { stepId: string; candidates: readonly { sourceStepId?: string }[] }) => (
       pool.candidates.every((candidate) => candidate.sourceStepId === pool.stepId)
     ))).toBe(true);
+    expect(result.diagnostics?.steps?.find((step) => step.stepId === 'cafe')?.attempts).toEqual([
+      expect.objectContaining({
+        phase: 'primary',
+        returnedCount: 1,
+        dedupedCount: 1,
+        qualifiedCount: 1,
+        categoryMatchedCount: 1,
+        requiredIntentMatchedCount: 1,
+        notSelectableByReason: {},
+        selectableCount: 1,
+        sufficient: false,
+      }),
+      expect.objectContaining({
+        phase: 'fallback',
+        returnedCount: 1,
+        discoveredCount: 2,
+        dedupedCount: 2,
+        qualifiedCount: 2,
+        categoryMatchedCount: 2,
+        requiredIntentMatchedCount: 2,
+        selectableCount: 2,
+        sufficient: true,
+      }),
+    ]);
   });
 
   it('uses Kakao only after Naver candidates remain insufficient and outputs provider-scoped candidates', async () => {
@@ -52,6 +76,45 @@ describe('provider-neutral discovery pipeline', () => {
       { provider: 'kakao', providerPlaceId: 'k-cafe' },
       { provider: 'naver', providerPlaceId: 'n-meal' },
     ]);
+  });
+
+  it('accepts canonical explicit search evidence for required intents from either provider', async () => {
+    const intentRequest = {
+      ...request,
+      courseSteps: [{ id: 'meal', category: 'meal' as const, label: '식사' }],
+      resolvedStepIntents: [{
+        stepId: 'meal', stepCategory: 'meal', intentType: 'dish' as const,
+        canonicalTerm: '삼겹살', kakaoSearchTerms: ['삼겹살'], strength: 'required' as const,
+        displayLabel: { ko: '삼겹살', en: 'Samgyeopsal' },
+      }],
+    };
+    for (const provider of ['naver', 'kakao'] as const) {
+      const result = await discoverProviderNeutralCandidates({
+        request: intentRequest,
+        stepAttempts: {
+          primary: [{
+            stepId: 'meal', provider,
+            run: async () => [
+              { ...place(`${provider}-meal-1`, 'meal', provider), evidence: { provider, searchTerms: ['성수역 삼겹살'] } },
+              { ...place(`${provider}-meal-2`, 'meal', provider), evidence: { provider, searchTerms: ['성수역 삼겹살'] } },
+            ],
+          }],
+          fallback: [],
+        },
+        minQualifiedCandidates: 2,
+      } as never);
+
+      expect(result.pools?.[0]?.selectableCandidates).toHaveLength(2);
+      expect(result.pools?.[0]?.selectableCandidates.every((candidate) => (
+        candidate.qualification?.intent === 'matched'
+        && candidate.qualification.intentEvidence[0]?.phase === 'provider_search'
+      ))).toBe(true);
+      expect(result.diagnostics?.steps?.[0]?.attempts[0]).toEqual(expect.objectContaining({
+        metadataIntentMatchedCount: 0,
+        providerSearchIntentMatchedCount: 2,
+        requiredIntentMatchedCount: 2,
+      }));
+    }
   });
 
   it('applies context ranking only after the hard and quality gates pass', async () => {

@@ -1,4 +1,10 @@
-import { mergePersonalStepTagCatalog, normalizeStepIntentTag } from '../lib/personal-step-tag-catalog';
+import {
+  PERSONAL_STEP_TAG_LIMIT,
+  canAddPersonalStepTag,
+  countPersonalStepTags,
+  mergePersonalStepTagCatalog,
+  normalizeStepIntentTag,
+} from '../lib/personal-step-tag-catalog';
 import { canonicalizeStepIntentTag, getStepIntentTagSuggestions } from '../shared/recommendation/step-intent-tag-catalog';
 
 describe('personal step tag catalog', () => {
@@ -13,6 +19,20 @@ describe('personal step tag catalog', () => {
 
   it('normalizes whitespace and case for unique catalog keys', () => {
     expect(normalizeStepIntentTag('  Ramen  ')).toBe('ramen');
+  });
+
+  it('limits unique personal tags per category while allowing an existing tag to be re-added', () => {
+    const personal = Array.from({ length: PERSONAL_STEP_TAG_LIMIT }, (_, index) => ({
+      id: `p-${index}`,
+      category: 'meal' as const,
+      tag: `메뉴 ${index}`,
+      normalizedTag: `메뉴 ${index}`,
+    }));
+
+    expect(countPersonalStepTags(personal, 'meal')).toBe(PERSONAL_STEP_TAG_LIMIT);
+    expect(canAddPersonalStepTag(personal, 'meal', '새 메뉴')).toBe(false);
+    expect(canAddPersonalStepTag(personal, 'meal', '메뉴 0')).toBe(true);
+    expect(canAddPersonalStepTag(personal, 'cafe', '새 카페')).toBe(true);
   });
 
   it('uses an English label but the same Korean canonical value for a shipped tag', () => {

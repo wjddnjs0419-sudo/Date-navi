@@ -258,6 +258,86 @@ describe('recommend-date server prompt', () => {
     expect(body.candidatePool?.[0]).toMatchObject({ placeIdentity: { provider: 'naver', providerPlaceId: 'https://map.naver.com/p/meal' } });
   });
 
+  it('keeps a provider-neutral locked step fixed during session regeneration', async () => {
+    const lockedStep = {
+      stepId: 'step-meal', candidateId: 'naver-locked-meal',
+      placeIdentity: { provider: 'naver' as const, providerPlaceId: 'naver-locked-meal' },
+      name: '기존 식당', address: '서울 성동구', roadAddress: '서울 성동구 왕십리로', mapUrl: '',
+      latitude: 37.5444, longitude: 127.0374, locked: true,
+    };
+    const cafePlace = (id: string) => ({
+      identity: { provider: 'naver' as const, providerPlaceId: id },
+      name: id, category: { normalized: 'cafe' as const },
+      address: { display: '서울 성동구', road: '서울 성동구 왕십리로' },
+      coordinates: { latitude: 37.5445, longitude: 127.0375 },
+      evidence: { provider: 'naver' as const, searchTerms: ['서울숲 카페'] },
+    });
+    const providerSearch = jest.fn(async () => ({
+      pools: [
+        {
+          stepId: 'step-meal', sufficient: true,
+          candidates: [{
+            candidateId: lockedStep.candidateId, sourceStepId: 'step-meal',
+            place: {
+              identity: lockedStep.placeIdentity, name: lockedStep.name,
+              category: { normalized: 'unknown' as const, providerRaw: 'locked step fact' },
+              address: { display: lockedStep.address, road: lockedStep.roadAddress },
+              coordinates: { latitude: lockedStep.latitude, longitude: lockedStep.longitude },
+              evidence: { provider: 'naver' as const, searchTerms: [] },
+            },
+            distanceFromSearchCenterMeters: 0, popularityBonus: 0,
+          }],
+          selectableCandidates: [{
+            candidateId: lockedStep.candidateId, sourceStepId: 'step-meal',
+            place: {
+              identity: lockedStep.placeIdentity, name: lockedStep.name,
+              category: { normalized: 'unknown' as const, providerRaw: 'locked step fact' },
+              address: { display: lockedStep.address, road: lockedStep.roadAddress },
+              coordinates: { latitude: lockedStep.latitude, longitude: lockedStep.longitude },
+              evidence: { provider: 'naver' as const, searchTerms: [] },
+            },
+            distanceFromSearchCenterMeters: 0, popularityBonus: 0,
+          }],
+        },
+        {
+          stepId: 'step-cafe', sufficient: true,
+          candidates: [
+            { candidateId: 'naver-cafe-1', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-1'), distanceFromSearchCenterMeters: 100, popularityBonus: 0 },
+            { candidateId: 'naver-cafe-2', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-2'), distanceFromSearchCenterMeters: 110, popularityBonus: 0 },
+          ],
+          selectableCandidates: [
+            { candidateId: 'naver-cafe-1', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-1'), distanceFromSearchCenterMeters: 100, popularityBonus: 0 },
+            { candidateId: 'naver-cafe-2', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-2'), distanceFromSearchCenterMeters: 110, popularityBonus: 0 },
+          ],
+        },
+      ],
+      candidates: [
+        { candidateId: 'naver-cafe-1', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-1'), distanceFromSearchCenterMeters: 100, popularityBonus: 0 },
+        { candidateId: 'naver-cafe-2', sourceStepId: 'step-cafe', place: cafePlace('naver-cafe-2'), distanceFromSearchCenterMeters: 110, popularityBonus: 0 },
+      ],
+      discovery: { places: [], attemptsRun: 1, fallbackUsed: false, fewerResults: false },
+    }));
+    const sessionRequest: RecommendationRequest = {
+      ...request(), requestId: 'regenerate-request', sessionId: 'session-1', baseRequestId: 'request-ko',
+      lockedSteps: [lockedStep],
+    };
+    const result = await handleRecommendDate(
+      { method: 'POST', authorization: 'Bearer token', body: sessionRequest },
+      dependencies({
+        searchProviderNeutralCandidates: providerSearch,
+        generateSelection: jest.fn(async () => ({ steps: [
+          { stepId: 'step-meal', candidateId: 'naver-locked-meal' },
+          { stepId: 'step-cafe', candidateId: 'naver-cafe-1' },
+        ] })),
+      }),
+    );
+
+    expect(result.status).toBe(200);
+    expect((result.body as any).course.steps).toEqual(expect.arrayContaining([
+      expect.objectContaining({ stepId: 'step-meal', candidateId: 'naver-locked-meal', locked: true, placeIdentity: lockedStep.placeIdentity }),
+    ]));
+  });
+
   it('keeps a current-location request on the established Kakao search path', async () => {
     const providerSearch = jest.fn(async () => ({
       candidates: [],

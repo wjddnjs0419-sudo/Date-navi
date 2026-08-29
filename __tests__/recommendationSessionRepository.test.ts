@@ -55,6 +55,18 @@ describe('recommendation session mapper/repository', () => {
     expect(snapshot.steps.map((step) => step.stepId)).toEqual(['step-meal', 'step-cafe']);
   });
 
+  it('validates locked response steps from persisted rows when latest_request omits lockedSteps', () => {
+    const payload = JSON.parse(JSON.stringify(recommendationSessionRpcFixture())) as any;
+    payload.steps[0].locked = true;
+    payload.session.current_course.steps[0].locked = true;
+    delete payload.session.latest_request;
+
+    const snapshot = mapRecommendationSessionPayload(payload);
+
+    expect(snapshot.steps[0].locked).toBe(true);
+    expect(snapshot.request).not.toHaveProperty('lockedSteps');
+  });
+
   it('accepts PostgreSQL timestamptz JSON values with a numeric UTC offset', () => {
     const payload = recommendationSessionRpcFixture();
     payload.session.created_at = '2026-07-14T10:00:01+00:00';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
-import { SortDropdown } from '../components/ui';
+import { resolveSortDropdownPosition, SortDropdown } from '../components/ui';
 
 const TR = require('react-test-renderer') as {
   act: (cb: () => void | Promise<void>) => Promise<void>;
@@ -34,5 +34,15 @@ describe('SortDropdown', () => {
       oldestOption?.props.onPress();
     });
     expect(onChange).toHaveBeenCalledWith('oldest');
+  });
+
+  it('오른쪽 트리거의 메뉴를 트리거 바로 아래 오른쪽 모서리에 맞춘다', async () => {
+    expect(resolveSortDropdownPosition({
+      x: 250,
+      y: 100,
+      width: 100,
+      height: 36,
+      windowWidth: 390,
+    })).toEqual({ left: 210, top: 140 });
   });
 });

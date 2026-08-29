@@ -100,6 +100,51 @@ create table if not exists public.personal_hidden_step_intent_defaults (
   primary key (user_id, category, normalized_tag)
 );
 
+create or replace function public.enforce_personal_step_intent_tag_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_count integer;
+begin
+  perform pg_advisory_xact_lock(hashtextextended(new.user_id::text || ':' || new.category, 0));
+
+  if exists (
+    select 1
+    from public.personal_step_intent_tags
+    where user_id = new.user_id
+      and category = new.category
+      and normalized_tag = new.normalized_tag
+  ) then
+    return new;
+  end if;
+
+  select count(*) into v_count
+  from public.personal_step_intent_tags
+  where user_id = new.user_id
+    and category = new.category;
+
+  if v_count >= 20 then
+    raise exception 'personal_step_intent_tag_limit_reached'
+      using errcode = 'check_violation',
+        detail = 'A category can contain at most 20 personal keywords.';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.enforce_personal_step_intent_tag_limit() from public, anon, authenticated;
+
+drop trigger if exists personal_step_intent_tag_limit on public.personal_step_intent_tags;
+create trigger personal_step_intent_tag_limit
+before insert or update of user_id, category, normalized_tag
+on public.personal_step_intent_tags
+for each row
+execute function public.enforce_personal_step_intent_tag_limit();
+
 alter table public.personal_step_intent_tags enable row level security;
 alter table public.personal_hidden_step_intent_defaults enable row level security;
 
@@ -2097,3 +2142,62 @@ create table if not exists public.app_version_policies (
   enforced boolean not null default false,
   updated_at timestamptz not null default now()
 );
+
+-- 20260829000000_provider_neutral_session_mutations.sql
+-- The provider tuple is the canonical mutation identity. Kakao ID remains an
+-- optional link for Naver-owned places and a legacy field for old sessions.
+do $provider_neutral_mutation_patch$
+declare
+  v_definition text;
+  v_before text;
+begin
+  select pg_get_functiondef('public.apply_recommendation_session_mutation(text,text,jsonb)'::regprocedure)
+    into v_definition;
+  v_before := v_definition;
+  if position('recommendation_place_identity_matches' in lower(v_definition)) > 0
+    and position('current_place_provider = nullif' in lower(v_definition)) > 0
+    and position('placeidentity' in lower(v_definition)) > 0 then
+    return;
+  end if;
+  v_definition := replace(v_definition,
+    $$and current_step.current_kakao_place_id = requested_lock ->> 'kakaoPlaceId'$$,
+    $$and public.recommendation_place_identity_matches(current_step.current_place_provider, current_step.current_provider_place_id, requested_lock)$$);
+  v_definition := replace(v_definition,
+    $$and requested_lock ->> 'kakaoPlaceId' = current_lock.current_kakao_place_id$$,
+    $$and public.recommendation_place_identity_matches(current_lock.current_place_provider, current_lock.current_provider_place_id, requested_lock)$$);
+  v_definition := replace(v_definition,
+    $$and next ->> 'kakaoPlaceId' = current_lock.current_kakao_place_id$$,
+    $$and public.recommendation_place_identity_matches(current_lock.current_place_provider, current_lock.current_provider_place_id, next)$$);
+  v_definition := replace(v_definition,
+    $$and next ->> 'kakaoPlaceId' = old.current_kakao_place_id$$,
+    $$and public.recommendation_place_identity_matches(old.current_place_provider, old.current_provider_place_id, next)$$);
+  v_definition := replace(v_definition,
+    $$and next ->> 'kakaoPlaceId' = current_step.current_kakao_place_id$$,
+    $$and public.recommendation_place_identity_matches(current_step.current_place_provider, current_step.current_provider_place_id, next)$$);
+  v_definition := replace(v_definition,
+    $$and candidate ->> 'kakaoPlaceId' = nullif(btrim(p_payload ->> 'kakaoPlaceId'), '')$$,
+    $$and candidate ->> 'candidateId' = candidate ->> 'candidateId'$$);
+  v_definition := replace(v_definition,
+    $$  select coalesce(jsonb_agg(jsonb_build_object(
+    'stepId', step_id, 'order', step_order, 'category', category, 'label', label,$$,
+    $$  update public.recommendation_course_steps current_step
+     set current_place_provider = nullif(v_response #>> ('{course,steps,' || (select (ordinality - 1)::text from jsonb_array_elements(v_response #> '{course,steps}') with ordinality response_step where response_step.value ->> 'stepId' = current_step.step_id limit 1) || ',placeIdentity,provider}'), ''),
+         current_provider_place_id = nullif(v_response #>> ('{course,steps,' || (select (ordinality - 1)::text from jsonb_array_elements(v_response #> '{course,steps}') with ordinality response_step where response_step.value ->> 'stepId' = current_step.step_id limit 1) || ',placeIdentity,providerPlaceId}'), '')
+     where current_step.session_id = p_session_id;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'stepId', step_id, 'order', step_order, 'category', category, 'label', label,$$);
+  v_definition := replace(v_definition,
+    $$'candidateId', current_candidate_id, 'kakaoPlaceId', current_kakao_place_id,
+    'name', place_name$$,
+    $$'candidateId', current_candidate_id, 'kakaoPlaceId', current_kakao_place_id,
+    'placeIdentity', case when current_place_provider is not null then jsonb_build_object('provider', current_place_provider, 'providerPlaceId', current_provider_place_id) end,
+    'name', place_name$$);
+  if v_definition = v_before
+    or position('recommendation_place_identity_matches' in lower(v_definition)) = 0
+    or position('current_place_provider = nullif' in lower(v_definition)) = 0
+    or position('placeidentity' in lower(v_definition)) = 0 then
+    raise exception 'provider-neutral mutation injection failed';
+  end if;
+  execute v_definition;
+end;
+$provider_neutral_mutation_patch$;

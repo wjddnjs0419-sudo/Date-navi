@@ -226,7 +226,6 @@ describe('structured step intent tags', () => {
   });
 
   it.each([
-    ['cafe', '루프탑 카페'],
     ['drinks', '와인바'],
     ['activity', '방탈출'],
     ['culture', '전시'],
@@ -242,6 +241,28 @@ describe('structured step intent tags', () => {
 
     expect(resolved.stepIntents).toEqual([expect.objectContaining({
       stepId: 'tagged-step', canonicalTerm: tag, strength: 'required',
+    })]);
+  });
+
+  it.each([
+    ['cafe', '조용한 카페', '조용한'],
+    ['cafe', '감성 카페', '감성적인'],
+    ['cafe', '뷰 좋은 카페', '뷰 좋은'],
+    ['cafe', '대화하기 좋은 카페', '대화하기 좋은'],
+    ['cafe', '루프탑 카페', '루프탑 카페'],
+    ['drinks', '루프탑 바', '루프탑바'],
+    ['meal', '가볍게', '가볍게'],
+  ] as const)('treats a descriptive %s tag as a preferred intent (%s)', async (category, tag, canonicalTerm) => {
+    const resolved = await resolveStepIntents({
+      ...request(''),
+      courseSteps: [
+        { id: 'tagged-step', category, label: category, intentTags: [tag] },
+        { id: 'meal-step', category: 'meal', label: '식사' },
+      ],
+    });
+
+    expect(resolved.stepIntents).toEqual([expect.objectContaining({
+      stepId: 'tagged-step', canonicalTerm, strength: 'preferred',
     })]);
   });
 });

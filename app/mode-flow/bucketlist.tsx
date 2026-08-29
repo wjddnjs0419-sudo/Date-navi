@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../constants/colors';
-import { Plane } from 'lucide-react-native';
+import { DS, SP } from '../../constants/theme';
+import { Plane } from '../../components/iconography';
+import { BigButton, Header, InputField, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 export default function BucketlistScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const [item, setItem] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -60,38 +64,28 @@ export default function BucketlistScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
-      <View style={s.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={s.backText}>←</Text>
-        </TouchableOpacity>
-        <View style={s.modeBadge}>
-          <Plane size={13} color={C.lavenderFg} strokeWidth={2} />
-          <Text style={s.modeLabel}>{t('modeFlow.bucketlist.modeLabel')}</Text>
-        </View>
-      </View>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('modeFlow.bucketlist.title')} subtitle={t('modeFlow.bucketlist.sub')} variant="input" />
 
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={s.title}>{t('modeFlow.bucketlist.title')}</Text>
-        <Text style={s.subtitle}>{t('modeFlow.bucketlist.sub')}</Text>
+        <View style={s.modeBadge}>
+          <Plane size={13} color={C.lavenderFg} strokeWidth={2} />
+          <Text style={s.modeLabel}>{t('modeFlow.bucketlist.modeLabel')}</Text>
+        </View>
 
-        <Text style={s.inputLabel}>{t('modeFlow.bucketlist.label')}</Text>
-        <TextInput
-          style={s.textInput}
-          placeholder={t('modeFlow.bucketlist.placeholder')}
-          placeholderTextColor="#C0C0C0"
+        <InputField
+          label={t('modeFlow.bucketlist.label')}
           value={item}
           onChangeText={setItem}
+          placeholder={t('modeFlow.bucketlist.placeholder')}
           multiline
           maxLength={200}
-          textAlignVertical="top"
+          inputStyle={s.textInput}
         />
         <Text style={s.charCount}>{item.length} / 200</Text>
 
@@ -101,80 +95,47 @@ export default function BucketlistScreen() {
         </View>
       </ScrollView>
 
-      <View style={s.footer}>
-        <TouchableOpacity
-          style={[s.saveBtn, (!item.trim() || saving) && s.saveBtnDisabled]}
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
+        <BigButton
           onPress={handleSave}
-          activeOpacity={0.85}
+          variant={saving || !item.trim() ? 'disabled' : 'primary'}
           disabled={!item.trim() || saving}
         >
-          {saving ? (
-            <ActivityIndicator color={C.white} />
-          ) : (
-            <Text style={s.saveBtnText}>{t('modeFlow.bucketlist.save')}</Text>
-          )}
-        </TouchableOpacity>
+          {saving ? t('common.saving') : t('modeFlow.bucketlist.save')}
+        </BigButton>
       </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.white },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  backText: { fontSize: 24, color: C.text },
+  safe: { flex: 1, backgroundColor: C.canvasWhiteException },
   modeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SP.xs,
     backgroundColor: C.lavender,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: SP.sm,
+    paddingVertical: SP.xs,
+    borderRadius: DS.radius.chip,
   },
-  modeLabel: { fontSize: 12, fontWeight: '600', color: C.lavenderFg },
+  modeLabel: { ...DS.typography.bodySmall, fontWeight: '600', color: C.lavenderFg },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
-  title: { fontSize: 26, fontWeight: '800', color: C.text, lineHeight: 34, marginBottom: 10 },
-  subtitle: { fontSize: 14, color: C.textSub, lineHeight: 21, marginBottom: 28 },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 10 },
-  textInput: {
-    borderWidth: 1.5,
-    borderColor: C.border,
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 15,
-    color: C.text,
-    minHeight: 120,
-    lineHeight: 22,
-  },
-  charCount: { fontSize: 12, color: C.textMuted, textAlign: 'right', marginTop: 6, marginBottom: 24 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.hero },
+  subtitle: { ...DS.typography.body, color: C.textSub, marginTop: SP.lg, marginBottom: SP.xxl },
+  textInput: { ...DS.typography.body, color: C.text, textAlignVertical: 'top' },
+  charCount: { ...DS.typography.bodySmall, color: C.textMuted, textAlign: 'right', marginTop: SP.sm, marginBottom: SP.xxl },
   tipBox: {
     backgroundColor: C.lavender,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: DS.radius.input,
+    padding: SP.lg,
   },
-  tipTitle: { fontSize: 13, fontWeight: '700', color: C.lavenderFg, marginBottom: 8 },
-  tipText: { fontSize: 13, color: C.lavenderFg, lineHeight: 22 },
+  tipTitle: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.lavenderFg, marginBottom: SP.sm },
+  tipText: { ...DS.typography.bodyCompact, color: C.lavenderFg },
   footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.white,
   },
-  saveBtn: {
-    backgroundColor: C.lavenderFg,
-    borderRadius: 20,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  saveBtnDisabled: { opacity: 0.45 },
-  saveBtnText: { color: C.white, fontSize: 16, fontWeight: '700' },
 });

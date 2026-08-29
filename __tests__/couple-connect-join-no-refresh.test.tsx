@@ -43,6 +43,8 @@ jest.mock('../components/ui', () => {
   const { View, Text } = RN;
   return {
     BackBar: View,
+    Header: View,
+    ScreenHeading: View,
     BigButton: ({ onPress, children }: any) => Rr.createElement(Text, { onPress }, children),
     HeartDoodle: View,
     ListGroup: View,

@@ -5,6 +5,7 @@ const mockRouterPush = jest.fn();
 const mockRouterReplace = jest.fn();
 const mockMutateRecommendationSession = jest.fn();
 const mockLoadRecommendationSession = jest.fn();
+const mockReloadRecommendationSession = jest.fn();
 const mockSupabaseFunctionsInvoke = jest.fn();
 let mockCapturedFocusEffect: (() => void) | null = null;
 let mockLanguage: 'ko' | 'en' = 'ko';
@@ -129,6 +130,7 @@ jest.mock('../components/recommendation/recommendation-session-provider', () => 
   useRecommendationSessionStore: () => ({
     getRecommendationSession: () => (globalThis as any).__mockSnapshot,
     loadRecommendationSession: mockLoadRecommendationSession,
+    reloadRecommendationSession: mockReloadRecommendationSession,
     mutateRecommendationSession: mockMutateRecommendationSession,
   }),
 }));
@@ -177,6 +179,7 @@ describe('course result screen', () => {
     mockRouterReplace.mockClear();
     mockMutateRecommendationSession.mockClear();
     mockLoadRecommendationSession.mockClear();
+    mockReloadRecommendationSession.mockClear();
     mockSupabaseFunctionsInvoke.mockClear();
     mockRequestRecommendationResponse.mockClear();
     mockCapturedFocusEffect = null;
@@ -207,11 +210,26 @@ describe('course result screen', () => {
     expect(instance.root.findAllByProps({ children: 'ok' }).length).toBeGreaterThan(0);
   });
 
+  it('shows selected step intent tags when the response metadata omits stepIntent', () => {
+    const base = buildSnapshot();
+    (globalThis as any).__mockSnapshot = buildSnapshot({
+      request: {
+        ...base.request,
+        courseSteps: base.request.courseSteps.map((step, index) => (
+          index === 0 ? { ...step, intentTags: ['일식'] } : step
+        )),
+      },
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    expect(instance.root.findAllByProps({ children: '일식' }).length).toBeGreaterThan(0);
+  });
+
   it('renders a category icon per step', () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     act(() => { instance = create(<CourseResultScreen />); });
 
-    const { Coffee, Utensils, Footprints } = require('lucide-react-native');
+    const { Coffee, Utensils, Footprints } = require('../components/iconography');
     expect(instance.root.findAllByType(Utensils).length).toBeGreaterThan(0);
     expect(instance.root.findAllByType(Coffee).length).toBeGreaterThan(0);
     expect(instance.root.findAllByType(Footprints).length).toBeGreaterThan(0);
@@ -377,7 +395,15 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke
       .mockResolvedValueOnce({ data: { targetStepId: 'step-meal', attestationId: '00000000-0000-4000-8000-000000000001', candidates: [{ candidateId: 'naver_replacement_001', providerPlaceId: 'naver-meal-2', name: '새 네이버 식당', address: 'addr', roadAddress: 'road', latitude: 37.55, longitude: 127.05 }] }, error: null })
       .mockResolvedValueOnce({ data: { ok: true }, error: null });
-    mockLoadRecommendationSession.mockResolvedValueOnce(snapshot);
+    const replacedSnapshot = buildSnapshot();
+    replacedSnapshot.steps[0] = {
+      ...replacedSnapshot.steps[0],
+      currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-2' },
+      currentCandidateId: 'naver_replacement_001',
+      placeName: '새 네이버 식당',
+    };
+    mockReloadRecommendationSession.mockResolvedValueOnce(replacedSnapshot);
     act(() => { instance = create(<CourseResultScreen />); });
 
     const card = instance.root.findByProps({ testID: 'course-step-card-step-meal' });
@@ -390,7 +416,23 @@ describe('course result screen', () => {
     expect(mockSupabaseFunctionsInvoke).toHaveBeenLastCalledWith('provider-neutral-replacements', {
       body: { action: 'apply', sessionId: 'session-1', targetStepId: 'step-meal', attestationId: '00000000-0000-4000-8000-000000000001', providerPlaceId: 'naver-meal-2' },
     });
+    expect(mockReloadRecommendationSession).toHaveBeenCalledWith('session-1');
+    expect(instance.root.findAllByProps({ children: '새 네이버 식당' }).length).toBeGreaterThan(0);
     expect(mockRequestRecommendationResponse).not.toHaveBeenCalled();
+  });
+
+  it('shows the Naver map action when Kakao link resolution is unavailable', () => {
+    const snapshot = buildSnapshot();
+    snapshot.steps[0] = {
+      ...snapshot.steps[0],
+      currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+      mapUrl: 'https://map.naver.com/p/search/%EC%84%B1%EC%88%98%20%EC%8B%9D%EB%8B%B9',
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    expect(instance.root.findByProps({ testID: 'course-step-map-step-meal' })).toBeDefined();
   });
 
   it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {

@@ -6,10 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
-import { Camera } from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, ProgressDots } from '../../components/ui';
+import { Camera } from '../../components/iconography';
+import { C, DS, G } from '../../constants/theme';
+import { BigButton, Header, ProgressDots, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
@@ -101,18 +100,13 @@ export default function PhotoScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header
+        onBack={() => router.back()}
+        center={<ProgressDots current={2} total={4} />}
+        right={<Text style={s.stepCount}>2 / 4</Text>}
+      />
+      <ScreenHeading title={t('onboarding.photo.title')} subtitle={t('onboarding.photo.sub')} variant="input" />
       <View style={s.container}>
-        <BackBar />
-        <View style={s.progressRow}>
-          <ProgressDots current={2} total={4} />
-          <Text style={s.stepCount}>2 / 4</Text>
-        </View>
-
-        <View style={s.headingBlock}>
-          <Text style={s.heading}>{t('onboarding.photo.title')}</Text>
-          <Text style={s.subText}>{t('onboarding.photo.sub')}</Text>
-        </View>
-
         <View style={s.avatarWrap}>
           <View style={s.avatar}>
             {photoUrl ? (
@@ -138,7 +132,7 @@ export default function PhotoScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={s.changeBtn} onPress={handlePickPhoto} disabled={uploading}>
+        <TouchableOpacity style={s.changeBtn} onPress={handlePickPhoto} disabled={uploading} activeOpacity={0.88}>
           <Text style={s.changeBtnText}>{t('onboarding.photo.change')}</Text>
         </TouchableOpacity>
 
@@ -155,33 +149,29 @@ export default function PhotoScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  stepCount: { fontSize: 11, color: C.textMuted },
-  headingBlock: { marginTop: 20 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, marginTop: 8 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.section },
+  stepCount: { ...DS.typography.caption, color: C.textMuted },
   avatarWrap: {
     alignSelf: 'center',
-    marginTop: 36,
+    marginTop: DS.spacing.section,
     position: 'relative',
   },
   avatar: {
     width: 150,
     height: 150,
-    borderRadius: 75,
+    borderRadius: DS.radius.full,
     backgroundColor: C.pinkLight,
     borderWidth: 1.5,
-    borderColor: '#F2D6DA',
+    borderColor: C.avatarBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 46, fontWeight: '700', color: C.pinkDeep },
-  avatarImage: { width: 150, height: 150, borderRadius: 75 },
+  avatarText: { ...DS.typography.avatarInitial, color: C.pinkDeep },
+  avatarImage: { width: 150, height: 150, borderRadius: DS.radius.full },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 75,
-    backgroundColor: 'rgba(40,30,25,0.4)',
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.color.avatarOverlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -191,29 +181,25 @@ const s = StyleSheet.create({
     right: 0,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: DS.radius.full,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
+    ...DS.elevation.avatarAction,
   },
   changeBtn: {
     alignSelf: 'center',
-    marginTop: 20,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    marginTop: DS.spacing.lg,
+    borderRadius: DS.radius.chip,
+    paddingHorizontal: DS.spacing.lg,
+    paddingVertical: DS.spacing.sm,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
   },
-  changeBtnText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
-  hint: { fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 12 },
+  changeBtnText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.pinkDeep },
+  hint: { ...DS.typography.caption, color: C.textMuted, textAlign: 'center', marginTop: DS.spacing.md },
   spacer: { flex: 1 },
 });

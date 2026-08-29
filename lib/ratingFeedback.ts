@@ -1,5 +1,5 @@
 // lib/ratingFeedback.ts
-import { Star, Smile, Meh, Frown, Angry } from 'lucide-react-native';
+import { Star, Smile, Meh, Frown, Angry } from '../components/iconography';
 import { C } from '../constants/theme';
 
 export type Rating = 1 | 2 | 3 | 4 | 5;

@@ -10,10 +10,9 @@ import { supabase } from '../../lib/supabase';
 import { logEvent } from '../../lib/analytics';
 import {
   CalendarDays, ChevronRight, Share2, Users, XCircle,
-} from 'lucide-react-native';
-import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, HeartDoodle, ListGroup, ListRow, SectionLabel, SoftCard } from '../../components/ui';
+} from '../../components/iconography';
+import { C, DS, G, SP } from '../../constants/theme';
+import { BigButton, Header, HeartDoodle, ListGroup, ListRow, ScreenHeading, SectionLabel, SoftCard } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { DateWheelPicker, PickerSheet, defaultIsoDate } from '../../components/pickers';
 import { useI18n } from '../../lib/i18n';
@@ -452,21 +451,18 @@ export default function CoupleConnectScreen() {
         <Illustration name="bg-park" resizeMode="cover" height={340} style={s.bgPark} />
       )}
       <SafeAreaView style={s.safe}>
+      <Header onBack={handleBack} />
+      <ScreenHeading
+        title={heading}
+        subtitle={subtitle}
+        variant="input"
+        accessory={status === 'linked' ? <HeartDoodle filled style={s.headingHeart} /> : undefined}
+      />
       <ScrollView
         contentContainerStyle={s.container}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <BackBar onPress={handleBack} />
-
-        <View style={s.headingBlock}>
-          <View style={s.headingRow}>
-            <Text style={s.heading}>{heading}</Text>
-            {status === 'linked' && <HeartDoodle filled style={s.headingHeart} />}
-          </View>
-          <Text style={s.subText}>{subtitle}</Text>
-        </View>
-
         {status === 'linked' ? (
           <>
             <View style={s.section}>
@@ -510,7 +506,7 @@ export default function CoupleConnectScreen() {
               <Illustration name="mascot-heart-couple" width={150} style={s.inviteMascot} />
 
               {status === 'waiting' ? (
-                <TouchableOpacity style={s.shareBtn} onPress={shareInvite} activeOpacity={0.82}>
+                <TouchableOpacity style={s.shareBtn} onPress={shareInvite} activeOpacity={0.88}>
                   <Share2 size={16} color={C.white} strokeWidth={2.2} />
                   <Text style={s.shareBtnText}>{t.shareInviteLink}</Text>
                 </TouchableOpacity>
@@ -549,7 +545,7 @@ export default function CoupleConnectScreen() {
 
             <Text style={s.footerText}>{t.linkHint}</Text>
 
-            <TouchableOpacity onPress={handleLogout} style={s.logoutLink}>
+            <TouchableOpacity onPress={handleLogout} activeOpacity={0.88} style={s.logoutLink}>
               <Text style={s.logoutLinkText}>{t.logoutLink}</Text>
             </TouchableOpacity>
           </>
@@ -580,49 +576,45 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
   // connected.tsx와 동일 패턴: SafeAreaView 밖(root)에 절대위치로 그려야 하단이 진짜 화면 끝까지 붙는다.
   bgPark: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 44 },
-  headingBlock: { marginTop: 16 },
-  headingRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  headingHeart: { marginTop: 2, marginLeft: 4 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8 },
-  section: { marginTop: 26 },
+  container: { flexGrow: 1, paddingHorizontal: DS.spacing.screen, paddingTop: DS.spacing.xxl, paddingBottom: DS.spacing.screen },
+  headingHeart: { marginTop: DS.spacing.micro },
+  section: { marginTop: DS.spacing.section },
   inviteCard: {
-    marginTop: 24,
-    padding: 20,
+    marginTop: DS.spacing.xxl,
+    padding: DS.spacing.screen,
     alignItems: 'center',
   },
-  inviteLabel: { fontSize: 11, color: C.pinkDeep, fontWeight: '700', letterSpacing: 0.4 },
-  codeText: { fontSize: 34, fontWeight: '800', color: C.pinkDeep, letterSpacing: 4, marginTop: 8 },
-  inviteMascot: { marginVertical: 12 },
-  createBtn: { marginTop: 4, width: '100%' },
+  inviteLabel: { ...DS.typography.caption, color: C.pinkDeep, fontWeight: '700', letterSpacing: DS.component.inviteLabelLetterSpacing },
+  codeText: { ...DS.typography.inviteCode, color: C.pinkDeep, marginTop: SP.sm },
+  inviteMascot: { marginVertical: DS.spacing.md },
+  createBtn: { marginTop: DS.spacing.xs, width: '100%' },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: DS.spacing.sm,
     backgroundColor: C.pink,
-    borderRadius: 18,
-    paddingVertical: 16,
-    marginTop: 4,
+    borderRadius: DS.radius.button,
+    paddingVertical: DS.spacing.lg,
+    marginTop: DS.spacing.xs,
     width: '100%',
   },
-  shareBtnText: { fontSize: 15, fontWeight: '700', color: C.white },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24 },
+  shareBtnText: { ...DS.typography.button, color: C.white },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.md, marginVertical: DS.spacing.xxl },
   dividerLine: { flex: 1, height: 1, backgroundColor: C.border },
-  dividerText: { fontSize: 11, color: C.textMuted },
+  dividerText: { ...DS.typography.caption, color: C.textMuted },
   fieldBox: {
     backgroundColor: C.white,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: DS.radius.input,
+    paddingHorizontal: DS.spacing.lg,
+    paddingVertical: DS.spacing.md,
     borderWidth: 1,
     borderColor: C.border,
   },
-  fieldLabel: { fontSize: 11, color: C.textLight, marginBottom: 4 },
-  fieldInput: { fontSize: 18, color: C.text, letterSpacing: 3, fontWeight: '700' },
-  joinBtnWrap: { marginTop: 12 },
-  footerText: { fontSize: 11, color: C.textMuted, textAlign: 'center', lineHeight: 18, marginTop: 22 },
-  logoutLink: { alignItems: 'center', marginTop: 20 },
-  logoutLinkText: { fontSize: 12, color: C.textFaint, textDecorationLine: 'underline' },
+  fieldLabel: { ...DS.typography.caption, color: C.textLight, marginBottom: DS.spacing.xs },
+  fieldInput: { ...DS.typography.codeInput, color: C.text },
+  joinBtnWrap: { marginTop: DS.spacing.md },
+  footerText: { ...DS.typography.caption, color: C.textMuted, textAlign: 'center', marginTop: DS.spacing.xxl },
+  logoutLink: { alignItems: 'center', marginTop: DS.spacing.screen },
+  logoutLinkText: { ...DS.typography.bodySmall, color: C.textFaint, textDecorationLine: 'underline' },
 });

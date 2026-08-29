@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { C } from '../constants/colors';
+import { DS } from '../constants/theme';
 import { SuccessModal, GeneratingView } from '../components/ui';
 import { PickerSheet } from '../components/pickers';
 import { StepActionSheet } from '../components/recommendation/step-action-sheet';
@@ -59,5 +60,5 @@ export default function ShotHarness() {
 
 const s = StyleSheet.create({
   bg: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-  label: { color: C.textMuted, fontSize: 13 },
+  label: { ...DS.typography.bodyCompact, color: C.textMuted },
 });

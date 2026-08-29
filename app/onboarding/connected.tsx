@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { C } from '../../constants/colors';
-import { SP } from '../../constants/theme';
+import { C, DS, SP } from '../../constants/theme';
 import { BigButton } from '../../components/ui';
 import { Illustration } from '../../components/illustration';
 import { useI18n } from '../../lib/i18n';
@@ -66,7 +65,7 @@ export default function CoupleConnectedScreen() {
 }
 
 const anim = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', marginBottom: SP.xl },
+  wrap: { alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl },
 });
 
 const s = StyleSheet.create({
@@ -82,9 +81,9 @@ const s = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  container: { flex: 1, paddingHorizontal: 24, paddingBottom: 24 },
+  container: { flex: 1, paddingHorizontal: DS.spacing.screen, paddingBottom: DS.spacing.xxl },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29, textAlign: 'center', marginTop: 8 },
-  sub: { fontSize: 13, color: C.textSub, lineHeight: 20, textAlign: 'center', marginTop: 12 },
+  heading: { ...DS.typography.headingLegacy, color: C.text, textAlign: 'center', marginTop: DS.spacing.sm },
+  sub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: DS.spacing.md },
   footer: {},
 });

@@ -22,7 +22,6 @@
       },
       "helper": "Choose Anything and AI will find the best fit.",
       "anything": "Anything",
-      "autoExpand": "The next step opens automatically after you choose.",
       "tip": "Details are optional. Anything is okay."
     },
     "steps": {
@@ -52,7 +51,9 @@
         "label": "Keywords (optional)",
         "hint": "We'll prioritize places matching your selected keywords.",
         "placeholder": "Add your own",
-        "add": "Add"
+        "add": "Add",
+        "limit": "Personal keywords {{count}}/{{max}}. New keywords won't be saved to your list, but they'll apply to this recommendation. Delete an existing keyword to save another.",
+        "temporary": "Applies to this recommendation only: {{tag}}"
       }
     },
     "walking": {
@@ -72,7 +73,7 @@
     "moods": {
       "label": "Preferred vibes (select any)",
       "options": {
-        "emotional": "Atmospheric",
+        "emotional": "Emotional",
         "comfortable": "Comfortable",
         "lively": "Lively",
         "romantic": "Romantic",

@@ -25,6 +25,7 @@ type RecommendationSessionContextValue = {
     sessionId: string,
     requestId: string,
   ) => Promise<RecommendationSessionSnapshot>;
+  reloadRecommendationSession: (sessionId: string) => Promise<RecommendationSessionSnapshot>;
   getRecommendationSession: (
     sessionId: string,
     requestId?: string,
@@ -72,6 +73,9 @@ export function RecommendationSessionProvider({
     },
     loadRecommendationSession(sessionId, requestId) {
       return cache.getOrHydrate(sessionId, requestId, (id) => repository.hydrate(id));
+    },
+    reloadRecommendationSession(sessionId) {
+      return repository.hydrate(sessionId).then((snapshot) => cache.set(snapshot, sessionId, snapshot.requestId));
     },
     getRecommendationSession(sessionId, requestId) {
       return cache.get(sessionId, requestId);

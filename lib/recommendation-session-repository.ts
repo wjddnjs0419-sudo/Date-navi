@@ -168,7 +168,31 @@ export function mapRecommendationSessionPayload(input: unknown): RecommendationS
       cards: payload.session.cards,
       metadata: payload.session.metadata,
     });
-    validateRecommendDateResponseForRequest(request, response);
+    // latest_request intentionally omits lockedSteps because the persisted
+    // per-step locked column is authoritative. Rebuild the lock tuples only
+    // for response validation; do not expose them as the request used for a
+    // subsequent recommendation input.
+    const persistedLockedSteps = payload.steps.filter((row) => row.locked).map((row) => {
+      const identity = row.current_place_provider && row.current_provider_place_id
+        ? { provider: row.current_place_provider, providerPlaceId: row.current_provider_place_id }
+        : row.current_kakao_place_id
+          ? { provider: 'kakao' as const, providerPlaceId: row.current_kakao_place_id }
+          : undefined;
+      return {
+        stepId: row.step_id,
+        candidateId: row.current_candidate_id,
+        ...(row.current_kakao_place_id ? { kakaoPlaceId: row.current_kakao_place_id } : {}),
+        ...(identity ? { placeIdentity: identity } : {}),
+        name: row.place_name,
+        address: row.address,
+        roadAddress: row.road_address,
+        mapUrl: row.map_url,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        locked: true,
+      };
+    });
+    validateRecommendDateResponseForRequest({ ...request, lockedSteps: persistedLockedSteps }, response);
 
     if (payload.session.id !== response.course.sessionId
       || payload.session.request_id !== request.requestId

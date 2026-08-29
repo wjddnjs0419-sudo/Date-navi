@@ -10,13 +10,14 @@ import { supabase } from '../../lib/supabase';
 import {
   Sparkles, Clock, Wallet, MapPin, Send, Bookmark, RefreshCw,
   ChevronRight,
-} from 'lucide-react-native';
+} from '../../components/iconography';
 import { C } from '../../constants/colors';
-import { G } from '../../constants/theme';
-import { BackBar, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
+import { DS, G, SP } from '../../constants/theme';
+import { Header, ScreenHeading, BigButton, Badge, Chip, SoftCard, PlaceRow } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { getCardStyle } from '../../lib/tagStyle';
 import { writeRecommendationIdentity } from '../../lib/recommendationIdentity';
+import { openPlaceInBrowser } from '../../lib/placeBrowser';
 
 export default function ResultScreen() {
   const { mode, input, cards: cardsParam, sessionId } = useLocalSearchParams<{ mode: string; input: string; cards: string; sessionId?: string }>();
@@ -121,10 +122,10 @@ export default function ResultScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('modeFlow.result.aiBadge')} />
       <ScrollView contentContainerStyle={s2.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-
         <View style={s2.badgeRow}>
           <Badge tone="pink">{t('modeFlow.result.aiBadge')}</Badge>
           <Badge>{t('modeFlow.result.nowBadge')}</Badge>
@@ -157,7 +158,13 @@ export default function ResultScreen() {
                 <Text style={s2.featuredDesc}>{card.summary}</Text>
 
                 {!!card.place_name && (
-                  <PlaceRow name={card.place_name} address={card.place_address} url={card.map_url} style={s2.placeRowGap} />
+                  <PlaceRow
+                    name={card.place_name}
+                    address={card.place_address}
+                    url={card.map_url}
+                    onPress={card.map_url ? () => void openPlaceInBrowser({ kakaoPlaceId: '', mapUrl: card.map_url, name: card.place_name, address: card.place_address }) : undefined}
+                    style={s2.placeRowGap}
+                  />
                 )}
 
                 <View style={s2.metaGrid}>
@@ -196,12 +203,13 @@ export default function ResultScreen() {
                     style={s2.sendBtn}
                     onPress={handleSendToPartner}
                     disabled={sending}
+                    activeOpacity={0.88}
                   >
                     {sending ? <ActivityIndicator size="small" color={C.white} /> : <Send size={14} color={C.white} />}
                     <Text style={s2.sendBtnText}>{t('modeFlow.result.send')}</Text>
                   </TouchableOpacity>
                   {!saved && (
-                    <TouchableOpacity style={s2.bookmarkBtn} onPress={handleSave} disabled={saving}>
+                    <TouchableOpacity style={s2.bookmarkBtn} onPress={handleSave} disabled={saving} activeOpacity={0.88}>
                       {saving
                         ? <ActivityIndicator size="small" color={C.pinkDeep} />
                         : <>
@@ -215,6 +223,7 @@ export default function ResultScreen() {
                   <TouchableOpacity
                     style={s2.goBtn}
                     onPress={() => router.replace('/(tabs)/candidates' as any)}
+                    activeOpacity={0.88}
                   >
                     <Text style={s2.goBtnText}>{t('modeFlow.result.goCandidates')}</Text>
                   </TouchableOpacity>
@@ -222,6 +231,7 @@ export default function ResultScreen() {
                 <TouchableOpacity
                   style={s2.retryBtn}
                   onPress={regenerate}
+                  activeOpacity={0.88}
                 >
                   <RefreshCw size={12} color={C.textSub} />
                   <Text style={s2.retryBtnText}>{t('modeFlow.result.retryRecommend')}</Text>
@@ -272,107 +282,99 @@ export default function ResultScreen() {
 }
 
 const s2 = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingGap: { marginTop: 12 },
-  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 8, marginBottom: 4 },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.hero },
+  heading: { ...DS.typography.headingLegacy, color: C.text },
+  headingGap: { marginTop: SP.md },
+  badgeRow: { flexDirection: 'row', gap: SP.xs, marginTop: SP.md },
+  subText: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.sm, marginBottom: SP.xs },
   featuredCard: {
-    marginTop: 20,
-    borderRadius: 24,
+    marginTop: SP.xxl,
+    borderRadius: DS.radius.card,
     overflow: 'hidden',
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 5,
   },
   featuredBanner: {
     height: 160,
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
-    padding: 20,
+    padding: SP.screen,
   },
-  bannerBadge: { position: 'absolute', top: 16, left: 16 },
+  bannerBadge: { position: 'absolute', top: SP.lg, left: SP.lg },
   featuredIconBg: { backgroundColor: C.white },
   featuredIcon: {
-    width: 80, height: 80, borderRadius: 20,
+    width: 80, height: 80, borderRadius: DS.radius.chip,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  featuredBody: { padding: 20 },
-  featuredCategory: { fontSize: 11, color: C.textMuted, letterSpacing: 0.5 },
-  featuredTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginTop: 4 },
-  featuredDesc: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: 4 },
-  metaGrid: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  featuredBody: { padding: SP.screen },
+  featuredCategory: { ...DS.typography.caption, color: C.textMuted, letterSpacing: DS.component.featuredCategoryLetterSpacing },
+  featuredTitle: { ...DS.typography.sectionTitle, color: C.text, marginTop: SP.xs },
+  featuredDesc: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.xs },
+  metaGrid: { flexDirection: 'row', gap: SP.sm, marginTop: SP.lg },
   metaBox: {
-    flex: 1, borderRadius: 14, padding: 12,
-    backgroundColor: C.bg, gap: 4,
+    flex: 1, borderRadius: DS.radius.input, padding: SP.md,
+    backgroundColor: C.bg, gap: SP.xs,
   },
-  metaLabel: { fontSize: 10, color: C.textMuted, marginTop: 4 },
-  metaValue: { fontSize: 13, fontWeight: '600', color: C.text },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 16 },
+  metaLabel: { ...DS.typography.micro, color: C.textMuted, marginTop: SP.xs },
+  metaValue: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SP.xs, marginTop: SP.lg },
   whyBox: {
     flexDirection: 'row',
-    gap: 8,
-    borderRadius: 14,
-    padding: 12,
+    gap: SP.sm,
+    borderRadius: DS.radius.input,
+    padding: SP.md,
     backgroundColor: C.cream,
-    marginTop: 16,
+    marginTop: SP.lg,
     alignItems: 'flex-start',
   },
-  whyText: { fontSize: 12, color: C.grayFg, lineHeight: 19, flex: 1 },
-  placeRowGap: { marginTop: 12 },
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  whyText: { ...DS.typography.bodySmall, color: C.grayFg, flex: 1 },
+  placeRowGap: { marginTop: SP.md },
+  actionRow: { flexDirection: 'row', gap: SP.sm, marginTop: SP.lg },
   sendBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderRadius: 14,
-    paddingVertical: 12,
+    gap: SP.xs,
+    borderRadius: DS.radius.input,
+    minHeight: DS.spacing.touch,
+    paddingVertical: SP.md,
     backgroundColor: C.pink,
   },
-  sendBtnText: { fontSize: 13, fontWeight: '600', color: C.white },
+  sendBtnText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.white },
   bookmarkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: SP.xs,
+    borderRadius: DS.radius.input,
+    minHeight: DS.spacing.touch,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
     backgroundColor: C.white,
     borderWidth: 1.5,
     borderColor: C.pinkBorder,
   },
-  bookmarkBtnText: { fontSize: 13, fontWeight: '600', color: C.pinkDeep },
-  goBtn: { alignItems: 'center', marginTop: 12 },
-  goBtnText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
-  retryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10 },
-  retryBtnText: { fontSize: 12, color: C.textSub },
-  subCardGap: { marginTop: 12 },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  bookmarkBtnText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.pinkDeep },
+  goBtn: { alignItems: 'center', marginTop: SP.md },
+  goBtnText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '600' },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs, minHeight: DS.spacing.touch, paddingVertical: SP.sm },
+  retryBtnText: { ...DS.typography.bodySmall, color: C.textSub },
+  subCardGap: { marginTop: SP.md },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: SP.md },
   subBody: { flex: 1 },
-  subIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  subTitle: { fontSize: 14, fontWeight: '700', color: C.text },
-  subDesc: { fontSize: 12, color: C.textSub, lineHeight: 17, marginTop: 2 },
-  subMetaRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  subMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  subMetaPlace: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 },
-  subMeta: { fontSize: 11, color: C.textMuted },
+  subIcon: { width: 64, height: 64, borderRadius: DS.radius.input, alignItems: 'center', justifyContent: 'center' },
+  subTitle: { ...DS.typography.body, fontWeight: '700', color: C.text },
+  subDesc: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.micro },
+  subMetaRow: { flexDirection: 'row', gap: SP.md, marginTop: SP.xs },
+  subMetaItem: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
+  subMetaPlace: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, flexShrink: 1 },
+  subMeta: { ...DS.typography.caption, color: C.textMuted },
   subMetaPink: { color: C.pinkDeep },
-  bottomSpacer: { height: 40 },
-  errWrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errIcon: { width: 120, height: 120, borderRadius: 60, backgroundColor: C.gray, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  errRetryBtn: { marginTop: 24 },
-  errTitle: { fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' },
-  errSub: { fontSize: 13, color: C.textSub, textAlign: 'center', lineHeight: 20, marginTop: 12 },
+  bottomSpacer: { height: SP.xxl },
+  errWrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: SP.section },
+  errIcon: { width: 120, height: 120, borderRadius: DS.radius.full, backgroundColor: C.gray, alignItems: 'center', justifyContent: 'center', marginBottom: SP.xxl },
+  errRetryBtn: { marginTop: SP.xxl },
+  errTitle: { ...DS.typography.headingLegacy, color: C.text, textAlign: 'center' },
+  errSub: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: SP.md },
 });

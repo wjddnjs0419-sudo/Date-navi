@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, Image,
+  View, Text, StyleSheet, ScrollView, Image,
   ActivityIndicator, Alert, TouchableOpacity, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,9 +9,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../lib/supabase';
 import { useI18n } from '../../../lib/i18n';
-import { Star, Camera } from 'lucide-react-native';
-import { C, SP, R } from '../../../constants/theme';
-import { BackBar, BigButton } from '../../../components/ui';
+import { Star, Camera } from '../../../components/iconography';
+import { C, DS, SP } from '../../../constants/theme';
+import { BigButton, Header, InputField, ScreenHeading } from '../../../components/ui';
 import { Illustration, MINI_ILLUSTRATION_WIDTH } from '../../../components/illustration';
 import { Rating, RATING_FEEDBACK_KEY, RATING_FEEDBACK_ICON, RATING_FEEDBACK_TONE, deriveWantAgain } from '../../../lib/ratingFeedback';
 import { removeStorageObjectByUrl } from '../../../lib/storageCleanup';
@@ -142,19 +142,17 @@ export default function NewMemoryScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={s.card.memory.newHeading} subtitle={s.card.memory.newSub} />
       <ScrollView style={styles.flex1} contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
-          <BackBar />
-
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>{s.card.memory.newHeading}</Text>
-            <Text style={styles.sub}>{s.card.memory.newSub}</Text>
             <Illustration name="mini-park-bench" width={MINI_ILLUSTRATION_WIDTH} style={styles.headingIllustration} />
           </View>
 
           <TouchableOpacity
             style={styles.photoPlaceholder}
             onPress={handlePickPhoto}
-            activeOpacity={0.8}
+            activeOpacity={0.88}
             disabled={uploadingPhoto}
           >
             {uploadingPhoto ? (
@@ -169,18 +167,17 @@ export default function NewMemoryScreen() {
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{s.card.memory.titleLabel}</Text>
-          <TextInput
-            style={styles.titleInput}
+          <InputField
+            label={s.card.memory.titleLabel}
             value={title}
             onChangeText={setTitle}
             placeholder={s.card.memory.titlePlaceholder}
-            placeholderTextColor={C.textFaint}
             maxLength={40}
             returnKeyType="next"
+            style={styles.field}
           />
 
-          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{c.starRatingLabel}</Text>
+          <Text style={styles.sectionLabel}>{c.starRatingLabel}</Text>
           <View style={styles.starRow}>
             {[1, 2, 3, 4, 5].map((n) => (
               <TouchableOpacity
@@ -190,7 +187,7 @@ export default function NewMemoryScreen() {
                 accessibilityLabel={`${n}점`}
                 onPress={() => setRating(n)}
                 style={styles.starBtn}
-                activeOpacity={1}
+                activeOpacity={0.88}
               >
                 <Star
                   size={28}
@@ -209,16 +206,15 @@ export default function NewMemoryScreen() {
             </View>
           )}
 
-          <Text style={[styles.sectionLabel, styles.sectionLabelTop]}>{c.reviewLabel}</Text>
-          <TextInput
-            style={styles.reviewInput}
+          <InputField
+            label={c.reviewLabel}
             value={reviewText}
             onChangeText={setReviewText}
             placeholder={c.reviewPlaceholder}
-            placeholderTextColor={C.textFaint}
             multiline
             maxLength={100}
             returnKeyType="done"
+            style={styles.field}
           />
 
           <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'} style={styles.saveBtn}>
@@ -233,30 +229,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flex1: { flex: 1 },
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.lg },
 
-  headingBlock: { marginTop: SP.lg, marginBottom: SP.xl },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 30 },
-  sub: { marginTop: SP.xs + 2, fontSize: 13, color: C.textSub, lineHeight: 19 },
-  headingIllustration: { alignSelf: 'flex-end', marginTop: -8 },
+  headingBlock: { marginBottom: SP.lg },
+  headingIllustration: { alignSelf: 'flex-end' },
 
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: SP.md },
-  sectionLabelTop: { marginTop: SP.xl },
-  saveBtn: { marginTop: SP.xxl },
-
-  titleInput: {
-    backgroundColor: C.white,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
-    fontSize: 14,
-    color: C.text,
-  },
+  sectionLabel: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text, marginTop: SP.lg, marginBottom: SP.md },
+  field: { marginTop: SP.lg },
 
   starRow: { flexDirection: 'row', gap: SP.sm },
-  starBtn: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  starBtn: { minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
 
   feedbackCard: {
     flexDirection: 'row',
@@ -265,28 +247,17 @@ const styles = StyleSheet.create({
     marginTop: SP.md,
     paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
   },
-  feedbackLabel: { fontSize: 13, fontWeight: '600' },
+  feedbackLabel: { ...DS.typography.bodyCompact, fontWeight: '600' },
 
-  reviewInput: {
-    backgroundColor: C.white,
-    borderRadius: R.btn,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md + 2,
-    fontSize: 14,
-    color: C.text,
-    minHeight: 70,
-    textAlignVertical: 'top',
-  },
+  saveBtn: { marginTop: SP.lg },
 
   photoPlaceholder: {
-    marginTop: SP.md + 2,
+    marginTop: SP.md,
     height: 180,
-    borderRadius: R.lg,
+    borderRadius: DS.radius.input,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: C.pinkBorder,
@@ -296,5 +267,5 @@ const styles = StyleSheet.create({
   },
   photoPreview: { width: '100%', height: '100%' },
   photoTextWrap: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
-  photoText: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
+  photoText: { ...DS.typography.buttonCompact, color: C.pinkDeep, fontWeight: '600' },
 });

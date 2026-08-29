@@ -1,31 +1,16 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput,
+  View, Text, StyleSheet, ScrollView,
   ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
-import { C, SP, R, G } from '../../../constants/theme';
-import { BackBar, BigButton, CourseStepList } from '../../../components/ui';
-import { StepSlider } from '../../../components/recommendation/step-slider';
+import { C, DS, SP, G } from '../../../constants/theme';
+import { BigButton, CourseStepList, Header, InputField, ScreenHeading } from '../../../components/ui';
 import { resolveDisplaySteps, type CourseStep } from '../../../lib/course';
-import {
-  DURATION_MAX_HOURS,
-  PER_PERSON_BUDGET_MAX_KRW,
-  PER_PERSON_BUDGET_STEP_KRW,
-  parseDurationHours,
-} from '../../../lib/course-draft';
 import { useI18n } from '../../../lib/i18n';
 import { localizeCardContent, overrideCardContent } from '../../../lib/card-i18n';
-
-// 표시용 텍스트(우리가 저장하는 "30,000원"/"KRW 30,000" 포함)에서 숫자만 뽑아 슬라이더 값으로 되돌린다.
-// 범위·단위가 섞인 레거시 AI 값은 파싱이 부정확할 수 있어 슬라이더 상한으로 클램프한다.
-function parseBudgetKRW(text?: string): number {
-  const digits = (text ?? '').replace(/[^0-9]/g, '');
-  if (!digits) return 0;
-  return Math.min(Number(digits), PER_PERSON_BUDGET_MAX_KRW);
-}
 
 export default function EditCardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,8 +22,6 @@ export default function EditCardScreen() {
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [contentI18n, setContentI18n] = useState<unknown>(null);
-  const [timeHours, setTimeHours] = useState(0);
-  const [budgetKRW, setBudgetKRW] = useState(0);
   const [refMode, setRefMode] = useState('');
   const [refSteps, setRefSteps] = useState<CourseStep[]>([]);
 
@@ -48,7 +31,7 @@ export default function EditCardScreen() {
       (async () => {
         const { data: raw } = await supabase
           .from('date_cards')
-          .select('title, summary, content_i18n, estimated_time, estimated_budget, mode, steps')
+          .select('title, summary, content_i18n, mode, steps')
           .eq('id', id)
           .maybeSingle();
         if (!active) return;
@@ -58,8 +41,6 @@ export default function EditCardScreen() {
           setContentI18n(data.content_i18n ?? null);
           setTitle(data.title ?? '');
           setSummary(data.summary ?? '');
-          setTimeHours(Math.min(parseDurationHours(data.estimated_time ?? '') ?? 0, DURATION_MAX_HOURS));
-          setBudgetKRW(parseBudgetKRW(data.estimated_budget ?? ''));
           setRefMode(data.mode ?? '');
           setRefSteps(resolveDisplaySteps(data));
         }
@@ -82,8 +63,6 @@ export default function EditCardScreen() {
           summary: summary.trim(),
           // 표시 경로가 content_i18n[언어] 텍스트를 우선하므로 제목·요약을 함께 덮어쓴다.
           content_i18n: overrideCardContent(contentI18n, { title: title.trim(), summary: summary.trim() }),
-          estimated_time: timeHours === 0 ? '' : t('course.duration.hoursLabel', { count: timeHours }),
-          estimated_budget: budgetKRW === 0 ? '' : t('course.budget.amount', { amount: budgetKRW.toLocaleString() }),
         })
         .eq('id', id);
       if (error) throw error;
@@ -105,63 +84,30 @@ export default function EditCardScreen() {
 
   return (
     <SafeAreaView style={G.screen}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('card.edit.heading')} subtitle={t('card.edit.subtitle')} />
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <BackBar onPress={() => router.back()} />
-
-        <Text style={[s.heading, s.headingTop]}>{t('card.edit.heading')}</Text>
-        <Text style={s.subText}>{t('card.edit.subtitle')}</Text>
-
-        <Text style={s.label}>{t('card.edit.titleLabel')}</Text>
-        <View style={[s.inputWrap, title.length > 0 && s.inputWrapActive]}>
-          <TextInput
-            style={s.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('card.edit.titlePlaceholder')}
-            placeholderTextColor={C.textFaint}
-            maxLength={60}
-          />
-        </View>
-
-        <Text style={s.label}>{t('card.edit.descLabel')}</Text>
-        <View style={s.inputWrap}>
-          <TextInput
-            style={[s.input, s.inputMultiline]}
-            value={summary}
-            onChangeText={setSummary}
-            placeholder={t('card.edit.descPlaceholder')}
-            placeholderTextColor={C.textFaint}
-            multiline
-            maxLength={300}
-          />
-        </View>
-
-        <Text style={s.label}>{t('card.edit.timeLabel')}</Text>
-        <StepSlider
-          min={0}
-          max={DURATION_MAX_HOURS}
-          step={1}
-          value={timeHours}
-          onChange={setTimeHours}
-          formatValue={(hours) => (hours === 0 ? t('course.unselected') : t('course.duration.hoursLabel', { count: hours }))}
-          accessibilityLabel={t('card.edit.timeLabel')}
-          testID="card-edit-time-slider"
+        <InputField
+          label={t('card.edit.titleLabel')}
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t('card.edit.titlePlaceholder')}
+          maxLength={60}
+          style={s.field}
         />
 
-        <Text style={s.label}>{t('card.edit.budgetLabel')}</Text>
-        <StepSlider
-          min={0}
-          max={PER_PERSON_BUDGET_MAX_KRW}
-          step={PER_PERSON_BUDGET_STEP_KRW}
-          value={budgetKRW}
-          onChange={setBudgetKRW}
-          formatValue={(v) => (v === 0 ? t('course.unselected') : t('course.budget.amount', { amount: v.toLocaleString() }))}
-          accessibilityLabel={t('card.edit.budgetLabel')}
-          testID="card-edit-budget-slider"
+        <InputField
+          label={t('card.edit.descLabel')}
+          value={summary}
+          onChangeText={setSummary}
+          placeholder={t('card.edit.descPlaceholder')}
+          multiline
+          maxLength={300}
+          style={s.field}
         />
 
         {refMode === 'make_course' && refSteps.length > 0 && (
@@ -171,46 +117,21 @@ export default function EditCardScreen() {
           </>
         )}
 
-        <View style={s.bottomSpacer} />
-      </ScrollView>
-
-      <View style={s.footer}>
         <BigButton
           onPress={handleSave}
           variant={!canSave || saving ? 'disabled' : 'primary'}
+          style={s.saveBtn}
         >
           {saving ? <ActivityIndicator color={C.white} size="small" /> : t('card.edit.saveCta')}
         </BigButton>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.xl, paddingBottom: SP.xxxl + SP.sm },
-  heading: { fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 29 },
-  headingTop: { marginTop: SP.lg },
-  subText: { fontSize: 13, color: C.textSub, lineHeight: 20, marginTop: SP.sm },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: SP.xl, marginBottom: SP.sm },
-  inputWrap: {
-    backgroundColor: C.white,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
-  },
-  inputWrapActive: { borderColor: C.pinkBorder, borderWidth: 1.5 },
-  // 단일행 입력에 lineHeight를 주면 iOS에서 세로 중앙이 어긋난다. paddingVertical: 0으로 기본 패딩도 제거.
-  input: { fontSize: 14, color: C.text, paddingVertical: 0 },
-  inputMultiline: { minHeight: 72, textAlignVertical: 'top', lineHeight: 22 },
-  bottomSpacer: { height: 120 },
-  footer: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
-    backgroundColor: C.bg,
-  },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxl },
+  label: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '600', marginTop: SP.lg, marginBottom: SP.sm },
+  field: { marginTop: SP.lg },
+  saveBtn: { marginTop: SP.lg },
 });

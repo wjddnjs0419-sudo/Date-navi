@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Coffee, Footprints, Smile, Utensils } from 'lucide-react-native';
+import { Coffee, Footprints, Smile, Utensils } from '../components/iconography';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
@@ -53,6 +53,11 @@ function render() {
   return renderer;
 }
 
+function selectMealAndCafe(renderer: TestRendererInstance) {
+  act(() => { renderer.root.findByProps({ testID: 'course-category-meal' }).props.onPress(); });
+  act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+}
+
 describe('five-step course screen', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -81,18 +86,21 @@ describe('five-step course screen', () => {
     expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(true);
 
     act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(true);
+    act(() => { renderer.root.findByProps({ testID: 'course-category-meal' }).props.onPress(); });
     expect(renderer.root.findByProps({ testID: 'course-flow-next' }).props.disabled).toBe(false);
   });
 
-  it('keeps the initial category selection compact without an expanded step card', () => {
+  it('starts with no category selected and no expanded step card', () => {
     const renderer = render();
-    expect(renderer.root.findByProps({ testID: 'course-category-meal' }).props.accessibilityState.selected).toBe(true);
+    expect(renderer.root.findByProps({ testID: 'course-category-meal' }).props.accessibilityState.selected).toBe(false);
+    expect(renderer.root.findByProps({ testID: 'course-category-cafe' }).props.accessibilityState.selected).toBe(false);
     expect(renderer.root.findAll((node) => node.props?.testID === 'course-step-row-course-step-1')).toHaveLength(0);
   });
 
   it('closes an expanded step when its up chevron is pressed again', () => {
     const renderer = render();
-    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    selectMealAndCafe(renderer);
     expect(renderer.root.findAll((node) => node.props?.testID === 'course-preference-cafe-아무거나')).not.toHaveLength(0);
 
     act(() => { renderer.root.findByProps({ testID: 'course-step-row-course-step-2' }).props.onPress(); });
@@ -101,7 +109,7 @@ describe('five-step course screen', () => {
 
   it('advances inside the same route through location, time, mood, and review steps', () => {
     const renderer = render();
-    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    selectMealAndCafe(renderer);
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
     expect(renderer.root.findByProps({ testID: 'course-flow-step-2' })).toBeDefined();
 
@@ -123,9 +131,61 @@ describe('five-step course screen', () => {
     expect(renderer.root.findAllByType(Text).map((node) => node.props.children)).toContain('course.review.title');
   });
 
+  it('uses the reaction-like selected treatment for the unsure mood option', () => {
+    const renderer = render();
+    selectMealAndCafe(renderer);
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-meeting-time-tonight' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+
+    const unsure = renderer.root.findByProps({ testID: 'course-mood-unsure' });
+    const selectedStyle = StyleSheet.flatten(unsure.props.style({ pressed: false }));
+    const pressedStyle = StyleSheet.flatten(unsure.props.style({ pressed: true }));
+
+    expect(unsure.props.accessibilityState.selected).toBe(true);
+    expect(selectedStyle).toEqual(expect.objectContaining({
+      backgroundColor: '#FFF3E0', borderColor: '#A77738', borderWidth: 2,
+    }));
+    expect(pressedStyle).toEqual(expect.objectContaining({
+      backgroundColor: '#FFF3E0', borderColor: '#A77738', borderWidth: 2,
+    }));
+    expect(renderer.root.findAllByType(Smile)[0].props.color).toBe('#A77738');
+
+    act(() => { renderer.root.findByProps({ testID: 'course-mood-emotional' }).props.onPress(); });
+    expect(unsure.props.accessibilityState.selected).toBe(false);
+    expect(StyleSheet.flatten(unsure.props.style({ pressed: false }))).toEqual(expect.objectContaining({
+      backgroundColor: '#FFF3E0', borderColor: '#F4E2CE', borderWidth: 1,
+    }));
+    expect(StyleSheet.flatten(unsure.props.style({ pressed: true }))).toEqual(expect.objectContaining({
+      backgroundColor: '#FFF3E0', borderColor: '#A77738', borderWidth: 2,
+    }));
+  });
+
+  it('uses strong content color on refine candidate review while keeping edit branded', () => {
+    const renderer = render();
+    selectMealAndCafe(renderer);
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-meeting-time-tonight' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-mood-emotional' }).props.onPress(); });
+    act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
+
+    const strongTextNodes = renderer.root.findAllByType(Text).filter((node) => {
+      return StyleSheet.flatten(node.props.style)?.color === '#3B2E2E';
+    });
+    const editNode = renderer.root.findAllByType(Text).find((node) => node.props.children === 'course.review.edit');
+
+    expect(strongTextNodes.length).toBeGreaterThan(0);
+    expect(StyleSheet.flatten(editNode?.props.style)).toEqual(expect.objectContaining({ color: '#C24B57' }));
+  });
+
   it('opens an inline native date picker with horizontal time chips inside the dimmed sheet', () => {
     const renderer = render();
-    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    selectMealAndCafe(renderer);
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
     act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
@@ -140,11 +200,11 @@ describe('five-step course screen', () => {
     const selectedChip = renderer.root.findByProps({ testID: 'course-time-chip-12-00' });
     const unselectedChip = renderer.root.findByProps({ testID: 'course-time-chip-12-30' });
     expect(StyleSheet.flatten(selectedChip.props.style)).toEqual(expect.objectContaining({ backgroundColor: '#F26B7A', borderRadius: 20 }));
-    expect(StyleSheet.flatten(unselectedChip.props.style)).toEqual(expect.objectContaining({ backgroundColor: '#ffffff' }));
+    expect(StyleSheet.flatten(unselectedChip.props.style)).toEqual(expect.objectContaining({ backgroundColor: '#FFFFFF' }));
     const selectedText = renderer.root.findAllByType(Text).find((node) => node.props.children === '12:00');
     const unselectedText = renderer.root.findAllByType(Text).find((node) => node.props.children === '12:30');
-    expect(StyleSheet.flatten(selectedText?.props.style)).toEqual(expect.objectContaining({ color: '#ffffff' }));
-    expect(StyleSheet.flatten(unselectedText?.props.style)).toEqual(expect.objectContaining({ color: '#3A2E2E' }));
+    expect(StyleSheet.flatten(selectedText?.props.style)).toEqual(expect.objectContaining({ color: '#FFFFFF' }));
+    expect(StyleSheet.flatten(unselectedText?.props.style)).toEqual(expect.objectContaining({ color: '#3B2E2E' }));
     expect(StyleSheet.flatten(selectedChip.props.style)).toEqual(expect.objectContaining({ width: 58, minWidth: 58, flexShrink: 0 }));
     expect(StyleSheet.flatten(selectedText?.props.style)).toEqual(expect.objectContaining({ width: '100%', textAlign: 'center', fontVariant: ['tabular-nums'] }));
     expect(renderer.root.findByProps({ testID: 'course-time-apply' })).toBeDefined();
@@ -153,7 +213,7 @@ describe('five-step course screen', () => {
 
   it('builds a recommendation only from the review CTA', () => {
     const renderer = render();
-    act(() => { renderer.root.findByProps({ testID: 'course-category-cafe' }).props.onPress(); });
+    selectMealAndCafe(renderer);
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
     act(() => { renderer.root.findByProps({ testID: 'location-selector' }).props.onChange(location); });
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });

@@ -12,7 +12,7 @@ describe('couple-connect manage screen (linked) illustration', () => {
   const source = read('app/onboarding/couple-connect.tsx');
 
   it('renders the heading heart doodle', () => {
-    expect(source).toMatch(/headingBlock[\s\S]*?<HeartDoodle/);
+    expect(source).toMatch(/<ScreenHeading[\s\S]*?accessory=\{status === 'linked' \? <HeartDoodle filled style=\{s\.headingHeart\} \/> : undefined\}/);
   });
 
   it('does not duplicate the mascot mini illustration in the heading (bg-park already fills the bottom)', () => {

@@ -1,17 +1,20 @@
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Pressable, TextInput, Linking, Alert,
-  AccessibilityInfo, Easing, Modal, Image,
-  type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType,
+  AccessibilityInfo, ActivityIndicator, Easing, Modal, Image, Platform,
+  useWindowDimensions,
+  type ViewStyle, type TextStyle, type StyleProp, type ImageSourcePropType, type TextInputProps,
 } from 'react-native';
-import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight, Wallet, Heart } from 'lucide-react-native';
+import { ChevronLeft, Pencil, X, MapPin, LocateFixed, ChevronDown, MoreVertical, Trash2, Clock, Footprints, Calendar, ChevronRight, Wallet, Heart } from './iconography';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { C, SP, R } from '../constants/theme';
+import { C, DS, SP, R, T } from '../constants/theme';
+import { AppIcon, type AppIconName } from './iconography';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Illustration } from './illustration';
 import type { GeoCoords } from '../lib/ai';
 import type { CourseStep } from '../lib/course';
 import { useI18n } from '../lib/i18n';
+import { useOptionalSafeAreaInsets } from '../lib/use-optional-safe-area-insets';
 
 // ─── BigButton ────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'text' | 'disabled';
@@ -39,17 +42,19 @@ export function BigButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      activeOpacity={0.85}
+      activeOpacity={0.88}
       disabled={disabled}
-      style={[btn.base, { backgroundColor: m.bg }, style]}
+      accessibilityState={{ disabled }}
+      style={[btn.base, { backgroundColor: m.bg }, disabled && btn.disabled, style]}
     >
       <Text style={[btn.label, { color: m.fg }]}>{children}</Text>
     </TouchableOpacity>
   );
 }
 const btn = StyleSheet.create({
-  base: { borderRadius: 18, paddingVertical: 16, alignItems: 'center', width: '100%' },
-  label: { fontSize: 15, fontWeight: '600' },
+  base: { minHeight: DS.spacing.input, borderRadius: DS.radius.button, paddingHorizontal: DS.spacing.lg, paddingVertical: DS.spacing.md, alignItems: 'center', justifyContent: 'center', width: '100%' },
+  disabled: { opacity: 0.72 },
+  label: { ...DS.typography.button },
 });
 
 // ─── SoftCard ─────────────────────────────────────────────────────────────────
@@ -64,7 +69,8 @@ export function SoftCard({
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.85}
+      activeOpacity={0.88}
+      accessibilityRole="button"
       style={[card.base, style]}
     >
       {children}
@@ -74,16 +80,135 @@ export function SoftCard({
 const card = StyleSheet.create({
   base: {
     backgroundColor: C.white,
-    borderRadius: 22,
-    padding: 16,
+    borderRadius: DS.radius.card,
+    padding: DS.spacing.lg,
     borderWidth: 1,
     borderColor: C.borderLight,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 7,
-    elevation: 3,
   },
+});
+
+// ─── InputField ──────────────────────────────────────────────────────────────
+// 새 Input 화면의 표준 표면. feature-specific 입력은 이 컴포넌트를 감싸서 사용한다.
+export function InputField({
+  label,
+  value,
+  placeholder,
+  error,
+  leading,
+  trailing,
+  onChangeText,
+  multiline = false,
+  editable = true,
+  style,
+  inputStyle,
+  testID,
+  ...inputProps
+}: {
+  label?: string;
+  value: string;
+  placeholder?: string;
+  error?: string;
+  leading?: ReactNode;
+  trailing?: ReactNode;
+  onChangeText: (value: string) => void;
+  multiline?: boolean;
+  editable?: boolean;
+  style?: StyleProp<ViewStyle>;
+  inputStyle?: StyleProp<TextStyle>;
+  testID?: string;
+} & Omit<TextInputProps, 'value' | 'placeholder' | 'onChangeText' | 'multiline' | 'editable' | 'style'>) {
+  const [focused, setFocused] = useState(false);
+  const hasLatinText = !multiline && /[A-Za-z]/.test(value);
+  return (
+    <View style={style}>
+      {label && <Text style={inputFieldS.label}>{label}</Text>}
+      <View style={[inputFieldS.shell, multiline && inputFieldS.multiline, focused && inputFieldS.focused, !editable && inputFieldS.disabled, !!error && inputFieldS.error]}>
+        {leading && <View style={inputFieldS.leading}>{leading}</View>}
+        <TextInput
+          {...inputProps}
+          testID={testID}
+          value={value}
+          placeholder={placeholder}
+          placeholderTextColor={C.textFaint}
+          onChangeText={onChangeText}
+          onFocus={(event) => { setFocused(true); inputProps.onFocus?.(event); }}
+          onBlur={(event) => { setFocused(false); inputProps.onBlur?.(event); }}
+          multiline={multiline}
+          editable={editable}
+          style={[inputFieldS.input, !multiline && inputFieldS.singleLine, hasLatinText && inputFieldS.latinText, multiline && inputFieldS.inputMultiline, inputStyle]}
+        />
+        {trailing && <View style={inputFieldS.trailing}>{trailing}</View>}
+      </View>
+      {!!error && <Text style={inputFieldS.errorText}>{error}</Text>}
+    </View>
+  );
+}
+const inputFieldS = StyleSheet.create({
+  label: { ...DS.typography.label, color: C.text, marginBottom: DS.spacing.sm },
+  shell: {
+    minHeight: DS.spacing.input, flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm,
+    paddingHorizontal: DS.spacing.md, borderRadius: DS.radius.input, borderWidth: 1,
+    borderColor: C.border, backgroundColor: C.white,
+  },
+  multiline: { minHeight: DS.spacing.multilineInput, alignItems: 'flex-start', paddingVertical: DS.spacing.md },
+  focused: { borderColor: C.pink, borderWidth: 1.5 },
+  disabled: { backgroundColor: C.disabledBg },
+  error: { borderColor: C.danger },
+  leading: { flexShrink: 0, paddingTop: DS.component.iconOpticalOffset },
+  trailing: { flexShrink: 0 },
+  input: {
+    flex: 1, minWidth: 0, height: DS.spacing.touch, minHeight: DS.spacing.touch, ...DS.typography.body,
+    color: C.text, padding: 0, textAlignVertical: 'center',
+  },
+  singleLine: Platform.select({ ios: { lineHeight: undefined }, default: {} }),
+  // iOS positions Latin glyphs lower than its Korean fallback in a single-line TextInput.
+  latinText: Platform.select({ ios: { transform: [{ translateY: -DS.spacing.xs }] }, default: {} }),
+  inputMultiline: {
+    height: DS.spacing.multilineInput - (DS.spacing.md * 2),
+    minHeight: DS.spacing.multilineInput - (DS.spacing.md * 2),
+    textAlignVertical: 'top',
+  },
+  errorText: { ...DS.typography.caption, color: C.danger, marginTop: DS.spacing.xs },
+});
+
+// ─── SelectionCard ───────────────────────────────────────────────────────────
+export function SelectionCard({
+  children,
+  selected = false,
+  onPress,
+  style,
+  accessibilityLabel,
+  testID,
+}: {
+  children: ReactNode;
+  selected?: boolean;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        selectionCardS.base,
+        selected && selectionCardS.selected,
+        pressed && selectionCardS.pressed,
+        style,
+      ]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+const selectionCardS = StyleSheet.create({
+  base: { minHeight: DS.spacing.touch, borderRadius: DS.radius.input, borderWidth: 1, borderColor: C.border, backgroundColor: C.white, padding: DS.spacing.lg },
+  selected: { borderColor: C.pinkBorder, backgroundColor: C.pinkLight },
+  pressed: { opacity: 0.88 },
 });
 
 // ─── SwipeableCard ─────────────────────────────────────────────────────────────
@@ -146,21 +271,21 @@ export function SwipeableCard({
       <Animated.View style={[swipe.actions, { opacity: actionsOpacity }]} pointerEvents="box-none">
         <TouchableOpacity
           style={[swipe.actionBtn, { backgroundColor: C.lavender }]}
-          activeOpacity={0.8}
+          activeOpacity={0.88}
           onPress={() => { snap(false); onEdit(); }}
         >
           <Pencil size={20} color={C.lavenderFg} strokeWidth={2} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[swipe.actionBtn, swipe.deleteBtn]}
-          activeOpacity={0.8}
+          activeOpacity={0.88}
           onPress={() => { snap(false); onDelete(); }}
         >
           <X size={20} color={C.white} strokeWidth={2.5} />
         </TouchableOpacity>
       </Animated.View>
       <Animated.View style={{ transform: [{ translateX }] }} {...pan.panHandlers}>
-        <Pressable onPress={handlePress}>{children}</Pressable>
+        <Pressable accessibilityRole={onPress ? 'button' : undefined} onPress={handlePress}>{children}</Pressable>
       </Animated.View>
     </View>
   );
@@ -170,7 +295,7 @@ const swipe = StyleSheet.create({
   actions: {
     position: 'absolute', right: 0, top: 0, bottom: 0, width: REVEAL_W,
     flexDirection: 'row', overflow: 'hidden',
-    borderTopLeftRadius: 22, borderBottomLeftRadius: 22,
+    borderTopLeftRadius: DS.radius.card, borderBottomLeftRadius: DS.radius.card,
   },
   actionBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   deleteBtn: { backgroundColor: C.danger },
@@ -180,10 +305,10 @@ const swipe = StyleSheet.create({
 type ChipTone = 'pink' | 'lavender' | 'mint' | 'cream' | 'gray';
 const CHIP_TONES: Record<ChipTone, { bg: string; fg: string; sel: string }> = {
   pink: { bg: C.pinkLight, fg: C.pinkDeep, sel: C.pinkMid },
-  lavender: { bg: C.lavender, fg: C.lavenderFg, sel: '#D7CAFF' },
-  mint: { bg: C.mint, fg: C.mintFg, sel: '#B7DDC6' },
-  cream: { bg: C.cream, fg: C.creamFg, sel: '#FFDDB0' },
-  gray: { bg: C.gray, fg: C.grayFg, sel: '#DDD2C5' },
+  lavender: { bg: C.lavender, fg: C.lavenderFg, sel: DS.color.lavenderSelected },
+  mint: { bg: C.mint, fg: C.mintFg, sel: DS.color.mintSelected },
+  cream: { bg: C.cream, fg: C.creamFg, sel: DS.color.creamSelected },
+  gray: { bg: C.gray, fg: C.grayFg, sel: DS.color.graySelected },
 };
 export function Chip({
   children, selected, tone = 'pink', onPress,
@@ -192,7 +317,9 @@ export function Chip({
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.88}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityState={{ selected }}
       style={[chipS.base, { backgroundColor: selected ? t.sel : t.bg }]}
     >
       <Text style={[chipS.label, { color: t.fg, fontWeight: selected ? '600' : '500' }]}>
@@ -202,8 +329,8 @@ export function Chip({
   );
 }
 const chipS = StyleSheet.create({
-  base: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  label: { fontSize: 12 },
+  base: { minHeight: DS.spacing.touch, borderRadius: DS.radius.chip, paddingHorizontal: DS.component.chipPaddingHorizontal, paddingVertical: DS.component.chipPaddingVertical, alignItems: 'center', justifyContent: 'center' },
+  label: { ...DS.typography.bodySmall },
 });
 
 // ─── OptionCardPicker ────────────────────────────────────────────────────────
@@ -237,7 +364,9 @@ export function OptionCardPicker({
               <TouchableOpacity
                 key={option.value}
                 onPress={() => onChange(option.value)}
-                activeOpacity={0.72}
+                activeOpacity={0.88}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 style={[
                   optionCardS.card,
                   largeTouchTarget && optionCardS.largeTouchTarget,
@@ -257,24 +386,24 @@ export function OptionCardPicker({
   );
 }
 const optionCardS = StyleSheet.create({
-  wrap: { gap: 8 },
-  row: { flexDirection: 'row', gap: 8 },
+  wrap: { gap: SP.sm },
+  row: { flexDirection: 'row', gap: SP.sm },
   card: {
     flex: 1,
-    minWidth: 76,
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 10,
+    minWidth: DS.component.optionCardMinWidth,
+    borderRadius: DS.radius.input,
+    paddingVertical: DS.spacing.md,
+    paddingHorizontal: DS.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: C.white,
     borderWidth: 1.5,
     borderColor: C.border,
   },
-  largeTouchTarget: { minHeight: 44 },
+  largeTouchTarget: { minHeight: DS.spacing.touch },
   cardSelected: { backgroundColor: C.pinkLight, borderColor: C.pinkBorder },
-  emoji: { fontSize: 18, marginBottom: 4 },
-  label: { fontSize: 13, color: C.inkSoft, fontWeight: '600', textAlign: 'center' },
+  emoji: { ...DS.typography.sectionTitle, marginBottom: SP.xs },
+  label: { ...DS.typography.bodyCompact, color: C.inkSoft, fontWeight: '600', textAlign: 'center' },
   labelSelected: { color: C.pinkDeep },
 });
 
@@ -285,7 +414,7 @@ const BADGE_TONES: Record<BadgeTone, { bg: string; fg: string }> = {
   pink: { bg: C.pinkLight, fg: C.pinkDeep },
   mint: { bg: C.mint, fg: C.mintFg },
   lavender: { bg: C.lavender, fg: C.lavenderFg },
-  blue: { bg: '#E8F1FC', fg: C.catCafe },
+  blue: { bg: DS.color.blueSurface, fg: C.catCafe },
   orange: { bg: C.cream, fg: C.creamFg },
 };
 export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?: BadgeTone }) {
@@ -297,8 +426,8 @@ export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?:
   );
 }
 const badgeS = StyleSheet.create({
-  base: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
-  label: { fontSize: 10, fontWeight: '600', letterSpacing: 0.2 },
+  base: { borderRadius: DS.radius.badge, paddingHorizontal: SP.sm, paddingVertical: DS.spacing.micro, alignSelf: 'flex-start' },
+  label: { ...DS.typography.badge },
 });
 
 // ─── HeartDoodle ──────────────────────────────────────────────────────────────
@@ -313,8 +442,8 @@ export function HeartDoodle({ filled = false, style }: { filled?: boolean; style
   );
 }
 const heartDoodleS = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
-  small: { marginBottom: 4 },
+  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: DS.spacing.micro },
+  small: { marginBottom: SP.xs },
 });
 
 // ─── DdayBadge ────────────────────────────────────────────────────────────────
@@ -332,10 +461,10 @@ const ddayS = StyleSheet.create({
     backgroundColor: C.pinkLight,
     borderRadius: R.badge,
     paddingHorizontal: SP.sm,
-    paddingVertical: SP.xs / 2,
+    paddingVertical: DS.component.badgePaddingVertical,
     alignSelf: 'flex-start',
   },
-  label: { fontSize: 12, fontWeight: '700', color: C.pinkDeep },
+  label: { ...DS.typography.bodySmall, fontWeight: '700', color: C.pinkDeep },
 });
 
 // ─── PlanListRow ──────────────────────────────────────────────────────────────
@@ -351,7 +480,7 @@ export function PlanListRow({
   showDday?: boolean;
 }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={planRowS.row}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={planRowS.row}>
       {/* 사진 등록 기능 전까지 썸네일 숨김 (imageSource 있을 때만 표시) */}
       {imageSource && <Image source={imageSource} style={planRowS.thumb} />}
       <View style={planRowS.body}>
@@ -387,9 +516,9 @@ const planRowS = StyleSheet.create({
     backgroundColor: C.pinkLight,
   },
   body: { flex: 1, minWidth: 0 },
-  title: { fontSize: 15, fontWeight: '700', color: C.text },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: 4 },
-  date: { fontSize: 12, color: C.textSub },
+  title: { ...DS.typography.cardTitle, color: C.text },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: SP.xs, marginTop: SP.xs },
+  date: { ...DS.typography.bodySmall, color: C.textSub },
   right: { flexDirection: 'row', alignItems: 'center', gap: SP.sm, flexShrink: 0 },
 });
 
@@ -424,7 +553,7 @@ const metaChipS = StyleSheet.create({
     borderColor: C.border,
     backgroundColor: C.white,
   },
-  label: { fontSize: 12, color: C.textSub, fontWeight: '500' },
+  label: { ...DS.typography.bodySmall, color: C.textSub },
 });
 
 // ─── BackBar ─────────────────────────────────────────────────────────────────
@@ -439,7 +568,7 @@ export function BackBar({
   return (
     <TouchableOpacity
       onPress={onPress ?? (() => router.back())}
-      activeOpacity={0.7}
+      activeOpacity={0.88}
       style={[backS.btn, largeTouchTarget && backS.largeTouchTarget]}
     >
       <ChevronLeft size={24} color={C.text} strokeWidth={2} />
@@ -448,22 +577,245 @@ export function BackBar({
 }
 const backS = StyleSheet.create({
   // 우측 액션(공유·⋮ MoreMenu)과 동일하게 44×44 중앙정렬로 통일.
-  // marginLeft:-10 → 44 박스 안에서 중앙정렬된 24px 셰브론의 좌측이 콘텐츠 여백과 정렬.
-  btn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 },
+  btn: { width: DS.spacing.touch, height: DS.spacing.touch, alignItems: 'center', justifyContent: 'center' },
   largeTouchTarget: {},
 });
 
-// ─── ProgressDots ─────────────────────────────────────────────────────────────
-export function ProgressDots({ current, total }: { current: number; total: number }) {
+// ─── Header / ScreenHeading ──────────────────────────────────────────────────
+// Header는 Safe Area 아래의 내비게이션 행만 담당한다. 화면 제목은 항상
+// ScreenHeading으로 분리해 44pt 내비게이션 행 아래 16pt에서 시작한다.
+export function Header({
+  onBack,
+  left,
+  center,
+  right,
+  testID,
+}: {
+  onBack?: () => void;
+  left?: ReactNode;
+  center?: ReactNode;
+  right?: ReactNode;
+  testID?: string;
+}) {
+  const leftSlot = left ?? (onBack ? <BackBar onPress={onBack} /> : null);
   return (
-    <View style={dotsS.row}>
+    <View testID={testID} style={headerS.wrap}>
+      <View style={headerS.row}>
+        <View style={headerS.leftSlot}>{leftSlot}</View>
+        {!!center && <View pointerEvents="box-none" style={headerS.centerSlot}>{center}</View>}
+        {!!right && <View style={headerS.rightSlot}>{right}</View>}
+      </View>
+    </View>
+  );
+}
+
+export function HeaderActions({
+  children,
+  separated = false,
+}: {
+  children: ReactNode;
+  separated?: boolean;
+}) {
+  return <View style={[headerS.actions, separated && headerS.actionsSeparated]}>{children}</View>;
+}
+
+export function ScreenHeading({
+  title,
+  subtitle,
+  helper,
+  accessory,
+  variant = 'default',
+  placement = 'below-header',
+  style,
+  testID,
+}: {
+  title: string;
+  subtitle?: string;
+  helper?: string;
+  accessory?: ReactNode;
+  variant?: 'default' | 'input';
+  placement?: 'below-header' | 'root';
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  return (
+    <View testID={testID} style={[screenHeadingS.wrap, placement === 'root' && screenHeadingS.root, style]}>
+      <View style={screenHeadingS.titleRow}>
+        <Text style={screenHeadingS.title}>{title}</Text>
+        {!!accessory && <View style={screenHeadingS.accessory}>{accessory}</View>}
+      </View>
+      {!!subtitle && <Text style={[screenHeadingS.subtitle, variant === 'input' && screenHeadingS.inputSubtitle]}>{subtitle}</Text>}
+      {!!helper && <Text style={screenHeadingS.helper}>{helper}</Text>}
+    </View>
+  );
+}
+const headerS = StyleSheet.create({
+  wrap: { paddingTop: DS.layout.headerTopInset, paddingHorizontal: DS.layout.pageInset },
+  row: { height: DS.spacing.touch, flexDirection: 'row', alignItems: 'center', position: 'relative' },
+  leftSlot: { minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'flex-start', justifyContent: 'center' },
+  centerSlot: { position: 'absolute', left: DS.spacing.touch, right: DS.spacing.touch, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  rightSlot: { position: 'absolute', right: 0, top: 0, bottom: 0, alignItems: 'flex-end', justifyContent: 'center' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: DS.layout.headerActionGap },
+  actionsSeparated: { gap: DS.layout.headerActionGroupGap },
+});
+const screenHeadingS = StyleSheet.create({
+  wrap: { marginTop: DS.layout.headerTitleOffset, paddingHorizontal: DS.layout.pageInset, gap: DS.spacing.xs },
+  root: { marginTop: DS.layout.headerTopInset },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  title: { ...DS.typography.screenTitle, color: C.text, flexShrink: 1 },
+  accessory: { marginLeft: DS.layout.titleAccessoryGap, minWidth: DS.spacing.touch, minHeight: DS.spacing.touch, alignItems: 'flex-start', justifyContent: 'center', marginTop: -(DS.spacing.xs + DS.spacing.micro) },
+  subtitle: { ...DS.typography.bodySmall, color: C.textSub },
+  inputSubtitle: { ...DS.typography.bodyLarge, color: C.textSub },
+  helper: { ...DS.typography.body, color: C.pinkDeep },
+});
+
+// ─── SegmentedControl ────────────────────────────────────────────────────────
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  testID,
+  itemTestID,
+}: {
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  testID?: string;
+  itemTestID?: (value: T) => string;
+}) {
+  return (
+    <View testID={testID} style={segmentedS.shell} accessibilityRole="tablist">
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            testID={itemTestID?.(option.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            onPress={() => onChange(option.value)}
+            style={({ pressed }) => [segmentedS.item, selected && segmentedS.selected, pressed && segmentedS.pressed]}
+          >
+            <Text style={[segmentedS.label, selected && segmentedS.labelSelected]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+const segmentedS = StyleSheet.create({
+  shell: { minHeight: DS.spacing.touch, flexDirection: 'row', alignItems: 'stretch', gap: DS.spacing.xs, padding: DS.spacing.xs, borderRadius: DS.radius.input, backgroundColor: C.borderLight },
+  item: { flex: 1, minHeight: DS.spacing.touch - (DS.spacing.xs * 2), alignItems: 'center', justifyContent: 'center', paddingHorizontal: DS.spacing.sm, borderRadius: DS.radius.compact },
+  selected: { backgroundColor: C.white },
+  pressed: { opacity: 0.88 },
+  label: { ...DS.typography.bodySmall, color: C.textSub, textAlign: 'center' },
+  labelSelected: { color: C.text, fontWeight: '600' },
+});
+
+// ─── BottomTab ───────────────────────────────────────────────────────────────
+// Expo Router owns the actual tab button; this component standardizes the
+// visual icon frame used by every tab route.
+export function BottomTab({ icon, color, focused, accessibilityLabel }: {
+  icon: AppIconName;
+  color: string;
+  focused: boolean;
+  accessibilityLabel?: string;
+}) {
+  void accessibilityLabel;
+  return <AppIcon name={icon} size={24} color={color} strokeWidth={focused ? 2.2 : 1.7} />;
+}
+
+// ─── ModalSurface ────────────────────────────────────────────────────────────
+export function ModalSurface({
+  visible,
+  onClose,
+  children,
+  title,
+  variant = 'center',
+  containerStyle,
+  testID,
+  scrimTestID,
+  titleTestID,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  title?: string;
+  variant?: 'center' | 'sheet';
+  containerStyle?: StyleProp<ViewStyle>;
+  testID?: string;
+  scrimTestID?: string;
+  titleTestID?: string;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable testID={scrimTestID} style={[modalSurfaceS.scrim, variant === 'sheet' && modalSurfaceS.sheetScrim]} onPress={onClose}>
+        <Pressable testID={testID} style={[modalSurfaceS.container, variant === 'sheet' && modalSurfaceS.sheet, containerStyle]} onPress={() => {}}>
+          {variant === 'sheet' && <View testID="modal-sheet-handle" style={modalSurfaceS.handle} />}
+          {!!title && <Text testID={titleTestID} style={modalSurfaceS.title}>{title}</Text>}
+          {children}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+const modalSurfaceS = StyleSheet.create({
+  scrim: { flex: 1, backgroundColor: DS.color.overlayScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: DS.spacing.xxl },
+  sheetScrim: { alignItems: 'stretch', justifyContent: 'flex-end', paddingHorizontal: 0 },
+  container: { width: '100%', maxWidth: 360, backgroundColor: C.white, borderRadius: DS.radius.modal, padding: DS.spacing.xxl, alignItems: 'stretch' },
+  sheet: { maxWidth: 480, alignSelf: 'stretch', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+  handle: { width: DS.component.sheetHandleWidth, height: DS.component.sheetHandleHeight, borderRadius: DS.radius.full, backgroundColor: C.border, alignSelf: 'center', marginBottom: DS.spacing.lg },
+  title: { ...DS.typography.sectionTitle, color: C.text, textAlign: 'center', marginBottom: DS.spacing.md },
+});
+
+/** Modal/sheet-only close action. It intentionally has no router.back() fallback. */
+export function CloseButton({ onPress, accessibilityLabel, testID }: { onPress: () => void; accessibilityLabel: string; testID?: string }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => [closeS.button, pressed && closeS.pressed]}
+    >
+      <X size={20} color={C.text} strokeWidth={2} />
+    </Pressable>
+  );
+}
+const closeS = StyleSheet.create({
+  button: { width: DS.spacing.touch, height: DS.spacing.touch, alignItems: 'center', justifyContent: 'center', borderRadius: DS.radius.full },
+  pressed: { backgroundColor: C.pinkLight },
+});
+
+// ─── ProgressDots ─────────────────────────────────────────────────────────────
+export function ProgressDots({
+  current,
+  total,
+  variant = 'default',
+  accessibilityLabel,
+}: {
+  current: number;
+  total: number;
+  variant?: 'default' | 'current-only';
+  accessibilityLabel?: string;
+}) {
+  const currentStep = Math.min(total, Math.max(1, current));
+  const currentOnly = variant === 'current-only';
+
+  return (
+    <View
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityLabel ? 'progressbar' : undefined}
+      accessibilityValue={accessibilityLabel ? { min: 1, max: total, now: currentStep } : undefined}
+      style={dotsS.row}
+    >
       {Array.from({ length: total }).map((_, i) => (
         <View
           key={i}
           style={[
             dotsS.dot,
-            i + 1 === current && dotsS.dotCurrent,
-            i + 1 <= current && dotsS.dotDone,
+            i + 1 === currentStep && dotsS.dotCurrent,
+            !currentOnly && i + 1 <= currentStep && dotsS.dotDone,
           ]}
         />
       ))}
@@ -471,10 +823,108 @@ export function ProgressDots({ current, total }: { current: number; total: numbe
   );
 }
 const dotsS = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },
-  dotCurrent: { width: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: SP.xs + DS.spacing.micro },
+  dot: { width: 8, height: 8, borderRadius: DS.radius.full, backgroundColor: C.border },
+  dotCurrent: { width: 24, backgroundColor: C.pink },
   dotDone: { backgroundColor: C.pink },
+});
+
+// ─── ProgressStepper ─────────────────────────────────────────────────────────
+export type ProgressStep = { label: string; icon: AppIconName };
+export function ProgressStepper({
+  steps,
+  current,
+  accessibilityLabel,
+  testID,
+  accessible = true,
+}: {
+  steps: readonly ProgressStep[];
+  current: number;
+  accessibilityLabel: string;
+  testID?: string;
+  accessible?: boolean;
+}) {
+  const currentStep = Math.min(steps.length, Math.max(1, current));
+  return (
+    <View
+      testID={testID}
+      style={stepperS.row}
+      accessible={accessible}
+      accessibilityRole={accessible ? 'progressbar' : undefined}
+      accessibilityLabel={accessible ? accessibilityLabel : undefined}
+      accessibilityValue={accessible ? { min: 1, max: steps.length, now: currentStep } : undefined}
+    >
+      {steps.map((step, index) => {
+        const reached = index + 1 <= currentStep;
+        const active = index + 1 === currentStep;
+        return (
+          <View key={`${step.label}-${index}`} style={stepperS.item}>
+            {index < steps.length - 1 && <View style={[stepperS.connector, reached && stepperS.connectorActive]} />}
+            <View style={[stepperS.circle, reached && stepperS.circleReached]}>
+              <AppIcon name={step.icon} size={18} color={reached ? C.pinkDeep : C.textSub} strokeWidth={1.5} />
+            </View>
+            <Text style={[stepperS.label, active && stepperS.labelActive]} numberOfLines={1}>{step.label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+const stepperS = StyleSheet.create({
+  row: { width: '100%', height: 76, flexDirection: 'row' },
+  item: { flex: 1, alignItems: 'center', position: 'relative' },
+  connector: { position: 'absolute', top: 21, left: '50%', width: '100%', height: DS.spacing.micro, backgroundColor: C.borderLight },
+  connectorActive: { backgroundColor: C.pink },
+  circle: {
+    zIndex: 1, width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: DS.radius.full, borderWidth: 1, borderColor: C.borderLight, backgroundColor: C.white,
+  },
+  circleReached: { borderColor: C.pink, backgroundColor: C.pinkLight },
+  label: { maxWidth: 82, marginTop: DS.spacing.sm, ...DS.typography.caption, color: C.textSub, textAlign: 'center' },
+  labelActive: { color: C.pinkDeep },
+});
+
+// ─── ProgressBar / LoadingState ──────────────────────────────────────────────
+export function ProgressBar({
+  value,
+  accessibilityLabel,
+  testID,
+}: {
+  value: number;
+  accessibilityLabel: string;
+  testID?: string;
+}) {
+  const progress = Math.min(100, Math.max(0, Math.round(value)));
+  return (
+    <View
+      testID={testID}
+      style={progressBarS.track}
+      accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 0, max: 100, now: progress }}
+    >
+      <View style={[progressBarS.fill, { width: `${progress}%` }]} />
+    </View>
+  );
+}
+const progressBarS = StyleSheet.create({
+  track: { width: '100%', height: DS.spacing.sm, overflow: 'hidden', borderRadius: DS.radius.full, backgroundColor: C.pinkLight },
+  fill: { height: '100%', borderRadius: DS.radius.full, backgroundColor: C.pink },
+});
+
+export function LoadingState({ label, description, testID }: { label: string; description?: string; testID?: string }) {
+  return (
+    <View testID={testID} style={loadingStateS.wrap} accessibilityRole="progressbar" accessibilityLabel={label}>
+      <ActivityIndicator color={C.pink} />
+      <Text style={loadingStateS.label}>{label}</Text>
+      {!!description && <Text style={loadingStateS.description}>{description}</Text>}
+    </View>
+  );
+}
+const loadingStateS = StyleSheet.create({
+  wrap: { alignItems: 'center', justifyContent: 'center', gap: DS.spacing.sm, padding: DS.spacing.lg },
+  label: { ...DS.typography.body, color: C.text, textAlign: 'center' },
+  description: { ...DS.typography.bodySmall, color: C.textSub, textAlign: 'center' },
 });
 
 // ─── ListGroup ────────────────────────────────────────────────────────────────
@@ -486,15 +936,11 @@ export function ListGroup({ children }: { children: ReactNode }) {
 const listGroupS = StyleSheet.create({
   wrap: {
     backgroundColor: C.white,
-    borderRadius: 20,
+    borderRadius: DS.radius.chip,
     borderWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
-    shadowRadius: 7,
-    elevation: 2,
+    ...DS.elevation.raised,
   },
 });
 
@@ -516,7 +962,7 @@ export function ListRow({
     <>
       <TouchableOpacity
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={0.88}
         style={listRowS.row}
       >
         <View style={listRowS.left}>
@@ -541,16 +987,16 @@ const listRowS = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
   },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
+  left: { flexDirection: 'row', alignItems: 'center', gap: SP.md, flex: 1, minWidth: 0 },
   icon: {},
-  label: { fontSize: 14, fontWeight: '500', color: C.text },
+  label: { ...DS.typography.body, color: C.text },
   labelWrap: { flex: 1 },
-  right: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
-  value: { fontSize: 13, color: C.textMuted },
-  divider: { height: 1, marginLeft: 16, backgroundColor: C.borderLight },
+  right: { flexDirection: 'row', alignItems: 'center', gap: SP.xs + DS.spacing.micro, flexShrink: 0 },
+  value: { ...DS.typography.bodyCompact, color: C.textMuted },
+  divider: { height: 1, marginLeft: SP.lg, backgroundColor: C.borderLight },
 });
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
@@ -561,13 +1007,13 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 }
 const sectionS = StyleSheet.create({
   label: {
-    fontSize: 11,
+    ...DS.typography.caption,
     color: C.textMuted,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: DS.component.sectionLabelLetterSpacing,
     textTransform: 'uppercase',
-    paddingHorizontal: 4,
-    marginBottom: 8,
+    paddingHorizontal: SP.xs,
+    marginBottom: SP.sm,
   },
 });
 
@@ -641,7 +1087,7 @@ export function LocationField({
           <TouchableOpacity
             style={[locS.gpsBtn, gpsOn && locS.gpsBtnOn]}
             onPress={handleGpsPress}
-            activeOpacity={0.7}
+            activeOpacity={0.88}
             disabled={locating}
           >
             <LocateFixed size={16} color={gpsOn ? C.white : C.pinkDeep} strokeWidth={2} />
@@ -653,56 +1099,65 @@ export function LocationField({
   );
 }
 const locS = StyleSheet.create({
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 8 },
+  label: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.text, marginTop: SP.xxl, marginBottom: SP.sm },
   inputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: C.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center', gap: SP.sm,
+    backgroundColor: C.white, borderRadius: DS.radius.input, paddingHorizontal: SP.md, paddingVertical: SP.md,
     borderWidth: 1.5, borderColor: C.border,
   },
-  input: { flex: 1, fontSize: 14, color: C.text, padding: 0 },
+  input: { flex: 1, ...DS.typography.body, color: C.text, padding: 0 },
   inputGps: { color: C.pinkDeep, fontWeight: '600' },
   gpsBtn: {
-    width: 30, height: 30, borderRadius: 10,
+    width: 30, height: 30, borderRadius: DS.radius.small,
     backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
   },
   gpsBtnOn: { backgroundColor: C.pink },
-  hint: { fontSize: 11, color: C.textSub, marginTop: 6, lineHeight: 16 },
+  hint: { ...DS.typography.caption, color: C.textSub, marginTop: SP.sm },
 });
 
 // ─── PlaceRow ─────────────────────────────────────────────────────────────────
 // 카드에 붙은 실제 카카오 장소. url이 있으면 탭 시 지도(카카오 place) 링크를 연다.
 export function PlaceRow({
-  name, address, url, style, size = 'default',
-}: { name?: string; address?: string; url?: string; style?: StyleProp<ViewStyle>; size?: 'default' | 'compact' }) {
+  name, address, url, onPress, style, size = 'default',
+}: {
+  name?: string;
+  address?: string;
+  url?: string;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  size?: 'default' | 'compact';
+}) {
   const { t } = useI18n();
   if (!name) return null;
   const compact = size === 'compact';
+  const interactive = Boolean(url || onPress);
   return (
     <TouchableOpacity
       style={[placeS.wrap, style]}
-      activeOpacity={url ? 0.7 : 1}
-      disabled={!url}
-      onPress={url ? () => { Linking.openURL(url); } : undefined}
+      accessibilityRole={interactive ? 'link' : undefined}
+      activeOpacity={interactive ? 0.88 : 1}
+      disabled={!interactive}
+      onPress={onPress ?? (url ? () => { Linking.openURL(url); } : undefined)}
     >
       <MapPin size={compact ? 14 : 16} color={compact ? C.textSub : C.text} strokeWidth={2} style={placeS.icon} />
       <View style={placeS.body}>
         <Text style={[placeS.name, compact && placeS.nameCompact]} numberOfLines={1}>{name}</Text>
         {!!address && <Text style={[placeS.addr, compact && placeS.addrCompact]} numberOfLines={1}>{address}</Text>}
       </View>
-      {!!url && <Text style={[placeS.link, compact && placeS.linkCompact]}>{t('location.map')}</Text>}
+      {interactive && <Text style={[placeS.link, compact && placeS.linkCompact]}>{t('location.map')}</Text>}
     </TouchableOpacity>
   );
 }
 const placeS = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  icon: { marginTop: 1 },
+  wrap: { flexDirection: 'row', alignItems: 'flex-start', gap: SP.sm },
+  icon: { marginTop: DS.component.iconOpticalOffset },
   body: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '700', color: C.text },
-  nameCompact: { fontSize: 13, fontWeight: '600' },
-  addr: { fontSize: 13, color: C.textSub, marginTop: 2 },
-  addrCompact: { fontSize: 11 },
-  link: { fontSize: 13, fontWeight: '600', color: C.textSub, marginTop: 1 },
-  linkCompact: { fontSize: 11 },
+  name: { ...DS.typography.cardTitle, color: C.text },
+  nameCompact: { ...DS.typography.bodyCompact, fontWeight: '600' },
+  addr: { ...DS.typography.bodyCompact, color: C.textSub, marginTop: SP.micro },
+  addrCompact: { ...DS.typography.caption },
+  link: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.textSub, marginTop: DS.spacing.micro },
+  linkCompact: { ...DS.typography.caption },
 });
 
 // ─── InfoNote ─────────────────────────────────────────────────────────────────
@@ -714,8 +1169,8 @@ export function InfoNote({ children, style }: { children: ReactNode; style?: Sty
   );
 }
 const noteS = StyleSheet.create({
-  wrap: { backgroundColor: C.cream, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
-  text: { fontSize: 11, color: C.creamFg, lineHeight: 17 },
+  wrap: { backgroundColor: C.cream, borderRadius: DS.radius.input, paddingHorizontal: SP.md, paddingVertical: SP.sm },
+  text: { ...DS.typography.caption, color: C.creamFg },
 });
 
 // ─── GeneratingView ───────────────────────────────────────────────────────────
@@ -732,6 +1187,7 @@ export function GeneratingView({
   step: number;
   progressPercent?: number;
 }) {
+  const insets = useOptionalSafeAreaInsets();
   const pulseScale = useRef(new Animated.Value(1)).current;
   const fillPercent = useRef(new Animated.Value(0)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -804,7 +1260,7 @@ export function GeneratingView({
   });
 
   return (
-    <View style={genS.container}>
+    <View style={[genS.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <Text style={genS.heading}>{heading}</Text>
 
       <Animated.View style={[genS.illustrationWrap, { transform: [{ scale: pulseScale }] }]}>
@@ -835,8 +1291,8 @@ const genS = StyleSheet.create({
     paddingHorizontal: SP.xxxl,
   },
   heading: {
-    fontSize: 22, fontWeight: '700', color: C.text,
-    textAlign: 'center', lineHeight: 29,
+    ...DS.typography.headingLegacy, color: C.text,
+    textAlign: 'center',
     marginBottom: SP.xxl,
   },
   illustrationWrap: {
@@ -851,13 +1307,13 @@ const genS = StyleSheet.create({
     justifyContent: 'space-between',
     gap: SP.sm,
   },
-  statusLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: C.text },
-  progressCount: { fontSize: 13, fontWeight: '600', color: C.pink },
+  statusLabel: { flex: 1, ...DS.typography.bodyCompact, fontWeight: '600', color: C.text },
+  progressCount: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.pink },
   progressTrack: {
-    height: 8, borderRadius: R.badge, backgroundColor: C.pinkMid, overflow: 'hidden',
+    height: 8, borderRadius: DS.radius.badge, backgroundColor: C.pinkMid, overflow: 'hidden',
   },
   progressFill: {
-    height: '100%', borderRadius: R.badge, backgroundColor: C.pink,
+    height: '100%', borderRadius: DS.radius.badge, backgroundColor: C.pink,
   },
 });
 
@@ -873,13 +1329,13 @@ export function FieldBox({ label, children }: { label?: string; children: ReactN
 const fieldS = StyleSheet.create({
   wrap: {
     backgroundColor: C.white,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: DS.radius.input,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
     borderWidth: 1,
     borderColor: C.border,
   },
-  label: { fontSize: 11, color: C.textLight, marginBottom: 4 },
+  label: { ...DS.typography.caption, color: C.textLight, marginBottom: SP.xs },
   content: {},
 });
 
@@ -913,6 +1369,7 @@ export function MoreMenu({ onEdit, onDelete, testID }: {
         accessibilityRole="button"
         accessibilityLabel={t('common.moreActions')}
         onPress={openMenu}
+        activeOpacity={0.88}
         testID={testID}
         style={moreS.trigger}
       >
@@ -922,12 +1379,12 @@ export function MoreMenu({ onEdit, onDelete, testID }: {
         <Pressable style={moreS.backdrop} onPress={() => setOpen(false)}>
           {/* 메뉴 상자 안(버튼 아닌 영역) 탭이 배경 Pressable로 새서 닫히지 않게 터치를 삼킨다. */}
           <Pressable style={[moreS.menu, { top: menuTop }]} onPress={() => {}}>
-            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onEdit)} style={moreS.item}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onEdit)} activeOpacity={0.88} style={moreS.item}>
               <Pencil size={15} color={C.text} strokeWidth={2} />
               <Text style={moreS.itemText}>{t('common.edit')}</Text>
             </TouchableOpacity>
             <View style={moreS.divider} />
-            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onDelete)} style={moreS.item}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => pick(onDelete)} activeOpacity={0.88} style={moreS.item}>
               <Trash2 size={15} color={C.danger} strokeWidth={2} />
               <Text style={[moreS.itemText, moreS.itemTextDanger]}>{t('common.delete')}</Text>
             </TouchableOpacity>
@@ -938,16 +1395,15 @@ export function MoreMenu({ onEdit, onDelete, testID }: {
   );
 }
 const moreS = StyleSheet.create({
-  trigger: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  trigger: { width: DS.spacing.touch, height: DS.spacing.touch, borderRadius: DS.radius.full, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1 },
   menu: {
-    position: 'absolute', right: 16, width: 150,
-    backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
-    elevation: 6, overflow: 'hidden',
+    position: 'absolute', right: SP.lg, width: 150,
+    backgroundColor: C.white, borderRadius: DS.radius.legacyInput, borderWidth: 1, borderColor: C.border,
+    ...DS.elevation.popover, overflow: 'hidden',
   },
-  item: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 },
-  itemText: { fontSize: 13, fontWeight: '700', color: C.text },
+  item: { minHeight: DS.spacing.touch, flexDirection: 'row', alignItems: 'center', gap: SP.sm, paddingHorizontal: SP.md },
+  itemText: { ...DS.typography.bodyCompact, fontWeight: '700', color: C.text },
   itemTextDanger: { color: C.danger },
   divider: { height: 1, backgroundColor: C.border },
 });
@@ -959,29 +1415,20 @@ export function SuccessModal({
   const { t } = useI18n();
   // 목업대로 버튼 닫힘: '확인'(onHide) 또는 하드웨어 back(onRequestClose)으로만 닫는다. 자동닫힘 없음.
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
-      <View style={successS.backdrop}>
-        <View style={successS.card}>
-          <Illustration name="mascot-heart-couple-check" width={148} style={successS.mascot} />
-          <Text style={successS.message}>{message}</Text>
-          <BigButton onPress={onHide} style={successS.cta}>{t('common.ok')}</BigButton>
-        </View>
-      </View>
-    </Modal>
+    <ModalSurface visible={visible} onClose={onHide} containerStyle={successS.card}>
+      <Illustration name="mascot-heart-couple-check" width={148} style={successS.mascot} />
+      <Text style={successS.message}>{message}</Text>
+      <BigButton onPress={onHide} style={successS.cta}>{t('common.ok')}</BigButton>
+    </ModalSurface>
   );
 }
 const successS = StyleSheet.create({
-  backdrop: {
-    flex: 1, backgroundColor: 'rgba(40,30,25,0.4)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: SP.xxl,
-  },
   card: {
-    width: '100%', maxWidth: 320, backgroundColor: C.white,
-    borderRadius: R.hero, paddingTop: SP.xl, paddingBottom: SP.xxl, paddingHorizontal: SP.xxl,
+    maxWidth: 320, paddingTop: SP.xxl, paddingBottom: SP.xxl, paddingHorizontal: SP.xxl,
     alignItems: 'center', gap: SP.md,
   },
   mascot: { marginBottom: SP.xs },
-  message: { fontSize: 19, fontWeight: '700', color: C.text, textAlign: 'center', lineHeight: 26 },
+  message: { ...DS.typography.sectionTitle, color: C.text, textAlign: 'center' },
   cta: { marginTop: SP.sm },
 });
 
@@ -999,19 +1446,20 @@ export function SortDropdown<T extends string>({
   const [open, setOpen] = useState(false);
   // null = 아직 위치를 측정하지 못함. 0으로 기본값을 두면 measureInWindow 콜백이 오기 전
   // 한 프레임 동안 메뉴가 top:0(화면 맨 위)에 잘못 그려졌다 제자리로 튀는 게 보인다.
-  const [menuTop, setMenuTop] = useState<number | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<View>(null);
+  const { width: windowWidth } = useWindowDimensions();
   const current = options.find(o => o.value === value) ?? options[0];
-  const measured = menuTop !== null;
+  const measured = menuPosition !== null;
 
   function openMenu() {
     // 위치 측정과 별개로 즉시 연다: measureInWindow 콜백이 늦거나(혹은 테스트 환경처럼 아예
     // 호출되지 않으면) 메뉴가 영영 안 열리는 문제를 막는다. 측정 전에는 opacity:0으로 숨겨,
     // 잘못된 위치(top:0)가 잠깐이라도 보이지 않게 한다.
     setOpen(true);
-    setMenuTop(null);
-    triggerRef.current?.measureInWindow((_x, y, _w, h) => {
-      setMenuTop(y + h + 4);
+    setMenuPosition(null);
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setMenuPosition(resolveSortDropdownPosition({ x, y, width, height, windowWidth }));
     });
   }
 
@@ -1030,7 +1478,7 @@ export function SortDropdown<T extends string>({
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={sortDropdownS.backdrop} onPress={() => setOpen(false)}>
           <Pressable
-            style={[sortDropdownS.menu, { top: menuTop ?? 0 }, !measured && sortDropdownS.menuHidden]}
+            style={[sortDropdownS.menu, menuPosition ?? sortDropdownS.unmeasuredPosition, !measured && sortDropdownS.menuHidden]}
             onPress={() => {}}
           >
             {options.map((opt, i) => (
@@ -1054,25 +1502,42 @@ export function SortDropdown<T extends string>({
     </>
   );
 }
+const SORT_DROPDOWN_MENU_WIDTH = 140;
+export function resolveSortDropdownPosition({
+  x, y, width, height, windowWidth,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  windowWidth: number;
+}) {
+  const rightAlignedLeft = x + width - SORT_DROPDOWN_MENU_WIDTH;
+  const maxLeft = windowWidth - DS.layout.pageInset - SORT_DROPDOWN_MENU_WIDTH;
+  return {
+    top: y + height + DS.spacing.xs,
+    left: Math.max(DS.layout.pageInset, Math.min(rightAlignedLeft, maxLeft)),
+  };
+}
 const sortDropdownS = StyleSheet.create({
   trigger: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    minHeight: 36, paddingHorizontal: 12,
-    borderRadius: 18, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
+    flexDirection: 'row', alignItems: 'center', gap: SP.xs,
+    minHeight: 36, paddingHorizontal: SP.md,
+    borderRadius: DS.radius.button, borderWidth: 1, borderColor: C.border, backgroundColor: C.white,
   },
-  triggerText: { fontSize: 12, fontWeight: '600', color: C.textSub },
+  triggerText: { ...DS.typography.bodySmall, fontWeight: '600', color: C.textSub },
   backdrop: { flex: 1 },
   menu: {
-    position: 'absolute', left: 20, width: 140,
-    backgroundColor: C.white, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16,
-    elevation: 6, overflow: 'hidden',
+    position: 'absolute', width: SORT_DROPDOWN_MENU_WIDTH,
+    backgroundColor: C.white, borderRadius: DS.radius.legacyInput, borderWidth: 1, borderColor: C.border,
+    ...DS.elevation.popover, overflow: 'hidden',
   },
+  unmeasuredPosition: { top: 0, left: 0 },
   // 위치 측정 전(top이 아직 확정 안 됨) 잘못된 위치가 눈에 보이지 않도록 숨긴다.
   // display:'none'이 아닌 opacity로 숨겨, 테스트에서 findAllByType으로는 여전히 옵션을 찾아 누를 수 있다.
   menuHidden: { opacity: 0 },
-  item: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
-  itemText: { fontSize: 13, fontWeight: '600', color: C.textSub },
+  item: { minHeight: DS.spacing.touch, justifyContent: 'center', paddingHorizontal: SP.md },
+  itemText: { ...DS.typography.bodyCompact, fontWeight: '600', color: C.textSub },
   itemTextActive: { color: C.pinkDeep, fontWeight: '700' },
   divider: { height: 1, backgroundColor: C.border },
 });
@@ -1090,7 +1555,7 @@ function StepConnector() {
   );
 }
 
-function StepCard({ step, index }: { step: CourseStep; index: number }) {
+function StepCard({ step, index, onPlacePress }: { step: CourseStep; index: number; onPlacePress?: (step: CourseStep) => void }) {
   return (
     <View style={stepS.card}>
       <View style={stepS.titleRow}>
@@ -1105,6 +1570,7 @@ function StepCard({ step, index }: { step: CourseStep; index: number }) {
           name={step.place_name}
           address={step.place_address}
           url={step.map_url}
+          onPress={onPlacePress && (step.kakaoPlaceId || step.map_url) ? () => onPlacePress(step) : undefined}
           size="compact"
           style={stepS.placeRow}
         />
@@ -1114,7 +1580,15 @@ function StepCard({ step, index }: { step: CourseStep; index: number }) {
 }
 
 // 코스 단계별 동선 표시 — course-result.tsx(추천 직후)와 card/[id].tsx(저장된 카드 재조회)가 공유한다.
-export function CourseStepList({ steps, summary }: { steps: CourseStep[]; summary?: string }) {
+export function CourseStepList({
+  steps,
+  summary,
+  onPlacePress,
+}: {
+  steps: CourseStep[];
+  summary?: string;
+  onPlacePress?: (step: CourseStep) => void;
+}) {
   if (steps.length === 0) {
     if (!summary) return null;
     return (
@@ -1127,7 +1601,7 @@ export function CourseStepList({ steps, summary }: { steps: CourseStep[]; summar
     <View>
       {steps.map((step, i) => (
         <View key={i}>
-          <StepCard step={step} index={i} />
+          <StepCard step={step} index={i} onPlacePress={onPlacePress} />
           {i < steps.length - 1 && <StepConnector />}
         </View>
       ))}
@@ -1137,32 +1611,28 @@ export function CourseStepList({ steps, summary }: { steps: CourseStep[]; summar
 const stepS = StyleSheet.create({
   card: {
     backgroundColor: C.white,
-    borderRadius: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderRadius: DS.radius.chip,
+    paddingVertical: DS.component.stepCardPaddingVertical,
+    paddingHorizontal: SP.lg,
     borderWidth: 1,
     borderColor: C.border,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    ...DS.elevation.raised,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: SP.sm },
   badge: {
-    width: 24, height: 24, borderRadius: 12,
+    width: 24, height: 24, borderRadius: DS.radius.full,
     borderWidth: 2, borderColor: C.pink, backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  badgeNum: { fontSize: 11, fontWeight: '700', color: C.pink, lineHeight: 11 },
-  title: { fontSize: 15, fontWeight: '700', color: C.text },
-  desc: { fontSize: 12, color: C.textSub, marginTop: 3, marginLeft: 34 },
-  placeRow: { marginTop: 9, marginLeft: 34 },
+  badgeNum: { ...DS.typography.badge, fontWeight: '700', color: C.pink },
+  title: { ...DS.typography.cardTitle, color: C.text },
+  desc: { ...DS.typography.bodySmall, color: C.textSub, marginTop: SP.xs, marginLeft: DS.component.stepContentOffset },
+  placeRow: { marginTop: SP.sm, marginLeft: DS.component.stepContentOffset },
   connector: { alignItems: 'center', height: 30, justifyContent: 'center' },
   connectorLine: { width: 1.5, height: 8, backgroundColor: C.borderLight },
   connectorDot: {
-    width: 22, height: 22, borderRadius: 11,
+    width: 22, height: 22, borderRadius: DS.radius.full,
     backgroundColor: C.pinkLight, alignItems: 'center', justifyContent: 'center',
   },
-  fallbackText: { fontSize: 14, color: C.text, lineHeight: 20 },
+  fallbackText: { ...DS.typography.body, color: C.text },
 });

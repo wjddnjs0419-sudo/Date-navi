@@ -19,10 +19,8 @@ describe('card confirm screen icons', () => {
     expect(source).not.toContain('💰');
   });
 
-  it('imports lucide icons for the row list', () => {
-    expect(source).toMatch(/import \{[^}]*Calendar[^}]*\} from 'lucide-react-native'/);
-    expect(source).toMatch(/import \{[^}]*MapPin[^}]*\} from 'lucide-react-native'/);
-    expect(source).toMatch(/import \{[^}]*ShoppingBag[^}]*\} from 'lucide-react-native'/);
+  it('imports the shared icon registry for the row list', () => {
+    expect(source).toMatch(/import \{[^}]*Calendar[^}]*MapPin[^}]*ShoppingBag[^}]*\} from '\.\.\/\.\.\/components\/iconography'/);
   });
 
   it('preserves the confirm save contract (status flip + confirmed fields)', () => {
@@ -39,7 +37,8 @@ describe('card confirm screen icons', () => {
   });
 
   it('renders the heading heart doodle and skyline mini illustration (목업 06 반복 누락 패턴)', () => {
-    expect(source).toMatch(/headingBlock[\s\S]*?<HeartDoodle/);
+    // The heart is a ScreenHeading accessory; the illustration remains below the heading block.
+    expect(source).toMatch(/<ScreenHeading[\s\S]*?accessory=\{<HeartDoodle \/>\}/);
     expect(source).toMatch(/<Illustration name="mini-skyline-route" width=\{MINI_ILLUSTRATION_WIDTH\}/);
   });
 

@@ -33,20 +33,18 @@ describe('course result save returns home with a success modal', () => {
   });
 });
 
-// 후보 수정 화면의 Title 단일행 입력에서 lineHeight가 iOS 세로 중앙 정렬을 깨뜨렸다.
-// 단일행 input에서는 lineHeight를 빼고 paddingVertical: 0으로 기본 패딩을 제거한다.
-describe('edit candidate title input vertical centering', () => {
+// 후보 수정 화면은 공통 InputField 계약을 사용해 입력 스타일을 중앙화한다.
+describe('edit candidate input uses the shared field contract', () => {
   const source = read('app/card/edit/[id].tsx');
 
-  it('removes lineHeight from the single-line input style', () => {
-    const input = source.match(/\n  input: \{([^}]*)\}/)?.[1] ?? '';
-    expect(input).not.toContain('lineHeight');
-    expect(input).toContain('paddingVertical: 0');
+  it('uses InputField for the title and description fields', () => {
+    expect(source).toMatch(/import \{[^}]*InputField[^}]*\} from '[^']*components\/ui'/);
+    expect(source).toMatch(/<InputField[\s\S]*?value=\{title\}/);
+    expect(source).toMatch(/<InputField[\s\S]*?value=\{summary\}/);
   });
 
-  it('keeps multiline spacing via the multiline style', () => {
-    const multiline = source.match(/inputMultiline: \{([^}]*)\}/)?.[1] ?? '';
-    expect(multiline).toContain('lineHeight');
+  it('does not keep a screen-specific duplicate input style', () => {
+    expect(source).not.toMatch(/inputMultiline:\s*\{/);
   });
 });
 
@@ -56,7 +54,7 @@ describe('MoreMenu popover component', () => {
 
   it('exports a MoreMenu trigger using the MoreVertical svg icon', () => {
     expect(ui).toMatch(/export function MoreMenu\(/);
-    expect(ui).toMatch(/import \{[^}]*MoreVertical[^}]*\} from 'lucide-react-native'/);
+    expect(ui).toMatch(/import \{[^}]*MoreVertical[^}]*\} from '\.\/iconography'/);
     expect(ui).toMatch(/<MoreVertical/);
   });
 

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -10,8 +11,8 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { Check, ChevronRight, Clock3, MapPin, Navigation, Search } from 'lucide-react-native';
-import { C, R, SP } from '../../constants/theme';
+import { Check, ChevronRight, Clock3, MapPin, Navigation, Search } from '../iconography';
+import { C, DS, R, SP } from '../../constants/theme';
 import { useI18n } from '../../lib/i18n';
 import {
   LOCATION_SEARCH_DEBOUNCE_MS,
@@ -19,7 +20,8 @@ import {
   searchLocations,
   shouldSearchLocations,
 } from '../../lib/locationSearch';
-import { loadRecentLocations, saveRecentLocation } from '../../lib/recentLocations';
+import { isSameRecommendationLocation, loadRecentLocations, saveRecentLocation } from '../../lib/recentLocations';
+import { supabase } from '../../lib/supabase';
 import type { RecommendationLocation } from '../../shared/recommendation/contracts';
 
 type Props = {
@@ -35,6 +37,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
   const [query, setQuery] = useState(value?.label ?? '');
   const [suggestions, setSuggestions] = useState<RecommendationLocation[]>([]);
   const [recent, setRecent] = useState<RecommendationLocation[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
@@ -42,11 +45,33 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
 
   useEffect(() => {
     let mounted = true;
-    loadRecentLocations().then((locations) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUserId(session?.user.id ?? null);
+    });
+    void supabase.auth.getSession()
+      .then(({ data }) => {
+        if (mounted) setUserId(data.session?.user.id ?? null);
+      })
+      .catch(() => {
+        if (mounted) setUserId(null);
+      });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!userId) {
+      setRecent([]);
+      return () => { mounted = false; };
+    }
+    loadRecentLocations(userId).then((locations) => {
       if (mounted) setRecent(locations);
     });
     return () => { mounted = false; };
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!shouldSearchLocations(query) || value?.label === query) {
@@ -89,8 +114,9 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
     setQuery(location.source === 'current' ? '' : location.label);
     setSuggestions([]);
     onChange(location);
+    if (!userId) return;
     try {
-      setRecent(await saveRecentLocation(location));
+      setRecent(await saveRecentLocation(userId, location));
     } catch {
       // Recent history is optional; selection remains valid if local storage is unavailable.
     }
@@ -137,7 +163,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
         <Search size={18} color={C.textSub} strokeWidth={2} />
         <TextInput
           accessibilityLabel={t('location.searchAccessibility')}
-          style={[styles.input, value?.source === 'current' && styles.currentInput]}
+          style={[styles.input, /[A-Za-z]/.test(query) && styles.latinText, value?.source === 'current' && styles.currentInput]}
           placeholder={t('location.placeholder')}
           placeholderTextColor={C.textFaint}
           value={query}
@@ -152,7 +178,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
         accessibilityState={{ selected: value?.source === 'current' }}
         accessibilityLabel={t('location.currentAccessibility')}
         style={[styles.currentLocationButton, value?.source === 'current' && styles.currentLocationButtonActive]}
-        activeOpacity={0.72}
+        activeOpacity={0.88}
         disabled={locating}
         onPress={selectCurrentLocation}
         testID="location-current-button"
@@ -172,14 +198,14 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
           </View>
           <View style={styles.recentList}>
             {recent.map((location) => {
-              const selected = value?.kakaoPlaceId === location.kakaoPlaceId;
+              const selected = isSameRecommendationLocation(value, location);
               return (
                 <TouchableOpacity
                   key={`${location.source}:${location.kakaoPlaceId ?? `${location.latitude}:${location.longitude}`}`}
                   accessibilityRole="button"
                   accessibilityLabel={t('location.suggestionAccessibility', { name: location.label })}
                   accessibilityState={{ selected }}
-                  activeOpacity={0.72}
+                  activeOpacity={0.88}
                   style={[styles.recentCard, selected && styles.recentCardSelected]}
                   onPress={() => selectLocation(location)}
                   testID={`location-recent-${location.kakaoPlaceId ?? `${location.latitude}:${location.longitude}`}`}
@@ -204,7 +230,7 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
                 key={`${location.source}:${location.kakaoPlaceId ?? `${location.latitude}:${location.longitude}`}`}
                 accessibilityRole="button"
                 accessibilityLabel={t('location.suggestionAccessibility', { name: location.label })}
-                activeOpacity={0.72}
+                activeOpacity={0.88}
                 style={styles.suggestion}
                 onPress={() => selectLocation(location)}
               >
@@ -230,21 +256,27 @@ export function LocationSelector({ value, onChange, search = searchLocations, re
 const styles = StyleSheet.create({
   container: { gap: SP.md },
   inputWrap: {
-    minHeight: 52,
+    minHeight: DS.spacing.input,
     flexDirection: 'row',
     alignItems: 'center',
     gap: SP.sm,
     backgroundColor: C.white,
-    borderRadius: R.md,
+    borderRadius: DS.radius.input,
     paddingHorizontal: SP.md,
     borderWidth: 1.5,
     borderColor: C.border,
   },
-  input: { flex: 1, minHeight: 44, fontSize: 14, color: C.text, paddingVertical: 0 },
+  input: {
+    flex: 1, minWidth: 0, height: DS.spacing.touch, minHeight: DS.spacing.touch,
+    ...DS.typography.body, ...Platform.select({ ios: { lineHeight: undefined }, default: {} }),
+    color: C.text, padding: 0, textAlignVertical: 'center',
+  },
+  // iOS positions Latin glyphs lower than its Korean fallback in a single-line TextInput.
+  latinText: Platform.select({ ios: { transform: [{ translateY: -DS.spacing.xs }] }, default: {} }),
   currentInput: { color: C.pinkDeep, fontWeight: '600' },
   currentLocationButton: {
-    minHeight: 52,
-    borderRadius: R.md,
+    minHeight: DS.spacing.input,
+    borderRadius: DS.radius.input,
     backgroundColor: C.white,
     borderWidth: 1,
     borderColor: C.border,
@@ -254,32 +286,32 @@ const styles = StyleSheet.create({
     gap: SP.sm,
   },
   currentLocationButtonActive: { backgroundColor: C.pink, borderColor: C.pink },
-  currentLocationText: { color: C.locationMuted, fontSize: 13, fontWeight: '700' },
+  currentLocationText: { ...DS.typography.bodyCompact, color: C.locationMuted, fontWeight: '700' },
   currentLocationTextActive: { color: C.white },
-  error: { fontSize: 12, color: C.danger, paddingTop: SP.sm, lineHeight: 18 },
+  error: { ...DS.typography.bodySmall, color: C.danger, paddingTop: SP.sm },
   recentSection: { gap: SP.sm, paddingTop: SP.xs },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: SP.xs },
   recentList: { gap: SP.sm },
   recentCard: {
-    minHeight: 52,
+    minHeight: DS.spacing.input,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SP.lg,
     borderWidth: 1,
     borderColor: C.borderLight,
-    borderRadius: R.md,
+    borderRadius: DS.radius.input,
     backgroundColor: C.white,
   },
   recentCardSelected: { borderColor: C.pink, backgroundColor: C.pinkLight },
-  recentCardText: { color: C.textSub, fontSize: 13, fontWeight: '500' },
+  recentCardText: { ...DS.typography.bodyCompact, color: C.textSub },
   recentCardTextSelected: { color: C.pinkDeep, fontWeight: '700' },
-  sectionTitle: { fontSize: 12, color: C.textMuted, fontWeight: '600' },
+  sectionTitle: { ...DS.typography.bodySmall, color: C.textMuted, fontWeight: '600' },
   list: {
     marginTop: SP.sm,
     borderWidth: 1,
     borderColor: C.borderLight,
-    borderRadius: R.md,
+    borderRadius: DS.radius.input,
     overflow: 'hidden',
     backgroundColor: C.white,
   },
@@ -294,6 +326,6 @@ const styles = StyleSheet.create({
     borderBottomColor: C.borderLight,
   },
   suggestionText: { flex: 1, minWidth: 0 },
-  suggestionName: { fontSize: 14, fontWeight: '600', color: C.text },
-  suggestionAddress: { fontSize: 11, color: C.textSub, lineHeight: 16, paddingTop: 2 },
+  suggestionName: { ...DS.typography.body, fontWeight: '600', color: C.text },
+  suggestionAddress: { ...DS.typography.caption, color: C.textSub, paddingTop: DS.spacing.micro },
 });

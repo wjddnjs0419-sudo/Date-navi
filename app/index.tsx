@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Animated, Easing, Image, useWindowDimensions } from 'react-native';
 import { useRef, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { C, SP } from '../constants/theme';
+import { C, DS, SP } from '../constants/theme';
 import { useI18n } from '../lib/i18n';
 import { splashMarkLayout } from '../lib/splash-layout';
 
@@ -66,13 +66,13 @@ const s = StyleSheet.create({
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingBottom: 56,
+    paddingBottom: SP.splash,
   },
   titleBlock: { position: 'absolute', left: 0, right: 0, alignItems: 'center', paddingTop: SP.lg },
-  appName: { fontSize: 30, fontWeight: '800', color: C.text, textAlign: 'center', letterSpacing: -0.6 },
-  tagline: { fontSize: 13, color: C.textSub, textAlign: 'center', marginTop: SP.sm },
-  bottom: { alignItems: 'center', gap: 6 },
-  dots: { flexDirection: 'row', gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.pink },
-  loadingText: { fontSize: 11, color: C.textMuted },
+  appName: { ...DS.typography.display, fontWeight: '800', color: C.text, textAlign: 'center', letterSpacing: DS.component.appNameLetterSpacing },
+  tagline: { ...DS.typography.bodyCompact, color: C.textSub, textAlign: 'center', marginTop: SP.sm },
+  bottom: { alignItems: 'center', gap: DS.component.tightGap },
+  dots: { flexDirection: 'row', gap: DS.component.tightGap },
+  dot: { width: DS.component.splashDotSize, height: DS.component.splashDotSize, borderRadius: DS.radius.full, backgroundColor: C.pink },
+  loadingText: { ...DS.typography.caption, color: C.textMuted },
 });

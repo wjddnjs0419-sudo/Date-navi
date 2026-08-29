@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { Wallet } from 'lucide-react-native';
+import { Wallet } from '../components/iconography';
 import { DdayBadge, MetaChipRow } from '../components/ui';
 
 const TR = require('react-test-renderer') as {

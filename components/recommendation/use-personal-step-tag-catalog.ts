@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   addPersonalStepTag,
+  countPersonalStepTags,
   defaultSuggestionsForPersonalCatalog,
   hideShippedStepTag,
   loadPersonalStepTagCatalog,
@@ -46,6 +47,11 @@ export function usePersonalStepTagCatalog() {
     return mergePersonalStepTagCatalog(category, defaultSuggestionsForPersonalCatalog(category), personal, hidden);
   }, [hidden, personal]);
 
+  const personalCountFor = useCallback((category: string): number => {
+    if (!isPersonalCategory(category)) return 0;
+    return countPersonalStepTags(personal, category);
+  }, [personal]);
+
   const addSuggestion = useCallback(async (category: string, tag: string) => {
     if (!userId || !isPersonalCategory(category)) return;
     await addPersonalStepTag(userId, category, tag);
@@ -60,5 +66,5 @@ export function usePersonalStepTagCatalog() {
     await refresh();
   }, [personal, refresh, userId]);
 
-  return useMemo(() => ({ suggestionsFor, addSuggestion, removeSuggestion }), [addSuggestion, removeSuggestion, suggestionsFor]);
+  return useMemo(() => ({ suggestionsFor, personalCountFor, addSuggestion, removeSuggestion }), [addSuggestion, personalCountFor, removeSuggestion, suggestionsFor]);
 }

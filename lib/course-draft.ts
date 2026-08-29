@@ -1,7 +1,7 @@
 import {
   Coffee, Footprints, Palette, Sparkles, Utensils, Wine, Zap,
   type LucideIcon,
-} from 'lucide-react-native';
+} from '../components/iconography';
 import type {
   CourseStepInput,
   ParsedPreferenceInput,
@@ -114,14 +114,10 @@ export type StructuredCourseInput = {
 
 const categorySet = new Set<string>(COURSE_CATEGORIES);
 
-export function createInitialCourseDraft(nextId: () => string): CourseDraft {
-  const firstId = nextId();
-  if (!firstId) {
-    throw new Error('Course step IDs must be non-empty and unique.');
-  }
+export function createInitialCourseDraft(_nextId?: () => string): CourseDraft {
   return {
     location: null,
-    steps: [{ id: firstId, category: 'meal' }],
+    steps: [],
     maxWalkingMinutes: undefined,
     perPersonBudgetKRWInput: '',
     moods: [],

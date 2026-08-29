@@ -237,6 +237,42 @@ describe('recommend-date Phase 7 typed search outcomes', () => {
 });
 
 describe('recommend-date Phase 7 candidate-only recovery and response', () => {
+  it('falls back to a keyword-matching place when AI selects a non-matching category candidate', async () => {
+    const taggedCandidates = [
+      candidate('meal-generic', 'meal-generic-id', 'FD6', 127),
+      { ...candidate('meal-pork', 'meal-pork-id', 'FD6', 127.0005), categoryName: '음식점 > 한식 > 육류,고기 > 삼겹살' },
+      candidate('cafe-candidate', 'cafe-id', 'CE7', 127.001),
+    ];
+    const taggedRequest: RecommendationRequest = {
+      ...request(),
+      courseSteps: [
+        { id: 'meal', category: 'meal', label: '식사', intentTags: ['삼겹살'] },
+        { id: 'cafe', category: 'cafe', label: '카페' },
+      ],
+    };
+    const deps = dependencies({
+      searchCandidates: jest.fn(async () => ({
+        candidates: taggedCandidates,
+        recallByCategory: { meal: 2, cafe: 1 },
+        searchMetadata: metadata({ requestCount: 2 }),
+      })),
+      generateSelection: jest.fn(async () => ({ steps: [
+        { stepId: 'meal', candidateId: 'meal-generic' },
+        { stepId: 'cafe', candidateId: 'cafe-candidate' },
+      ] })),
+    });
+
+    const result = await handleRecommendDate({ method: 'POST', authorization: 'Bearer valid', body: taggedRequest }, deps);
+
+    expect(result).toMatchObject({
+      status: 200,
+      body: {
+        course: { steps: [{ kakaoPlaceId: 'meal-pork-id' }, { kakaoPlaceId: 'cafe-id' }] },
+        metadata: { fallbackUsed: true, selectionSource: 'deterministic_fallback', selectionReason: 'ai_invalid_selection' },
+      },
+    });
+  });
+
   it('replaces an AI route that exceeds walking when a compliant deterministic route exists', async () => {
     const routeCandidates = [
       candidate('meal', 'meal-id', 'FD6', 127),

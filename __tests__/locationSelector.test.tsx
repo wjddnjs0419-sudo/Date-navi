@@ -1,14 +1,34 @@
 import React from 'react';
 import { Text, TextInput, TouchableOpacity } from 'react-native';
+import { DS } from '../constants/theme';
 import type { RecommendationLocation } from '../shared/recommendation/contracts';
 
 jest.mock('../lib/i18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
+const mockGetSession = jest.fn().mockResolvedValue({
+  data: { session: { user: { id: '11111111-1111-4111-8111-111111111111' } } },
+});
+
+jest.mock('../lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
+  },
+}));
+
 jest.mock('../lib/recentLocations', () => ({
   loadRecentLocations: jest.fn().mockResolvedValue([]),
   saveRecentLocation: jest.fn().mockResolvedValue([]),
+  isSameRecommendationLocation: (left: any, right: any) => (
+    !!left && !!right && left.source === right.source
+      && (left.kakaoPlaceId && right.kakaoPlaceId
+        ? left.kakaoPlaceId === right.kakaoPlaceId
+        : left.latitude === right.latitude && left.longitude === right.longitude)
+  ),
 }));
 
 const { loadRecentLocations } = jest.requireMock('../lib/recentLocations') as {
@@ -39,6 +59,24 @@ const suggestion: RecommendationLocation = {
   latitude: 37.4979,
   longitude: 127.0276,
   kind: 'station',
+};
+
+const noIdLocation: RecommendationLocation = {
+  source: 'kakao',
+  label: '성수동1가',
+  address: '서울 성동구 성수동1가',
+  latitude: 37.5417253860375,
+  longitude: 127.043351028535,
+  kind: 'neighborhood',
+};
+
+const otherNoIdLocation: RecommendationLocation = {
+  source: 'kakao',
+  label: '연남동',
+  address: '서울 마포구 연남동',
+  latitude: 37.5655,
+  longitude: 126.9254,
+  kind: 'neighborhood',
 };
 
 describe('LocationSelector', () => {
@@ -96,7 +134,13 @@ describe('LocationSelector', () => {
     const input = renderer.root.findByType(TextInput);
     expect(input.props.accessibilityLabel).toBe('location.searchAccessibility');
     expect(input.props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ minHeight: 44 }),
+      expect.objectContaining({ height: 44, minHeight: 44, lineHeight: undefined, textAlignVertical: 'center' }),
+    ]));
+
+    act(() => input.props.onChangeText('chicken'));
+    const englishInput = renderer.root.findByType(TextInput);
+    expect(englishInput.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ transform: [{ translateY: -DS.spacing.xs }] }),
     ]));
   });
 
@@ -131,10 +175,25 @@ describe('LocationSelector', () => {
     );
     expect(row).toBeDefined();
     expect(row!.props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ minHeight: 52, backgroundColor: '#ffffff' }),
+      expect.objectContaining({ minHeight: 52, backgroundColor: '#FFFFFF' }),
     ]));
     await act(async () => { await row!.props.onPress(); });
     expect(onChange).toHaveBeenCalledWith(suggestion);
+  });
+
+  it('does not mark an ID-less recent location selected before the user chooses one', async () => {
+    loadRecentLocations.mockResolvedValue([noIdLocation, otherNoIdLocation]);
+    let renderer!: TestRendererInstance;
+    await act(async () => {
+      renderer = create(<LocationSelector value={null} onChange={jest.fn()} search={jest.fn()} />);
+      activeRenderers.push(renderer);
+      await Promise.resolve();
+    });
+
+    const rows = [noIdLocation, otherNoIdLocation].map((location) => (
+      renderer.root.findByProps({ testID: `location-recent-${location.latitude}:${location.longitude}` })
+    ));
+    expect(rows.map((row) => row.props.accessibilityState.selected)).toEqual([false, false]);
   });
 
   it('hides query A suggestions immediately when eligible query B starts debouncing', async () => {

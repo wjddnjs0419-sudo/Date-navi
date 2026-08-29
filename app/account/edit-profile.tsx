@@ -8,16 +8,18 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../lib/supabase';
-import { Camera, Check } from 'lucide-react-native';
+import { Camera, Check } from '../../components/iconography';
 import { C } from '../../constants/colors';
-import { G, SP, R, T } from '../../constants/theme';
-import { BackBar, BigButton, ListGroup, ListRow, SectionLabel } from '../../components/ui';
+import { DS, G, SP } from '../../constants/theme';
+import { BigButton, Header, ListGroup, ListRow, ScreenHeading, SectionLabel } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { removeStorageObjectByUrl } from '../../lib/storageCleanup';
+import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useOptionalSafeAreaInsets();
   const PLANNING_STYLES = [
     t('account.editProfile.planningOptions.often'),
     t('account.editProfile.planningOptions.together'),
@@ -189,13 +191,12 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={G.screen}>
+    <SafeAreaView style={G.screen} edges={['top']}>
+      <Header onBack={() => router.back()} />
+      <ScreenHeading title={t('account.editProfile.heading')} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <BackBar />
-        <Text style={[T.h1, s.headingSpacing]}>{t('account.editProfile.heading')}</Text>
-
         <View style={s.avatarWrap}>
-          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} disabled={uploadingPhoto}>
+          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.88} disabled={uploadingPhoto}>
             <View style={s.avatar}>
               {photoUrl ? (
                 <Image source={{ uri: photoUrl }} style={s.avatarImage} />
@@ -212,7 +213,7 @@ export default function EditProfileScreen() {
               </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={s.changePhotoWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
+          <TouchableOpacity style={s.changePhotoWrap} onPress={handlePickPhoto} disabled={uploadingPhoto} activeOpacity={0.88}>
             <Text style={s.changePhotoBtn}>{t('account.editProfile.changePhotoCta')}</Text>
           </TouchableOpacity>
         </View>
@@ -268,7 +269,7 @@ export default function EditProfileScreen() {
         <View style={s.bottomSpacer} />
       </ScrollView>
 
-      <View style={s.footer}>
+      <View style={[s.footer, { paddingBottom: SP.screen + insets.bottom }]}>
         <BigButton onPress={handleSave} variant={saving ? 'disabled' : 'primary'}>
           {saving ? <ActivityIndicator color={C.white} size="small" /> : t('account.editProfile.saveCta')}
         </BigButton>
@@ -278,50 +279,49 @@ export default function EditProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  content: { paddingHorizontal: SP.xl, paddingTop: SP.lg, paddingBottom: SP.xxxl + SP.sm },
-  headingSpacing: { marginTop: SP.lg },
+  content: { paddingHorizontal: SP.screen, paddingTop: SP.xxl, paddingBottom: SP.xxxl + SP.sm },
   avatarWrap: { alignItems: 'center', marginTop: SP.xxl },
   changePhotoWrap: { marginTop: SP.md },
-  nicknameSection: { marginTop: SP.xxl + SP.xs },
-  planningSection: { marginTop: SP.xl },
-  optionText: { fontSize: 14 },
-  bottomSpacer: { height: 120 },
+  nicknameSection: { marginTop: SP.xxl },
+  planningSection: { marginTop: SP.xxl },
+  optionText: { ...DS.typography.body },
+  bottomSpacer: { height: SP.hero + SP.section + SP.lg },
   avatar: {
-    width: 110, height: 110, borderRadius: 55,
+    width: 110, height: 110, borderRadius: DS.radius.full,
     backgroundColor: C.pinkMid,
     alignItems: 'center', justifyContent: 'center',
     position: 'relative',
   },
-  avatarText: { fontSize: 40, fontWeight: '800', color: C.white },
-  avatarImage: { width: 110, height: 110, borderRadius: 55 },
+  avatarText: { ...DS.typography.avatarInitial, color: C.white },
+  avatarImage: { width: 110, height: 110, borderRadius: DS.radius.full },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 55,
-    backgroundColor: 'rgba(40,30,25,0.4)',
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.color.avatarOverlay,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarCamera: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 36, height: 36, borderRadius: R.btn,
+    width: 36, height: 36, borderRadius: DS.radius.full,
     backgroundColor: C.white,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: C.border,
   },
-  changePhotoBtn: { fontSize: 13, color: C.pinkDeep, fontWeight: '600' },
-  nicknameInput: { fontSize: 14, color: C.text, fontWeight: '500', flex: 1 },
-  charCount: { fontSize: 11, color: C.textLight },
-  fieldHint: { fontSize: 11, color: C.textMuted, marginTop: SP.xs + 2, paddingHorizontal: SP.xs },
+  changePhotoBtn: { ...DS.typography.buttonCompact, color: C.pinkDeep, fontWeight: '600' },
+  nicknameInput: { ...DS.typography.body, color: C.text, flex: 1 },
+  charCount: { ...DS.typography.caption, color: C.textLight },
+  fieldHint: { ...DS.typography.caption, color: C.textMuted, marginTop: SP.sm, paddingHorizontal: SP.xs },
   checkCircle: {
-    width: 20, height: 20, borderRadius: 10,
+    width: 20, height: 20, borderRadius: DS.radius.full,
     backgroundColor: C.pink,
     alignItems: 'center', justifyContent: 'center',
   },
   footer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    paddingHorizontal: SP.xl,
-    paddingBottom: SP.xxxl,
-    paddingTop: SP.md,
+    paddingHorizontal: SP.screen,
+    paddingBottom: SP.screen,
+    paddingTop: SP.lg,
     backgroundColor: C.bg,
   },
 });

@@ -27,6 +27,7 @@ rg -n "^##|^###" PLAN.md RESULT.md
 - **검증**: 위험도에 맞춘 검증을 수행한다. 시각 변경은 타입검사와 시각 확인, 로컬 로직은 대상 단위 테스트, 연결 기능은 통합 테스트, 데이터·인증 변경은 회귀 테스트와 전체 검증, 릴리스 후보는 전체 테스트·빌드·기기 QA를 적용한다.
 - **No Hardcoding**: 환경변수와 타입 시스템 활용. 마법 문자열·ID 금지.
 - **i18n Sync**: 화면에 보이는 문구를 추가·수정할 땐 `locales/ko.json`과 `locales/en.json`을 같은 작업에서 함께 갱신한다. 한쪽 언어만 반영된 상태로 작업 완료 보고 금지.
+- **UI Design System**: UI 변경 전 [`docs/design-system/README.md`](docs/design-system/README.md)와 상세 결정 기록을 읽는다. 실제 스타일은 `constants/design-tokens.ts`의 `C / DS / SP / T / G` 및 공통 UI 컴포넌트로만 적용한다. raw 디자인 값과 직접 Lucide 아이콘을 새로 추가하지 않는다.
 - **Ratchet**: 스스로 해결한 빌드/린트 오류는 `AGENTS.md` Anti-Patterns에 1줄 추가.
 
 ---

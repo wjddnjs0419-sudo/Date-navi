@@ -1,7 +1,8 @@
-import { getStepIntentTagSuggestions } from '../shared/recommendation/step-intent-tag-catalog';
+import { getCoursePreferenceOptions } from '../shared/recommendation/step-intent-tag-catalog';
 import { supabase } from './supabase';
 
 export const PERSONAL_STEP_TAG_CATEGORIES = ['meal', 'cafe', 'drinks', 'activity', 'culture', 'walk'] as const;
+export const PERSONAL_STEP_TAG_LIMIT = 20;
 export type PersonalStepTagCategory = (typeof PERSONAL_STEP_TAG_CATEGORIES)[number];
 
 export type PersonalStepIntentTag = {
@@ -19,6 +20,41 @@ export type HiddenStepIntentDefault = {
 
 export function normalizeStepIntentTag(tag: string): string {
   return tag.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+export function countPersonalStepTags(
+  personal: readonly PersonalStepIntentTag[],
+  category: PersonalStepTagCategory,
+): number {
+  return new Set(
+    personal
+      .filter((entry) => entry.category === category)
+      .map((entry) => normalizeStepIntentTag(entry.normalizedTag || entry.tag))
+      .filter(Boolean),
+  ).size;
+}
+
+export function canAddPersonalStepTag(
+  personal: readonly PersonalStepIntentTag[],
+  category: PersonalStepTagCategory,
+  rawTag: string,
+): boolean {
+  const normalizedTag = normalizeStepIntentTag(rawTag);
+  if (!normalizedTag) return false;
+  const categoryTags = personal.filter((entry) => entry.category === category);
+  const alreadySaved = categoryTags.some((entry) => (
+    normalizeStepIntentTag(entry.normalizedTag || entry.tag) === normalizedTag
+  ));
+  return alreadySaved || countPersonalStepTags(personal, category) < PERSONAL_STEP_TAG_LIMIT;
+}
+
+export class PersonalStepTagLimitError extends Error {
+  readonly code = 'personal_step_tag_limit_reached';
+
+  constructor() {
+    super(`A category can contain at most ${PERSONAL_STEP_TAG_LIMIT} personal keywords.`);
+    this.name = 'PersonalStepTagLimitError';
+  }
 }
 
 function uniqueTags(tags: readonly string[]): string[] {
@@ -47,7 +83,8 @@ export function mergePersonalStepTagCatalog(
 }
 
 export function defaultSuggestionsForPersonalCatalog(category: PersonalStepTagCategory): readonly string[] {
-  return getStepIntentTagSuggestions(category).map((suggestion) => suggestion.value);
+  return getCoursePreferenceOptions(category)
+    .flatMap((option) => option.value ? [option.value] : []);
 }
 
 type TagRow = { id: string; category: PersonalStepTagCategory; tag: string; normalized_tag: string };
@@ -80,6 +117,13 @@ export async function addPersonalStepTag(userId: string, category: PersonalStepT
   const tag = rawTag.trim().replace(/\s+/g, ' ');
   const normalizedTag = normalizeStepIntentTag(tag);
   if (!tag || tag.length > 40) throw new Error('Invalid tag.');
+  const { data: existingRows, error: existingError } = await supabase.from('personal_step_intent_tags')
+    .select('id, category, tag, normalized_tag').eq('user_id', userId).eq('category', category);
+  if (existingError) throw existingError;
+  const existingPersonal = ((existingRows ?? []) as TagRow[]).map(toPersonal);
+  if (!canAddPersonalStepTag(existingPersonal, category, normalizedTag)) {
+    throw new PersonalStepTagLimitError();
+  }
   const { error: clearError } = await supabase.from('personal_hidden_step_intent_defaults')
     .delete().eq('user_id', userId).eq('category', category).eq('normalized_tag', normalizedTag);
   if (clearError) throw clearError;

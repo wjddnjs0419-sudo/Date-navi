@@ -4,6 +4,7 @@ import { Chip } from '../components/ui';
 import { saveRecentPlaceSearch } from '../lib/recentPlaceSearches';
 
 const mockInvoke = jest.fn();
+const mockGetSession = jest.fn();
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ x: '127.05', y: '37.54' }),
@@ -41,6 +42,10 @@ jest.mock('lucide-react-native', () => {
 
 jest.mock('../lib/supabase', () => ({
   supabase: {
+    auth: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
     functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
   },
 }));
@@ -55,6 +60,7 @@ const PlaceSearchScreen = require('../app/mode-flow/place-search').default;
 beforeEach(async () => {
   jest.useFakeTimers();
   mockInvoke.mockReset();
+  mockGetSession.mockResolvedValue({ data: { session: { user: { id: '11111111-1111-4111-8111-111111111111' } } } });
   mockInvoke.mockResolvedValue({ data: { places: [] }, error: null });
   const AsyncStorage = require('@react-native-async-storage/async-storage');
   await AsyncStorage.clear();
@@ -75,7 +81,7 @@ function allText(tree: { root: { findAllByType: (t: unknown) => { props: any }[]
 
 describe('장소 검색 화면 — 검색 전 상태(최근검색/추천지역)', () => {
   it('categoryCode가 없고 검색어도 없으면 최근 검색·추천 지역 칩을 보여준다', async () => {
-    await saveRecentPlaceSearch('강남 데이트');
+    await saveRecentPlaceSearch('11111111-1111-4111-8111-111111111111', '강남 데이트');
 
     let tree: ReturnType<typeof TR.create>;
     await TR.act(async () => { tree = TR.create(<PlaceSearchScreen />); });

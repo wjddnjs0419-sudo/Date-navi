@@ -9,14 +9,15 @@ function read(rel: string): string {
 describe('홈 화면 디자인 QA (UI RENEW 코스카드 레이아웃)', () => {
   const source = read('app/(tabs)/index.tsx');
 
-  it('코스 카드가 layered-shadow로 분리한다 (보더만으로 분리하지 않는다)', () => {
-    expect(source).toMatch(/courseCard:\s*{[\s\S]{0,500}shadowOpacity/);
+  it('코스 카드가 flat semantic surface로 분리한다', () => {
+    expect(source).toMatch(/courseCard:\s*{[\s\S]{0,500}borderRadius:\s*DS\.radius\.card/);
+    expect(source).not.toMatch(/courseCard:\s*{[\s\S]{0,500}DS\.elevation\.card/);
   });
 
-  it('주요 카드/배너가 카드 radius(R.card)를 쓴다', () => {
-    expect(source).toMatch(/courseCard:\s*{[^}]*borderRadius:\s*R\.card/s);
-    expect(source).toMatch(/upcomingCard:\s*{[^}]*borderRadius:\s*R\.card/s);
-    expect(source).toMatch(/prefBanner:\s*{[^}]*borderRadius:\s*R\.card/s);
+  it('주요 카드/배너가 semantic card radius를 쓴다', () => {
+    expect(source).toMatch(/courseCard:\s*{[^}]*borderRadius:\s*DS\.radius\.card/s);
+    expect(source).toMatch(/upcomingCard:\s*{[^}]*borderRadius:\s*DS\.radius\.card/s);
+    expect(source).toMatch(/prefBanner:\s*{[^}]*borderRadius:\s*DS\.radius\.card/s);
   });
 
   it('워드마크 헤더 + 히어로 일러스트를 재사용한다', () => {
@@ -34,7 +35,7 @@ describe('홈 화면 디자인 QA (UI RENEW 코스카드 레이아웃)', () => {
 
   it('알림/설정 아이콘 버튼에 accessibilityLabel이 있다', () => {
     expect(source).toMatch(/bellBtn[\s\S]{0,400}accessibilityLabel=\{t\('home\.accessibility\.notifications'\)\}/);
-    expect(source).toMatch(/onPress=\{\(\) => router\.push\('\/settings'[\s\S]{0,200}accessibilityLabel=\{t\('home\.accessibility\.settings'\)\}/);
+    expect(source).toMatch(/onPress=\{\(\) => router\.navigate\('\/\(tabs\)\/account'[\s\S]{0,200}accessibilityLabel=\{t\('home\.accessibility\.settings'\)\}/);
   });
 
   it('스타일 정의에 하드코딩 hex 색상이 없다 (토큰만 사용)', () => {

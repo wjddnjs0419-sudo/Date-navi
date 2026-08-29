@@ -307,10 +307,9 @@ export async function handleRecommendDate(
     return courseValidationFailure(dependencies, stage);
   };
 
-  // Provider-neutral rollout is deliberately limited to fresh courses until
-  // the editable-session RPC has completed its additive identity migration.
-  // Existing Kakao pins, replacements, and persisted locks retain the proven
-  // Kakao-only path below rather than being silently reinterpreted.
+  // Provider-neutral discovery also serves editable sessions. Preserved steps
+  // are injected into their own pools by the discovery adapter, so a session
+  // regeneration cannot drift them or require a Kakao compatibility ID.
   const hasStructuredStepTags = serverRequest.courseSteps.some((step) => (step.intentTags?.length ?? 0) > 0);
   const canUseProviderNeutralPath = Boolean(dependencies.searchProviderNeutralCandidates)
     // Structured tags are now represented in Naver query evidence and checked
@@ -319,9 +318,6 @@ export async function handleRecommendDate(
     // explicitly changed.
     && (hasStructuredStepTags || (resolved.stepIntents.length === 0 && resolved.excludedIntents.length === 0))
     && serverRequest.location.source !== 'current'
-    && !serverRequest.sessionId
-    && !serverRequest.replacement
-    && !(serverRequest.lockedSteps?.length)
     && !serverRequest.courseSteps.some((step) => step.pinnedKakaoPlaceId);
   if (canUseProviderNeutralPath) {
     let providerDiscovery: ProviderNeutralDiscoveryResult;
@@ -353,8 +349,9 @@ export async function handleRecommendDate(
       const step = serverRequest.courseSteps.find((candidate) => candidate.id === intent.stepId);
       const pool = providerPools.find((candidatePool) => candidatePool.stepId === intent.stepId);
       const candidatesForStep = pool?.selectableCandidates ?? selectableCandidates;
+      if (serverRequest.replacement?.stepId === intent.stepId) return false;
       return !step || !candidatesForStep.some((candidate) => (
-        providerNeutralPlaceMatchesStep(candidate.place, step, intent)
+        providerNeutralPlaceMatchesStep(candidate.place, step, intent, { allowProviderSearchEvidence: true })
       ));
     });
     if (unsatisfiedIntents.length > 0) {
@@ -386,7 +383,11 @@ export async function handleRecommendDate(
         const candidate = candidatesForStep.find((entry) => (
           !used.has(entry.candidateId)
           && !selectedPlaces.some((selected) => isSamePhysicalPlace(selected.place, entry.place))
-          && providerNeutralPlaceMatchesStep(entry.place, step, intent)
+          && (!serverRequest.replacement || serverRequest.replacement.stepId !== step.id
+            || (entry.place.identity.provider === 'kakao'
+              && entry.place.identity.providerPlaceId === serverRequest.replacement.kakaoPlaceId))
+          && (serverRequest.replacement?.stepId === step.id
+            || providerNeutralPlaceMatchesStep(entry.place, step, intent, { allowProviderSearchEvidence: true }))
         ));
         if (!candidate) return undefined;
         used.add(candidate.candidateId);

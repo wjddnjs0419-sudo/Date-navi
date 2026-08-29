@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Coffee, MapPin, Trees, Utensils, type LucideIcon } from 'lucide-react-native';
-import { C, R, SP } from '../constants/theme';
+import { Coffee, MapPin, Trees, Utensils, type LucideIcon } from './iconography';
+import { C, DS, SP } from '../constants/theme';
 
 export type CoursePinCategory = 'meal' | 'cafe' | 'walk' | 'generic';
 
@@ -107,11 +107,7 @@ const s = StyleSheet.create({
   pin: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-    elevation: 3,
+    ...DS.elevation.coursePin,
   },
   stepPin: {
     // 뱃지를 원 상단에 겹치기 위한 relative 컨테이너. 뱃지는 absolute라 레이아웃 높이에 영향 없음.
@@ -130,19 +126,15 @@ const s = StyleSheet.create({
     borderColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
+    ...DS.elevation.courseBadge,
   },
   badgeText: {
-    fontSize: 12,
+    ...DS.typography.bodySmall,
     fontWeight: '700',
   },
   label: {
     marginTop: SP.sm,
-    fontSize: 13,
+    ...DS.typography.bodyCompact,
     fontWeight: '600',
     color: C.text,
   },
@@ -153,7 +145,7 @@ const s = StyleSheet.create({
     borderTopWidth: 2,
     borderStyle: 'dashed',
     borderColor: C.pink,
-    borderRadius: R.badge,
+    borderRadius: DS.radius.badge,
   },
   destCol: {
     alignItems: 'center',

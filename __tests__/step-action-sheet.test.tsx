@@ -45,6 +45,7 @@ describe('StepActionSheet', () => {
     const { instance } = renderSheet({ placeName: '한강 카페' });
     const title = instance.root.findByProps({ testID: 'step-action-sheet-title' });
     expect(title.props.children).toBe('한강 카페');
+    expect(instance.root.findAllByProps({ testID: 'modal-sheet-handle' }).length).toBeGreaterThan(0);
   });
 
   it('closes when the backdrop is tapped', () => {
