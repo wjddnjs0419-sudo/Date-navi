@@ -503,6 +503,45 @@ describe('course result screen', () => {
     expect(instance.root.findAllByProps({ children: '리뷰·지도 보기' }).length).toBeGreaterThan(0);
   });
 
+  it('opens a provider-neutral replacement through its verified Kakao detail link', async () => {
+    const snapshot = buildSnapshot();
+    snapshot.steps[0] = {
+      ...snapshot.steps[0],
+      currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        attestationId: '00000000-0000-4000-8000-000000000001',
+        candidates: [{
+          candidateId: 'naver_replacement_001',
+          providerPlaceId: 'naver-meal-2',
+          name: '네이버 후보',
+          address: '서울 성동구',
+          roadAddress: '서울 성동구 연무장길',
+          mapUrl: 'https://map.naver.com/p/search/%EB%84%A4%EC%9D%B4%EB%B2%84%20%ED%9B%84%EB%B3%B4',
+          kakaoPlaceId: 'kakao-matched-2',
+          kakaoMapUrl: 'https://place.map.kakao.com/kakao-matched-2',
+          latitude: 37.55,
+          longitude: 127.05,
+        }],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    await act(async () => { instance.root.findByProps({ testID: 'course-replacement-map-naver-meal-2' }).props.onPress(); });
+
+    expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
+      'https://place.map.kakao.com/kakao-matched-2',
+      expect.any(Object),
+    );
+  });
+
   it('opens a Kakao replacement candidate with its existing map URL', async () => {
     (globalThis as any).__mockSnapshot = buildSnapshot();
     mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
@@ -549,7 +588,7 @@ describe('course result screen', () => {
     await act(async () => { instance.root.findByProps({ testID: 'course-replacement-map-naver-meal-2' }).props.onPress(); });
 
     expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
-      'https://map.naver.com/p/search/%EC%84%B1%EC%88%98%20%EC%8B%9D%EB%8B%B9%20%EC%84%9C%EC%9A%B8%20%EC%84%B1%EB%8F%99%EA%B5%AC%20%EC%97%B0%EB%AC%B4%EC%9E%A5%EA%B8%B8',
+      'https://map.naver.com/p/search/%EC%84%B1%EC%88%98%20%EC%8B%9D%EB%8B%B9',
       expect.any(Object),
     );
   });

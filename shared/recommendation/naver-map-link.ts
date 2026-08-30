@@ -17,10 +17,7 @@ export function isNaverMapUrl(rawUrl: string | null | undefined): boolean {
 }
 
 export function buildNaverMapSearchUrl(name?: string, address?: string): string | undefined {
-  const query = [name, address]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value))
-    .join(' ');
+  const query = name?.trim() || address?.trim();
   if (!query) return undefined;
   return `https://map.naver.com/p/search/${encodeURIComponent(query)}`;
 }

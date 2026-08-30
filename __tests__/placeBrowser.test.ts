@@ -40,6 +40,6 @@ describe('placeBrowser', () => {
       address: '서울 성동구 성수이로 1',
     });
 
-    expect(url).toBe(`https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수 서울 성동구 성수이로 1')}`);
+    expect(url).toBe(`https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수')}`);
   });
 });

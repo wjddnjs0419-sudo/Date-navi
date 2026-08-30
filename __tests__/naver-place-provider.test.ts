@@ -26,7 +26,7 @@ describe('fetchNaverLocalPlaces', () => {
       name: '카페 레이어드 성수',
       coordinates: { latitude: 37.544, longitude: 127.055 },
       category: { normalized: 'cafe' },
-      mapUrl: `https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수 서울 성동구 성수이로 1')}`,
+      mapUrl: `https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수')}`,
     });
   });
 
@@ -43,7 +43,7 @@ describe('fetchNaverLocalPlaces', () => {
     expect(first).toMatchObject({
       identity: { provider: 'naver', providerPlaceId: expect.stringMatching(/^local:[a-f0-9]{64}$/) },
     });
-    expect(first.mapUrl).toBe(`https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수 서울 성동구 성수이로 1')}`);
+    expect(first.mapUrl).toBe(`https://map.naver.com/p/search/${encodeURIComponent('카페 레이어드 성수')}`);
     expect(second.identity).toEqual(first.identity);
   });
 

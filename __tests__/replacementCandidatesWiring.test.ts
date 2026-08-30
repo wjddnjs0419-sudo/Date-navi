@@ -4,6 +4,8 @@ import { join } from 'node:path';
 describe('Phase 10 replacement/detail wiring', () => {
   const root = join(__dirname, '..');
   const edge = readFileSync(join(root, 'supabase/functions/replacement-candidates/index.ts'), 'utf8');
+  const providerNeutralEdge = readFileSync(join(root, 'supabase/functions/provider-neutral-replacements/index.ts'), 'utf8');
+  const providerNeutralLink = readFileSync(join(root, 'supabase/functions/_shared/provider-neutral-replacement-link.ts'), 'utf8');
   const handler = readFileSync(join(root, 'supabase/functions/_shared/replacement-candidates-handler.ts'), 'utf8');
   const screen = readFileSync(join(root, 'app/mode-flow/course-result.tsx'), 'utf8');
 
@@ -63,6 +65,15 @@ describe('Phase 10 replacement/detail wiring', () => {
   it('reads the shared operational experiment mode before allowing a stored Treatment arm to load history', () => {
     expect(edge).toContain("Deno.env.get('RECOMMENDATION_HISTORY_EXPERIMENT')");
     expect(edge).toContain('experimentMode: historyExperimentMode');
+  });
+
+  it('enriches Naver replacement candidates through the existing detailed Kakao link resolver', () => {
+    expect(providerNeutralLink).toContain('resolveKakaoPlaceLinkDetailed');
+    expect(providerNeutralEdge).toContain('resolveProviderNeutralReplacementKakaoLink');
+    expect(providerNeutralEdge).toContain('searchKakaoPlacesForLinkDetailed');
+    expect(providerNeutralEdge).toContain('kakaoMapUrl');
+    expect(providerNeutralEdge).toContain('current_kakao_link_place_id');
+    expect(providerNeutralEdge).toContain('providerPlaceId: candidate.providerPlaceId');
   });
 
 });

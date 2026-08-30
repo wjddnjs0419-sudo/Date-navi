@@ -49,6 +49,8 @@ type ProviderReplacementCandidate = {
   address: string;
   roadAddress: string;
   mapUrl?: string;
+  kakaoPlaceId?: string;
+  kakaoMapUrl?: string;
   latitude: number;
   longitude: number;
 };
@@ -57,8 +59,8 @@ function replacementCandidatePlaceRef(
   candidate: ReplacementCandidate | ProviderReplacementCandidate,
 ): Parameters<typeof openPlaceInBrowser>[0] {
   return {
-    kakaoPlaceId: 'kakaoPlaceId' in candidate ? candidate.kakaoPlaceId : undefined,
-    mapUrl: candidate.mapUrl,
+    kakaoPlaceId: candidate.kakaoPlaceId,
+    mapUrl: ('kakaoMapUrl' in candidate ? candidate.kakaoMapUrl : undefined) ?? candidate.mapUrl,
     name: candidate.name,
     address: candidate.roadAddress || candidate.address,
   };

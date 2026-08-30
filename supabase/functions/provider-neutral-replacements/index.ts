@@ -15,6 +15,8 @@ import { recommendationRequestSchema } from '../../../shared/recommendation/sche
 import { createProviderNeutralReplacementCandidateId } from '../../../shared/recommendation/provider-neutral-candidate-id.ts';
 import { resolveStepIntents } from '../_shared/step-intent-resolve.ts';
 import { providerNeutralPlaceMatchesStep } from '../_shared/provider-neutral-intent.ts';
+import { searchKakaoPlacesForLinkDetailed } from '../_shared/kakao-place-link.ts';
+import { resolveProviderNeutralReplacementKakaoLink } from '../_shared/provider-neutral-replacement-link.ts';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 const cache = createNaverSearchCache();
@@ -22,7 +24,19 @@ const listSchema = z.object({ action: z.literal('list'), sessionId: z.string().t
 const applySchema = z.object({ action: z.literal('apply'), sessionId: z.string().trim().min(1), targetStepId: z.string().trim().min(1), attestationId: z.string().uuid(), providerPlaceId: z.string().trim().min(1) }).strict();
 const bodySchema = z.union([listSchema, applySchema]);
 
-type StoredCandidate = { candidateId: string; provider: 'kakao' | 'naver'; providerPlaceId: string; name: string; address: string; roadAddress: string; mapUrl: string; latitude: number; longitude: number };
+type StoredCandidate = {
+  candidateId: string;
+  provider: 'kakao' | 'naver';
+  providerPlaceId: string;
+  name: string;
+  address: string;
+  roadAddress: string;
+  mapUrl: string;
+  kakaoPlaceId?: string;
+  kakaoMapUrl?: string;
+  latitude: number;
+  longitude: number;
+};
 
 function jsonObject(value: unknown): Record<string, unknown> { return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 
@@ -97,17 +111,39 @@ Deno.serve(async (request) => {
       ...(loadedHistory.status === 'loaded' ? { history: loadedHistory.context } : {}),
     });
     const requiredIntent = resolved.stepIntents.find((intent) => intent.stepId === target.step_id && intent.strength === 'required');
-    const candidates: StoredCandidate[] = discovery.candidates.filter((candidate) => (
+    const selectedCandidates = discovery.candidates.filter((candidate) => (
       providerNeutralPlaceMatchesStep(candidate.place, target, requiredIntent, { allowProviderSearchEvidence: true })
-    )).slice(0, 15).map((candidate) => ({
-      candidateId: createProviderNeutralReplacementCandidateId(target.step_id),
-      provider: candidate.place.identity.provider,
-      providerPlaceId: candidate.place.identity.providerPlaceId,
-      name: candidate.place.name,
-      address: candidate.place.address?.display ?? '', roadAddress: candidate.place.address?.road ?? '',
-      mapUrl: candidate.place.mapUrl ?? '',
-      latitude: candidate.place.coordinates?.latitude ?? replacementRequest.location.latitude,
-      longitude: candidate.place.coordinates?.longitude ?? replacementRequest.location.longitude,
+    )).slice(0, 15);
+    const kakaoRestApiKey = Deno.env.get('KAKAO_REST_API_KEY') ?? '';
+    const kakaoLinkSearchCache = new Map<string, Promise<Awaited<ReturnType<typeof searchKakaoPlacesForLinkDetailed>>>>();
+    const searchKakao = (query: string) => {
+      const existing = kakaoLinkSearchCache.get(query);
+      if (existing) return existing;
+      const pending = searchKakaoPlacesForLinkDetailed({ query, kakaoRestApiKey, fetcher: fetch });
+      kakaoLinkSearchCache.set(query, pending);
+      return pending;
+    };
+    const candidates: StoredCandidate[] = await Promise.all(selectedCandidates.map(async (candidate) => {
+      const base: StoredCandidate = {
+        candidateId: createProviderNeutralReplacementCandidateId(target.step_id),
+        provider: candidate.place.identity.provider,
+        providerPlaceId: candidate.place.identity.providerPlaceId,
+        name: candidate.place.name,
+        address: candidate.place.address?.display ?? '',
+        roadAddress: candidate.place.address?.road ?? '',
+        mapUrl: candidate.place.mapUrl ?? '',
+        latitude: candidate.place.coordinates?.latitude ?? replacementRequest.location.latitude,
+        longitude: candidate.place.coordinates?.longitude ?? replacementRequest.location.longitude,
+      };
+      if (candidate.place.identity.provider !== 'naver') return base;
+      try {
+        const link = await resolveProviderNeutralReplacementKakaoLink(candidate.place, searchKakao);
+        return link ? { ...base, kakaoPlaceId: link.kakaoPlaceId, kakaoMapUrl: link.mapUrl } : base;
+      } catch {
+        // Kakao enrichment is optional convenience metadata. Keep the Naver
+        // candidate available when the secondary lookup is unavailable.
+        return base;
+      }
     }));
     if (requiredIntent && candidates.length === 0) {
       return new Response(JSON.stringify({ error: 'STEP_INTENT_UNSATISFIED', unsatisfiedIntents: [{ canonicalTerm: requiredIntent.canonicalTerm, displayLabel: requiredIntent.displayLabel }] }), { status: 422, headers: corsHeaders });
@@ -128,11 +164,14 @@ Deno.serve(async (request) => {
   const oldStep = courseSteps.find((step) => jsonObject(step).stepId === parsed.data.targetStepId);
   if (!oldStep) return new Response(JSON.stringify({ error: 'NOT_FOUND' }), { status: 404, headers: corsHeaders });
   const identity = { provider: candidate.provider ?? 'naver', providerPlaceId: candidate.providerPlaceId } as const;
+  const responseKakaoPlaceId = identity.provider === 'kakao' ? identity.providerPlaceId : candidate.kakaoPlaceId;
+  const selectedMapUrl = candidate.kakaoMapUrl ?? candidate.mapUrl;
+  const selectedKakaoLinkPlaceId = identity.provider === 'naver' ? candidate.kakaoPlaceId ?? null : null;
   const { kakaoPlaceId: _oldKakaoPlaceId, ...oldStepWithoutKakaoIdentity } = jsonObject(oldStep);
-  const nextStep = { ...oldStepWithoutKakaoIdentity, candidateId: candidate.candidateId, ...(identity.provider === 'kakao' ? { kakaoPlaceId: identity.providerPlaceId } : {}), placeIdentity: identity, name: candidate.name, address: candidate.address, roadAddress: candidate.roadAddress, mapUrl: candidate.mapUrl, latitude: candidate.latitude, longitude: candidate.longitude, reason: '품질 기준을 통과한 다른 후보예요.' };
+  const nextStep = { ...oldStepWithoutKakaoIdentity, candidateId: candidate.candidateId, ...(responseKakaoPlaceId ? { kakaoPlaceId: responseKakaoPlaceId } : {}), placeIdentity: identity, name: candidate.name, address: candidate.address, roadAddress: candidate.roadAddress, mapUrl: selectedMapUrl, latitude: candidate.latitude, longitude: candidate.longitude, reason: '품질 기준을 통과한 다른 후보예요.' };
   const nextCourse = { ...course, steps: courseSteps.map((step) => jsonObject(step).stepId === parsed.data.targetStepId ? nextStep : step) };
-  const cards = Array.isArray(session.cards) ? session.cards.map((card: unknown) => { const item = jsonObject(card); const cardSteps = Array.isArray(item.steps) ? item.steps : []; return { ...item, steps: cardSteps.map((step) => { const value = jsonObject(step); if (value.candidateId !== jsonObject(oldStep).candidateId) return step; const { kakaoPlaceId: _oldCardKakaoPlaceId, ...stepWithoutKakaoIdentity } = value; return { ...stepWithoutKakaoIdentity, candidateId: candidate.candidateId, ...(identity.provider === 'kakao' ? { kakaoPlaceId: identity.providerPlaceId } : {}), placeIdentity: nextStep.placeIdentity, place_name: candidate.name, place_address: candidate.roadAddress || candidate.address, map_url: candidate.mapUrl }; }) }; }) : session.cards;
-  const { error: stepError } = await service.from('recommendation_course_steps').update({ current_candidate_id: candidate.candidateId, current_kakao_place_id: identity.provider === 'kakao' ? identity.providerPlaceId : null, current_kakao_link_place_id: null, current_place_provider: identity.provider, current_provider_place_id: candidate.providerPlaceId, place_name: candidate.name, address: candidate.address, road_address: candidate.roadAddress, map_url: candidate.mapUrl, latitude: candidate.latitude, longitude: candidate.longitude, reason: nextStep.reason }).eq('session_id', session.id).eq('step_id', parsed.data.targetStepId);
+  const cards = Array.isArray(session.cards) ? session.cards.map((card: unknown) => { const item = jsonObject(card); const cardSteps = Array.isArray(item.steps) ? item.steps : []; return { ...item, steps: cardSteps.map((step) => { const value = jsonObject(step); if (value.candidateId !== jsonObject(oldStep).candidateId) return step; const { kakaoPlaceId: _oldCardKakaoPlaceId, ...stepWithoutKakaoIdentity } = value; return { ...stepWithoutKakaoIdentity, candidateId: candidate.candidateId, ...(responseKakaoPlaceId ? { kakaoPlaceId: responseKakaoPlaceId } : {}), placeIdentity: nextStep.placeIdentity, place_name: candidate.name, place_address: candidate.roadAddress || candidate.address, map_url: selectedMapUrl }; }) }; }) : session.cards;
+  const { error: stepError } = await service.from('recommendation_course_steps').update({ current_candidate_id: candidate.candidateId, current_kakao_place_id: identity.provider === 'kakao' ? identity.providerPlaceId : null, current_kakao_link_place_id: selectedKakaoLinkPlaceId, current_place_provider: identity.provider, current_provider_place_id: candidate.providerPlaceId, place_name: candidate.name, address: candidate.address, road_address: candidate.roadAddress, map_url: selectedMapUrl, latitude: candidate.latitude, longitude: candidate.longitude, reason: nextStep.reason }).eq('session_id', session.id).eq('step_id', parsed.data.targetStepId);
   const { error: sessionError } = await service.from('recommendation_sessions').update({ current_course: nextCourse, cards }).eq('id', session.id).eq('owner_user_id', user.id);
   if (stepError || sessionError) return new Response(JSON.stringify({ error: 'OPERATION_FAILED' }), { status: 503, headers: corsHeaders });
   const { error: routeError } = await service.rpc('recompute_recommendation_session_route', { p_session_id: session.id });
