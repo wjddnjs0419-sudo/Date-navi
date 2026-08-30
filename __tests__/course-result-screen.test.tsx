@@ -7,6 +7,7 @@ const mockMutateRecommendationSession = jest.fn();
 const mockLoadRecommendationSession = jest.fn();
 const mockReloadRecommendationSession = jest.fn();
 const mockSupabaseFunctionsInvoke = jest.fn();
+const mockLogEvent = jest.fn();
 let mockCapturedFocusEffect: (() => void) | null = null;
 let mockLanguage: 'ko' | 'en' = 'ko';
 const mockTranslations = {
@@ -21,6 +22,10 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(async () => ({})) }));
+
+jest.mock('../lib/analytics', () => ({
+  logEvent: mockLogEvent,
+}));
 
 jest.mock('../lib/i18n', () => ({
   useI18n: () => ({
@@ -182,6 +187,7 @@ describe('course result screen', () => {
     mockReloadRecommendationSession.mockClear();
     mockSupabaseFunctionsInvoke.mockClear();
     mockRequestRecommendationResponse.mockClear();
+    mockLogEvent.mockClear();
     mockCapturedFocusEffect = null;
     mockLanguage = 'ko';
   });
@@ -249,6 +255,7 @@ describe('course result screen', () => {
 
     await act(async () => { sheet.props.onLockToggle(); });
     expect(mockMutateRecommendationSession).toHaveBeenCalledWith('session-1', 'lock', { stepId: 'step-cafe' });
+    expect(mockLogEvent).toHaveBeenCalledWith('course_edit_action', { action: 'lock' });
   });
 
   it('disables delete in the action sheet once only two steps remain', () => {
@@ -433,6 +440,17 @@ describe('course result screen', () => {
     act(() => { instance = create(<CourseResultScreen />); });
 
     expect(instance.root.findByProps({ testID: 'course-step-map-step-meal' })).toBeDefined();
+  });
+
+  it('logs open_map when a recommendation map action is executed', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    await act(async () => {
+      instance.root.findByProps({ testID: 'course-step-map-step-meal' }).props.onPress();
+    });
+
+    expect(mockLogEvent).toHaveBeenCalledWith('course_edit_action', { action: 'open_map' });
   });
 
   it('hides the replacement sheet (without clearing the target step) instead of leaving a stale overlay when the user taps "Search a place"', async () => {

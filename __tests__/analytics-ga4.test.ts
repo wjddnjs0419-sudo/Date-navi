@@ -26,6 +26,10 @@ const supportedEventNames: readonly AnalyticsEventName[] = [
   'course_regenerate_requested',
   'course_saved',
   'proposal_sent',
+  'course_builder_step_viewed',
+  'onboarding_preferences_step_viewed',
+  'course_edit_action',
+  'native_share_opened',
 ];
 
 // @ts-expect-error Legacy analytics aliases must not re-enter the transport union.
@@ -55,7 +59,7 @@ describe('GA4 event forwarding', () => {
   afterEach(() => mockConsoleWarn.mockRestore());
 
   it('keeps the public event union limited to retained and approved events', () => {
-    expect(supportedEventNames).toHaveLength(10);
+    expect(supportedEventNames).toHaveLength(14);
     expect(removedLegacyEventName).toBe('ai_card_created');
   });
 

@@ -2,6 +2,7 @@ import React from 'react';
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
+const mockLogEvent = jest.fn();
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ cardId: 'card-1' }),
@@ -13,6 +14,10 @@ jest.mock('../lib/i18n', () => ({
     t: (key: string, vals?: Record<string, unknown>) => (vals?.returnObjects ? [] : key),
     language: 'ko',
   }),
+}));
+
+jest.mock('../lib/analytics', () => ({
+  logEvent: mockLogEvent,
 }));
 
 const cardRow = {
@@ -96,6 +101,8 @@ describe('share/send screen — course summary card', () => {
     expect(shareSpy).toHaveBeenCalledWith(expect.objectContaining({
       message: expect.stringContaining('성수 감성 데이트 코스'),
     }));
+    expect(mockLogEvent).toHaveBeenCalledWith('native_share_opened');
+    mockLogEvent.mockClear();
     shareSpy.mockRestore();
   });
 });

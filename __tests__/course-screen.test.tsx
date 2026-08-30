@@ -8,6 +8,7 @@ import type { RecommendationLocation } from '../shared/recommendation/contracts'
 const mockRouterReplace = jest.fn();
 const mockRouterBack = jest.fn();
 const mockPrepareRecommendationRequest = jest.fn();
+const mockLogEvent = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockRouterBack, replace: mockRouterReplace, push: jest.fn() }),
@@ -18,7 +19,7 @@ jest.mock('../lib/i18n', () => ({
 }));
 
 jest.mock('../lib/analytics', () => ({
-  logEvent: jest.fn(),
+  logEvent: mockLogEvent,
 }));
 
 jest.mock('../components/recommendation/recommendation-session-provider', () => ({
@@ -65,6 +66,7 @@ describe('five-step course screen', () => {
     mockRouterReplace.mockClear();
     mockRouterBack.mockClear();
     mockPrepareRecommendationRequest.mockClear();
+    mockLogEvent.mockClear();
   });
 
   afterEach(() => {
@@ -129,6 +131,26 @@ describe('five-step course screen', () => {
     act(() => { renderer.root.findByProps({ testID: 'course-flow-next' }).props.onPress(); });
     expect(renderer.root.findByProps({ testID: 'course-flow-step-5' })).toBeDefined();
     expect(renderer.root.findAllByType(Text).map((node) => node.props.children)).toContain('course.review.title');
+
+    expect(mockLogEvent.mock.calls.filter(([name]) => name === 'course_builder_step_viewed')).toEqual([
+      ['course_builder_step_viewed', { step: 'course' }],
+      ['course_builder_step_viewed', { step: 'location' }],
+      ['course_builder_step_viewed', { step: 'time' }],
+      ['course_builder_step_viewed', { step: 'mood' }],
+      ['course_builder_step_viewed', { step: 'review' }],
+    ]);
+
+    const { Header } = require('../components/ui') as typeof import('../components/ui');
+    const header = renderer.root.findAllByType(Header)[0];
+    act(() => { header.props.onBack(); });
+    expect(mockLogEvent.mock.calls.filter(([name]) => name === 'course_builder_step_viewed')).toEqual([
+      ['course_builder_step_viewed', { step: 'course' }],
+      ['course_builder_step_viewed', { step: 'location' }],
+      ['course_builder_step_viewed', { step: 'time' }],
+      ['course_builder_step_viewed', { step: 'mood' }],
+      ['course_builder_step_viewed', { step: 'review' }],
+      ['course_builder_step_viewed', { step: 'mood' }],
+    ]);
   });
 
   it('uses the reaction-like selected treatment for the unsure mood option', () => {

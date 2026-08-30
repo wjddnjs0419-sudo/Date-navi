@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,9 +28,18 @@ import { buildStructuredGeneratingParams } from '../../lib/recommendation-route'
 import { useRecommendationSessionStore } from '../../components/recommendation/recommendation-session-provider';
 import { logEvent } from '../../lib/analytics';
 import { buildRecommendationRequestStartedParams } from '../../lib/analytics-course';
+import { buildCourseBuilderStepViewedParams, type CourseBuilderStep } from '../../lib/analytics-course-actions';
 
 type FlowStep = 1 | 2 | 3 | 4 | 5;
 type Translate = (key: string, values?: Record<string, unknown>) => string;
+
+const COURSE_BUILDER_STEP_BY_FLOW_STEP: Record<FlowStep, CourseBuilderStep> = {
+  1: 'course',
+  2: 'location',
+  3: 'time',
+  4: 'mood',
+  5: 'review',
+};
 
 const MOOD_ICONS = { emotional: Heart, quiet: Moon, lively: Sparkles, romantic: Heart, comfortable: Gift, novel: Star } as const;
 
@@ -164,12 +173,19 @@ export default function CourseScreen() {
   const idSequence = useRef(0);
   const [draft, dispatch] = useReducer(courseDraftReducer, undefined, () => createInitialCourseDraft(() => `course-step-${++idSequence.current}`));
   const [flowStep, setFlowStep] = useState<FlowStep>(1);
+  const previousFlowStep = useRef<FlowStep | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const categoryLabels = useMemo(() => Object.fromEntries(
     COURSE_CATEGORIES.map((category) => [category, t(`course.steps.categories.${category}`)]),
   ) as Record<CourseCategory, string>, [t]);
   const validation = useMemo(() => validateCourseDraft(draft), [draft]);
   const expandedStep = draft.steps.find((step) => step.id === expandedStepId);
+
+  useEffect(() => {
+    if (previousFlowStep.current === flowStep) return;
+    previousFlowStep.current = flowStep;
+    void logEvent('course_builder_step_viewed', buildCourseBuilderStepViewedParams(COURSE_BUILDER_STEP_BY_FLOW_STEP[flowStep]));
+  }, [flowStep]);
 
   function toggleCategory(category: Exclude<CourseCategory, 'ai_decide'>) {
     const selected = draft.steps.find((step) => step.category === category);

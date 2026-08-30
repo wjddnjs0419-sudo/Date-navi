@@ -15,7 +15,11 @@ export type AnalyticsEventName =
   | 'place_selected'
   | 'course_regenerate_requested'
   | 'course_saved'
-  | 'proposal_sent';
+  | 'proposal_sent'
+  | 'course_builder_step_viewed'
+  | 'onboarding_preferences_step_viewed'
+  | 'course_edit_action'
+  | 'native_share_opened';
 
 type AnalyticsParams = Record<string, unknown>;
 

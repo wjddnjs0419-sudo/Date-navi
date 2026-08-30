@@ -33,7 +33,7 @@ import { StepActionSheet } from '../../components/recommendation/step-action-she
 import { subscribePickedPlace } from '../../lib/place-pick-bridge';
 import type { RecommendationSessionSnapshot } from '../../lib/recommendation-session-repository';
 import { logEvent } from '../../lib/analytics';
-import { buildCourseRegenerateRequestedParams } from '../../lib/analytics-course-actions';
+import { buildCourseEditActionParams, buildCourseRegenerateRequestedParams } from '../../lib/analytics-course-actions';
 import { buildCourseSavedParams } from '../../lib/analytics-course-save';
 import { canonicalizeStepIntentTag, localizeStepIntentTag } from '../../shared/recommendation/step-intent-tag-catalog';
 
@@ -76,6 +76,11 @@ function getCurrentPlaceIdentity(step: RecommendationSessionSnapshot['steps'][nu
     ?? (step.currentKakaoPlaceId
       ? { provider: 'kakao' as const, providerPlaceId: step.currentKakaoPlaceId }
       : undefined);
+}
+
+function openMap(place: Parameters<typeof openPlaceInBrowser>[0]) {
+  void logEvent('course_edit_action', buildCourseEditActionParams('open_map'));
+  void openPlaceInBrowser(place);
 }
 
 function getDisplayStepIntents(
@@ -190,6 +195,9 @@ export default function CourseResultScreen() {
     try {
       const next = await mutateRecommendationSession(snapshot.sessionId, action, payload);
       setSnapshot(next);
+      if (action !== 'confirm') {
+        void logEvent('course_edit_action', buildCourseEditActionParams(action));
+      }
       // 확정만으로는 후보 저장이 아니다. 저장/보내기 전까지 카드를 draft로 두어
       // candidates(status='active')에 뜨지 않게 한다. 저장/보내기 시 active로 승격된다.
       if (action === 'confirm' && next.confirmedCardId) {
@@ -321,6 +329,7 @@ export default function CourseResultScreen() {
       if (error) throw error;
       const next = await reloadRecommendationSession(snapshot.sessionId);
       setSnapshot(next);
+      void logEvent('course_edit_action', buildCourseEditActionParams('replace'));
       setReplacementTargetId(null); setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS); setProviderReplacementAttestationId(null);
     } catch { setEditError(t('modeFlow.courseResult.editError')); } finally { setEditing(false); }
   }
@@ -354,6 +363,7 @@ export default function CourseResultScreen() {
       if (!replaced) throw new Error('The replacement step was not present in the verified response.');
       const next = await mutateRecommendationSession(snapshot.sessionId, 'replace', { attestationRequestId: request.requestId, stepId: targetStepId, candidateId: replaced.candidateId, kakaoPlaceId });
       setSnapshot(next);
+      void logEvent('course_edit_action', buildCourseEditActionParams('replace'));
       setReplacementTargetId(null);
       setReplacementCandidates(EMPTY_REPLACEMENT_CANDIDATE_GROUPS);
       setReplacementCandidateListAttestationId(null);
@@ -401,6 +411,7 @@ export default function CourseResultScreen() {
         kakaoPlaceId: added.kakaoPlaceId,
       });
       setSnapshot(next);
+      void logEvent('course_edit_action', buildCourseEditActionParams('add'));
       router.replace({ pathname: '/mode-flow/course-result', params: buildStructuredCourseResultParams(next.requestId, next.sessionId) } as any);
     } catch {
       setEditError(t('modeFlow.courseResult.editError'));
@@ -656,7 +667,7 @@ export default function CourseResultScreen() {
                   {step.reason ? <Text numberOfLines={2} style={s.timelineReason}>{step.reason}</Text> : null}
                   <Text numberOfLines={1} style={s.timelineAddress}>{step.roadAddress || step.address}</Text>
                   <View style={s.cardActions}>
-                    {(step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId ?? step.mapUrl) && <TouchableOpacity testID={`course-step-map-${step.stepId}`} accessibilityRole="link" onPress={() => void openPlaceInBrowser({ kakaoPlaceId: step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId, mapUrl: step.mapUrl, name: step.placeName, address: step.roadAddress || step.address })} activeOpacity={0.88} style={s.cardActionBtn}>
+                    {(step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId ?? step.mapUrl) && <TouchableOpacity testID={`course-step-map-${step.stepId}`} accessibilityRole="link" onPress={() => openMap({ kakaoPlaceId: step.currentKakaoPlaceId ?? step.currentKakaoLinkPlaceId, mapUrl: step.mapUrl, name: step.placeName, address: step.roadAddress || step.address })} activeOpacity={0.88} style={s.cardActionBtn}>
                       <Text style={s.cardActionText}>{t('modeFlow.courseResult.placeReviews')}</Text>
                     </TouchableOpacity>}
                     {snapshot.status !== 'confirmed' && (
@@ -730,7 +741,7 @@ export default function CourseResultScreen() {
                             <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                          {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                          {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => openMap(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
                           <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>
@@ -742,7 +753,7 @@ export default function CourseResultScreen() {
                           <View style={s.replacementCopy}>
                             <Text style={s.replacementName}>{candidate.name}</Text>
                             <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => void openPlaceInBrowser(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => openMap(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
                           </View>
                           <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
                         </View>

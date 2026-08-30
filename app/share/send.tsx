@@ -57,6 +57,7 @@ export default function SendScreen() {
   async function handleNativeShare() {
     const title = card?.title ?? t('share.cardTitleFallback');
     const summary = card?.summary ?? t('share.cardDescFallback');
+    void logEvent('native_share_opened');
     await Share.share({ title, message: `${title}\n${summary}` });
   }
 

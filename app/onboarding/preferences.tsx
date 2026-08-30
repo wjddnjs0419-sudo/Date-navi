@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert,
@@ -16,8 +16,16 @@ import {
 import { C, DS, G } from '../../constants/theme';
 import { BigButton, Header, ProgressDots, InfoNote, ScreenHeading } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
+import { buildOnboardingPreferencesStepViewedParams, type OnboardingPreferencesStep } from '../../lib/analytics-course-actions';
 
 type Step = 1 | 2 | 3 | 4;
+
+const ONBOARDING_PREFERENCES_STEP_BY_STEP: Record<Step, OnboardingPreferencesStep> = {
+  1: 'preferred',
+  2: 'mood',
+  3: 'avoid',
+  4: 'long_distance',
+};
 
 export default function PreferencesScreen() {
   const router = useRouter();
@@ -68,6 +76,13 @@ export default function PreferencesScreen() {
   const [avoid, setAvoid] = useState<string[]>([]);
   const [longDistance, setLongDistance] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const previousStep = useRef<Step | null>(null);
+
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    void logEvent('onboarding_preferences_step_viewed', buildOnboardingPreferencesStepViewedParams(ONBOARDING_PREFERENCES_STEP_BY_STEP[step]));
+  }, [step]);
 
   function toggle(list: string[], setList: (v: string[]) => void, id: string) {
     setList(list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
