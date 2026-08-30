@@ -42,12 +42,19 @@
       ],
       "shareChannelsLabel": "Choose how to share",
       "nativeShareCta": "Share via another app",
+      "nativeShareError": "We couldn't create a share link. Please try again.",
       "sectionLabel": "A note to send along",
       "messagePlaceholder": "Type a note",
       "suggestCta": "Suggest a note",
       "sendCta": "Send to partner",
       "editCta": "Edit",
       "sentMessage": "Your message is on its way"
+    },
+    "public": {
+      "heading": "Shared course",
+      "subText": "A date course shared from Date Navi.",
+      "loading": "Loading the course",
+      "notFound": "This shared course could not be found"
     }
   }
 }

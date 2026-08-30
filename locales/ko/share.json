@@ -42,12 +42,19 @@
       ],
       "shareChannelsLabel": "공유 방법 선택",
       "nativeShareCta": "다른 앱으로 공유하기",
+      "nativeShareError": "공유 링크를 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
       "sectionLabel": "함께 보낼 한마디",
       "messagePlaceholder": "한마디를 입력하세요",
       "suggestCta": "한마디 추천받기",
       "sendCta": "상대에게 보내기",
       "editCta": "수정하기",
       "sentMessage": "마음을 전했어요"
+    },
+    "public": {
+      "heading": "공유된 코스",
+      "subText": "Date Navi에서 공유한 데이트 코스예요.",
+      "loading": "코스를 불러오는 중이에요",
+      "notFound": "공유 코스를 찾을 수 없어요"
     }
   }
 }

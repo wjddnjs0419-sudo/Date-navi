@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { I18nProvider } from '../lib/i18n';
 import { PENDING_INVITE_CODE_KEY, isCoupleRowLinked, parseInviteCodeFromUrl } from '../lib/couple-invite';
+import { resolveCourseShareRoute } from '../lib/course-share';
 import { resolveOnboardingDestination } from '../lib/onboarding-routing';
 import { RecommendationSessionProvider } from '../components/recommendation/recommendation-session-provider';
 import { ScreenshotNavigator } from '../components/screenshot/screenshot-navigator';
@@ -37,6 +38,10 @@ async function rememberInviteUrl(url?: string | null) {
   const code = parseInviteCodeFromUrl(url);
   if (code) await AsyncStorage.setItem(PENDING_INVITE_CODE_KEY, code);
   return code;
+}
+
+export function courseShareRouteForUrl(url?: string | null) {
+  return resolveCourseShareRoute(url);
 }
 
 async function getPendingInviteCode() {
@@ -87,6 +92,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     let disposed = false;
+    let publicShareRoute: string | null = null;
     let currentVersionPolicyLock: VersionPolicyLock | null = initialVersionPolicyLock;
     let policyCheckPromise: Promise<void> | null = null;
 
@@ -99,6 +105,10 @@ export default function RootLayout() {
 
     async function routeForSession(session: Session | null) {
       if (updateStoreUrlRef.current) return;
+      if (publicShareRoute) {
+        router.replace(publicShareRoute as any);
+        return;
+      }
       const dest = await getDestination(session);
       if (updateStoreUrlRef.current) return;
       router.replace(dest as any);
@@ -170,7 +180,13 @@ export default function RootLayout() {
         const routed = await withStartupTimeout(
           (async () => {
             if (updateStoreUrlRef.current) return true;
-            await rememberInviteUrl(await ExpoLinking.getInitialURL());
+            const initialUrl = await ExpoLinking.getInitialURL();
+            publicShareRoute = courseShareRouteForUrl(initialUrl);
+            if (publicShareRoute) {
+              router.replace(publicShareRoute as any);
+              return true;
+            }
+            await rememberInviteUrl(initialUrl);
             const { data: { session } } = await supabase.auth.getSession();
             if (session && !SCREENSHOT_MODE) {
               const { ensureStartupPermissions } = require('../lib/startupPermissions');
@@ -194,6 +210,12 @@ export default function RootLayout() {
 
     const urlSubscription = ExpoLinking.addEventListener('url', ({ url }) => {
       void (async () => {
+        const shareRoute = courseShareRouteForUrl(url);
+        if (shareRoute) {
+          publicShareRoute = shareRoute;
+          router.replace(shareRoute as any);
+          return;
+        }
         const code = await rememberInviteUrl(url);
         if (!code) return;
 
@@ -272,6 +294,7 @@ export default function RootLayout() {
           <Stack.Screen name="settings" />
           <Stack.Screen name="mode-flow" />
           <Stack.Screen name="share" />
+          <Stack.Screen name="course" />
           <Stack.Screen name="account" />
         </Stack>
       </RecommendationSessionProvider>

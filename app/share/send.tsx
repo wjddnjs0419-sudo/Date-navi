@@ -15,6 +15,7 @@ import { resolveDisplaySteps, type CourseStep } from '../../lib/course';
 import { logEvent } from '../../lib/analytics';
 import { buildProposalSentParams, shouldTrackProposalSent } from '../../lib/analytics-course-save';
 import { useOptionalSafeAreaInsets } from '../../lib/use-optional-safe-area-insets';
+import { buildCourseShareMessage, normalizeCourseShareToken, parseCourseShareDto } from '../../lib/course-share';
 
 type CardInfo = {
   id: string;
@@ -55,10 +56,28 @@ export default function SendScreen() {
   }, [cardId]);
 
   async function handleNativeShare() {
-    const title = card?.title ?? t('share.cardTitleFallback');
-    const summary = card?.summary ?? t('share.cardDescFallback');
+    if (!cardId) return;
+
+    const { data: shareToken, error } = await supabase.rpc('create_date_card_share', {
+      p_card_id: cardId,
+    });
+    const token = normalizeCourseShareToken(shareToken);
+    if (error || !token) {
+      Alert.alert(t('common.error'), t('share.send.nativeShareError'));
+      return;
+    }
+
+    const dto = parseCourseShareDto({
+      title: card?.title ?? t('share.cardTitleFallback'),
+      summary: card?.summary ?? t('share.cardDescFallback'),
+      estimated_time: card?.estimated_time ?? '',
+      estimated_budget: card?.estimated_budget ?? '',
+      steps: resolveDisplaySteps(card ?? {}),
+    });
+    if (!dto) return;
+
     void logEvent('native_share_opened');
-    await Share.share({ title, message: `${title}\n${summary}` });
+    await Share.share({ title: dto.title, message: buildCourseShareMessage(dto, token, language) });
   }
 
   async function handleSend() {

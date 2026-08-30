@@ -516,8 +516,10 @@ exception
   when duplicate_object then null;
 end $$;
 
--- Mobile date_cards is managed by the Expo app's migration history and can be
--- absent from installations that only use the Date Planner web schema above.
+-- Mobile date_cards and its revocable public-share capability table are managed
+-- by the Expo app's migration history and can be absent from installations that
+-- only use the Date Planner web schema above. See
+-- supabase/migrations/20260830180250_date_card_shares.sql.
 do $$
 begin
   if to_regclass('public.date_cards') is not null then

@@ -211,3 +211,4 @@ UI를 수정하기 전에 반드시 [`docs/design-system/README.md`](docs/design
 - 삭제 이벤트를 기록하는 감사 테이블에 대상 테이블로의 `on delete cascade` FK를 걸지 말 것 — `after delete`는 부모가 이미 없어 FK 위반으로 원본 삭제를 깨뜨리고, `before delete`로 옮겨도 이어지는 cascade가 방금 넣은 행을 지운다. 상위(세션 등) FK만 남길 것.
 - `.worktrees/*`에 만든 git worktree도 Jest의 test/haste-map 탐색에서 제외할 것 — `.claude/worktrees/*`만 ignore하면 root에서 테스트할 때 worktree 테스트가 중복 실행되고 `__mocks__` duplicate 경고가 발생한다. 두 ignore 배열에 모두 `<rootDir>/.worktrees/`를 넣는다.
 - RNFirebase Analytics의 TypeScript `logEvent` overload는 Firebase의 유효 suggested event `login`을 좁게 제외할 수 있다 — canonical `login`을 유지할 때 Firebase 호출 경계에서만 `name as any`로 캐스팅하고, Supabase 이벤트명을 `user_login`으로 임의 변환하지 말 것.
+- React Native `Share.share` mock 호출의 payload는 Jest에서 `unknown`으로 추론될 수 있다 — 테스트에서 `.message`를 읽을 때 캡처한 호출값을 필요한 최소 구조로 캐스팅할 것.

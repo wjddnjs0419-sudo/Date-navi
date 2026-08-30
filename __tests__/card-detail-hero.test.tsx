@@ -107,6 +107,12 @@ describe('card detail layout order', () => {
     expect(source).toMatch(/void openPlaceInBrowser\(\{[\s\S]{0,180}mapUrl: place\.mapUrl/);
   });
 
+  it('uses the public share token flow for the detail screen share action', () => {
+    expect(source).toContain("create_date_card_share");
+    expect(source).toContain('buildCourseShareMessage');
+    expect(source).not.toMatch(/Share\.share\(\{ message: `\$\{card\.title\}/);
+  });
+
   it('keeps the love toggle as a trailing card action, not a title accessory', () => {
     const titleRow = body.indexOf('styles.courseTitleActions');
     const heart = body.indexOf('<CardLoveToggle');

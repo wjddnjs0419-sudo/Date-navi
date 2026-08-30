@@ -23,6 +23,7 @@ import { readRecommendationIdentity } from '../../lib/recommendationIdentity';
 import { ReactionType, REACTIONS, REACTION_ICONS } from '../../lib/reactions';
 import { ReactionPicker } from '../../components/ReactionPicker';
 import { openPlaceInBrowser } from '../../lib/placeBrowser';
+import { buildCourseShareMessage, normalizeCourseShareToken, parseCourseShareDto } from '../../lib/course-share';
 
 export { REACTION_ICONS };
 export type { ReactionType };
@@ -246,7 +247,30 @@ export default function CardDetailScreen() {
   async function handleShare() {
     if (!card) return;
     try {
-      await Share.share({ message: `${card.title}\n${card.summary}` });
+      const { data: shareToken, error } = await supabase.rpc('create_date_card_share', {
+        p_card_id: id,
+      });
+      const token = normalizeCourseShareToken(shareToken);
+      if (error || !token) {
+        Alert.alert(alertTitle, t('share.send.nativeShareError'));
+        return;
+      }
+
+      const displaySteps = resolveDisplaySteps(card);
+      const dto = parseCourseShareDto({
+        title: card.title,
+        summary: card.summary,
+        estimated_time: card.estimated_time,
+        estimated_budget: card.estimated_budget,
+        steps: displaySteps.length > 0
+          ? displaySteps
+          : card.place_name
+            ? [{ label: card.place_name, place_name: card.place_name }]
+            : [],
+      });
+      if (!dto) return;
+
+      await Share.share({ title: dto.title, message: buildCourseShareMessage(dto, token, language) });
     } catch {
       // 공유 시트 취소/실패는 무해하므로 별도 처리하지 않는다.
     }

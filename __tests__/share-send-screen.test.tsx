@@ -3,6 +3,8 @@ import React from 'react';
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 const mockLogEvent = jest.fn();
+const mockCreateShare = jest.fn();
+const mockShareToken = 'd'.repeat(64);
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ cardId: 'card-1' }),
@@ -46,6 +48,7 @@ jest.mock('../lib/supabase', () => {
     supabase: {
       auth: { getUser: async () => ({ data: { user: null } }) },
       from: () => builder,
+      rpc: (...args: unknown[]) => mockCreateShare(...args),
     },
   };
 });
@@ -67,6 +70,12 @@ const SendScreen = require('../app/share/send').default as typeof import('../app
 const { CourseStepList, MetaChipRow } = require('../components/ui') as typeof import('../components/ui');
 
 describe('share/send screen — course summary card', () => {
+  beforeEach(() => {
+    mockCreateShare.mockReset();
+    mockCreateShare.mockResolvedValue({ data: mockShareToken, error: null });
+    mockLogEvent.mockClear();
+  });
+
   it('renders the fetched card steps via the shared CourseStepList', async () => {
     let instance!: ReturnType<typeof create>;
     await act(async () => { instance = create(<SendScreen />); });
@@ -98,10 +107,18 @@ describe('share/send screen — course summary card', () => {
     const shareBtn = instance.root.findByProps({ testID: 'send-native-share' });
     await act(async () => { await shareBtn.props.onPress(); });
 
+    expect(mockCreateShare).toHaveBeenCalledWith('create_date_card_share', { p_card_id: 'card-1' });
     expect(shareSpy).toHaveBeenCalledWith(expect.objectContaining({
       message: expect.stringContaining('성수 감성 데이트 코스'),
     }));
+    const sharePayload = shareSpy.mock.calls[0]?.[0] as { message?: string };
+    expect(sharePayload.message).toContain(`https://date-navi.vercel.app/course/${mockShareToken}`);
+    expect(sharePayload.message).toContain('1. 식사');
+    expect(sharePayload.message).toContain('2. 카페');
     expect(mockLogEvent).toHaveBeenCalledWith('native_share_opened');
+    expect(mockLogEvent.mock.calls.find((call) => call[0] === 'native_share_opened')).toEqual(['native_share_opened']);
+    expect(mockLogEvent.mock.calls.flat()).not.toContain(mockShareToken);
+    expect(mockLogEvent.mock.calls.flat()).not.toContain('card-1');
     mockLogEvent.mockClear();
     shareSpy.mockRestore();
   });

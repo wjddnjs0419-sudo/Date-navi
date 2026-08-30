@@ -8,6 +8,7 @@ const INTENTIONALLY_UNTRACKED_ROUTES = new Set([
   'mode-flow/result',
   'mode-flow/bucketlist',
   'shot',
+  'course/[shareToken]',
 ]);
 
 function collectProductionRoutes(directory: string): string[] {
