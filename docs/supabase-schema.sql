@@ -103,8 +103,8 @@ create table if not exists public.personal_hidden_step_intent_defaults (
 create or replace function public.enforce_personal_step_intent_tag_limit()
 returns trigger
 language plpgsql
-security definer
-set search_path = public, pg_temp
+security invoker
+set search_path = ''
 as $$
 declare
   v_count integer;
