@@ -9,7 +9,11 @@ export function AnalyticsScreenTracker() {
   const screenName = resolveScreenName(segments);
 
   useEffect(() => {
-    if (!screenName || previousScreenName.current === screenName) return;
+    if (screenName === null) {
+      previousScreenName.current = null;
+      return;
+    }
+    if (previousScreenName.current === screenName) return;
     previousScreenName.current = screenName;
     void logScreenView(screenName);
   }, [screenName]);

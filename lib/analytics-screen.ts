@@ -48,6 +48,7 @@ const SCREEN_BY_SEGMENTS: Record<string, ScreenName> = {
   '(tabs)/mode': 'date_mode_picker',
   '(tabs)/candidates': 'candidates',
   '(tabs)/memories': 'memories',
+  '(tabs)/account': 'settings',
   'mode-flow/course': 'course_builder',
   'mode-flow/place-search': 'place_search',
   'mode-flow/generating': 'recommendation_generating',
