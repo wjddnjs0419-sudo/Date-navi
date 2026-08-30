@@ -8,6 +8,7 @@ const mockLoadRecommendationSession = jest.fn();
 const mockReloadRecommendationSession = jest.fn();
 const mockSupabaseFunctionsInvoke = jest.fn();
 const mockLogEvent = jest.fn();
+const mockOpenBrowserAsync = jest.fn(async () => ({}));
 let mockCapturedFocusEffect: (() => void) | null = null;
 let mockLanguage: 'ko' | 'en' = 'ko';
 const mockTranslations = {
@@ -21,7 +22,7 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void) => { mockCapturedFocusEffect = cb; },
 }));
 
-jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(async () => ({})) }));
+jest.mock('expo-web-browser', () => ({ openBrowserAsync: mockOpenBrowserAsync }));
 
 jest.mock('../lib/analytics', () => ({
   logEvent: mockLogEvent,
@@ -33,6 +34,7 @@ jest.mock('../lib/i18n', () => ({
     t: (key: string) => {
       if (key === 'modeFlow.courseResult.replacementNotice') return mockTranslations[mockLanguage].replacementNotice;
       if (key === 'modeFlow.courseResult.topPick') return mockTranslations[mockLanguage].topPick;
+      if (key === 'modeFlow.courseResult.placeReviews') return mockTranslations[mockLanguage].placeReviews;
       return key;
     },
   }),
@@ -188,6 +190,7 @@ describe('course result screen', () => {
     mockSupabaseFunctionsInvoke.mockClear();
     mockRequestRecommendationResponse.mockClear();
     mockLogEvent.mockClear();
+    mockOpenBrowserAsync.mockClear();
     mockCapturedFocusEffect = null;
     mockLanguage = 'ko';
   });
@@ -440,6 +443,137 @@ describe('course result screen', () => {
     act(() => { instance = create(<CourseResultScreen />); });
 
     expect(instance.root.findByProps({ testID: 'course-step-map-step-meal' })).toBeDefined();
+  });
+
+  it('renders the same review-and-map link for every Kakao replacement candidate', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
+        top: [{ kakaoPlaceId: 'k-top', name: '카카오 상위 후보', address: 'addr', roadAddress: 'road', mapUrl: 'https://place.map.kakao.com/k-top', latitude: 37.55, longitude: 127.05, displayRank: 1 }],
+        additional: [{ kakaoPlaceId: 'k-additional', name: '카카오 추가 후보', address: 'addr', roadAddress: 'road', mapUrl: 'https://place.map.kakao.com/k-additional', latitude: 37.55, longitude: 127.05, displayRank: 2 }],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    for (const candidateId of ['k-top', 'k-additional']) {
+      const mapButton = instance.root.findByProps({ testID: `course-replacement-map-${candidateId}` });
+      const pickButton = instance.root.findByProps({ testID: `course-replacement-pick-${candidateId}` });
+      expect(mapButton.props.accessibilityRole).toBe('link');
+      expect(pickButton.props.accessibilityRole).toBe('button');
+    }
+    expect(instance.root.findAllByProps({ children: '리뷰·지도 보기' }).length).toBeGreaterThan(0);
+  });
+
+  it('renders the review-and-map link for every provider-neutral replacement candidate', async () => {
+    const snapshot = buildSnapshot();
+    snapshot.steps[0] = {
+      ...snapshot.steps[0],
+      currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        attestationId: '00000000-0000-4000-8000-000000000001',
+        candidates: [
+          { candidateId: 'naver_replacement_001', providerPlaceId: 'naver-meal-2', name: '네이버 상위 후보', address: 'addr', roadAddress: 'road', latitude: 37.55, longitude: 127.05 },
+          { candidateId: 'naver_replacement_002', providerPlaceId: 'naver-meal-3', name: '네이버 추가 후보', address: 'addr', roadAddress: 'road', latitude: 37.55, longitude: 127.05 },
+        ],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    for (const providerPlaceId of ['naver-meal-2', 'naver-meal-3']) {
+      const mapButton = instance.root.findByProps({ testID: `course-replacement-map-${providerPlaceId}` });
+      const pickButton = instance.root.findByProps({ testID: `course-replacement-pick-${providerPlaceId}` });
+      expect(mapButton.props.accessibilityRole).toBe('link');
+      expect(pickButton.props.accessibilityRole).toBe('button');
+    }
+    expect(instance.root.findAllByProps({ children: '리뷰·지도 보기' }).length).toBeGreaterThan(0);
+  });
+
+  it('opens a Kakao replacement candidate with its existing map URL', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
+        top: [{ kakaoPlaceId: 'k-top', name: '카카오 후보', address: 'addr', roadAddress: 'road', mapUrl: 'https://place.map.kakao.com/k-top', latitude: 37.55, longitude: 127.05, displayRank: 1 }],
+        additional: [],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    await act(async () => { instance.root.findByProps({ testID: 'course-replacement-map-k-top' }).props.onPress(); });
+
+    expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
+      'https://place.map.kakao.com/k-top',
+      expect.any(Object),
+    );
+  });
+
+  it('uses the Naver search fallback for a provider-neutral replacement without a map URL', async () => {
+    const snapshot = buildSnapshot();
+    snapshot.steps[0] = {
+      ...snapshot.steps[0],
+      currentKakaoPlaceId: undefined,
+      currentPlaceIdentity: { provider: 'naver', providerPlaceId: 'naver-meal-1' },
+    };
+    (globalThis as any).__mockSnapshot = snapshot;
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        attestationId: '00000000-0000-4000-8000-000000000001',
+        candidates: [{ candidateId: 'naver_replacement_001', providerPlaceId: 'naver-meal-2', name: '성수 식당', address: '서울 성동구', roadAddress: '서울 성동구 연무장길', latitude: 37.55, longitude: 127.05 }],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    await act(async () => { instance.root.findByProps({ testID: 'course-replacement-map-naver-meal-2' }).props.onPress(); });
+
+    expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
+      'https://map.naver.com/p/search/%EC%84%B1%EC%88%98%20%EC%8B%9D%EB%8B%B9%20%EC%84%9C%EC%9A%B8%20%EC%84%B1%EB%8F%99%EA%B5%AC%20%EC%97%B0%EB%AC%B4%EC%9E%A5%EA%B8%B8',
+      expect.any(Object),
+    );
+  });
+
+  it('logs one open_map action and does not run replacement when a replacement map link is pressed', async () => {
+    (globalThis as any).__mockSnapshot = buildSnapshot();
+    mockSupabaseFunctionsInvoke.mockResolvedValueOnce({
+      data: {
+        targetStepId: 'step-meal',
+        candidateListAttestationId: 'replacement-list-001',
+        top: [{ kakaoPlaceId: 'k-top', name: '카카오 후보', address: 'addr', roadAddress: 'road', mapUrl: 'https://place.map.kakao.com/k-top', latitude: 37.55, longitude: 127.05, displayRank: 1 }],
+        additional: [],
+      },
+      error: null,
+    });
+    act(() => { instance = create(<CourseResultScreen />); });
+    act(() => { instance.root.findByProps({ testID: 'course-step-card-step-meal' }).props.onPress(); });
+    await act(async () => { findSheet(instance).props.onReplace(); });
+
+    await act(async () => { instance.root.findByProps({ testID: 'course-replacement-map-k-top' }).props.onPress(); });
+
+    expect(mockLogEvent).toHaveBeenCalledTimes(1);
+    expect(mockLogEvent).toHaveBeenCalledWith('course_edit_action', { action: 'open_map' });
+    expect(mockMutateRecommendationSession).not.toHaveBeenCalled();
   });
 
   it('logs open_map when a recommendation map action is executed', async () => {

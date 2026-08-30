@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Date Navi · 교체 후보 UI 시안</title>
+    <style>
+      :root {
+        --canvas: #f1eceb;
+        --screen: #fff9fc;
+        --surface: #ffffff;
+        --pink: #f26b7a;
+        --pink-deep: #c24b57;
+        --pink-subtle: #ffeef0;
+        --pink-border: #f2a8b0;
+        --text: #3b2e2e;
+        --secondary: #8a7f76;
+        --muted: #a89b92;
+        --border: #f2e0dc;
+        --divider: #f2e7dc;
+        --scrim: rgba(31, 31, 36, 0.24);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { min-height: 100%; margin: 0; }
+
+      body {
+        padding: 36px 24px 56px;
+        background: var(--canvas);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
+      }
+
+      button { font: inherit; }
+
+      .intro {
+        width: min(1512px, 100%);
+        margin: 0 auto 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--pink-deep);
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 700;
+        letter-spacing: .04em;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        line-height: 34px;
+        font-weight: 800;
+        letter-spacing: -.04em;
+      }
+
+      .intro-copy {
+        max-width: 620px;
+        margin: 8px 0 0;
+        color: var(--secondary);
+        font-size: 14px;
+        line-height: 22px;
+      }
+
+      .board {
+        width: min(1512px, 100%);
+        display: grid;
+        grid-template-columns: repeat(4, minmax(280px, 1fr));
+        gap: 16px;
+        margin: 0 auto;
+      }
+
+      .option {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid rgba(194, 75, 87, .12);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, .7);
+      }
+
+      .option-heading {
+        min-height: 62px;
+        margin-bottom: 12px;
+      }
+
+      .option-number {
+        display: inline-flex;
+        min-width: 28px;
+        height: 20px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 7px;
+        border-radius: 6px;
+        background: var(--pink-subtle);
+        color: var(--pink-deep);
+        font-size: 10px;
+        line-height: 12px;
+        font-weight: 700;
+      }
+
+      .option-title {
+        margin: 0;
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 700;
+      }
+
+      .option-note {
+        min-height: 36px;
+        margin: 4px 0 0;
+        color: var(--secondary);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .phone {
+        position: relative;
+        height: 640px;
+        overflow: hidden;
+        border-radius: 18px;
+        background: var(--screen);
+      }
+
+      .ghost-result {
+        position: absolute;
+        inset: 0;
+        padding: 28px 20px 0;
+      }
+
+      .ghost-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 16px;
+      }
+
+      .ghost-title {
+        margin-top: 30px;
+        font-size: 22px;
+        line-height: 30px;
+        font-weight: 800;
+        letter-spacing: -.04em;
+      }
+
+      .ghost-card {
+        height: 92px;
+        margin-top: 16px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+      }
+
+      .ghost-card + .ghost-card { margin-top: 8px; }
+      .ghost-line { width: 54%; height: 12px; border-radius: 6px; background: #f4e9e5; }
+      .ghost-line.short { width: 78%; margin-top: 12px; background: #f8f0ed; }
+
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+
+      .sheet {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        min-height: 418px;
+        padding: 24px 16px 20px;
+        border-radius: 24px 24px 0 0;
+        background: var(--surface);
+        box-shadow: 0 -10px 28px rgba(120, 80, 70, .08);
+      }
+
+      .handle {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        width: 36px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--border);
+        transform: translateX(-50%);
+      }
+
+      .sheet-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .sheet-title {
+        margin: 0;
+        font-size: 19px;
+        line-height: 26px;
+        font-weight: 700;
+      }
+
+      .sheet-count {
+        flex: none;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 16px;
+      }
+
+      .candidate {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 12px;
+        padding: 14px 0 16px;
+        border-top: 1px solid var(--divider);
+      }
+
+      .candidate:first-of-type { border-top: 0; padding-top: 0; }
+
+      .candidate-copy { min-width: 0; }
+
+      .candidate-kicker {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 16px;
+        margin-bottom: 4px;
+        color: var(--pink-deep);
+        font-size: 11px;
+        line-height: 16px;
+        font-weight: 700;
+      }
+
+      .candidate-kicker.neutral { color: var(--muted); }
+
+      .candidate-name {
+        margin: 0;
+        overflow: hidden;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .candidate-address {
+        margin: 3px 0 0;
+        color: var(--secondary);
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .map-button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        border: 1px solid var(--pink-border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--pink-deep);
+        font-size: 13px;
+        line-height: 18px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .map-button:focus-visible,
+      .pick-button:focus-visible {
+        outline: 3px solid rgba(242, 107, 122, .24);
+        outline-offset: 2px;
+      }
+
+      .pick-button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 16px;
+        background: var(--pink);
+        color: var(--surface);
+        font-size: 15px;
+        line-height: 20px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* 01. 정보와 행동을 한 행 안에서 가장 안정적으로 정리하는 안 */
+      .variant-airy .candidate {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .variant-airy .candidate-actions {
+        display: flex;
+        grid-column: 1;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .variant-airy .map-button {
+        min-height: 36px;
+        padding: 0 10px;
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .variant-airy .pick-button { min-height: 44px; }
+
+      /* 02. 후보 하나를 작은 카드로 묶어 선택 단위를 명확하게 보이는 안 */
+      .variant-card .candidate {
+        display: block;
+        margin-top: 12px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface);
+      }
+
+      .variant-card .candidate:first-of-type { padding-top: 14px; }
+      .variant-card .candidate + .candidate { margin-top: 8px; }
+
+      .variant-card .candidate-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .variant-card .candidate-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .variant-card .map-button { width: 100%; }
+      .variant-card .pick-button { min-width: 68px; }
+
+      /* 03. 장소 정보가 먼저 읽히고 행동은 한 줄로 묶이는 안 */
+      .variant-action .candidate {
+        display: block;
+        padding: 16px 0;
+      }
+
+      .variant-action .candidate:first-of-type { padding-top: 0; }
+
+      .variant-action .candidate-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+
+      .variant-action .pick-button { min-width: 80px; }
+
+      /* 04. 후보가 많아져도 가장 덜 번잡하게 유지하는 안 */
+      .variant-compact .sheet { padding-right: 20px; padding-left: 20px; }
+      .variant-compact .candidate { grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; align-items: start; }
+      .variant-compact .candidate-index {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--pink-subtle);
+        color: var(--pink-deep);
+        font-size: 11px;
+        line-height: 16px;
+        font-weight: 700;
+      }
+      .variant-compact .candidate-kicker { display: none; }
+      .variant-compact .candidate-name { font-size: 15px; line-height: 20px; }
+      .variant-compact .candidate-address { margin-top: 2px; font-size: 12px; line-height: 18px; }
+      .variant-compact .candidate-actions { display: grid; grid-column: 2; grid-template-columns: 1fr auto; gap: 6px; margin-top: 8px; }
+      .variant-compact .map-button { min-height: 44px; padding: 0 8px; font-size: 11px; }
+      .variant-compact .pick-button { min-height: 44px; padding: 0 12px; font-size: 14px; }
+
+      .legend {
+        width: min(1512px, 100%);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 16px auto 0;
+        color: var(--secondary);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pink); }
+      .legend i.outline { border: 1px solid var(--pink-border); background: var(--surface); }
+
+      @media (max-width: 1240px) {
+        .board { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+      }
+
+      @media (max-width: 680px) {
+        body { padding: 24px 12px 36px; }
+        .board { grid-template-columns: 1fr; }
+        .option { padding: 12px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="intro">
+      <p class="eyebrow">DATE NAVI · REPLACEMENT CANDIDATE</p>
+      <h1>교체 후보 모달 UI 시안 4종</h1>
+      <p class="intro-copy">같은 후보 데이터로 정보 위계와 행동 배치만 비교합니다. 핑크 filled는 선택, outlined는 정확히 “리뷰·지도 보기”로 고정했습니다.</p>
+    </header>
+
+    <main class="board">
+      <article class="option">
+        <div class="option-heading">
+          <span class="option-number">01</span>
+          <h2 class="option-title">여백형 · 가장 안정적인 기본안</h2>
+          <p class="option-note">정보를 먼저 읽고, 오른쪽에서 선택하는 현재 화면과 가장 가까운 구성</p>
+        </div>
+        <div class="phone variant-airy">
+          <div class="ghost-result"><div class="ghost-header"><span>‹ 데이트 코스</span><span>오늘</span></div><div class="ghost-title">광안리 데이트 코스</div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div></div>
+          <div class="scrim"></div>
+          <section class="sheet" aria-label="교체 후보">
+            <div class="handle"></div>
+            <div class="sheet-header"><h3 class="sheet-title">다른 장소 보기</h3><span class="sheet-count">2개 후보</span></div>
+            <div class="candidate">
+              <div class="candidate-copy"><div class="candidate-kicker">동선 추천</div><h4 class="candidate-name">광안리 진양호횟집</h4><p class="candidate-address">부산광역시 수영구 광안해변로344번길 17-20</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="광안리 진양호횟집 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+            <div class="candidate">
+              <div class="candidate-copy"><div class="candidate-kicker neutral">다른 추천</div><h4 class="candidate-name">바다마루 조개구이</h4><p class="candidate-address">부산광역시 수영구 광안해변로 239</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="바다마루 조개구이 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-heading">
+          <span class="option-number">02</span>
+          <h2 class="option-title">카드 분리형 · 선택 단위 강조</h2>
+          <p class="option-note">후보 간 경계를 선명하게 보여줘 비교가 쉬운 구성</p>
+        </div>
+        <div class="phone variant-card">
+          <div class="ghost-result"><div class="ghost-header"><span>‹ 데이트 코스</span><span>오늘</span></div><div class="ghost-title">광안리 데이트 코스</div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div></div>
+          <div class="scrim"></div>
+          <section class="sheet" aria-label="교체 후보">
+            <div class="handle"></div>
+            <div class="sheet-header"><h3 class="sheet-title">다른 장소 보기</h3><span class="sheet-count">2개 후보</span></div>
+            <div class="candidate">
+              <div class="candidate-top"><div class="candidate-copy"><div class="candidate-kicker">동선 추천</div><h4 class="candidate-name">광안리 진양호횟집</h4><p class="candidate-address">부산광역시 수영구 광안해변로344번길 17-20</p></div></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="광안리 진양호횟집 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+            <div class="candidate">
+              <div class="candidate-top"><div class="candidate-copy"><div class="candidate-kicker neutral">다른 추천</div><h4 class="candidate-name">바다마루 조개구이</h4><p class="candidate-address">부산광역시 수영구 광안해변로 239</p></div></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="바다마루 조개구이 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-heading">
+          <span class="option-number">03</span>
+          <h2 class="option-title">행동 분리형 · CTA 위계 강조</h2>
+          <p class="option-note">장소 정보와 행동을 세로로 나눠 선택 버튼을 가장 쉽게 찾는 구성</p>
+        </div>
+        <div class="phone variant-action">
+          <div class="ghost-result"><div class="ghost-header"><span>‹ 데이트 코스</span><span>오늘</span></div><div class="ghost-title">광안리 데이트 코스</div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div></div>
+          <div class="scrim"></div>
+          <section class="sheet" aria-label="교체 후보">
+            <div class="handle"></div>
+            <div class="sheet-header"><h3 class="sheet-title">다른 장소 보기</h3><span class="sheet-count">2개 후보</span></div>
+            <div class="candidate">
+              <div class="candidate-copy"><div class="candidate-kicker">동선 추천</div><h4 class="candidate-name">광안리 진양호횟집</h4><p class="candidate-address">부산광역시 수영구 광안해변로344번길 17-20</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="광안리 진양호횟집 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+            <div class="candidate">
+              <div class="candidate-copy"><div class="candidate-kicker neutral">다른 추천</div><h4 class="candidate-name">바다마루 조개구이</h4><p class="candidate-address">부산광역시 수영구 광안해변로 239</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="바다마루 조개구이 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-heading">
+          <span class="option-number">04</span>
+          <h2 class="option-title">컴팩트 리스트형 · 후보가 많을 때</h2>
+          <p class="option-note">번호와 짧은 리듬으로 후보 수가 늘어도 화면이 덜 번잡한 구성</p>
+        </div>
+        <div class="phone variant-compact">
+          <div class="ghost-result"><div class="ghost-header"><span>‹ 데이트 코스</span><span>오늘</span></div><div class="ghost-title">광안리 데이트 코스</div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div><div class="ghost-card"><div class="ghost-line"></div><div class="ghost-line short"></div></div></div>
+          <div class="scrim"></div>
+          <section class="sheet" aria-label="교체 후보">
+            <div class="handle"></div>
+            <div class="sheet-header"><h3 class="sheet-title">다른 장소 보기</h3><span class="sheet-count">2개 후보</span></div>
+            <div class="candidate">
+              <span class="candidate-index" aria-hidden="true">1</span><div class="candidate-copy"><div class="candidate-kicker">동선 추천</div><h4 class="candidate-name">광안리 진양호횟집</h4><p class="candidate-address">부산광역시 수영구 광안해변로344번길 17-20</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="광안리 진양호횟집 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+            <div class="candidate">
+              <span class="candidate-index" aria-hidden="true">2</span><div class="candidate-copy"><div class="candidate-kicker neutral">다른 추천</div><h4 class="candidate-name">바다마루 조개구이</h4><p class="candidate-address">부산광역시 수영구 광안해변로 239</p></div>
+              <div class="candidate-actions"><button class="map-button" type="button" aria-label="바다마루 조개구이 리뷰·지도 보기">리뷰·지도 보기</button><button class="pick-button" type="button">선택</button></div>
+            </div>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <div class="legend" aria-label="디자인 토큰 범례">
+      <span><i></i> Primary · 선택</span>
+      <span><i class="outline"></i> Secondary · 리뷰·지도 보기</span>
+      <span>공통: 390px 폭 기준 / 웜 뉴트럴 캔버스 / 핑크 단일 액센트</span>
+    </div>
+  </body>
+</html>

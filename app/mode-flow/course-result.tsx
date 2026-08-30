@@ -48,9 +48,21 @@ type ProviderReplacementCandidate = {
   name: string;
   address: string;
   roadAddress: string;
+  mapUrl?: string;
   latitude: number;
   longitude: number;
 };
+
+function replacementCandidatePlaceRef(
+  candidate: ReplacementCandidate | ProviderReplacementCandidate,
+): Parameters<typeof openPlaceInBrowser>[0] {
+  return {
+    kakaoPlaceId: 'kakaoPlaceId' in candidate ? candidate.kakaoPlaceId : undefined,
+    mapUrl: candidate.mapUrl,
+    name: candidate.name,
+    address: candidate.roadAddress || candidate.address,
+  };
+}
 
 const EMPTY_REPLACEMENT_CANDIDATE_GROUPS: ReplacementCandidateGroups = { top: [], additional: [] };
 
@@ -740,10 +752,12 @@ export default function CourseResultScreen() {
                           <View style={s.replacementCopy}>
                             <Text style={s.topLabel}>{t('modeFlow.courseResult.topPick')}</Text>
                             <Text style={s.replacementName}>{candidate.name}</Text>
-                            <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                          {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => openMap(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                            <Text style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <View style={s.replacementActions}>
+                            <TouchableOpacity testID={`course-replacement-map-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} accessibilityRole="link" onPress={() => openMap(replacementCandidatePlaceRef(candidate))} activeOpacity={0.88} hitSlop={{ top: SP.sm, right: SP.sm, bottom: SP.sm, left: SP.sm }} style={s.externalLinkButton}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity>
+                            <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          </View>
                         </View>
                       ))}
                     </View>
@@ -752,10 +766,12 @@ export default function CourseResultScreen() {
                         <View key={'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId} style={s.replacementRow}>
                           <View style={s.replacementCopy}>
                             <Text style={s.replacementName}>{candidate.name}</Text>
-                            <Text numberOfLines={1} style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
-                            {'providerPlaceId' in candidate ? null : <View style={s.externalActions}><TouchableOpacity accessibilityRole="link" onPress={() => openMap(candidate)} activeOpacity={0.88}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity></View>}
+                            <Text style={s.replacementAddress}>{candidate.roadAddress || candidate.address}</Text>
                           </View>
-                          <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          <View style={s.replacementActions}>
+                            <TouchableOpacity testID={`course-replacement-map-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} accessibilityRole="link" onPress={() => openMap(replacementCandidatePlaceRef(candidate))} activeOpacity={0.88} hitSlop={{ top: SP.sm, right: SP.sm, bottom: SP.sm, left: SP.sm }} style={s.externalLinkButton}><Text style={s.externalLink}>{t('modeFlow.courseResult.placeReviews')}</Text></TouchableOpacity>
+                            <TouchableOpacity accessibilityRole="button" testID={`course-replacement-pick-${'providerPlaceId' in candidate ? candidate.providerPlaceId : candidate.kakaoPlaceId}`} disabled={editing} onPress={() => { if (replacementTargetId) { if ('providerPlaceId' in candidate) void replaceWithProviderCandidate(replacementTargetId, candidate); else void replaceWithCandidate(replacementTargetId, candidate.kakaoPlaceId); } }} activeOpacity={0.88} style={s.pickButton}><Text style={s.pickButtonText}>{t('modeFlow.courseResult.pick')}</Text></TouchableOpacity>
+                          </View>
                         </View>
                       ))}
                     </View>
@@ -946,14 +962,15 @@ const s = StyleSheet.create({
   searchCtaText: { ...DS.typography.bodyCompact, color: C.pinkDeep, fontWeight: '800' },
   searchHint: { ...DS.typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: SP.sm },
   replacementEmpty: { ...DS.typography.bodySmall, color: C.textMuted, textAlign: 'center', paddingVertical: SP.md },
-  replacementRow: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: SP.sm, borderTopWidth: 1, borderTopColor: C.border, paddingTop: SP.sm },
-  replacementCopy: { flex: 1, gap: SP.micro },
+  replacementRow: { flexDirection: 'column', gap: SP.md, borderTopWidth: 1, borderTopColor: C.border, paddingVertical: SP.md },
+  replacementCopy: { flex: 1, minWidth: 0, gap: SP.xs },
   topLabel: { ...DS.typography.micro, color: C.pinkDeep, fontWeight: '800' },
   replacementName: { ...DS.typography.bodyCompact, color: C.text, fontWeight: '700' },
-  replacementAddress: { ...DS.typography.caption, color: C.textMuted },
-  externalActions: { flexDirection: 'row', gap: SP.sm, marginTop: SP.xs },
-  externalLink: { ...DS.typography.caption, color: C.pinkDeep, fontWeight: '700', minHeight: DS.spacing.touch, textAlignVertical: 'center' },
-  pickButton: { minHeight: 44, borderRadius: DS.radius.input, backgroundColor: C.pink, paddingHorizontal: SP.md, justifyContent: 'center' },
+  replacementAddress: { ...DS.typography.caption, color: C.textMuted, flexShrink: 1 },
+  replacementActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: SP.sm },
+  externalLinkButton: { minHeight: DS.spacing.touch, borderRadius: DS.radius.full, borderWidth: 1, borderColor: C.pinkBorder, backgroundColor: C.white, paddingHorizontal: SP.md, alignItems: 'center', justifyContent: 'center' },
+  externalLink: { ...DS.typography.buttonCompact, color: C.pinkDeep, fontWeight: '700' },
+  pickButton: { minHeight: DS.spacing.touch, borderRadius: DS.radius.input, backgroundColor: C.pink, paddingHorizontal: SP.md, justifyContent: 'center' },
   pickButtonText: { ...DS.typography.bodySmall, color: C.white, fontWeight: '800' },
   confirmedActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: SP.sm, marginHorizontal: SP.screen, marginBottom: SP.lg },
   sendBtn: { flex: 1, minHeight: SP.input, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SP.xs, borderRadius: DS.radius.button, paddingHorizontal: SP.sm, backgroundColor: C.pink },
