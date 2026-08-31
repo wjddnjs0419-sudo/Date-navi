@@ -79,7 +79,7 @@ git commit -m "test: establish web UI harness and tokens"
 
 - [ ] **Step 1: Write reducer tests**
 
-Test adding/removing/reordering 2–4 steps, one selected keyword per step, personal keyword normalization, `ai_decide`, location coordinates, meeting time, six moods plus recommendation opt-out, max walking `5 | 10 | 20`, and request serialization without UI-only fields.
+Test adding/removing/reordering 2–4 steps, one selected keyword per step, personal keyword normalization, `ai_decide`, `kakao | current` location source and coordinates, meeting time, six moods plus recommendation opt-out, max walking `5 | 10 | 20`, and request serialization without UI-only fields.
 
 ```ts
 expect(courseReducer(initialDraft, { type: 'addStep', category: 'cafe' }).courseSteps).toHaveLength(3);
