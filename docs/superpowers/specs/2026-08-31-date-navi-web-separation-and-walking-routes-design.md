@@ -168,7 +168,7 @@ MapLibre GL JS는 지도 렌더러다. 장소 검색 데이터와 도보 경로 
 
 ### MVP 처리
 
-추천이 최종 장소 2~4개의 위도·경도를 반환하면 Vercel 서버가 openrouteservice Directions의 `foot-walking` 프로필을 한 번 호출한다. 모든 장소를 순서대로 한 요청의 waypoint로 전달한다.
+추천이 최종 장소 2~4개의 위도·경도를 반환하면 Vercel 서버가 `https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson`을 한 번 호출한다. 모든 장소를 순서대로 `[longitude, latitude]` waypoint로 전달하고, GeoJSON FeatureCollection의 첫 `LineString`만 검증해 사용한다. 배포 검증은 종료된 `api.openrouteservice.org` 호스트를 거부한다.
 
 서버는 다음 계약으로 정규화한다.
 
@@ -202,7 +202,7 @@ MapLibre는 `geometry`를 별도 GeoJSON source와 line layer로 그린다. 결�
 
 도보 경로 계산은 추천 성공과 분리한다.
 
-- ORS timeout, 429, 5xx: 추천 장소는 표시하고 경로 상태만 `unavailable`로 반환한다.
+- ORS timeout, 일일 quota 소진 `403`, 분당 제한 `429`, 5xx: 추천 장소는 표시하고 경로 상태만 `unavailable`로 반환한다.
 - 경로 없음: 직선 연결선을 도보 경로처럼 표시하지 않는다.
 - 일부 좌표 누락: 유효한 장소 카드는 표시하고 경로를 생략한다.
 - 응답 geometry 또는 leg 개수 불일치: 서버 검증에서 폐기하고 오류 로그를 남긴다.
@@ -244,6 +244,8 @@ MapLibre는 `geometry`를 별도 GeoJSON source와 line layer로 그린다. 결�
 - 서비스 전체 일일 상한은 환경 변수로 설정
 - 지역 자동완성은 방문자당 24시간 60회, IP hash당 24시간 300회, 서비스 전체 일일 상한 3,000회
 
+quota 확인과 증가, 동시 실행 lease 획득은 하나의 데이터베이스 transaction/RPC에서 원자적으로 수행한다. lease는 요청별 owner token을 저장하고, 정상 해제는 같은 owner token일 때만 compare-and-delete한다. 다른 요청은 lease 생성 후 2분이 지난 경우에만 stale takeover할 수 있다.
+
 한 번의 공개 추천에 ORS Directions 호출은 기본 1회, 도보 제한 초과에 따른 자동 대체가 실행될 때만 최대 2회다. 동일한 waypoint 순서와 profile은 서버 캐시 키로 정규화해 재사용한다. 캐시는 최소 24시간 유지하고 사용자 입력 문구나 IP를 키에 포함하지 않는다.
 
 현재 ORS Standard 제한인 Directions 2,000회/일·40회/분보다 낮은 서비스 전체 상한을 둔다. 자동 대체의 최악 조건인 요청당 2회를 기준으로 용량을 계산한다. 한도 임박, ORS 429, API 장애 시 추천 결과만 반환하고 도보 경로는 일시적으로 생략한다.
@@ -261,13 +263,23 @@ type WebDemoRecommendationRequest = {
     category: 'meal' | 'cafe' | 'drinks' | 'activity' | 'culture' | 'walk' | 'ai_decide';
     intentTags?: string[];
   }>;
-  location: { label: string; latitude: number; longitude: number };
+  location: {
+    source: 'kakao' | 'current';
+    label: string;
+    latitude: number;
+    longitude: number;
+    kakaoPlaceId?: string;
+  };
   meetingTime: string;
   moods: string[];
   maxWalkingMinutes?: 5 | 10 | 20;
   language: 'ko' | 'en';
 };
 ```
+
+런타임 스키마는 코스 2~4개, step ID·카테고리·키워드 길이, 위도 `-90..90`, 경도 `-180..180`, 시간·분위기·도보 값과 알 수 없는 필드를 검증한다. 개인 입력 키워드는 해당 step의 `intentTags` 한 항목으로 보존한다. 현재 모바일 5단계 화면에 없는 별도 자유 입력 필드는 웹 MVP에 추가하지 않는다.
+
+Supabase 어댑터는 검증된 웹 계약으로부터 모바일 `RecommendationRequest`를 만든다. 서버에서 충돌하지 않는 `requestId`를 생성하고 `mode: 'course'`, 카탈로그 기반 step `label`, `location.source`를 채우며, `meetingTime`은 기존 한국어/영어 `additionalRequest` 시간 문구로 변환한다. 이 어댑터를 거친 값만 기존 `handleRecommendDate`에 전달한다.
 
 응답 장소는 최소한 `stepId`, 순서, 이름, 주소, 카테고리, 위도, 경도, provider와 map URL을 포함한다. `rating`, `photoUrl`은 optional이며 검증된 출처가 있을 때만 채운다. 응답에는 모바일 인증 세션 ID나 내부 candidate ID를 노출하지 않는다.
 
@@ -334,6 +346,7 @@ type WebDemoRecommendationRequest = {
 - 5단계 입력 상태와 카테고리별 키워드 테스트
 - 추천 요청·rate limit·오류 UI 테스트
 - ORS 응답 정규화와 잘못된 geometry/leg 거부 테스트
+- 서로 다른 위도·경도를 사용해 `[longitude, latitude]` 순서를 검증하는 ORS 회귀 테스트
 - 거리·초 단위 표시 포맷 테스트
 - 카드·마커·경로 선택 동기화 테스트
 - MapLibre cluster와 route source 브라우저 검증
@@ -378,3 +391,4 @@ type WebDemoRecommendationRequest = {
 - MapLibre GeoJSON line: <https://www.maplibre.org/maplibre-gl-js/docs/examples/add-a-geojson-line/>
 - openrouteservice 계획: <https://account.heigit.org/info/plans>
 - openrouteservice 요청 제한: <https://openrouteservice.org/restrictions/>
+- HeiGIT ORS 호스트 이전: <https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912>
