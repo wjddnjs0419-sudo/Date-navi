@@ -34,11 +34,16 @@
 
 - [ ] **Step 1: Add the secret variable**
 
-Add `ORS_API_KEY=` to `.env.example`; never prefix it with `NEXT_PUBLIC_`.
+Add these server-only values to `.env.example`; never prefix either with `NEXT_PUBLIC_`:
+
+```dotenv
+ORS_API_BASE_URL=https://api.heigit.org/openrouteservice
+ORS_API_KEY=
+```
 
 - [ ] **Step 2: Write normalization tests**
 
-Test a valid LineString and `n - 1` segments; meters/seconds preservation; maximum comparison by duration; malformed geometry; segment-count mismatch; missing coordinates; timeout; 429; and 5xx. Invalid/upstream cases must return `{ status: 'unavailable', provider: 'openrouteservice', profile: 'foot-walking' }` without geometry.
+Test a valid LineString and `n - 1` segments; asymmetric Seoul coordinates proving request and response order is `[longitude, latitude]`; meters/seconds preservation; maximum comparison by duration; malformed geometry; segment-count mismatch; missing coordinates; timeout; daily-quota `403`; minute-limit `429`; and 5xx. Invalid/upstream cases must return `{ status: 'unavailable', provider: 'openrouteservice', profile: 'foot-walking' }` without geometry.
 
 - [ ] **Step 3: Run and confirm failure**
 
@@ -48,7 +53,7 @@ npm test -- lib/server/walking-route.test.ts
 
 - [ ] **Step 4: Implement server-only ORS client and cache**
 
-POST ordered `[longitude, latitude]` coordinates to `/v2/directions/foot-walking/geojson`, abort at 8 seconds, validate `features[0].geometry` and `segments`. Cache by SHA-256 of rounded coordinates and profile for `86400` seconds; do not cache unavailable responses longer than 60 seconds.
+Validate `ORS_API_BASE_URL` equals `https://api.heigit.org/openrouteservice` and reject `api.openrouteservice.org`. POST ordered `[longitude, latitude]` coordinates to `${ORS_API_BASE_URL}/v2/directions/foot-walking/geojson`, abort at 8 seconds, validate `features[0].geometry` and `segments`. Cache by SHA-256 of rounded coordinates and profile for `86400` seconds; do not cache unavailable responses longer than 60 seconds.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -192,6 +197,7 @@ npx vercel env add WEB_DEMO_INTERNAL_TOKEN preview
 npx vercel env add WEB_DEMO_HMAC_SECRET preview
 npx vercel env add WEB_DEMO_GLOBAL_DAILY_LIMIT preview
 npx vercel env add WEB_DEMO_LOCATION_GLOBAL_DAILY_LIMIT preview
+npx vercel env add ORS_API_BASE_URL preview
 npx vercel env add ORS_API_KEY preview
 npx vercel env add NEXT_PUBLIC_MAP_STYLE_URL preview
 npx vercel env add NEXT_PUBLIC_SITE_ORIGIN preview
