@@ -2,7 +2,7 @@
 
 Date: 2026-08-31
 
-Status: 사용자 방향 승인, 문서 최종 검토 대기
+Status: 사용자 승인 완료 — 구현 기준선
 
 Scope: 기존 `web/`을 독립 저장소로 분리하고, 로그인 없는 코스 추천 데모와 MapLibre 기반 지도·실제 도보 경로를 제공한다.
 
@@ -223,6 +223,8 @@ MapLibre는 `geometry`를 별도 GeoJSON source와 line layer로 그린다. 결�
 
 브라우저는 Naver, Kakao, AI, ORS 비밀 키를 받지 않는다. Vercel Route Handler는 공개 웹의 단일 오케스트레이션 경계이며, Supabase `recommend-demo`도 자체 입력 검증과 사용량 검사를 수행한다.
 
+지역 선택은 모바일과 같이 현재 위치 또는 Kakao 기반 검색 결과를 사용한다. 기존 `location-autocomplete`의 검색·정렬 코어를 공유하되, 웹은 Vercel의 same-origin `/api/demo/locations`를 통해서만 호출한다. 검색은 2글자부터 300ms debounce하고 최대 8개 결과만 반환한다.
+
 ## 10. 공개 데모 제한과 보안
 
 로그인 없는 공개 서비스이므로 모바일의 사용자 ID 기반 제한을 그대로 사용할 수 없다. 다음 두 식별자를 함께 사용한다.
@@ -240,6 +242,7 @@ MapLibre는 `geometry`를 별도 GeoJSON source와 line layer로 그린다. 결�
 - 도보 경로 요청은 성공한 추천 요청에 귀속하고 별도 공개 범용 라우팅 API로 제공하지 않음
 - 한 공개 요청 안의 자동 대체는 최대 1회
 - 서비스 전체 일일 상한은 환경 변수로 설정
+- 지역 자동완성은 방문자당 24시간 60회, IP hash당 24시간 300회, 서비스 전체 일일 상한 3,000회
 
 한 번의 공개 추천에 ORS Directions 호출은 기본 1회, 도보 제한 초과에 따른 자동 대체가 실행될 때만 최대 2회다. 동일한 waypoint 순서와 profile은 서버 캐시 키로 정규화해 재사용한다. 캐시는 최소 24시간 유지하고 사용자 입력 문구나 IP를 키에 포함하지 않는다.
 
