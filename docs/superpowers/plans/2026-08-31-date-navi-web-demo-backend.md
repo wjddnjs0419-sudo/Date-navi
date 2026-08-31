@@ -29,11 +29,11 @@
 - Create: `shared/recommendation/__tests__/web-demo-contracts.test.ts`
 
 **Interfaces:**
-- Produces: `webDemoRecommendationRequestSchema`, `WebDemoRecommendationRequest`, `WebDemoInternalResponse`, and `toPublicWebDemoResponse`.
+- Produces: `webDemoRecommendationRequestSchema`, `WebDemoRecommendationRequest`, `toRecommendationRequest`, `WebDemoInternalResponse`, and `toPublicWebDemoResponse`.
 
 - [ ] **Step 1: Write failing schema tests**
 
-Test that 2–4 steps, valid categories, one intent tag per step, coordinates, ISO-like meeting time, language, and `5 | 10 | 20` pass; test that five steps, 41-character tags, unknown categories, and extra keys fail. Test that `toPublicWebDemoResponse` removes `candidateId`, `sessionId`, and `retryContext` recursively.
+Test that 2–4 steps, valid categories, one intent tag per step, `kakao | current` location source, coordinate ranges, ISO-like meeting time, language, and `5 | 10 | 20` pass; test that five steps, 41-character tags, unknown categories, out-of-range coordinates, and extra keys fail. Test that `toRecommendationRequest` generates `requestId`, `mode: course`, category labels, `location.source`, and the existing localized meeting-time note without losing a custom `intentTags` value. Test that `toPublicWebDemoResponse` removes `candidateId`, `sessionId`, and `retryContext` recursively.
 
 ```ts
 expect(webDemoRecommendationRequestSchema.safeParse(validRequest).success).toBe(true);
@@ -51,7 +51,7 @@ Expected: FAIL because `web-demo-contracts.ts` does not exist.
 
 - [ ] **Step 3: Implement the exact public types**
 
-Define `WebDemoRecommendationRequest` exactly as the spec, `WebDemoPlace` with `stepId`, `order`, `name`, `address`, `category`, `latitude`, `longitude`, `provider`, `mapUrl`, optional `rating` and `photoUrl`, and `WebDemoInternalResponse` with `{ course, metadata, retryContext }`. Make schemas strict and preserve only fields required for one bounded server retry.
+Define `WebDemoRecommendationRequest` exactly as the spec, `WebDemoPlace` with `stepId`, `order`, `name`, `address`, `category`, `latitude`, `longitude`, `provider`, `mapUrl`, optional `rating` and `photoUrl`, and `WebDemoInternalResponse` with `{ course, metadata, retryContext }`. Make schemas strict and preserve only fields required for one bounded server retry. Implement `toRecommendationRequest(input, requestIdFactory)` so only the server generates internal IDs and labels.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -70,11 +70,11 @@ git commit -m "feat: define public web recommendation contract"
 
 **Interfaces:**
 - Consumes: `visitorHash`, `networkHash`, `requestId`, and configured global limit.
-- Produces: `acquireWebDemoPermit(): Promise<{ permitId: string }>` and `finishWebDemoPermit(permitId, outcome): Promise<void>`.
+- Produces: `acquireWebDemoPermit(): Promise<{ permitId: string; ownerToken: string }>` and `finishWebDemoPermit(permitId, ownerToken, outcome): Promise<void>`.
 
 - [ ] **Step 1: Write adapter tests**
 
-Cover allowed acquisition, visitor daily rejection, network daily rejection, global rejection, active-lock rejection, 121-second stale-lock recovery, success consumption, and failure release. Assert no query is made against the authenticated mobile quota RPC.
+Cover allowed acquisition, visitor daily rejection, network daily rejection, global rejection, two simultaneous acquisitions where exactly one wins, active-lock rejection, 119-second rejection, 121-second stale-lock takeover, wrong-owner release rejection, owner compare-and-delete release, success consumption, and failure release. Assert no query is made against the authenticated mobile quota RPC.
 
 - [ ] **Step 2: Run the focused test and confirm failure**
 
@@ -84,7 +84,7 @@ npm test -- --runInBand supabase/functions/_shared/__tests__/web-demo-rate-limit
 
 - [ ] **Step 3: Create service-role-only tables and RPCs**
 
-The migration creates `web_demo_usage` and `web_demo_permits` keyed by opaque hashes, revokes all access from `anon` and `authenticated`, grants only `service_role`, and implements atomic acquire/finish RPCs. Acquisition must compare `now()` against a 24-hour window and consider a permit active only for 120 seconds.
+The migration creates `web_demo_usage` and `web_demo_permits` keyed by opaque hashes, revokes all access from `anon` and `authenticated`, grants only `service_role`, and implements atomic acquire/finish RPCs. Acquisition performs check-and-increment plus owner-token lease creation in one transaction; finish deletes only where `permit_id` and `owner_token` both match. Takeover is allowed only when the stored lease is older than 120 seconds.
 
 - [ ] **Step 4: Implement the adapter and stable error codes**
 
