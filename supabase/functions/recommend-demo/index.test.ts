@@ -131,6 +131,15 @@ describe('loginless recommend-demo', () => {
     expect(await result.json()).toMatchObject({ retryContext: { attempt: 0 } });
   });
 
+  it('generates a request ID when the production adapter does not inject one', async () => {
+    const deps = dependencies();
+    const handler = createRecommendDemoHandler(deps);
+    const result = await handler(request(input));
+
+    expect(result.status).toBe(200);
+    expect(deps.acquire).toHaveBeenCalledWith(expect.objectContaining({ requestId: expect.any(String) }));
+  });
+
   it('attempt 1 is forwarded as a retry and always releases the permit', async () => {
     const deps = dependencies({
       requestIdFactory: () => 'request-retry',

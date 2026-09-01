@@ -97,10 +97,10 @@ begin
   perform pg_advisory_xact_lock(hashtextextended('web-demo:visitor:' || p_visitor_hash, 0));
   perform pg_advisory_xact_lock(hashtextextended('web-demo:network:' || p_network_hash, 0));
 
-  select permit_id, created_at
+  select permit.permit_id, permit.created_at
     into v_existing_permit, v_existing_created_at
-  from public.web_demo_permits
-  where visitor_hash = p_visitor_hash;
+  from public.web_demo_permits as permit
+  where permit.visitor_hash = p_visitor_hash;
 
   if v_existing_permit is not null then
     if v_existing_created_at > p_now - make_interval(secs => p_stale_after_seconds) then

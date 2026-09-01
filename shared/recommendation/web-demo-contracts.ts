@@ -105,9 +105,8 @@ const CATEGORY_LABELS: Record<RecommendationLanguage, Record<WebDemoRecommendati
 };
 
 function defaultRequestId(): string {
-  const randomUUID = globalThis.crypto?.randomUUID;
-  if (!randomUUID) throw new Error('Secure request ID generation is unavailable.');
-  return randomUUID();
+  if (!globalThis.crypto?.randomUUID) throw new Error('Secure request ID generation is unavailable.');
+  return globalThis.crypto.randomUUID();
 }
 
 function meetingTimeNote(input: WebDemoRecommendationRequest): string {
