@@ -38,6 +38,7 @@ type GenerateAiSelectionInput = {
   prompt: string;
   promptVersion: string;
   action?: 'recommend_date_select' | 'estimate_place_price';
+  aiPrincipal?: 'web-demo';
 };
 
 type GenerateAiSelectionOptions = {
@@ -63,6 +64,7 @@ export async function invokeGenerateAiSelection(
       headers: {
         Authorization: input.authorization,
         'x-internal-ai-token': input.internalAiToken,
+        ...(input.aiPrincipal ? { 'x-ai-principal': input.aiPrincipal } : {}),
         apikey: input.anonKey,
         'Content-Type': 'application/json',
       },

@@ -150,4 +150,16 @@ describe('recommend-date downstream timeout boundary', () => {
       action: 'estimate_place_price',
     });
   });
+
+  it('forwards the exact web-demo AI principal only when requested by the web adapter', async () => {
+    const fetchImpl: DownstreamFetch = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ steps: [] }),
+    }));
+
+    await invokeGenerateAiSelection({ ...input, aiPrincipal: 'web-demo' }, { fetchImpl });
+
+    expect((fetchImpl as jest.Mock).mock.calls[0][1].headers['x-ai-principal']).toBe('web-demo');
+  });
 });

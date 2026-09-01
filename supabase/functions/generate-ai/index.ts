@@ -1,8 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { resolveGenerateAiAccess } from '../_shared/web-demo-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-ai-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-ai-token, x-ai-principal',
 };
 
 const json = (body: unknown, status = 200) =>
@@ -75,7 +76,7 @@ function hasInternalAiToken(provided: string | null, expected: string | undefine
 }
 
 type LogParams = {
-  userId: string;
+  userId?: string;
   action: string;
   promptVersion: string;
   prompt: string;
@@ -89,8 +90,10 @@ type LogParams = {
 };
 
 // 로깅 실패가 원래 응답 흐름을 절대 막지 않도록 호출부에서 await하되 에러는 여기서 삼킨다.
-async function logRecommendation(adminClient: ReturnType<typeof createClient<any>>, params: LogParams) {
-  if (!LOGGED_ACTIONS.has(params.action)) return;
+async function logRecommendation(adminClient: ReturnType<typeof createClient<any>> | null, params: LogParams) {
+  // Loginless demo calls are intentionally not associated with auth.users and
+  // must not create a user_id-bearing AI log row.
+  if (!adminClient || !params.userId || !LOGGED_ACTIONS.has(params.action)) return;
   try {
     const { error } = await adminClient.from('ai_recommendation_logs').insert({
       user_id: params.userId,
@@ -117,31 +120,59 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 로그인된 사용자만 호출 가능
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return json({ error: 'Unauthorized' }, 401);
+    const aiPrincipal = req.headers.get('x-ai-principal');
+    if (aiPrincipal && aiPrincipal !== 'web-demo') {
+      return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
+    }
+    const internalAiToken = Deno.env.get('INTERNAL_AI_TOKEN');
+    const hasValidInternalToken = hasInternalAiToken(req.headers.get('x-internal-ai-token'), internalAiToken);
+    const isWebDemoRequest = aiPrincipal === 'web-demo';
+    let user: { id: string } | null = null;
 
-    const userClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
+    // The mobile path remains JWT + internal-token protected. The only
+    // loginless exception is the exact web-demo principal with that same
+    // constant-time checked internal token.
+    if (isWebDemoRequest) {
+      // Action-specific access is resolved after the request body is parsed.
+    } else {
+      // 로그인된 사용자만 호출 가능
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) return json({ error: 'Unauthorized' }, 401);
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+
+      const { data: { user: authenticatedUser }, error: userError } = await userClient.auth.getUser();
+      if (userError || !authenticatedUser) return json({ error: 'Unauthorized' }, 401);
+      user = authenticatedUser;
+    }
 
     const { action, prompt, prompt_version } = await req.json();
     const config = typeof action === 'string' ? ACTION_CONFIG[action] : undefined;
     if (!config) {
       return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
     }
-    const internalAiToken = Deno.env.get('INTERNAL_AI_TOKEN');
-    if (!internalAiToken) {
+    const access = resolveGenerateAiAccess({
+      principal: aiPrincipal,
+      authenticatedUserId: user?.id,
+      internalTokenValid: hasValidInternalToken,
+      action,
+    });
+    if (access === 'forbidden') {
+      if (!internalAiToken) {
+        if (action !== 'recommend_date_select') {
+          console.error('generate-ai INTERNAL_AI_TOKEN is not configured');
+          return json({ error: 'Internal configuration error' }, 500);
+        }
+      }
+      return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
+    }
+    if (!internalAiToken && access === 'web-demo') {
       console.error('generate-ai INTERNAL_AI_TOKEN is not configured');
       return json({ error: 'Internal configuration error' }, 500);
-    }
-    if (!hasInternalAiToken(req.headers.get('x-internal-ai-token'), internalAiToken)) {
-      return json({ error: { code: 'AI_ACTION_FORBIDDEN' } }, 403);
     }
     if (typeof prompt !== 'string' || !prompt) {
       return json({ error: 'Invalid request' }, 400);
@@ -157,11 +188,11 @@ Deno.serve(async (req) => {
     // 로깅 전용 admin 클라이언트 — RLS를 우회해 ai_recommendation_logs에 쓰기 위함.
     // action/prompt 검증 이후에 만들어서, 검증 실패나 soft_message처럼 로깅이 필요 없는
     // 요청까지 SUPABASE_SERVICE_ROLE_KEY 존재 여부에 발목 잡히지 않게 한다.
-    const adminClient = createClient(
+    const adminClient = user ? createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-    const baseLog = { userId: user.id, action, promptVersion, prompt, model: MODEL };
+    ) : null;
+    const baseLog = { userId: user?.id, action, promptVersion, prompt, model: MODEL };
 
     const startedAt = Date.now();
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {

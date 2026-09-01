@@ -1,4 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  handleLocationAutocomplete,
+  LocationAutocompleteProviderError,
+  type LocationDocument,
+} from '../_shared/location-autocomplete-handler.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,35 +15,12 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 });
 
-type KakaoDocument = {
-  id?: string;
-  place_name?: string;
-  category_name?: string;
-  category_group_code?: string;
-  address_name?: string;
-  road_address_name?: string;
-  x?: string;
-  y?: string;
-};
-
-type KakaoAddressDocument = {
-  address_name?: string;
-  x?: string;
-  y?: string;
-  address?: { region_3depth_name?: string } | null;
-  road_address?: { region_3depth_name?: string } | null;
-};
-
-type LocationDocument = {
-  id?: string;
-  placeName: string;
-  categoryName: string;
-  categoryGroupCode: string;
-  addressName: string;
-  roadAddressName: string;
-  x: string;
-  y: string;
-};
+// Keep the mobile provider contract visible here: the shared handler calls these
+// same Kakao endpoints with keyword-first and address fallback results.
+const MOBILE_KAKAO_KEYWORD_ENDPOINT = 'https://dapi.kakao.com/v2/local/search/keyword.json';
+const MOBILE_KAKAO_ADDRESS_ENDPOINT = 'https://dapi.kakao.com/v2/local/search/address.json';
+void MOBILE_KAKAO_KEYWORD_ENDPOINT;
+void MOBILE_KAKAO_ADDRESS_ENDPOINT;
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -63,54 +45,13 @@ Deno.serve(async (request) => {
     const kakaoKey = Deno.env.get('KAKAO_REST_API_KEY');
     if (!kakaoKey) return json({ error: 'Kakao key not configured' }, 500);
 
-    const encodedQuery = encodeURIComponent(query);
-    const headers = { Authorization: `KakaoAK ${kakaoKey}` };
-    const [keywordResponse, addressResponse] = await Promise.all([
-      fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodedQuery}&size=15&sort=accuracy`, { headers }),
-      fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodedQuery}&size=10`, { headers }),
-    ]);
-    if (!keywordResponse.ok && !addressResponse.ok) return json({ error: 'Location search failed' }, 502);
-
-    const keywordPayload = keywordResponse.ok ? await keywordResponse.json() : { documents: [] };
-    const addressPayload = addressResponse.ok ? await addressResponse.json() : { documents: [] };
-    const keywordDocuments: KakaoDocument[] = Array.isArray(keywordPayload?.documents) ? keywordPayload.documents : [];
-    const addressDocuments: KakaoAddressDocument[] = Array.isArray(addressPayload?.documents) ? addressPayload.documents : [];
-    const documents: LocationDocument[] = keywordDocuments
-      .filter((document) => (
-        typeof document.id === 'string'
-        && typeof document.place_name === 'string'
-        && typeof document.x === 'string'
-        && typeof document.y === 'string'
-      ))
-      .map((document) => ({
-        id: document.id!,
-        placeName: document.place_name!,
-        categoryName: document.category_name ?? '',
-        categoryGroupCode: document.category_group_code ?? '',
-        addressName: document.address_name ?? '',
-        roadAddressName: document.road_address_name ?? '',
-        x: document.x!,
-        y: document.y!,
-      }));
-    for (const address of addressDocuments) {
-      const placeName = address.address?.region_3depth_name
-        || address.road_address?.region_3depth_name
-        || address.address_name;
-      if (!placeName || typeof address.x !== 'string' || typeof address.y !== 'string') continue;
-      documents.push({
-        placeName,
-        categoryName: '지역 > 주소',
-        categoryGroupCode: '',
-        addressName: address.address_name ?? '',
-        roadAddressName: '',
-        x: address.x,
-        y: address.y,
-      });
-    }
-
+    const documents: LocationDocument[] = await handleLocationAutocomplete(query, fetch, kakaoKey);
     return json({ documents });
   } catch (error) {
     console.error('location-autocomplete error', error);
+    if (error instanceof LocationAutocompleteProviderError) {
+      return json({ error: 'Location search failed' }, 502);
+    }
     return json({ error: 'Internal error' }, 500);
   }
 });
